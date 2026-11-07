@@ -6,17 +6,20 @@ The detector is not a source separator and its activations are not calibrated pr
 from __future__ import annotations
 
 from pathlib import Path
+from dataclasses import replace
 import subprocess
 import threading
+import time
 
 import imageio_ffmpeg
 import numpy as np
 import onnxruntime as ort
 from scipy.ndimage import median_filter
-from scipy.signal import correlate, find_peaks, stft
+from scipy.signal import find_peaks, stft
 from scipy.io import wavfile
 
 from .domain import Note
+from .timing import estimate_timing
 
 SR, FRAME, WINDOW, OVERLAP = 22050, 256, 43844, 7680
 _session = None
@@ -72,12 +75,29 @@ def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):
     return np.concatenate(frames)[valid], np.concatenate(onsets)[valid], times[valid]
 
 
-def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_threshold=.3):
+def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_threshold=.3, attacks=None):
     notes = []
+    attack_times = np.array([n.start / 1000 for n in attacks]) if attacks is not None else None
     for pitch in range(88):
-        peaks, _ = find_peaks(onsets[:, pitch], height=onset_threshold, distance=5)
+        peaks, _ = find_peaks(onsets[:, pitch], height=onset_threshold, distance=3)
         if len(onsets) > 1 and onsets[0, pitch] >= onset_threshold and onsets[0, pitch] > onsets[1, pitch]:
             peaks = np.r_[0, peaks]
+        accepted = []
+        for i in peaks:
+            before = frames[max(0, i - 6):i, pitch]
+            after = frames[i + 3:i + 12, pitch]
+            supported = attack_times is None or bool(np.any(np.abs(attack_times - times[i]) <= .045))
+            # The model can fire another onset during a release, splitting one
+            # long sound into an LN plus a fake tap. Reject only this falling
+            # tail shape when independent attack evidence is also absent.
+            release_peak = (len(before) >= 3 and len(after) >= 4 and
+                            np.median(before) >= frame_threshold and
+                            np.mean(after) < np.median(before) * .8 and
+                            np.min(after) < frame_threshold)
+            if not supported and release_peak:
+                continue
+            accepted.append(i)
+        peaks = np.asarray(accepted, dtype=int)
         for j, start in enumerate(peaks):
             stop = int(peaks[j + 1]) if j + 1 < len(peaks) else len(times)
             last, gap = int(start), 0
@@ -88,7 +108,7 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
                     gap += 1
                     if gap > 4:
                         break
-            if last - start < 5:
+            if last - start < 3:
                 continue
             a = max(0, round(float(times[start]) * 1000))
             b = min(round(duration * 1000), round((float(times[last]) + FRAME / SR) * 1000))
@@ -112,24 +132,54 @@ def rhythmic_evidence(samples):
     if not np.any(flux):
         return [], {"bpm": 120.0, "offset": 0.0, "estimated": True, "reliability": "无可靠节奏证据"}
     base = median_filter(flux, size=43)
-    peaks, _ = find_peaks(flux, height=base * 1.6 + np.max(flux) * .025, distance=7, prominence=np.max(flux) * .02)
+    peaks, _ = find_peaks(flux, height=base * 1.6 + np.max(flux) * .025, distance=3, prominence=np.max(flux) * .02)
     scale = max(float(np.percentile(flux[peaks], 90)) if len(peaks) else 1, 1e-9)
-    notes = [Note(max(0, round(times[i] * 1000)), max(0, round(times[i] * 1000)), -1, 48,
-                  round(min(1, float(flux[i]) / scale), 4), "transient", f"t{i}") for i in peaks]
-    ac = correlate(flux, flux, mode="full", method="fft")[len(flux) - 1:]
-    fps = SR / FRAME
-    low, high = max(1, int(fps * 60 / 200)), min(len(ac) - 1, int(fps * 60 / 65))
-    if high <= low or len(peaks) < 4:
-        bpm, reliability = 120.0, "证据不足，请手动设置"
-    else:
-        lag = low + int(np.argmax(ac[low:high + 1]))
-        bpm, reliability = round(60 * fps / lag, 2), "估计值；可能为倍速 / 半速，未自动吸附音符"
-    beat_ms = 60000 / bpm
-    offset = round(notes[0].start % beat_ms, 2) if notes else 0
-    return notes, {"bpm": bpm, "offset": offset, "estimated": True, "reliability": reliability}
+    notes = []
+    # Refine each STFT attack on a 1 ms RMS envelope. The flux peak itself can
+    # precede or follow the physical attack by a window-dependent amount.
+    step = 22
+    usable = len(samples) // step * step
+    rms = np.sqrt(np.mean(samples[:usable].reshape(-1, step) ** 2, axis=1))
+    smooth = np.convolve(rms, np.ones(3) / 3, mode="same")
+    for i in peaks:
+        center = int(times[i] * SR / step)
+        lo, hi = max(0, center - 30), min(len(smooth), center + 25)
+        if hi - lo < 3:
+            continue
+        region = smooth[lo:hi]
+        peak = int(np.argmax(region))
+        floor = float(np.percentile(region[:max(1, peak)], 15))
+        threshold = floor + (float(region[peak]) - floor) * .2
+        crossing = peak
+        while crossing > 0 and region[crossing - 1] > threshold:
+            crossing -= 1
+        at = max(0, round((lo + crossing) * step / SR * 1000))
+        if notes and at - notes[-1].start < 35:
+            continue
+        notes.append(Note(at, at, -1, 48, round(min(1, float(flux[i]) / scale), 4), "transient", f"t{i}"))
+    return notes, estimate_timing(notes, len(samples) / SR)
+
+
+def fuse_attacks(pitched, transients):
+    """Anchor nearby model onsets to measured attacks and avoid duplicate taps."""
+    times = np.array([n.start for n in transients])
+    if not len(times):
+        return pitched, transients, 0
+    used, corrected = set(), []
+    for n in pitched:
+        i = int(np.searchsorted(times, n.start))
+        nearby = [j for j in (i - 1, i) if 0 <= j < len(times)]
+        j = min(nearby, key=lambda j: abs(int(times[j]) - n.start))
+        # A small correction is allowed; remote transients are unrelated voices.
+        if abs(int(times[j]) - n.start) <= 40 and times[j] < n.end:
+            used.add(j)
+            n = replace(n, start=int(times[j]))
+        corrected.append(n)
+    return corrected, [n for j, n in enumerate(transients) if j not in used], len(used)
 
 
 def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=lambda: False):
+    started = time.perf_counter()
     progress(2, "解码音频")
     samples = decode(path, work)
     duration = len(samples) / SR
@@ -152,12 +202,13 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
         temporary.replace(cache)
     if cancelled():
         raise InterruptedError("已取消分析")
-    notes = pitched_notes(frames, onsets, times, duration, settings["onset_threshold"], settings["frame_threshold"])
-    progress(90, "检测瞬态和估计速度")
+    progress(90, "校准瞬态、比较 BPM 候选并检查全曲漂移")
     transients, tempo = rhythmic_evidence(samples)
+    notes = pitched_notes(frames, onsets, times, duration, settings["onset_threshold"], settings["frame_threshold"], transients)
+    notes, unmatched, fused = fuse_attacks(notes, transients)
     chunks = np.array_split(np.abs(samples), min(2400, len(samples)))
     waveform = [round(float(np.max(x)), 4) for x in chunks]
-    candidates = sorted(notes + transients, key=lambda n: (n.start, n.pitch))
+    candidates = sorted(notes + unmatched, key=lambda n: (n.start, n.pitch))
     segments = []
     for start in range(0, int(duration * 1000) + 1, 15000):
         local = [n for n in candidates if start <= n.start < start + 15000]
@@ -166,6 +217,8 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
                          "transients": sum(n.source == "transient" for n in local),
                          "sustains_over_800ms": sum(n.end - n.start >= 800 for n in local)})
     progress(100, "采音候选已准备好")
-    return {"duration": duration, "waveform": waveform, "tempo": tempo, "segments": segments,
+    return {"revision": 2, "duration": duration, "waveform": waveform, "tempo": tempo, "segments": segments,
+            "elapsed_seconds": round(time.perf_counter() - started, 2), "cached": cached is not None,
+            "timing_attacks": [n.data() for n in transients], "fused_attacks": fused,
             "candidates": [n.data() for n in candidates], "thresholds": {k: settings[k] for k in ("onset_threshold", "frame_threshold")},
-            "engine": "Basic Pitch 0.4.0 ONNX + spectral flux", "notice": "音高候选并非乐器分轨；复杂混音、混响和音尾仍可能误判。"}
+            "engine": "Basic Pitch 0.4.0 ONNX + onset refinement + phase regression", "notice": "音高候选并非乐器分轨；复杂混音、混响和音尾仍可能误判。"}

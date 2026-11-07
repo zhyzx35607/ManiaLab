@@ -9,6 +9,7 @@ import zipfile
 from manialab.server import create_app
 from manialab.domain import Note, export_osu, parse_osu
 from manialab.planner import plan
+from manialab.storage import Projects
 
 ROOT=Path(__file__).parents[1]
 
@@ -56,3 +57,31 @@ def test_real_http_planner_mock():
         result=plan(f'http://127.0.0.1:{server.server_port}/v1','test','fake-test-key','prefer sustain',[{'start_ms':0,'end_ms':1000}],{})
         assert result['preferences']['ln_ratio']==.8
     finally:server.shutdown();thread.join();server.server_close()
+
+
+def test_audio_generation_uses_confirmed_grid_and_real_ln_target(tmp_path):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    state = client.post('/api/import', data={'files': (io.BytesIO(b'placeholder'), 'song.wav')}, headers=headers).json
+    pid = state['id']
+    notes = [Note(1014 + i * 1000, 1764 + i * 1000, source='pitch', id=str(i)) for i in range(20)]
+    state['analysis'] = {'revision': 2, 'candidates': [n.data() for n in notes], 'tempo': {'bpm': 121, 'offset': 20, 'stable': False}}
+    Projects(tmp_path / 'projects').save(state)
+    payload = {'mode': 'audio', 'settings': {'ln_ratio': .5}, 'bpm': 120, 'offset': 0, 'division': 4,
+               'snap': True, 'timing_confirmed': True}
+    job = client.post(f'/api/projects/{pid}/generate', json=payload, headers=headers).json
+    for _ in range(300):
+        result = client.get('/api/jobs/' + job['id']).json
+        if result['status'] in ('done', 'error'):
+            break
+        time.sleep(.02)
+    assert result['status'] == 'done', result
+    output = client.get(f'/api/projects/{pid}').json['variants'][0]
+    assert output['report']['ln'] == 10
+    assert output['selection']['alignment']['moved'] == 20
+    assert all(n['start'] % 1000 == 0 for n in output['notes'])
+    parsed = parse_osu(client.get(f'/api/projects/{pid}/export/osu').data.decode())
+    assert '0.000,500.00000000,4,2,0,70,1,0' in parsed['timing']
+    assert client.post(f'/api/projects/{pid}/timing-check', json={'bpm': 0}, headers=headers).status_code == 400
+    app.extensions['executor'].shutdown()

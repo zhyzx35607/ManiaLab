@@ -51,7 +51,7 @@ shutil.copytree(ROOT/'licenses',target/'licenses',dirs_exist_ok=True)
 shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
 (target/'开始使用.txt').write_text('完整解压后双击 ManiaLab.exe。\n程序会自动打开浏览器；关闭控制台窗口退出。\n基础功能无需 Python、Docker 或 GPU。\n项目数据：%LOCALAPPDATA%\\ManiaLab\\projects\n这是实验版，尚未训练专用 10K 模型。\n',encoding='utf-8-sig')
 release=ROOT/'release';release.mkdir(exist_ok=True)
-name='ManiaLab-0.1.0-alpha.1-windows-x64'
+name='ManiaLab-0.1.0-alpha.2-windows-x64'
 archive=Path(shutil.make_archive(str(release/name),'zip',ROOT/'dist','ManiaLab'))
 digest=hashlib.sha256(archive.read_bytes()).hexdigest()
 (release/'SHA256SUMS.txt').write_text(f'{digest}  {archive.name}\n',encoding='utf-8')

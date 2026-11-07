@@ -65,6 +65,34 @@ def test_source_backed_ln():
     assert not any(n.hold for n in taps)
 
 
+@pytest.mark.parametrize('ratio', [0, .25, .5, .75, 1])
+def test_ln_target_is_object_ratio(ratio):
+    candidates = [Note(i * 1000, i * 1000 + 750, pitch=60 + i % 12, source='pitch', id=str(i)) for i in range(40)]
+    notes, report = select_notes(candidates, {'ln_ratio': ratio})
+    assert sum(n.hold for n in notes) == round(len(notes) * ratio)
+    assert [(n.id, n.start) for n in notes] == [(n.id, n.start) for n in candidates]
+    assert report['actual_ln_ratio'] == ratio
+
+
+def test_ln_target_reserves_future_chord_and_reports_shortfall():
+    candidates = [Note(0, 5000, pitch=60, source='pitch', id='hold')]
+    candidates += [Note(1000, 1000, pitch=40 + i, source='transient', id=str(i)) for i in range(6)]
+    notes, report = select_notes(candidates, {'keys': 6, 'ln_ratio': 1, 'chord_size': 6, 'density': 24})
+    assert len(notes) == 7
+    assert not any(n.hold for n in notes)
+    assert report['feasible_ln_count'] == 0 and report['target_ln_count'] == 7
+    assert validate(assign_lanes(notes, {'keys': 6}), 6)['valid']
+
+
+def test_ln_target_max_held_is_enforced_globally():
+    candidates = [Note(i * 300, i * 300 + 3000, pitch=60 + i % 12, source='pitch', id=str(i)) for i in range(50)]
+    notes, report = select_notes(candidates, {'keys': 10, 'ln_ratio': 1, 'max_held': 3})
+    assigned = assign_lanes(notes, {'keys': 10, 'max_held': 3})
+    assert validate(assigned, 10)['max_held'] <= 3
+    assert report['actual_ln_ratio'] < 1
+    assert report['maximum_proven']
+
+
 def test_random_interval_coloring():
     rng=random.Random(7)
     for keys in range(6,11):

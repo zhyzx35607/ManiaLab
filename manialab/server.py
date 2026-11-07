@@ -16,7 +16,8 @@ import zipfile
 from flask import Flask, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
 
-from .arrange import DEFAULTS, assign_lanes, parameters, select_notes
+from .arrange import DEFAULTS, assign_lanes, parameters, select_notes, layout_metrics
+from .timing import align_candidates, grid_diagnostics
 from .audio import analyze
 from .domain import clean_meta, export_osu, note_from, parse_osu, upstream_events, validate
 from .planner import plan
@@ -67,7 +68,7 @@ def create_app(resources, data_root):
 
     @app.get("/api/status")
     def status():
-        return jsonify(version="0.1.0-alpha.1", defaults=DEFAULTS, projects=projects.recent(),
+        return jsonify(version="0.1.0-alpha.2", defaults=DEFAULTS, projects=projects.recent(),
                        capabilities={"audio": True, "remap": True, "api_planner": True, "trained_10k": False}, engine=engine.status())
 
     def busy(pid):
@@ -85,7 +86,7 @@ def create_app(resources, data_root):
         parsed = parse_osu(source.read_text(encoding="utf-8-sig"))
         state.update(mode="remap", original=relative, input_notes=[n.data() for n in parsed["notes"]],
                      title=parsed["metadata"].get("Title", source.stem), artist=parsed["metadata"].get("Artist", "Unknown"),
-                     input_keys=parsed["keys"], variants=[], active=-1)
+                     input_keys=parsed["keys"], input_timing=parsed["timing"], variants=[], active=-1)
         state["settings"]["keys"] = min(10, max(6, parsed["keys"]))
         audio_name = parsed["general"].get("AudioFilename", "")
         audio = safe_path(base, (Path(relative).parent / audio_name).as_posix()) if audio_name else None
@@ -140,7 +141,11 @@ def create_app(resources, data_root):
 
     @app.get("/api/projects/<pid>")
     def get_project(pid):
-        return jsonify(projects.load(pid))
+        state = projects.load(pid)
+        if state.get("original") and "input_timing" not in state:
+            source = safe_path(projects.path(pid) / "files", state["original"])
+            state["input_timing"] = parse_osu(source.read_text(encoding="utf-8-sig"))["timing"]
+        return jsonify(state)
 
     @app.post("/api/projects/<pid>/chart")
     def choose_chart(pid):
@@ -179,6 +184,7 @@ def create_app(resources, data_root):
                 with mutex:
                     job.update(progress=p, message=message)
             def run():
+                started = time.perf_counter()
                 job["status"] = "running"
                 try:
                     state = projects.load(pid)
@@ -186,7 +192,7 @@ def create_app(resources, data_root):
                     if job["cancel"]:
                         raise InterruptedError("已取消，原有谱面已保留")
                     projects.save(state)
-                    job.update(status="done", progress=100, message="完成", result=result)
+                    job.update(status="done", progress=100, message="完成", result=result, elapsed_seconds=round(time.perf_counter() - started, 2))
                 except InterruptedError as error:
                     job.update(status="cancelled", message=str(error))
                 except Exception as error:
@@ -215,6 +221,27 @@ def create_app(resources, data_root):
             return {"candidates": len(state["analysis"]["candidates"])}
         return submit(pid, operation)
 
+    def requested_tempo(payload, state):
+        detected = state.get("analysis", {}).get("tempo", {"bpm": 120, "offset": 0})
+        bpm, offset = float(payload.get("bpm", detected["bpm"])), float(payload.get("offset", detected["offset"]))
+        if not math.isfinite(bpm) or not 10 <= bpm <= 1000 or not math.isfinite(offset) or abs(offset) > 600000:
+            raise ValueError("BPM 或 Offset 无效")
+        division = payload.get("division", detected.get("division", 4))
+        if type(division) is not int or division not in (3, 4):
+            raise ValueError("拍内细分必须为 3 或 4")
+        unchanged = abs(bpm - detected["bpm"]) < .0001 and abs(offset - detected["offset"]) < .01 and division == detected.get("division", 4)
+        return detected | dict(bpm=bpm, offset=offset, division=division, stable=bool(unchanged and detected.get("stable")))
+
+    @app.post("/api/projects/<pid>/timing-check")
+    def timing_check(pid):
+        state = projects.load(pid)
+        tempo = requested_tempo(request.json, state)
+        attacks = [note_from(n) for n in state.get("analysis", {}).get("timing_attacks", [])]
+        if not attacks:
+            raise ValueError("请用新版重新分析音频，才能检查整曲拍线")
+        checks = grid_diagnostics(attacks, tempo["bpm"], tempo["offset"], tempo["division"])
+        return jsonify(sections=checks, suspect=sum(s["suspect"] for s in checks))
+
     @app.post("/api/projects/<pid>/generate")
     def generate(pid):
         payload = request.json
@@ -223,6 +250,8 @@ def create_app(resources, data_root):
         if mode not in ("audio", "remap"):
             raise ValueError("生成模式无效")
         def operation(state, progress, cancelled):
+            started = time.perf_counter()
+            tempo = requested_tempo(payload, state)
             progress(15, "选择音乐物件 / 保留原始物件")
             if mode == "remap":
                 if not state["input_notes"]:
@@ -234,7 +263,14 @@ def create_app(resources, data_root):
             else:
                 if not state.get("analysis"):
                     raise ValueError("请先完成音频分析")
-                selected, selection = select_notes([note_from(n) for n in state["analysis"]["candidates"]], prefs, state.get("plan", {}).get("segments", []))
+                if state["analysis"].get("revision", 1) < 2:
+                    raise ValueError("该项目使用旧版采音结果，请先点击「分析音频」更新拍线和 LN 候选；音高缓存会自动复用")
+                candidates, alignment = align_candidates([note_from(n) for n in state["analysis"]["candidates"]],
+                    tempo, enabled=payload.get("snap", True) is True, confirmed=payload.get("timing_confirmed", False) is True)
+                progress(25, "按目标 LN 比例求解持续音与未来占轨约束")
+                selected, selection = select_notes(candidates, prefs, state.get("plan", {}).get("segments", []))
+                selection["alignment"] = alignment
+                selection["message"] += f" 起音吸附 {alignment['moved']} 个。" + alignment["reason"]
                 if not selected:
                     raise ValueError("未找到可生成的采音候选，请降低检测阈值或更换音源")
             locked = []
@@ -252,15 +288,19 @@ def create_app(resources, data_root):
                 locked = [n for n in previous if not a <= n.start < b]
                 selected = [n for n in selected if a <= n.start < b]
             progress(45, "分配轨道并检查 LN 占轨")
-            output = assign_lanes(selected, prefs, locked)
+            output = assign_lanes(selected, prefs, locked, beat_ms=60000 / tempo["bpm"], progress=progress, cancelled=cancelled)
             progress(90, "校验谱面并保存候选")
             report = validate(output, prefs["keys"])
-            tempo = state.get("analysis", {}).get("tempo", {"bpm": 120, "offset": 0})
-            bpm, offset = float(payload.get("bpm", tempo["bpm"])), float(payload.get("offset", tempo["offset"]))
-            if not math.isfinite(bpm) or not 10 <= bpm <= 1000 or not math.isfinite(offset) or abs(offset) > 600000:
-                raise ValueError("BPM 或 Offset 无效")
+            report["layout"] = layout_metrics(output, prefs["keys"], 60000 / tempo["bpm"])
+            timing_sections = grid_diagnostics([note_from(n) for n in state.get("analysis", {}).get("timing_attacks", [])],
+                                              tempo["bpm"], tempo["offset"], tempo["division"]) if mode == "audio" else []
+            if region is not None:
+                selection["message"] = f"局部定轨完成；整谱实际 LN 比例 {report['ln_ratio']:.1%}。区域外物件已锁定。"
             variant = dict(notes=[n.data() for n in output], settings=prefs, mode=mode, report=report, selection=selection,
-                           bpm=bpm, offset=offset, created=time.time(), region=region,
+                           bpm=tempo["bpm"], offset=tempo["offset"], division=tempo["division"],
+                           timing_sections=timing_sections,
+                           snap=payload.get("snap", True) is True, timing_confirmed=payload.get("timing_confirmed", False) is True,
+                           elapsed_seconds=round(time.perf_counter() - started, 2), created=time.time(), region=region,
                            event_count=len(upstream_events(output)))
             state["variants"] = (state["variants"] + [variant])[-8:]
             state["active"] = len(state["variants"]) - 1
@@ -321,7 +361,7 @@ def create_app(resources, data_root):
             assigned = assign_lanes(parsed["notes"], prefs)
             name = "Mapperatorinator-" + secrets.token_hex(4) + ".osu"
             (work / "files" / name).write_text(text, encoding="utf-8")
-            state.update(original=name, input_notes=[n.data() for n in parsed["notes"]], input_keys=parsed["keys"], mode="remap", settings=prefs)
+            state.update(original=name, input_notes=[n.data() for n in parsed["notes"]], input_keys=parsed["keys"], input_timing=parsed["timing"], mode="remap", settings=prefs)
             state["charts"].append({"path": name, "label": f'Mapperatorinator V32 · {prefs["keys"]}K'})
             report = validate(assigned, prefs["keys"])
             warnings = getattr(engine, "last_warnings", [])

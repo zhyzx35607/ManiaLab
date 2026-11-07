@@ -11,3 +11,7 @@ ManiaLab's own code is MIT licensed. Bundled third-party programs and model data
 The optional Mapperatorinator backend downloads CPU PyTorch and other upstream dependencies into the user's application-data directory. These packages and downloaded V32 model weights are not embedded in the base Windows ZIP. Their license metadata stays in that separate installation; the model repository README is downloaded with the weights.
 
 User audio, beatmaps, API credentials, local projects and test downloads are not included in the source repository or Release.
+
+Design reference: Torosu, Copyright (c) 2026 Manolo-dl, MIT, commit b283791f46622b0dd1f47f53afa10bd62d700e66. Its explicit hand layouts and LN release-state costs informed the independently implemented ManiaLab allocator. License retained in licenses/Torosu-MIT.txt. Source: https://github.com/Manolo-dl/Torosu
+
+The user-supplied Timing Analyzer v0.32.4 alpha and its BASS runtime were used only for local comparison. Neither executable is distributed in ManiaLab.

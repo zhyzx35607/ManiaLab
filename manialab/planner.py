@@ -56,7 +56,7 @@ def plan(endpoint, model, key, instruction, segments, current):
               "结构: {explanation:中文说明,preferences:{参数},segments:[{index:已知段落索引,preferences:{参数}}]}。"
               "允许参数: density 1..24, ln_ratio 0..1, min_ln 100..2000毫秒, max_held 1..10, chord_size 1..10,"
               "focus balanced/pitched/transient, pitch_follow/balance/jack_avoid 0..1, release_gap 0..250毫秒。"
-              "ln_ratio是持续音选取偏好，不保证精确比例。不够证据时应在说明中指出。")
+              "ln_ratio是目标LN物件数占比；程序在持续音证据和占轨约束下尽量达到，不能通过删短键或虚构音尾凑比例。不够证据时应在说明中指出。")
     payload = {"model": model.strip(), "messages": [{"role": "system", "content": prompt},
                {"role": "user", "content": json.dumps({"request": instruction[:6000], "current": current, "segments": segments}, ensure_ascii=False)}],
                "temperature": .3, "max_tokens": 2500}

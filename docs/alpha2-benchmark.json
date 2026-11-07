@@ -1,0 +1,87 @@
+{
+  "timing": [
+    {
+      "true_bpm": 90,
+      "alpha1_bpm": 90.67,
+      "alpha2_bpm": 90.00002,
+      "alpha2_max_beat_error_ms": 1.262,
+      "alpha2_offset": 345.778,
+      "true_phase_ms": 347.0,
+      "stable": true
+    },
+    {
+      "true_bpm": 120,
+      "alpha1_bpm": 120.19,
+      "alpha2_bpm": 120.0,
+      "alpha2_max_beat_error_ms": 1.222,
+      "alpha2_offset": 345.778,
+      "true_phase_ms": 347.0,
+      "stable": true
+    },
+    {
+      "true_bpm": 137,
+      "alpha1_bpm": 136.0,
+      "alpha2_bpm": 136.99986,
+      "alpha2_max_beat_error_ms": 1.289,
+      "alpha2_offset": 345.711,
+      "true_phase_ms": 347.0,
+      "stable": true
+    },
+    {
+      "true_bpm": 174.5,
+      "alpha1_bpm": 87.59,
+      "alpha2_bpm": 174.49999,
+      "alpha2_max_beat_error_ms": 1.21,
+      "alpha2_offset": 1.95,
+      "true_phase_ms": 3.16,
+      "stable": true
+    },
+    {
+      "true_bpm": 273.25,
+      "alpha1_bpm": 136.0,
+      "alpha2_bpm": 273.25013,
+      "alpha2_max_beat_error_ms": 1.279,
+      "alpha2_offset": 126.227,
+      "true_phase_ms": 127.421,
+      "stable": true
+    }
+  ],
+  "maps": [
+    {
+      "id": "5410987",
+      "notes": 1177,
+      "ln": 1177,
+      "seconds": 0.55,
+      "preserved": true
+    },
+    {
+      "id": "5848413",
+      "notes": 1161,
+      "ln": 912,
+      "seconds": 0.87,
+      "preserved": true
+    },
+    {
+      "id": "5877693",
+      "notes": 1015,
+      "ln": 513,
+      "seconds": 0.794,
+      "preserved": true
+    },
+    {
+      "id": "5894796",
+      "notes": 1325,
+      "ln": 642,
+      "seconds": 1.104,
+      "preserved": true
+    },
+    {
+      "id": "5900981",
+      "notes": 1850,
+      "ln": 956,
+      "seconds": 1.492,
+      "preserved": true
+    }
+  ],
+  "note": "Controlled timing/structure tests; no real-song listening or gameplay quality claim."
+}

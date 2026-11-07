@@ -23,6 +23,7 @@ def test_real_model_timing_and_sustains(tmp_path):
     wavfile.write(tmp_path/'synth.wav',SR,y)
     result=analyze(tmp_path/'synth.wav',tmp_path,Path(__file__).parents[1]/'assets/basic-pitch.onnx',parameters())
     pitched=[n for n in result['candidates'] if n['source']=='pitch']
+    assert len(pitched) == len(expected), pitched
     for start,duration,midi in expected:
         matches=[n for n in pitched if n['pitch']==midi and abs(n['start']-start*1000)<120]
         assert matches, (start,midi,pitched)
