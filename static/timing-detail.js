@@ -41,11 +41,12 @@ function drawWaveDetail(){
   c.fillStyle='#8d9db5';c.font='10px monospace';c.fillText(`${d.start_ms.toFixed(1)} ms`,left,h-2);c.fillText(`${d.end_ms.toFixed(1)} ms`,Math.max(left,right-85),h-2);
   const tick=60000/Number($('bpm').value)/Number($('division').value),offset=Number($('offset').value);
   const delta=cursor-(offset+Math.round((cursor-offset)/tick)*tick);
-  $('waveAlign').disabled=$('mode').value!=='audio';
+  $('waveAlign').disabled=busy||$('mode').value!=='audio';
   $('waveDetailInfo').textContent=`${d.voice} · 原始采样 ${d.sample_rate} Hz · 波形显示提前 ${d.shift} ms · 选中 ${cursor.toFixed(0)} ms`+($('mode').value==='audio'?`，距最近细分线 ${delta.toFixed(2)} ms。`:'。')+'橙色：原始起音；白色：谱面起点；绿色虚线：LN 尾端。波形位置需要结合试听判断。';
 }
 $('waveHere').onclick=guarded(()=>loadWaveDetail());
 $('waveNote').onclick=guarded(()=>{const note=displayed.find(n=>n.id===selected);if(!note)throw Error('请先在谱面或采音预览中点击一个音符');return loadWaveDetail(note.start-(view==='evidence'?waveShift():0));});
+$('waveTail').onclick=guarded(()=>{const note=displayed.find(n=>n.id===selected);if(!note||note.end<=note.start)throw Error('请先在谱面或采音预览中点击一条 LN / 持续音');return loadWaveDetail(note.end-(view==='evidence'?waveShift():0));});
 $('waveSpan').onchange=guarded(()=>loadWaveDetail(waveDetail?Number($('waveCursor').value):currentTime()*1000));
 $('wavePrev').onclick=guarded(()=>loadWaveDetail(Math.max(0,(waveDetail?.start_ms||0)-Number($('waveSpan').value)*.5)));
 $('waveNext').onclick=guarded(()=>loadWaveDetail(Math.min(duration()*1000-100,(waveDetail?.end_ms||0))));

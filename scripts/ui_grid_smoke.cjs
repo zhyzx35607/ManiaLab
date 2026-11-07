@@ -37,6 +37,16 @@ const path=require('path'),fs=require('fs');
    const p=line.split(','),times=[Number(p[2])];if(Number(p[3])&128)times.push(Number(p[5].split(':')[0]));
    for(const t of times)if(Math.abs(t-(91+Math.round((t-91)/(60000/210/3))*60000/210/3))>.501)throw Error('triplet off grid');
  }
+ for(const fine of [6,8,12,16]){
+   await page.locator('#division').selectOption(String(fine));await page.locator('#timingConfirmed').check();await generate();
+   const result=await(await page.request.get(base+await page.locator('#exportOsu').getAttribute('href'))).text();
+   if(!result.includes(`BeatDivisor: ${fine}`))throw Error('fine editor grid mismatch: '+fine);
+   if(await page.locator('#division').inputValue()!==String(fine))throw Error('saved fine division missing from UI');
+   for(const line of result.split('[HitObjects]')[1].trim().split('\n')){
+     const p=line.split(','),times=[Number(p[2])];if(Number(p[3])&128)times.push(Number(p[5].split(':')[0]));
+     for(const t of times)if(Math.abs(t-(91+Math.round((t-91)/(60000/210/fine))*60000/210/fine))>.501)throw Error('fine grid off line: '+fine);
+   }
+ }
  await analyze();
  if(await page.locator('#exportOsu').getAttribute('href'))throw Error('reanalysis kept stale candidate active');
  if(await page.locator('#variants').inputValue()!=='')throw Error('old candidate still selected');
@@ -69,6 +79,6 @@ const path=require('path'),fs=require('fs');
  if(await page.locator('#offset').inputValue()!==edited)throw Error('stale refit overwrote changed clock');
  await page.setViewportSize({width:390,height:844});
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth);
- const result={endpoints,maxError,refit,rawRefit,clockRoundTrips:5,staleRefitIgnored:true,errors,mobileOverflow:overflow};
+ const result={endpoints,maxError,refit,rawRefit,divisionsChecked:[3,4,6,8,12,16],clockRoundTrips:5,staleRefitIgnored:true,errors,mobileOverflow:overflow};
  console.log(JSON.stringify(result));await browser.close();if(errors.length||overflow)process.exit(1);
 })().catch(e=>{console.error(e);process.exit(1)});

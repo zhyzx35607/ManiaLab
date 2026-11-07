@@ -78,8 +78,8 @@ function updateGridStatus(){
   ['exportOsu','exportOsz'].forEach(id=>{const a=$(id),blocked=!v||stale||mismatch||(id==='exportOsz'&&!state?.audio);a.classList.toggle('disabled',blocked);if(blocked)a.removeAttribute('href');else a.href=`/api/projects/${state.id}/export/${id==='exportOsu'?'osu':'osz'}`;});
 }
 async function refreshRecent(){const status=await api('/api/status');separatorAvailable=!!status.separator?.available;$('analysisEngine').querySelector('[value=deep]').disabled=!separatorAvailable;$('separationStatus').textContent=separatorAvailable?'四声部模型已就绪 · 本机 CPU 分离，再逐声部采音':'当前包未包含四声部组件 · 可使用快速采音';if(!state)$('analysisEngine').value=separatorAvailable?'deep':'basic';options($('recent'),[['','打开已保存项目…'],...status.projects.map(p=>[p.id,p.title])]);if(state)$('recent').value=state.id;$('engineStatus').textContent=status.engine.installed?`运行环境已就绪 · ${status.engine.model_downloaded?'模型权重已下载':'模型权重将在首次生成时下载'}`:'原模型未安装 · 不影响基础采音与定轨';$('priorStatus').textContent=status.pattern_prior?.available?`通过验证的键数：${status.pattern_prior.keys.map(k=>k+'K').join(' / ')}。仅提供定轨软偏好；未通过的键数自动忽略。`:'当前未加载经过验证的键型先验。';}
-function setMode(){const remap=$('mode').value==='remap';$('musical').classList.toggle('hidden',remap);$('strictHint').classList.toggle('hidden',!remap);$('bpm').disabled=remap;$('offset').disabled=remap;['tempoCandidates','halfBpm','doubleBpm','division','timingConfirmed','checkTiming','refitTiming','referenceTiming','applyTiming','audioShift'].forEach(id=>$(id).disabled=remap);$('generate').firstChild.textContent=remap?'严格重新定轨 ':'生成候选谱面 ';}
-function setBusy(value){busy=value;['analyze','generate','another','regenerate','plan','charts','variants','recent','files','clearPlan','engineInstall','engineGenerate','referenceStyleFile'].forEach(id=>$(id).disabled=value);$('job').classList.toggle('hidden',!value);}
+function setMode(){const remap=$('mode').value==='remap';$('musical').classList.toggle('hidden',remap);$('strictHint').classList.toggle('hidden',!remap);$('bpm').disabled=remap||busy;$('offset').disabled=remap||busy;['tempoCandidates','halfBpm','doubleBpm','division','timingConfirmed','checkTiming','refitTiming','referenceTiming','applyTiming','audioShift','waveAlign','auditionApply'].forEach(id=>$(id).disabled=remap||busy);$('generate').firstChild.textContent=remap?'严格重新定轨 ':'生成候选谱面 ';}
+function setBusy(value){busy=value;['analyze','generate','another','regenerate','plan','charts','variants','recent','files','clearPlan','engineInstall','engineGenerate','referenceStyleFile','mode','preset','focus','layoutEngine','analysisEngine',...numbers].forEach(id=>$(id).disabled=value);document.querySelectorAll('[data-key]').forEach(button=>button.disabled=value);$('job').classList.toggle('hidden',!value);setMode();}
 async function runJob(action,payload){
   if(!state)throw Error('请先导入素材');if(busy)return;setBusy(true);
   try{const job=await api(`/api/projects/${state.id}/${action}`,payload);jobId=job.id;
@@ -143,7 +143,9 @@ function draw(){
 function inspectNote(n){
   selected=n.id;
   const shift=n.evidence_start===null||n.evidence_start===undefined?'':` · 制谱基准下的原始起音 ${n.evidence_start} ms（量化移动 ${n.start-n.evidence_start>0?'+':''}${n.start-n.evidence_start} ms）`;
+  const tail=n.end>n.start&&Number.isFinite(n.evidence_end)?` · 检测音尾 ${n.evidence_end} ms（量化移动 ${n.end-n.evidence_end>0?'+':''}${n.end-n.evidence_end} ms）`:'';
   $('inspector').textContent=`${n.end>n.start?'LN / 持续音':'短键 / 瞬态'} · 起点 ${n.start} ms · 终点 ${n.end} ms · 长度 ${n.end-n.start} ms · ${n.source==='import'?'原谱物件':n.source==='pitch'?`检测音高 MIDI ${n.pitch} · 激活强度 ${n.strength}`:'频谱瞬态'}${n.lane>=0?' · 轨道 '+(n.lane+1):''} · 声部 ${n.voice||'mix'}${n.phrase?' · 跨音高持续段 · 支持 '+((n.support_coverage||0)*100).toFixed(0)+'%':''}${shift}`;
+  $('inspector').textContent+=tail+(n.phrase?` · 支撑音高候选 ${(n.support||[]).length} 个`:'');
   draw();
 }
 $('roll').onclick=e=>{const rect=$('roll').getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;const hit=[...hitboxes].reverse().find(b=>x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h);if(hit)inspectNote(hit.n);};
