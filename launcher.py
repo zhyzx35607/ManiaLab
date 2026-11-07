@@ -25,8 +25,7 @@ def main():
     if os.name == "nt":
         import msvcrt
         singleton = (root / "instance.lock").open("a+b")
-        singleton.seek(0)
-        if not singleton.read(1):
+        if os.fstat(singleton.fileno()).st_size == 0:
             singleton.write(b"0");singleton.flush()
         singleton.seek(0)
         try:
