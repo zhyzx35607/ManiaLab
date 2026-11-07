@@ -170,6 +170,46 @@
           "overlap_median_f1": 0.0398
         }
       }
+    },
+    "audio-extension2-10k": {
+      "basic": {
+        "available_support": {
+          "reference_intervals": 453,
+          "no_attack": 51,
+          "insufficient_duration": 320,
+          "sufficient_duration": 82,
+          "existing_endpoint_nearby": 62
+        },
+        "reference": {
+          "generated": 17,
+          "endpoints_median_f1": 0.0,
+          "overlap_median_f1": 0.0
+        },
+        "automatic": {
+          "generated": 1,
+          "endpoints_median_f1": 0.0,
+          "overlap_median_f1": 0.0
+        }
+      },
+      "deep": {
+        "available_support": {
+          "reference_intervals": 453,
+          "no_attack": 28,
+          "insufficient_duration": 273,
+          "sufficient_duration": 152,
+          "existing_endpoint_nearby": 129
+        },
+        "reference": {
+          "generated": 17,
+          "endpoints_median_f1": 0.0,
+          "overlap_median_f1": 0.0
+        },
+        "automatic": {
+          "generated": 8,
+          "endpoints_median_f1": 0.0,
+          "overlap_median_f1": 0.0089
+        }
+      }
     }
   },
   "songs": [
@@ -4723,6 +4763,2244 @@
         "unique_intervals": 103,
         "under_240ms": 0,
         "at_least_800ms": 2,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 1577245,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 27,
+              "reference": 114,
+              "matched": 1,
+              "precision": 0.037,
+              "recall": 0.0088,
+              "f1": 0.0142
+            },
+            "overlap": {
+              "predicted": 27,
+              "reference": 114,
+              "matched": 2,
+              "precision": 0.0741,
+              "recall": 0.0175,
+              "f1": 0.0284
+            },
+            "long_reference": {
+              "800": {
+                "reference": 5,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 114,
+            "no_attack": 1,
+            "insufficient_duration": 90,
+            "sufficient_duration": 23,
+            "existing_endpoint_nearby": 19
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 33,
+              "reference": 114,
+              "matched": 3,
+              "precision": 0.0909,
+              "recall": 0.0263,
+              "f1": 0.0408
+            },
+            "overlap": {
+              "predicted": 33,
+              "reference": 114,
+              "matched": 5,
+              "precision": 0.1515,
+              "recall": 0.0439,
+              "f1": 0.068
+            },
+            "long_reference": {
+              "800": {
+                "reference": 5,
+                "endpoints_matched": 1,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.2,
+                "overlap_recall": 0.2
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "endpoints": {
+              "predicted": 33,
+              "reference": 114,
+              "matched": 3,
+              "precision": 0.0909,
+              "recall": 0.0263,
+              "f1": 0.0408
+            },
+            "overlap": {
+              "predicted": 33,
+              "reference": 114,
+              "matched": 5,
+              "precision": 0.1515,
+              "recall": 0.0439,
+              "f1": 0.068
+            },
+            "long_reference": {
+              "800": {
+                "reference": 5,
+                "endpoints_matched": 1,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.2,
+                "overlap_recall": 0.2
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "available_support": {
+            "reference_intervals": 114,
+            "no_attack": 0,
+            "insufficient_duration": 71,
+            "sufficient_duration": 43,
+            "existing_endpoint_nearby": 35
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 114,
+        "under_240ms": 65,
+        "at_least_800ms": 5,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 2419420,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 26,
+              "reference": 14,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 26,
+              "reference": 14,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 14,
+            "no_attack": 0,
+            "insufficient_duration": 14,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 28,
+              "reference": 14,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 28,
+              "reference": 14,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 14,
+            "no_attack": 1,
+            "insufficient_duration": 12,
+            "sufficient_duration": 1,
+            "existing_endpoint_nearby": 1
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 14,
+        "under_240ms": 0,
+        "at_least_800ms": 2,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 2488937,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 49,
+              "reference": 23,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 49,
+              "reference": 23,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 23,
+            "no_attack": 6,
+            "insufficient_duration": 17,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 49,
+              "reference": 23,
+              "matched": 1,
+              "precision": 0.0204,
+              "recall": 0.0435,
+              "f1": 0.0278
+            },
+            "overlap": {
+              "predicted": 49,
+              "reference": 23,
+              "matched": 1,
+              "precision": 0.0204,
+              "recall": 0.0435,
+              "f1": 0.0278
+            },
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 23,
+            "no_attack": 2,
+            "insufficient_duration": 16,
+            "sufficient_duration": 5,
+            "existing_endpoint_nearby": 5
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 23,
+        "under_240ms": 0,
+        "at_least_800ms": 1,
+        "at_least_2000ms": 1
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 2599562,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        },
+        "deep": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 62,
+        "under_240ms": 43,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 3474858,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        },
+        "deep": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 516,
+        "under_240ms": 268,
+        "at_least_800ms": 74,
+        "at_least_2000ms": 43
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 3943165,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 26,
+              "reference": 69,
+              "matched": 1,
+              "precision": 0.0385,
+              "recall": 0.0145,
+              "f1": 0.0211
+            },
+            "overlap": {
+              "predicted": 26,
+              "reference": 69,
+              "matched": 1,
+              "precision": 0.0385,
+              "recall": 0.0145,
+              "f1": 0.0211
+            },
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 69,
+            "no_attack": 11,
+            "insufficient_duration": 34,
+            "sufficient_duration": 24,
+            "existing_endpoint_nearby": 23
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 25,
+              "reference": 69,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 25,
+              "reference": 69,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 69,
+            "no_attack": 1,
+            "insufficient_duration": 28,
+            "sufficient_duration": 40,
+            "existing_endpoint_nearby": 39
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 69,
+        "under_240ms": 40,
+        "at_least_800ms": 1,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 3953596,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 55,
+              "reference": 16,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 55,
+              "reference": 16,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 16,
+            "no_attack": 3,
+            "insufficient_duration": 11,
+            "sufficient_duration": 2,
+            "existing_endpoint_nearby": 2
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 87,
+              "reference": 16,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 87,
+              "reference": 16,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 16,
+            "no_attack": 2,
+            "insufficient_duration": 12,
+            "sufficient_duration": 2,
+            "existing_endpoint_nearby": 2
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 16,
+        "under_240ms": 4,
+        "at_least_800ms": 8,
+        "at_least_2000ms": 1
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4053464,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 15,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 15,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "endpoints": {
+              "predicted": 22,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 22,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 40,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 40,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "endpoints": {
+              "predicted": 41,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 41,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 0,
+        "under_240ms": 0,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4252009,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        },
+        "deep": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "endpoints": {
+              "predicted": 302,
+              "reference": 55,
+              "matched": 4,
+              "precision": 0.0132,
+              "recall": 0.0727,
+              "f1": 0.0224
+            },
+            "overlap": {
+              "predicted": 302,
+              "reference": 55,
+              "matched": 6,
+              "precision": 0.0199,
+              "recall": 0.1091,
+              "f1": 0.0336
+            },
+            "long_reference": {
+              "800": {
+                "reference": 9,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 55,
+        "under_240ms": 0,
+        "at_least_800ms": 9,
+        "at_least_2000ms": 1
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4486256,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 34,
+              "reference": 40,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 34,
+              "reference": 40,
+              "matched": 1,
+              "precision": 0.0294,
+              "recall": 0.025,
+              "f1": 0.027
+            },
+            "long_reference": {
+              "800": {
+                "reference": 15,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0667
+              },
+              "2000": {
+                "reference": 10,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 40,
+            "no_attack": 7,
+            "insufficient_duration": 31,
+            "sufficient_duration": 2,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 61,
+              "reference": 40,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 61,
+              "reference": 40,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 15,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 10,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 40,
+            "no_attack": 3,
+            "insufficient_duration": 36,
+            "sufficient_duration": 1,
+            "existing_endpoint_nearby": 1
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 40,
+        "under_240ms": 8,
+        "at_least_800ms": 15,
+        "at_least_2000ms": 10
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4635410,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 30,
+              "reference": 18,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 30,
+              "reference": 18,
+              "matched": 1,
+              "precision": 0.0333,
+              "recall": 0.0556,
+              "f1": 0.0417
+            },
+            "long_reference": {
+              "800": {
+                "reference": 6,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 18,
+            "no_attack": 0,
+            "insufficient_duration": 18,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 61,
+              "reference": 18,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 61,
+              "reference": 18,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 6,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "endpoints": {
+              "predicted": 63,
+              "reference": 18,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 63,
+              "reference": 18,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 6,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "available_support": {
+            "reference_intervals": 18,
+            "no_attack": 0,
+            "insufficient_duration": 16,
+            "sufficient_duration": 2,
+            "existing_endpoint_nearby": 2
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 18,
+        "under_240ms": 0,
+        "at_least_800ms": 6,
+        "at_least_2000ms": 1
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4890664,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 93,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 93,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 84,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 84,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 0,
+        "under_240ms": 0,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4964602,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 102,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 102,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 86,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 86,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "endpoints": {
+              "predicted": 87,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 87,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 0,
+        "under_240ms": 0,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4984293,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 44,
+              "reference": 59,
+              "matched": 4,
+              "precision": 0.0909,
+              "recall": 0.0678,
+              "f1": 0.0777
+            },
+            "overlap": {
+              "predicted": 44,
+              "reference": 59,
+              "matched": 4,
+              "precision": 0.0909,
+              "recall": 0.0678,
+              "f1": 0.0777
+            },
+            "long_reference": {
+              "800": {
+                "reference": 5,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 59,
+            "no_attack": 5,
+            "insufficient_duration": 38,
+            "sufficient_duration": 16,
+            "existing_endpoint_nearby": 10
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 81,
+              "reference": 59,
+              "matched": 2,
+              "precision": 0.0247,
+              "recall": 0.0339,
+              "f1": 0.0286
+            },
+            "overlap": {
+              "predicted": 81,
+              "reference": 59,
+              "matched": 3,
+              "precision": 0.037,
+              "recall": 0.0508,
+              "f1": 0.0429
+            },
+            "long_reference": {
+              "800": {
+                "reference": 5,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 59,
+            "no_attack": 2,
+            "insufficient_duration": 29,
+            "sufficient_duration": 28,
+            "existing_endpoint_nearby": 26
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 59,
+        "under_240ms": 8,
+        "at_least_800ms": 5,
+        "at_least_2000ms": 1
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5008549,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 24,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 24,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 49,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 49,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 0,
+        "under_240ms": 0,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5060312,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        },
+        "deep": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 0,
+        "under_240ms": 0,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5154697,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 252,
+              "reference": 51,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 252,
+              "reference": 51,
+              "matched": 3,
+              "precision": 0.0119,
+              "recall": 0.0588,
+              "f1": 0.0198
+            },
+            "long_reference": {
+              "800": {
+                "reference": 23,
+                "endpoints_matched": 0,
+                "overlap_matched": 3,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.1304
+              },
+              "2000": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.125
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 51,
+            "no_attack": 17,
+            "insufficient_duration": 27,
+            "sufficient_duration": 7,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 286,
+              "reference": 51,
+              "matched": 1,
+              "precision": 0.0035,
+              "recall": 0.0196,
+              "f1": 0.0059
+            },
+            "overlap": {
+              "predicted": 286,
+              "reference": 51,
+              "matched": 6,
+              "precision": 0.021,
+              "recall": 0.1176,
+              "f1": 0.0356
+            },
+            "long_reference": {
+              "800": {
+                "reference": 23,
+                "endpoints_matched": 0,
+                "overlap_matched": 4,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.1739
+              },
+              "2000": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.125
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 51,
+            "no_attack": 16,
+            "insufficient_duration": 17,
+            "sufficient_duration": 18,
+            "existing_endpoint_nearby": 6
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 51,
+        "under_240ms": 20,
+        "at_least_800ms": 23,
+        "at_least_2000ms": 8
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5189083,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 75,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 75,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 99,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 99,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "endpoints": {
+              "predicted": 93,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 93,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 0,
+        "under_240ms": 0,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5317787,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        },
+        "deep": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 0,
+        "under_240ms": 0,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5324688,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 85,
+              "reference": 43,
+              "matched": 8,
+              "precision": 0.0941,
+              "recall": 0.186,
+              "f1": 0.125
+            },
+            "overlap": {
+              "predicted": 85,
+              "reference": 43,
+              "matched": 15,
+              "precision": 0.1765,
+              "recall": 0.3488,
+              "f1": 0.2344
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 43,
+            "no_attack": 0,
+            "insufficient_duration": 35,
+            "sufficient_duration": 8,
+            "existing_endpoint_nearby": 8
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 97,
+              "reference": 43,
+              "matched": 3,
+              "precision": 0.0309,
+              "recall": 0.0698,
+              "f1": 0.0429
+            },
+            "overlap": {
+              "predicted": 97,
+              "reference": 43,
+              "matched": 8,
+              "precision": 0.0825,
+              "recall": 0.186,
+              "f1": 0.1143
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "endpoints": {
+              "predicted": 91,
+              "reference": 43,
+              "matched": 5,
+              "precision": 0.0549,
+              "recall": 0.1163,
+              "f1": 0.0746
+            },
+            "overlap": {
+              "predicted": 91,
+              "reference": 43,
+              "matched": 6,
+              "precision": 0.0659,
+              "recall": 0.1395,
+              "f1": 0.0896
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "available_support": {
+            "reference_intervals": 43,
+            "no_attack": 0,
+            "insufficient_duration": 32,
+            "sufficient_duration": 11,
+            "existing_endpoint_nearby": 11
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 43,
+        "under_240ms": 0,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5359181,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        },
+        "deep": {
+          "reference": {
+            "skipped": true
+          },
+          "automatic": {
+            "skipped": true
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 158,
+        "under_240ms": 66,
+        "at_least_800ms": 31,
+        "at_least_2000ms": 6
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5487297,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 36,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 36,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 204,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 204,
+              "reference": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 0,
+            "no_attack": 0,
+            "insufficient_duration": 0,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 0,
+        "under_240ms": 0,
+        "at_least_800ms": 0,
+        "at_least_2000ms": 0
+      }
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5535105,
+      "keys": 10,
+      "modes": {
+        "basic": {
+          "reference": {
+            "endpoints": {
+              "predicted": 75,
+              "reference": 6,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 75,
+              "reference": 6,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "skipped": true
+          },
+          "available_support": {
+            "reference_intervals": 6,
+            "no_attack": 1,
+            "insufficient_duration": 5,
+            "sufficient_duration": 0,
+            "existing_endpoint_nearby": 0
+          }
+        },
+        "deep": {
+          "reference": {
+            "endpoints": {
+              "predicted": 106,
+              "reference": 6,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 106,
+              "reference": 6,
+              "matched": 1,
+              "precision": 0.0094,
+              "recall": 0.1667,
+              "f1": 0.0179
+            },
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "automatic": {
+            "endpoints": {
+              "predicted": 106,
+              "reference": 6,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 106,
+              "reference": 6,
+              "matched": 1,
+              "precision": 0.0094,
+              "recall": 0.1667,
+              "f1": 0.0179
+            },
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "available_support": {
+            "reference_intervals": 6,
+            "no_attack": 1,
+            "insufficient_duration": 4,
+            "sufficient_duration": 1,
+            "existing_endpoint_nearby": 1
+          }
+        }
+      },
+      "reference_lengths": {
+        "unique_intervals": 6,
+        "under_240ms": 1,
+        "at_least_800ms": 1,
         "at_least_2000ms": 0
       }
     }

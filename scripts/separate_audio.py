@@ -5,6 +5,10 @@ Input is a decoded stereo 44.1 kHz PCM WAV. It never reads API keys or uploads a
 """
 from __future__ import annotations
 
+if __name__ == '__main__':
+    from worker_lifetime import watch_parent
+    watch_parent()
+
 import argparse
 import gc
 import hashlib

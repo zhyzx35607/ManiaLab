@@ -55,6 +55,9 @@ jobs:
       - name: Verify actual EXE offline with clean PATH and Unicode data paths
         if: env.BUILD_PORTABLE == 'true'
         run: .venv/Scripts/python.exe scripts/verify_portable.py dist/ManiaLab/ManiaLab.exe --work test-data/portable-ci
+      - name: Verify closing the application stops its active audio worker
+        if: env.BUILD_PORTABLE == 'true'
+        run: .venv/Scripts/python.exe scripts/verify_shutdown.py dist/ManiaLab/ManiaLab.exe --work test-data/shutdown-ci
       - name: Save portable verification report
         if: always() && env.BUILD_PORTABLE == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -63,6 +66,8 @@ jobs:
           path: |
             test-data/portable-ci/report.json
             test-data/portable-ci/launch-*.log
+            test-data/shutdown-ci/report.json
+            test-data/shutdown-ci/launch.log
           retention-days: 7
           if-no-files-found: ignore
       - name: Save verified build

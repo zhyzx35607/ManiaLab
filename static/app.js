@@ -6,6 +6,7 @@ let timingSections=[], tempoChoices=[], lastScheduledBeat=-Infinity,separatorAva
 let lastClockShift=22.5;
 let clockAnchor=22.5;
 const clockShift=()=>Number($('audioShift').value);
+const timingLocations=document.createElement('div');timingLocations.id='timingLocations';$('timingReport').after(timingLocations);
 let state = null, keys = 10, view = 'chart', busy = false, jobId = null, displayed = [], hitboxes = [], selected = null, manualTime = 0, audioContext = null, lastAudioTime = 0;
 const audio = $('audio');
 const msg = (text, error=false) => { $('message').textContent=text; $('message').classList.toggle('error',error); };
@@ -47,6 +48,16 @@ function renderReview(){
 }
 function duration(){return Math.max(state?.analysis?.duration||0,Number.isFinite(audio.duration)?audio.duration:0,displayed.reduce((m,n)=>Math.max(m,n.end/1000),0),(state?.input_notes||[]).reduce((m,n)=>Math.max(m,n.end/1000),0));}
 function currentTime(){return audio.src&&Number.isFinite(audio.currentTime)?audio.currentTime:manualTime;}
+function renderTimingLocations(){
+  timingLocations.replaceChildren();if(!state?.analysis)return;
+  const length=state.analysis.duration||0,suspect=timingSections.filter(s=>s.suspect);
+  const explanation=document.createElement('p');explanation.className='muted compact';explanation.textContent=suspect.length?'点击可疑区间，在对音实验室试听检查：':'建议分别试听开头、中间和结尾：';timingLocations.append(explanation);
+  const locations=suspect.length?suspect.slice(0,12).map(s=>({time:s.start_ms/1000,label:`${(s.start_ms/1000).toFixed(0)}–${Math.min(length,s.end_ms/1000).toFixed(0)}s`,title:`相位偏差 ${s.phase_error_ms}ms · 起音匹配 ${(s.coverage*100).toFixed(0)}%`})):[{time:0,label:'开头'},{time:Math.max(0,length/2-6),label:'中间'},{time:Math.max(0,length-12),label:'结尾'}];
+  for(const item of locations){
+    const button=document.createElement('button');button.className='quiet';button.textContent=item.label;button.title=item.title||'定位到对音实验室';
+    button.onclick=()=>{const time=Math.min(Math.max(0,length-1),item.time);audio.pause();seek(time);$('auditionStart').value=time.toFixed(1);const panel=document.querySelector('.audition-panel');panel.open=true;$('auditionNote').textContent=`已定位 ${time.toFixed(1)} 秒；点击「试听当前拍线 A」比较音乐与拍线，或设置 B 的 Offset 做对照。`;panel.scrollIntoView({block:'center',behavior:'smooth'});};timingLocations.append(button);
+  }
+}
 function loadState(s){
   const changed=state?.id!==s.id;auditionRequest++;cueClock.reset();$('auditionAudio').pause();if(auditionUrl){URL.revokeObjectURL(auditionUrl);auditionUrl=null;}$('auditionAudio').removeAttribute('src');state=s;setSettings(s.settings);$('projectTitle').textContent=s.title;$('projectSub').textContent=s.mode==='remap'?`已导入 ${s.input_keys}K 原谱 · ${s.input_notes.length} 个物件`:'本地音频项目 · 先检查采音，再调整编排';
   $('mode').value=s.mode;options($('charts'),s.charts.map(c=>[c.path,c.label]));$('charts').classList.toggle('hidden',!s.charts.length);if(s.original)$('charts').value=s.original;
@@ -60,6 +71,7 @@ function loadState(s){
   $('tempoNote').textContent=s.analysis?.tempo?.reliability||'分析后校准 BPM / Offset，再生成谱面。';
   $('timingReport').textContent=s.analysis?`原始检测 Offset ${s.analysis.tempo.offset} ms · 制谱提前量 ${clockShift()} ms。起音融合 ${s.analysis.fused_attacks||0} 处 · 分析耗时 ${s.analysis.elapsed_seconds??'未知'} 秒 · ${s.analysis.cached?'复用音高缓存':'本次运行音高模型'}`:'';
   timingSections=v?.timing_sections||s.analysis?.tempo?.sections||[];
+  renderTimingLocations();
   $('planText').textContent=s.plan?.explanation||'';
   const ref=s.reference_style;$('referenceStyleInfo').textContent=ref?`${ref.title} · ${ref.keys}K · LN ${(ref.ln_ratio*100).toFixed(1)}% · 中位长度 ${ref.ln_duration_ms['50']||0} ms · 峰值 ${ref.peak_nps} 物件/秒。${ref.warnings.join(' ')} ${ref.notice}`:'不复制原谱音符或时间，也不保证相同手感。';
   options($('variants'),s.variants.length?s.variants.map((v,i)=>[i,`候选 ${i+1} · ${v.settings.keys}K · seed ${v.settings.seed} · ${v.notes.length} 物件${v.region?' · 局部':''}`]):[['','尚未生成']]);$('variants').value=s.active;
@@ -179,7 +191,7 @@ function drawBeatGrid(c,left,width,bottom,scale,t,span){
   for(const b of beatsBetween(t,t+span)){const y=bottom-(b.time-t)*scale;c.strokeStyle=b.accent?'#52766d':'#2e4a4a';c.lineWidth=b.accent?1.5:1;c.beginPath();c.moveTo(left,y);c.lineTo(width-12,y);c.stroke();}
   c.lineWidth=1;
 }
-function timingChanged(preserveClockAnchor=false){ if(!preserveClockAnchor)clockAnchor=Number($('offset').value)+clockShift();cueClock.reset();$('timingConfirmed').checked=false;timingSections=[];lastScheduledBeat=-Infinity;updateGridStatus();draw();window.drawWaveDetail?.(); }
+function timingChanged(preserveClockAnchor=false){ if(!preserveClockAnchor)clockAnchor=Number($('offset').value)+clockShift();cueClock.reset();$('timingConfirmed').checked=false;timingSections=[];renderTimingLocations();lastScheduledBeat=-Infinity;updateGridStatus();draw();window.drawWaveDetail?.(); }
 ['bpm','offset','division'].forEach(id=>$(id).addEventListener('input',()=>timingChanged()));
 $('audioShift').addEventListener('change',()=>{const value=clockShift();if(!Number.isFinite(value)||Math.abs(value)>100)return;$('offset').value=Math.round(clockAnchor-value);lastClockShift=value;tempoChoices=tempoChoices.map(c=>({...c,offset:Math.round(c.audio_offset-value)}));showTempoChoices();timingChanged(true);msg(`制谱提前量 ${value} ms；Offset 已同步调整。原始采音保留，需重新生成整谱。`);});
 $('tempoCandidates').onchange=()=>{const i=$('tempoCandidates').value;if(i==='')return;const c=tempoChoices[Number(i)];$('bpm').value=c.bpm;$('offset').value=c.offset;$('division').value=c.division;timingChanged();if(c.precision_suggestion)msg(`已采用 ${c.bpm} BPM 精确候选；请在歌曲开头和结尾试听，确认没有逐渐漂移。`);};
@@ -198,7 +210,7 @@ $('refitTiming').onclick=guarded(async()=>{
   const pid=state.id,bpm=Number($('bpm').value),offset=Number($('offset').value),division=Number($('division').value),shift=clockShift();
   const r=await api(`/api/projects/${pid}/timing-refit`,{bpm,offset,division,audio_shift_ms:shift});
   if(state.id!==pid||Number($('bpm').value)!==bpm||Number($('offset').value)!==offset||Number($('division').value)!==division||clockShift()!==shift)return;
-  $('offset').value=r.offset;timingChanged();timingSections=r.sections;draw();
+  $('offset').value=r.offset;timingChanged();timingSections=r.sections;renderTimingLocations();draw();
   $('timingReport').textContent=`按 ${r.bpm} BPM 重新估计 Offset：${r.offset} ms。${r.suspect} 段可能错位；请试听确认。`;
 });
 $('checkTiming').onclick=guarded(async()=>{
@@ -206,7 +218,7 @@ $('checkTiming').onclick=guarded(async()=>{
   const pid=state.id,bpm=Number($('bpm').value),offset=Number($('offset').value),division=Number($('division').value),shift=clockShift();
   const r=await api(`/api/projects/${pid}/timing-check`,{bpm,offset,division,audio_shift_ms:shift});
   if(state.id!==pid||Number($('bpm').value)!==bpm||Number($('offset').value)!==offset||Number($('division').value)!==division||clockShift()!==shift)return;
-  timingSections=r.sections;const suspicious=r.sections.filter(s=>s.suspect);$('timingReport').textContent=`检查 ${r.sections.length} 段，${r.suspect} 段可能错位。`+(suspicious.length?'请定位试听：'+suspicious.slice(0,8).map(s=>`${(s.start_ms/1000).toFixed(0)}–${(s.end_ms/1000).toFixed(0)}s（相位偏差 ${s.phase_error_ms}ms）`).join('；'):'请再用节拍器确认倍速、半速和弱起。');draw();
+  timingSections=r.sections;renderTimingLocations();const suspicious=r.sections.filter(s=>s.suspect);$('timingReport').textContent=`检查 ${r.sections.length} 段，${r.suspect} 段可能错位。`+(suspicious.length?'请定位试听：'+suspicious.slice(0,8).map(s=>`${(s.start_ms/1000).toFixed(0)}–${(s.end_ms/1000).toFixed(0)}s（相位偏差 ${s.phase_error_ms}ms）`).join('；'):'请再用节拍器确认倍速、半速和弱起。');draw();
 });
 ['metronome','clicks','releases'].forEach(id=>$(id).onchange=guarded(async()=>{cueClock.reset();if($(id).checked)await cueClock.enable();}));
 let auditionUrl=null,auditionRequest=0;

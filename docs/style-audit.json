@@ -10133,6 +10133,4752 @@
       },
       "audio_shift_ms": 22.5,
       "group": "audio-additional-10k"
+    },
+    {
+      "beatmap_id": 1577245,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1505,
+            "ln": 163,
+            "ln_ratio": 0.108,
+            "max_held": 3,
+            "longest_ln_ms": 784,
+            "lane_counts": [
+              128,
+              143,
+              159,
+              180,
+              167,
+              177,
+              156,
+              141,
+              131,
+              123
+            ]
+          },
+          "grid": {
+            "endpoints": 1668,
+            "off_grid": 0,
+            "max_error_ms": 0.4902,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 163,
+            "ratio": 0.1083,
+            "percentiles_ms": [
+              196,
+              196,
+              294,
+              392,
+              784
+            ],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 1792,
+            "selected": 1505,
+            "omitted": 287,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 1505
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 339,
+            "target_ln_ratio": 0.108,
+            "target_ln_count": 163,
+            "actual_ln_ratio": 0.1083,
+            "eligible_ln_count": 363,
+            "feasible_ln_count": 354,
+            "feasible_ln_ratio": 0.2352,
+            "maximum_proven": true,
+            "message": "LN 目标 11%，实际 10.8%（163/1505）。"
+          },
+          "attacks": {
+            "predicted": 831,
+            "reference": 464,
+            "matched": 447,
+            "precision": 0.5379,
+            "recall": 0.9634,
+            "f1": 0.6903,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 155,
+              "reference": 114,
+              "matched": 10,
+              "precision": 0.0645,
+              "recall": 0.0877,
+              "f1": 0.0743
+            },
+            "overlap": {
+              "predicted": 155,
+              "reference": 114,
+              "matched": 14,
+              "precision": 0.0903,
+              "recall": 0.1228,
+              "f1": 0.1041
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 5,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1746,
+            "ln": 189,
+            "ln_ratio": 0.108,
+            "max_held": 3,
+            "longest_ln_ms": 2549,
+            "lane_counts": [
+              133,
+              162,
+              184,
+              214,
+              205,
+              214,
+              190,
+              165,
+              149,
+              130
+            ]
+          },
+          "grid": {
+            "endpoints": 1935,
+            "off_grid": 0,
+            "max_error_ms": 0.4902,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 189,
+            "ratio": 0.1082,
+            "percentiles_ms": [
+              196,
+              196,
+              295,
+              706,
+              2549
+            ],
+            "over_1s": 10,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 3190,
+            "selected": 1746,
+            "omitted": 1444,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 445,
+              "drums": 397,
+              "other": 632,
+              "vocals": 272
+            },
+            "phrase_attacks": 10,
+            "selected_large_attack_shifts": 235,
+            "target_ln_ratio": 0.108,
+            "target_ln_count": 189,
+            "actual_ln_ratio": 0.1082,
+            "eligible_ln_count": 453,
+            "feasible_ln_count": 421,
+            "feasible_ln_ratio": 0.2411,
+            "maximum_proven": true,
+            "message": "LN 目标 11%，实际 10.8%（189/1746）。"
+          },
+          "attacks": {
+            "predicted": 815,
+            "reference": 464,
+            "matched": 446,
+            "precision": 0.5472,
+            "recall": 0.9612,
+            "f1": 0.6974,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 181,
+              "reference": 114,
+              "matched": 16,
+              "precision": 0.0884,
+              "recall": 0.1404,
+              "f1": 0.1085
+            },
+            "overlap": {
+              "predicted": 181,
+              "reference": 114,
+              "matched": 18,
+              "precision": 0.0994,
+              "recall": 0.1579,
+              "f1": 0.122
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 5,
+              "endpoints_matched": 1,
+              "overlap_matched": 1,
+              "endpoints_recall": 0.2,
+              "overlap_recall": 0.2
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "la's Anime 10K Pack",
+        "creator": "SK_la",
+        "version": "KOTOKO - Loop-the-loop (TV Size)//SC",
+        "keys": 10,
+        "objects": 1309,
+        "ln_ratio": 0.108,
+        "max_held": 3,
+        "duration_ms": 80392,
+        "average_nps": 16.28,
+        "active_nps95": 23.0,
+        "peak_nps": 28,
+        "ln_duration_ms": {
+          "10": 196,
+          "50": 197,
+          "90": 784,
+          "100": 1569
+        },
+        "preferences": {
+          "density": 23,
+          "ln_ratio": 0.108,
+          "min_ln": 180,
+          "chord_size": 5,
+          "max_held": 3
+        },
+        "warnings": [
+          "参考图局部密度超过当前 24 物件/秒上限，建议值已限制到支持范围。"
+        ],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 23.0,
+        "ln_ratio": 0.108,
+        "min_ln": 180,
+        "max_held": 3,
+        "release_gap": 55,
+        "chord_size": 5,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 153.0,
+        "offset": 160.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 2419420,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 683,
+            "ln": 20,
+            "ln_ratio": 0.029,
+            "max_held": 1,
+            "longest_ln_ms": 2783,
+            "lane_counts": [
+              22,
+              41,
+              68,
+              100,
+              98,
+              100,
+              110,
+              75,
+              45,
+              24
+            ]
+          },
+          "grid": {
+            "endpoints": 703,
+            "off_grid": 0,
+            "max_error_ms": 0.4948,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 20,
+            "ratio": 0.0293,
+            "percentiles_ms": [
+              309,
+              348,
+              503,
+              859,
+              2783
+            ],
+            "over_1s": 1,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 1821,
+            "selected": 683,
+            "omitted": 1138,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 683
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 27,
+            "target_ln_ratio": 0.03,
+            "target_ln_count": 20,
+            "actual_ln_ratio": 0.0293,
+            "eligible_ln_count": 23,
+            "feasible_ln_count": 22,
+            "feasible_ln_ratio": 0.0322,
+            "maximum_proven": true,
+            "message": "LN 目标 3%，实际 2.9%（20/683）。"
+          },
+          "attacks": {
+            "predicted": 675,
+            "reference": 377,
+            "matched": 227,
+            "precision": 0.3363,
+            "recall": 0.6021,
+            "f1": 0.4316,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 20,
+              "reference": 14,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 20,
+              "reference": 14,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 2,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 671,
+            "ln": 20,
+            "ln_ratio": 0.03,
+            "max_held": 1,
+            "longest_ln_ms": 3092,
+            "lane_counts": [
+              26,
+              33,
+              65,
+              98,
+              91,
+              89,
+              107,
+              83,
+              53,
+              26
+            ]
+          },
+          "grid": {
+            "endpoints": 691,
+            "off_grid": 0,
+            "max_error_ms": 0.4948,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 20,
+            "ratio": 0.0298,
+            "percentiles_ms": [
+              309,
+              348,
+              483,
+              951,
+              3092
+            ],
+            "over_1s": 2,
+            "over_3s": 1
+          },
+          "selection": {
+            "candidates": 3040,
+            "selected": 671,
+            "omitted": 2369,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 77,
+              "drums": 264,
+              "other": 328,
+              "vocals": 2
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 12,
+            "target_ln_ratio": 0.03,
+            "target_ln_count": 20,
+            "actual_ln_ratio": 0.0298,
+            "eligible_ln_count": 23,
+            "feasible_ln_count": 22,
+            "feasible_ln_ratio": 0.0328,
+            "maximum_proven": true,
+            "message": "LN 目标 3%，实际 3.0%（20/671）。"
+          },
+          "attacks": {
+            "predicted": 640,
+            "reference": 377,
+            "matched": 258,
+            "precision": 0.4031,
+            "recall": 0.6844,
+            "f1": 0.5074,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 20,
+              "reference": 14,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 20,
+              "reference": 14,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 2,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "Completeness Under Incompleteness",
+        "creator": "XDerbyX",
+        "version": "BASIC",
+        "keys": 10,
+        "objects": 471,
+        "ln_ratio": 0.03,
+        "max_held": 1,
+        "duration_ms": 119922,
+        "average_nps": 3.93,
+        "active_nps95": 6.0,
+        "peak_nps": 8,
+        "ln_duration_ms": {
+          "10": 309,
+          "50": 310,
+          "90": 1098,
+          "100": 1237
+        },
+        "preferences": {
+          "density": 6,
+          "ln_ratio": 0.03,
+          "min_ln": 300,
+          "chord_size": 2,
+          "max_held": 1
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 6.0,
+        "ln_ratio": 0.03,
+        "min_ln": 300,
+        "max_held": 1,
+        "release_gap": 55,
+        "chord_size": 2,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 193.99999999999994,
+        "offset": 589.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 2488937,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1546,
+            "ln": 38,
+            "ln_ratio": 0.025,
+            "max_held": 4,
+            "longest_ln_ms": 3000,
+            "lane_counts": [
+              107,
+              126,
+              162,
+              192,
+              198,
+              207,
+              196,
+              153,
+              111,
+              94
+            ]
+          },
+          "grid": {
+            "endpoints": 1584,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 38,
+            "ratio": 0.0246,
+            "percentiles_ms": [
+              324,
+              365,
+              568,
+              1135,
+              3000
+            ],
+            "over_1s": 4,
+            "over_3s": 1
+          },
+          "selection": {
+            "candidates": 1887,
+            "selected": 1546,
+            "omitted": 341,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 1546
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 206,
+            "target_ln_ratio": 0.031,
+            "target_ln_count": 48,
+            "actual_ln_ratio": 0.0246,
+            "eligible_ln_count": 38,
+            "feasible_ln_count": 38,
+            "feasible_ln_ratio": 0.0246,
+            "maximum_proven": true,
+            "message": "LN 目标 3%，实际 2.5%（38/1546）。持续音证据或占轨空间不足，保留起音，未虚构长条尾端。"
+          },
+          "attacks": {
+            "predicted": 1236,
+            "reference": 931,
+            "matched": 816,
+            "precision": 0.6602,
+            "recall": 0.8765,
+            "f1": 0.7531,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 38,
+              "reference": 23,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 38,
+              "reference": 23,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1684,
+            "ln": 44,
+            "ln_ratio": 0.026,
+            "max_held": 4,
+            "longest_ln_ms": 5270,
+            "lane_counts": [
+              87,
+              129,
+              186,
+              214,
+              217,
+              228,
+              211,
+              181,
+              128,
+              103
+            ]
+          },
+          "grid": {
+            "endpoints": 1728,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 44,
+            "ratio": 0.0261,
+            "percentiles_ms": [
+              324,
+              325,
+              486,
+              949,
+              5270
+            ],
+            "over_1s": 4,
+            "over_3s": 1
+          },
+          "selection": {
+            "candidates": 3399,
+            "selected": 1684,
+            "omitted": 1715,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 26,
+              "drums": 795,
+              "other": 842,
+              "vocals": 21
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 126,
+            "target_ln_ratio": 0.031,
+            "target_ln_count": 52,
+            "actual_ln_ratio": 0.0261,
+            "eligible_ln_count": 44,
+            "feasible_ln_count": 44,
+            "feasible_ln_ratio": 0.0261,
+            "maximum_proven": true,
+            "message": "LN 目标 3%，实际 2.6%（44/1684）。持续音证据或占轨空间不足，保留起音，未虚构长条尾端。"
+          },
+          "attacks": {
+            "predicted": 1241,
+            "reference": 931,
+            "matched": 813,
+            "precision": 0.6551,
+            "recall": 0.8733,
+            "f1": 0.7486,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 44,
+              "reference": 23,
+              "matched": 2,
+              "precision": 0.0455,
+              "recall": 0.087,
+              "f1": 0.0597
+            },
+            "overlap": {
+              "predicted": 44,
+              "reference": 23,
+              "matched": 2,
+              "precision": 0.0455,
+              "recall": 0.087,
+              "f1": 0.0597
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "BLACK or WHITE?",
+        "creator": "XDerbyX",
+        "version": "ADVANCED",
+        "keys": 10,
+        "objects": 1375,
+        "ln_ratio": 0.031,
+        "max_held": 4,
+        "duration_ms": 119351,
+        "average_nps": 11.52,
+        "active_nps95": 16.0,
+        "peak_nps": 20,
+        "ln_duration_ms": {
+          "10": 324,
+          "50": 324,
+          "90": 325,
+          "100": 4865
+        },
+        "preferences": {
+          "density": 16,
+          "ln_ratio": 0.031,
+          "min_ln": 320,
+          "chord_size": 3,
+          "max_held": 4
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 16.0,
+        "ln_ratio": 0.031,
+        "min_ln": 320,
+        "max_held": 4,
+        "release_gap": 55,
+        "chord_size": 3,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 185.0000000000002,
+        "offset": 578.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 2599562,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {},
+      "skipped": "Changing reference tempo or phase",
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 3474858,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {},
+      "skipped": "Changing reference tempo or phase",
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 3943165,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 2256,
+            "ln": 153,
+            "ln_ratio": 0.068,
+            "max_held": 3,
+            "longest_ln_ms": 1342,
+            "lane_counts": [
+              179,
+              203,
+              245,
+              259,
+              241,
+              238,
+              255,
+              232,
+              209,
+              195
+            ]
+          },
+          "grid": {
+            "endpoints": 2409,
+            "off_grid": 0,
+            "max_error_ms": 0.4737,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 153,
+            "ratio": 0.0678,
+            "percentiles_ms": [
+              236,
+              237,
+              316,
+              395,
+              1342
+            ],
+            "over_1s": 1,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 2562,
+            "selected": 2256,
+            "omitted": 306,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 2256
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 289,
+            "target_ln_ratio": 0.068,
+            "target_ln_count": 153,
+            "actual_ln_ratio": 0.0678,
+            "eligible_ln_count": 749,
+            "feasible_ln_count": 749,
+            "feasible_ln_ratio": 0.332,
+            "maximum_proven": true,
+            "message": "LN 目标 7%，实际 6.8%（153/2256）。"
+          },
+          "attacks": {
+            "predicted": 1398,
+            "reference": 973,
+            "matched": 867,
+            "precision": 0.6202,
+            "recall": 0.8911,
+            "f1": 0.7313,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 153,
+              "reference": 69,
+              "matched": 5,
+              "precision": 0.0327,
+              "recall": 0.0725,
+              "f1": 0.045
+            },
+            "overlap": {
+              "predicted": 153,
+              "reference": 69,
+              "matched": 5,
+              "precision": 0.0327,
+              "recall": 0.0725,
+              "f1": 0.045
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 2760,
+            "ln": 188,
+            "ln_ratio": 0.068,
+            "max_held": 4,
+            "longest_ln_ms": 1816,
+            "lane_counts": [
+              183,
+              203,
+              263,
+              333,
+              343,
+              317,
+              314,
+              297,
+              264,
+              243
+            ]
+          },
+          "grid": {
+            "endpoints": 2948,
+            "off_grid": 0,
+            "max_error_ms": 0.4737,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 188,
+            "ratio": 0.0681,
+            "percentiles_ms": [
+              237,
+              316,
+              316,
+              473,
+              1816
+            ],
+            "over_1s": 9,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 4079,
+            "selected": 2760,
+            "omitted": 1319,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 340,
+              "drums": 777,
+              "other": 1603,
+              "vocals": 40
+            },
+            "phrase_attacks": 1,
+            "selected_large_attack_shifts": 323,
+            "target_ln_ratio": 0.068,
+            "target_ln_count": 188,
+            "actual_ln_ratio": 0.0681,
+            "eligible_ln_count": 1002,
+            "feasible_ln_count": 999,
+            "feasible_ln_ratio": 0.362,
+            "maximum_proven": true,
+            "message": "LN 目标 7%，实际 6.8%（188/2760）。"
+          },
+          "attacks": {
+            "predicted": 1436,
+            "reference": 973,
+            "matched": 908,
+            "precision": 0.6323,
+            "recall": 0.9332,
+            "f1": 0.7538,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 181,
+              "reference": 69,
+              "matched": 7,
+              "precision": 0.0387,
+              "recall": 0.1014,
+              "f1": 0.056
+            },
+            "overlap": {
+              "predicted": 181,
+              "reference": 69,
+              "matched": 6,
+              "precision": 0.0331,
+              "recall": 0.087,
+              "f1": 0.048
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "Retribution",
+        "creator": "Hugged",
+        "version": "Expert",
+        "keys": 10,
+        "objects": 2395,
+        "ln_ratio": 0.068,
+        "max_held": 6,
+        "duration_ms": 125052,
+        "average_nps": 19.15,
+        "active_nps95": 27.65,
+        "peak_nps": 32,
+        "ln_duration_ms": {
+          "10": 158,
+          "50": 237,
+          "90": 395,
+          "100": 1263
+        },
+        "preferences": {
+          "density": 24,
+          "ln_ratio": 0.068,
+          "min_ln": 140,
+          "chord_size": 6,
+          "max_held": 6
+        },
+        "warnings": [
+          "参考图局部密度超过当前 24 物件/秒上限，建议值已限制到支持范围。"
+        ],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 24.0,
+        "ln_ratio": 0.068,
+        "min_ln": 140,
+        "max_held": 6,
+        "release_gap": 55,
+        "chord_size": 6,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 190.0000000000003,
+        "offset": 1619.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 3953596,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 953,
+            "ln": 32,
+            "ln_ratio": 0.034,
+            "max_held": 1,
+            "longest_ln_ms": 1616,
+            "lane_counts": [
+              61,
+              85,
+              113,
+              120,
+              96,
+              97,
+              129,
+              108,
+              82,
+              62
+            ]
+          },
+          "grid": {
+            "endpoints": 985,
+            "off_grid": 0,
+            "max_error_ms": 0.4615,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 32,
+            "ratio": 0.0336,
+            "percentiles_ms": [
+              317,
+              346,
+              577,
+              900,
+              1616
+            ],
+            "over_1s": 3,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 2741,
+            "selected": 953,
+            "omitted": 1788,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 953
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 67,
+            "target_ln_ratio": 0.034,
+            "target_ln_count": 32,
+            "actual_ln_ratio": 0.0336,
+            "eligible_ln_count": 205,
+            "feasible_ln_count": 170,
+            "feasible_ln_ratio": 0.1784,
+            "maximum_proven": true,
+            "message": "LN 目标 3%，实际 3.4%（32/953）。"
+          },
+          "attacks": {
+            "predicted": 888,
+            "reference": 405,
+            "matched": 233,
+            "precision": 0.2624,
+            "recall": 0.5753,
+            "f1": 0.3604,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 32,
+              "reference": 16,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 32,
+              "reference": 16,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 8,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 929,
+            "ln": 32,
+            "ln_ratio": 0.034,
+            "max_held": 1,
+            "longest_ln_ms": 1846,
+            "lane_counts": [
+              54,
+              76,
+              98,
+              119,
+              98,
+              102,
+              127,
+              106,
+              80,
+              69
+            ]
+          },
+          "grid": {
+            "endpoints": 961,
+            "off_grid": 0,
+            "max_error_ms": 0.4615,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 32,
+            "ratio": 0.0344,
+            "percentiles_ms": [
+              346,
+              462,
+              722,
+              1027,
+              1846
+            ],
+            "over_1s": 4,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 3595,
+            "selected": 929,
+            "omitted": 2666,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 105,
+              "drums": 242,
+              "other": 574,
+              "vocals": 8
+            },
+            "phrase_attacks": 1,
+            "selected_large_attack_shifts": 59,
+            "target_ln_ratio": 0.034,
+            "target_ln_count": 32,
+            "actual_ln_ratio": 0.0344,
+            "eligible_ln_count": 259,
+            "feasible_ln_count": 201,
+            "feasible_ln_ratio": 0.2164,
+            "maximum_proven": true,
+            "message": "LN 目标 3%，实际 3.4%（32/929）。"
+          },
+          "attacks": {
+            "predicted": 850,
+            "reference": 405,
+            "matched": 271,
+            "precision": 0.3188,
+            "recall": 0.6691,
+            "f1": 0.4319,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 32,
+              "reference": 16,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 32,
+              "reference": 16,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 8,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "MKTR 10K2S BMS Collection",
+        "creator": "DealerOfMelons",
+        "version": "Puru - Toki EZ LV.3",
+        "keys": 10,
+        "objects": 473,
+        "ln_ratio": 0.034,
+        "max_held": 1,
+        "duration_ms": 132769,
+        "average_nps": 3.56,
+        "active_nps95": 7.0,
+        "peak_nps": 9,
+        "ln_duration_ms": {
+          "10": 231,
+          "50": 635,
+          "90": 1750,
+          "100": 2654
+        },
+        "preferences": {
+          "density": 7,
+          "ln_ratio": 0.034,
+          "min_ln": 220,
+          "chord_size": 2,
+          "max_held": 1
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 7.0,
+        "ln_ratio": 0.034,
+        "min_ln": 220,
+        "max_held": 1,
+        "release_gap": 55,
+        "chord_size": 2,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 129.99999999999986,
+        "offset": 0.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 4053464,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 2077,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              174,
+              171,
+              193,
+              226,
+              225,
+              170,
+              213,
+              234,
+              242,
+              229
+            ]
+          },
+          "grid": {
+            "endpoints": 2077,
+            "off_grid": 0,
+            "max_error_ms": 0.4964,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 2275,
+            "selected": 2077,
+            "omitted": 198,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 2077
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 286,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/2077）。"
+          },
+          "attacks": {
+            "predicted": 937,
+            "reference": 883,
+            "matched": 764,
+            "precision": 0.8154,
+            "recall": 0.8652,
+            "f1": 0.8396,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 2384,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              186,
+              188,
+              210,
+              249,
+              268,
+              179,
+              246,
+              275,
+              294,
+              289
+            ]
+          },
+          "grid": {
+            "endpoints": 2384,
+            "off_grid": 0,
+            "max_error_ms": 0.4964,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 3428,
+            "selected": 2384,
+            "omitted": 1044,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 294,
+              "drums": 382,
+              "other": 1611,
+              "vocals": 97
+            },
+            "phrase_attacks": 5,
+            "selected_large_attack_shifts": 173,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/2384）。"
+          },
+          "attacks": {
+            "predicted": 929,
+            "reference": 883,
+            "matched": 767,
+            "precision": 0.8256,
+            "recall": 0.8686,
+            "f1": 0.8466,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "CHERRY DOLL",
+        "creator": "DealerOfMelons",
+        "version": "Hugged's Fumo",
+        "keys": 10,
+        "objects": 2178,
+        "ln_ratio": 0.0,
+        "max_held": 0,
+        "duration_ms": 115620,
+        "average_nps": 18.84,
+        "active_nps95": 26.0,
+        "peak_nps": 29,
+        "ln_duration_ms": {},
+        "preferences": {
+          "density": 24,
+          "ln_ratio": 0.0,
+          "min_ln": 240,
+          "chord_size": 5,
+          "max_held": 1
+        },
+        "warnings": [
+          "参考图局部密度超过当前 24 物件/秒上限，建议值已限制到支持范围。"
+        ],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 24.0,
+        "ln_ratio": 0.0,
+        "min_ln": 240,
+        "max_held": 1,
+        "release_gap": 55,
+        "chord_size": 5,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 137.00000000000003,
+        "offset": 1726.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 4252009,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {},
+      "skipped": "Changing reference tempo or phase",
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 4486256,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1447,
+            "ln": 62,
+            "ln_ratio": 0.043,
+            "max_held": 2,
+            "longest_ln_ms": 1800,
+            "lane_counts": [
+              52,
+              108,
+              153,
+              198,
+              209,
+              211,
+              211,
+              154,
+              108,
+              43
+            ]
+          },
+          "grid": {
+            "endpoints": 1509,
+            "off_grid": 0,
+            "max_error_ms": 0.4286,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 62,
+            "ratio": 0.0428,
+            "percentiles_ms": [
+              172,
+              257,
+              343,
+              917,
+              1800
+            ],
+            "over_1s": 6,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 1570,
+            "selected": 1447,
+            "omitted": 123,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 1447
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 108,
+            "target_ln_ratio": 0.043,
+            "target_ln_count": 62,
+            "actual_ln_ratio": 0.0428,
+            "eligible_ln_count": 99,
+            "feasible_ln_count": 98,
+            "feasible_ln_ratio": 0.0677,
+            "maximum_proven": true,
+            "message": "LN 目标 4%，实际 4.3%（62/1447）。"
+          },
+          "attacks": {
+            "predicted": 1418,
+            "reference": 782,
+            "matched": 721,
+            "precision": 0.5085,
+            "recall": 0.922,
+            "f1": 0.6555,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 62,
+              "reference": 40,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 62,
+              "reference": 40,
+              "matched": 1,
+              "precision": 0.0161,
+              "recall": 0.025,
+              "f1": 0.0196
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 15,
+              "endpoints_matched": 0,
+              "overlap_matched": 1,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0667
+            },
+            "2000": {
+              "reference": 10,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1594,
+            "ln": 69,
+            "ln_ratio": 0.043,
+            "max_held": 2,
+            "longest_ln_ms": 1543,
+            "lane_counts": [
+              88,
+              130,
+              175,
+              212,
+              207,
+              220,
+              213,
+              164,
+              108,
+              77
+            ]
+          },
+          "grid": {
+            "endpoints": 1663,
+            "off_grid": 0,
+            "max_error_ms": 0.4286,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 69,
+            "ratio": 0.0433,
+            "percentiles_ms": [
+              257,
+              343,
+              600,
+              943,
+              1543
+            ],
+            "over_1s": 6,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 2264,
+            "selected": 1594,
+            "omitted": 670,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 381,
+              "drums": 996,
+              "other": 106,
+              "vocals": 111
+            },
+            "phrase_attacks": 1,
+            "selected_large_attack_shifts": 127,
+            "target_ln_ratio": 0.043,
+            "target_ln_count": 69,
+            "actual_ln_ratio": 0.0433,
+            "eligible_ln_count": 278,
+            "feasible_ln_count": 272,
+            "feasible_ln_ratio": 0.1706,
+            "maximum_proven": true,
+            "message": "LN 目标 4%，实际 4.3%（69/1594）。"
+          },
+          "attacks": {
+            "predicted": 1362,
+            "reference": 782,
+            "matched": 704,
+            "precision": 0.5169,
+            "recall": 0.9003,
+            "f1": 0.6567,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 69,
+              "reference": 40,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 69,
+              "reference": 40,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 15,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 10,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "MOVEMENT (Nightcore Mix)",
+        "creator": "Anwul_",
+        "version": "Hard",
+        "keys": 10,
+        "objects": 1246,
+        "ln_ratio": 0.043,
+        "max_held": 2,
+        "duration_ms": 153600,
+        "average_nps": 8.11,
+        "active_nps95": 12.0,
+        "peak_nps": 13,
+        "ln_duration_ms": {
+          "10": 172,
+          "50": 343,
+          "90": 2743,
+          "100": 4115
+        },
+        "preferences": {
+          "density": 12,
+          "ln_ratio": 0.043,
+          "min_ln": 160,
+          "chord_size": 3,
+          "max_held": 2
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 12.0,
+        "ln_ratio": 0.043,
+        "min_ln": 160,
+        "max_held": 2,
+        "release_gap": 55,
+        "chord_size": 3,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 174.99999999999991,
+        "offset": 237.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 4635410,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 356,
+            "ln": 11,
+            "ln_ratio": 0.031,
+            "max_held": 2,
+            "longest_ln_ms": 986,
+            "lane_counts": [
+              18,
+              36,
+              51,
+              46,
+              34,
+              37,
+              47,
+              42,
+              29,
+              16
+            ]
+          },
+          "grid": {
+            "endpoints": 367,
+            "off_grid": 0,
+            "max_error_ms": 0.4964,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 11,
+            "ratio": 0.0309,
+            "percentiles_ms": [
+              438,
+              438,
+              548,
+              548,
+              986
+            ],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 1296,
+            "selected": 356,
+            "omitted": 940,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 356
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 16,
+            "target_ln_ratio": 0.074,
+            "target_ln_count": 26,
+            "actual_ln_ratio": 0.0309,
+            "eligible_ln_count": 11,
+            "feasible_ln_count": 11,
+            "feasible_ln_ratio": 0.0309,
+            "maximum_proven": true,
+            "message": "LN 目标 7%，实际 3.1%（11/356）。持续音证据或占轨空间不足，保留起音，未虚构长条尾端。"
+          },
+          "attacks": {
+            "predicted": 346,
+            "reference": 191,
+            "matched": 171,
+            "precision": 0.4942,
+            "recall": 0.8953,
+            "f1": 0.6369,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 11,
+              "reference": 18,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 11,
+              "reference": 18,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 6,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 357,
+            "ln": 26,
+            "ln_ratio": 0.073,
+            "max_held": 2,
+            "longest_ln_ms": 3285,
+            "lane_counts": [
+              12,
+              21,
+              43,
+              58,
+              53,
+              48,
+              49,
+              39,
+              21,
+              13
+            ]
+          },
+          "grid": {
+            "endpoints": 383,
+            "off_grid": 0,
+            "max_error_ms": 0.4964,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 26,
+            "ratio": 0.0728,
+            "percentiles_ms": [
+              438,
+              438,
+              849,
+              1533,
+              3285
+            ],
+            "over_1s": 5,
+            "over_3s": 1
+          },
+          "selection": {
+            "candidates": 2350,
+            "selected": 357,
+            "omitted": 1993,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 20,
+              "drums": 186,
+              "other": 93,
+              "vocals": 58
+            },
+            "phrase_attacks": 6,
+            "selected_large_attack_shifts": 4,
+            "target_ln_ratio": 0.074,
+            "target_ln_count": 26,
+            "actual_ln_ratio": 0.0728,
+            "eligible_ln_count": 30,
+            "feasible_ln_count": 29,
+            "feasible_ln_ratio": 0.0812,
+            "maximum_proven": true,
+            "message": "LN 目标 7%，实际 7.3%（26/357）。"
+          },
+          "attacks": {
+            "predicted": 340,
+            "reference": 191,
+            "matched": 183,
+            "precision": 0.5382,
+            "recall": 0.9581,
+            "f1": 0.6893,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 26,
+              "reference": 18,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 26,
+              "reference": 18,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 6,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "Ruby Slippers Mirage",
+        "creator": "eZmmR",
+        "version": "Sayana's Easy",
+        "keys": 10,
+        "objects": 258,
+        "ln_ratio": 0.074,
+        "max_held": 2,
+        "duration_ms": 79708,
+        "average_nps": 3.24,
+        "active_nps95": 5.0,
+        "peak_nps": 6,
+        "ln_duration_ms": {
+          "10": 438,
+          "50": 438,
+          "90": 1752,
+          "100": 5256
+        },
+        "preferences": {
+          "density": 5,
+          "ln_ratio": 0.074,
+          "min_ln": 420,
+          "chord_size": 2,
+          "max_held": 2
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 5.0,
+        "ln_ratio": 0.074,
+        "min_ln": 420,
+        "max_held": 2,
+        "release_gap": 55,
+        "chord_size": 2,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 137.00000000000003,
+        "offset": 480.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 4890664,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 2776,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              199,
+              223,
+              316,
+              359,
+              322,
+              319,
+              359,
+              289,
+              216,
+              174
+            ]
+          },
+          "grid": {
+            "endpoints": 2776,
+            "off_grid": 0,
+            "max_error_ms": 0.4286,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 4223,
+            "selected": 2776,
+            "omitted": 1447,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 2776
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 0,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/2776）。"
+          },
+          "attacks": {
+            "predicted": 1982,
+            "reference": 1390,
+            "matched": 903,
+            "precision": 0.4556,
+            "recall": 0.6496,
+            "f1": 0.5356,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 2868,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              169,
+              227,
+              315,
+              386,
+              361,
+              363,
+              362,
+              305,
+              213,
+              167
+            ]
+          },
+          "grid": {
+            "endpoints": 2868,
+            "off_grid": 0,
+            "max_error_ms": 0.4286,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 5953,
+            "selected": 2868,
+            "omitted": 3085,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 317,
+              "drums": 791,
+              "other": 1690,
+              "vocals": 70
+            },
+            "phrase_attacks": 3,
+            "selected_large_attack_shifts": 0,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/2868）。"
+          },
+          "attacks": {
+            "predicted": 2151,
+            "reference": 1390,
+            "matched": 984,
+            "precision": 0.4575,
+            "recall": 0.7079,
+            "f1": 0.5558,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "Speedcore Sonata",
+        "creator": "XRedyRatyX",
+        "version": "Hyper",
+        "keys": 10,
+        "objects": 2237,
+        "ln_ratio": 0.0,
+        "max_held": 0,
+        "duration_ms": 173486,
+        "average_nps": 12.89,
+        "active_nps95": 18.0,
+        "peak_nps": 20,
+        "ln_duration_ms": {},
+        "preferences": {
+          "density": 18,
+          "ln_ratio": 0.0,
+          "min_ln": 240,
+          "chord_size": 3,
+          "max_held": 1
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 18.0,
+        "ln_ratio": 0.0,
+        "min_ln": 240,
+        "max_held": 1,
+        "release_gap": 55,
+        "chord_size": 3,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 350.0000000000009,
+        "offset": 2721.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 4964602,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 493,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              16,
+              32,
+              55,
+              82,
+              76,
+              75,
+              83,
+              46,
+              16,
+              12
+            ]
+          },
+          "grid": {
+            "endpoints": 493,
+            "off_grid": 0,
+            "max_error_ms": 0.4945,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 1966,
+            "selected": 493,
+            "omitted": 1473,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 493
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 11,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/493）。"
+          },
+          "attacks": {
+            "predicted": 493,
+            "reference": 350,
+            "matched": 176,
+            "precision": 0.357,
+            "recall": 0.5029,
+            "f1": 0.4176,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 491,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              8,
+              13,
+              36,
+              97,
+              98,
+              95,
+              88,
+              38,
+              10,
+              8
+            ]
+          },
+          "grid": {
+            "endpoints": 491,
+            "off_grid": 0,
+            "max_error_ms": 0.4945,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 4359,
+            "selected": 491,
+            "omitted": 3868,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 32,
+              "drums": 369,
+              "other": 88,
+              "vocals": 2
+            },
+            "phrase_attacks": 1,
+            "selected_large_attack_shifts": 5,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/491）。"
+          },
+          "attacks": {
+            "predicted": 491,
+            "reference": 350,
+            "matched": 223,
+            "precision": 0.4542,
+            "recall": 0.6371,
+            "f1": 0.5303,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "DESTINY",
+        "creator": "Zexenux",
+        "version": "EASY",
+        "keys": 10,
+        "objects": 351,
+        "ln_ratio": 0.0,
+        "max_held": 0,
+        "duration_ms": 139615,
+        "average_nps": 2.51,
+        "active_nps95": 4.0,
+        "peak_nps": 5,
+        "ln_duration_ms": {},
+        "preferences": {
+          "density": 4,
+          "ln_ratio": 0.0,
+          "min_ln": 240,
+          "chord_size": 1,
+          "max_held": 1
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 4.0,
+        "ln_ratio": 0.0,
+        "min_ln": 240,
+        "max_held": 1,
+        "release_gap": 55,
+        "chord_size": 1,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 181.99999999999983,
+        "offset": 1298.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 4984293,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 2970,
+            "ln": 42,
+            "ln_ratio": 0.014,
+            "max_held": 3,
+            "longest_ln_ms": 675,
+            "lane_counts": [
+              151,
+              238,
+              328,
+              402,
+              385,
+              397,
+              399,
+              314,
+              209,
+              147
+            ]
+          },
+          "grid": {
+            "endpoints": 3012,
+            "off_grid": 0,
+            "max_error_ms": 0.0,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 42,
+            "ratio": 0.0141,
+            "percentiles_ms": [
+              300,
+              375,
+              525,
+              600,
+              675
+            ],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 3149,
+            "selected": 2970,
+            "omitted": 179,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 2970
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 389,
+            "target_ln_ratio": 0.014,
+            "target_ln_count": 42,
+            "actual_ln_ratio": 0.0141,
+            "eligible_ln_count": 537,
+            "feasible_ln_count": 537,
+            "feasible_ln_ratio": 0.1808,
+            "maximum_proven": true,
+            "message": "LN 目标 1%，实际 1.4%（42/2970）。"
+          },
+          "attacks": {
+            "predicted": 2484,
+            "reference": 2508,
+            "matched": 1687,
+            "precision": 0.6791,
+            "recall": 0.6726,
+            "f1": 0.6759,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 42,
+              "reference": 59,
+              "matched": 1,
+              "precision": 0.0238,
+              "recall": 0.0169,
+              "f1": 0.0198
+            },
+            "overlap": {
+              "predicted": 42,
+              "reference": 59,
+              "matched": 1,
+              "precision": 0.0238,
+              "recall": 0.0169,
+              "f1": 0.0198
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 5,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 5011,
+            "ln": 70,
+            "ln_ratio": 0.014,
+            "max_held": 3,
+            "longest_ln_ms": 4350,
+            "lane_counts": [
+              361,
+              449,
+              544,
+              609,
+              591,
+              618,
+              605,
+              502,
+              403,
+              329
+            ]
+          },
+          "grid": {
+            "endpoints": 5081,
+            "off_grid": 0,
+            "max_error_ms": 0.0,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 70,
+            "ratio": 0.014,
+            "percentiles_ms": [
+              375,
+              450,
+              600,
+              1132,
+              4350
+            ],
+            "over_1s": 10,
+            "over_3s": 2
+          },
+          "selection": {
+            "candidates": 6261,
+            "selected": 5011,
+            "omitted": 1250,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 679,
+              "drums": 1437,
+              "other": 2630,
+              "vocals": 265
+            },
+            "phrase_attacks": 11,
+            "selected_large_attack_shifts": 438,
+            "target_ln_ratio": 0.014,
+            "target_ln_count": 70,
+            "actual_ln_ratio": 0.014,
+            "eligible_ln_count": 1693,
+            "feasible_ln_count": 1693,
+            "feasible_ln_ratio": 0.3379,
+            "maximum_proven": true,
+            "message": "LN 目标 1%，实际 1.4%（70/5011）。"
+          },
+          "attacks": {
+            "predicted": 2932,
+            "reference": 2508,
+            "matched": 2079,
+            "precision": 0.7091,
+            "recall": 0.8289,
+            "f1": 0.7643,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 70,
+              "reference": 59,
+              "matched": 1,
+              "precision": 0.0143,
+              "recall": 0.0169,
+              "f1": 0.0155
+            },
+            "overlap": {
+              "predicted": 70,
+              "reference": 59,
+              "matched": 2,
+              "precision": 0.0286,
+              "recall": 0.0339,
+              "f1": 0.031
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 5,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "A Reyvateil's Curse",
+        "creator": "xBomb72",
+        "version": "Arcanum",
+        "keys": 10,
+        "objects": 5086,
+        "ln_ratio": 0.014,
+        "max_held": 6,
+        "duration_ms": 264600,
+        "average_nps": 19.22,
+        "active_nps95": 28.0,
+        "peak_nps": 33,
+        "ln_duration_ms": {
+          "10": 150,
+          "50": 300,
+          "90": 750,
+          "100": 2250
+        },
+        "preferences": {
+          "density": 24,
+          "ln_ratio": 0.014,
+          "min_ln": 140,
+          "chord_size": 4,
+          "max_held": 6
+        },
+        "warnings": [
+          "参考图局部密度超过当前 24 物件/秒上限，建议值已限制到支持范围。"
+        ],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 24.0,
+        "ln_ratio": 0.014,
+        "min_ln": 140,
+        "max_held": 6,
+        "release_gap": 55,
+        "chord_size": 4,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 200.0,
+        "offset": 30.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 5008549,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 592,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              24,
+              41,
+              74,
+              93,
+              89,
+              99,
+              94,
+              58,
+              14,
+              6
+            ]
+          },
+          "grid": {
+            "endpoints": 592,
+            "off_grid": 0,
+            "max_error_ms": 0.4898,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 1472,
+            "selected": 592,
+            "omitted": 880,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 592
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 11,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/592）。"
+          },
+          "attacks": {
+            "predicted": 591,
+            "reference": 432,
+            "matched": 366,
+            "precision": 0.6193,
+            "recall": 0.8472,
+            "f1": 0.7155,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 588,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              29,
+              49,
+              78,
+              83,
+              79,
+              92,
+              90,
+              58,
+              23,
+              7
+            ]
+          },
+          "grid": {
+            "endpoints": 588,
+            "off_grid": 0,
+            "max_error_ms": 0.4898,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 2255,
+            "selected": 588,
+            "omitted": 1667,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 146,
+              "drums": 373,
+              "other": 64,
+              "vocals": 5
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 19,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/588）。"
+          },
+          "attacks": {
+            "predicted": 576,
+            "reference": 432,
+            "matched": 376,
+            "precision": 0.6528,
+            "recall": 0.8704,
+            "f1": 0.746,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "Pluton",
+        "creator": "Hugged",
+        "version": "Easy",
+        "keys": 10,
+        "objects": 467,
+        "ln_ratio": 0.0,
+        "max_held": 0,
+        "duration_ms": 124081,
+        "average_nps": 3.76,
+        "active_nps95": 5.0,
+        "peak_nps": 6,
+        "ln_duration_ms": {},
+        "preferences": {
+          "density": 5,
+          "ln_ratio": 0.0,
+          "min_ln": 240,
+          "chord_size": 2,
+          "max_held": 1
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 5.0,
+        "ln_ratio": 0.0,
+        "min_ln": 240,
+        "max_held": 1,
+        "release_gap": 55,
+        "chord_size": 2,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 147.00000000000017,
+        "offset": 3003.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 5060312,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {},
+      "skipped": "Changing reference tempo or phase",
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 5154697,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 4362,
+            "ln": 48,
+            "ln_ratio": 0.011,
+            "max_held": 2,
+            "longest_ln_ms": 2595,
+            "lane_counts": [
+              356,
+              376,
+              459,
+              488,
+              463,
+              449,
+              520,
+              487,
+              416,
+              348
+            ]
+          },
+          "grid": {
+            "endpoints": 4410,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 48,
+            "ratio": 0.011,
+            "percentiles_ms": [
+              810,
+              1095,
+              1378,
+              2270,
+              2595
+            ],
+            "over_1s": 26,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 5060,
+            "selected": 4362,
+            "omitted": 698,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 4362
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 476,
+            "target_ln_ratio": 0.011,
+            "target_ln_count": 48,
+            "actual_ln_ratio": 0.011,
+            "eligible_ln_count": 1596,
+            "feasible_ln_count": 1596,
+            "feasible_ln_ratio": 0.3659,
+            "maximum_proven": true,
+            "message": "LN 目标 1%，实际 1.1%（48/4362）。"
+          },
+          "attacks": {
+            "predicted": 2657,
+            "reference": 2330,
+            "matched": 1901,
+            "precision": 0.7155,
+            "recall": 0.8159,
+            "f1": 0.7624,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 48,
+              "reference": 51,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 48,
+              "reference": 51,
+              "matched": 3,
+              "precision": 0.0625,
+              "recall": 0.0588,
+              "f1": 0.0606
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 23,
+              "endpoints_matched": 0,
+              "overlap_matched": 3,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.1304
+            },
+            "2000": {
+              "reference": 8,
+              "endpoints_matched": 0,
+              "overlap_matched": 1,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.125
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 5164,
+            "ln": 57,
+            "ln_ratio": 0.011,
+            "max_held": 4,
+            "longest_ln_ms": 2756,
+            "lane_counts": [
+              372,
+              397,
+              485,
+              559,
+              593,
+              525,
+              611,
+              621,
+              541,
+              460
+            ]
+          },
+          "grid": {
+            "endpoints": 5221,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 57,
+            "ratio": 0.011,
+            "percentiles_ms": [
+              973,
+              1216,
+              1378,
+              2465,
+              2756
+            ],
+            "over_1s": 39,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 8582,
+            "selected": 5164,
+            "omitted": 3418,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 620,
+              "drums": 592,
+              "other": 3932,
+              "vocals": 20
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 430,
+            "target_ln_ratio": 0.011,
+            "target_ln_count": 57,
+            "actual_ln_ratio": 0.011,
+            "eligible_ln_count": 2318,
+            "feasible_ln_count": 2315,
+            "feasible_ln_ratio": 0.4483,
+            "maximum_proven": true,
+            "message": "LN 目标 1%，实际 1.1%（57/5164）。"
+          },
+          "attacks": {
+            "predicted": 2726,
+            "reference": 2330,
+            "matched": 1948,
+            "precision": 0.7146,
+            "recall": 0.8361,
+            "f1": 0.7706,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 57,
+              "reference": 51,
+              "matched": 1,
+              "precision": 0.0175,
+              "recall": 0.0196,
+              "f1": 0.0185
+            },
+            "overlap": {
+              "predicted": 57,
+              "reference": 51,
+              "matched": 5,
+              "precision": 0.0877,
+              "recall": 0.098,
+              "f1": 0.0926
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 23,
+              "endpoints_matched": 1,
+              "overlap_matched": 5,
+              "endpoints_recall": 0.0435,
+              "overlap_recall": 0.2174
+            },
+            "2000": {
+              "reference": 8,
+              "endpoints_matched": 0,
+              "overlap_matched": 1,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.125
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "Akasha",
+        "creator": "XDerbyX",
+        "version": "Limitless Sapphire",
+        "keys": 10,
+        "objects": 5397,
+        "ln_ratio": 0.011,
+        "max_held": 8,
+        "duration_ms": 239027,
+        "average_nps": 22.58,
+        "active_nps95": 37.0,
+        "peak_nps": 44,
+        "ln_duration_ms": {
+          "10": 162,
+          "50": 892,
+          "90": 6162,
+          "100": 6162
+        },
+        "preferences": {
+          "density": 24,
+          "ln_ratio": 0.011,
+          "min_ln": 160,
+          "chord_size": 6,
+          "max_held": 8
+        },
+        "warnings": [
+          "参考图局部密度超过当前 24 物件/秒上限，建议值已限制到支持范围。"
+        ],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 24.0,
+        "ln_ratio": 0.011,
+        "min_ln": 160,
+        "max_held": 8,
+        "release_gap": 55,
+        "chord_size": 6,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 185.0000000000002,
+        "offset": 1409.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 5189083,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 791,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              63,
+              73,
+              86,
+              91,
+              87,
+              87,
+              87,
+              86,
+              67,
+              64
+            ]
+          },
+          "grid": {
+            "endpoints": 791,
+            "off_grid": 0,
+            "max_error_ms": 0.4839,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 1014,
+            "selected": 791,
+            "omitted": 223,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 791
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 145,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/791）。"
+          },
+          "attacks": {
+            "predicted": 551,
+            "reference": 345,
+            "matched": 335,
+            "precision": 0.608,
+            "recall": 0.971,
+            "f1": 0.7478,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 862,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              68,
+              74,
+              91,
+              94,
+              91,
+              88,
+              101,
+              98,
+              81,
+              76
+            ]
+          },
+          "grid": {
+            "endpoints": 862,
+            "off_grid": 0,
+            "max_error_ms": 0.4839,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 2307,
+            "selected": 862,
+            "omitted": 1445,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 194,
+              "drums": 159,
+              "other": 341,
+              "vocals": 168
+            },
+            "phrase_attacks": 6,
+            "selected_large_attack_shifts": 54,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/862）。"
+          },
+          "attacks": {
+            "predicted": 510,
+            "reference": 345,
+            "matched": 328,
+            "precision": 0.6431,
+            "recall": 0.9507,
+            "f1": 0.7673,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "POKEDANCE",
+        "creator": "XRedyRatyX",
+        "version": "Hard",
+        "keys": 10,
+        "objects": 741,
+        "ln_ratio": 0.0,
+        "max_held": 0,
+        "duration_ms": 76935,
+        "average_nps": 9.63,
+        "active_nps95": 13.0,
+        "peak_nps": 17,
+        "ln_duration_ms": {},
+        "preferences": {
+          "density": 13,
+          "ln_ratio": 0.0,
+          "min_ln": 240,
+          "chord_size": 4,
+          "max_held": 1
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 13.0,
+        "ln_ratio": 0.0,
+        "min_ln": 240,
+        "max_held": 1,
+        "release_gap": 55,
+        "chord_size": 4,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 124.00000000000013,
+        "offset": 483.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 5317787,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {},
+      "skipped": "Changing reference tempo or phase",
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 5324688,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 409,
+            "ln": 22,
+            "ln_ratio": 0.054,
+            "max_held": 1,
+            "longest_ln_ms": 1611,
+            "lane_counts": [
+              31,
+              44,
+              59,
+              57,
+              40,
+              41,
+              55,
+              40,
+              23,
+              19
+            ]
+          },
+          "grid": {
+            "endpoints": 431,
+            "off_grid": 0,
+            "max_error_ms": 0.4915,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 22,
+            "ratio": 0.0538,
+            "percentiles_ms": [
+              339,
+              339,
+              488,
+              908,
+              1611
+            ],
+            "over_1s": 2,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 1254,
+            "selected": 409,
+            "omitted": 845,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 409
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 20,
+            "target_ln_ratio": 0.148,
+            "target_ln_count": 61,
+            "actual_ln_ratio": 0.0538,
+            "eligible_ln_count": 25,
+            "feasible_ln_count": 22,
+            "feasible_ln_ratio": 0.0538,
+            "maximum_proven": true,
+            "message": "LN 目标 15%，实际 5.4%（22/409）。持续音证据或占轨空间不足，保留起音，未虚构长条尾端。"
+          },
+          "attacks": {
+            "predicted": 388,
+            "reference": 254,
+            "matched": 208,
+            "precision": 0.5361,
+            "recall": 0.8189,
+            "f1": 0.648,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 22,
+              "reference": 43,
+              "matched": 6,
+              "precision": 0.2727,
+              "recall": 0.1395,
+              "f1": 0.1846
+            },
+            "overlap": {
+              "predicted": 22,
+              "reference": 43,
+              "matched": 6,
+              "precision": 0.2727,
+              "recall": 0.1395,
+              "f1": 0.1846
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 414,
+            "ln": 18,
+            "ln_ratio": 0.043,
+            "max_held": 1,
+            "longest_ln_ms": 1865,
+            "lane_counts": [
+              12,
+              24,
+              42,
+              63,
+              62,
+              64,
+              69,
+              43,
+              19,
+              16
+            ]
+          },
+          "grid": {
+            "endpoints": 432,
+            "off_grid": 0,
+            "max_error_ms": 0.4915,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 18,
+            "ratio": 0.0435,
+            "percentiles_ms": [
+              339,
+              424,
+              678,
+              1220,
+              1865
+            ],
+            "over_1s": 3,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 2297,
+            "selected": 414,
+            "omitted": 1883,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 59,
+              "drums": 219,
+              "other": 134,
+              "vocals": 2
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 14,
+            "target_ln_ratio": 0.148,
+            "target_ln_count": 61,
+            "actual_ln_ratio": 0.0435,
+            "eligible_ln_count": 22,
+            "feasible_ln_count": 18,
+            "feasible_ln_ratio": 0.0435,
+            "maximum_proven": true,
+            "message": "LN 目标 15%，实际 4.3%（18/414）。持续音证据或占轨空间不足，保留起音，未虚构长条尾端。"
+          },
+          "attacks": {
+            "predicted": 384,
+            "reference": 254,
+            "matched": 211,
+            "precision": 0.5495,
+            "recall": 0.8307,
+            "f1": 0.6614,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 18,
+              "reference": 43,
+              "matched": 1,
+              "precision": 0.0556,
+              "recall": 0.0233,
+              "f1": 0.0328
+            },
+            "overlap": {
+              "predicted": 18,
+              "reference": 43,
+              "matched": 1,
+              "precision": 0.0556,
+              "recall": 0.0233,
+              "f1": 0.0328
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "Craiova",
+        "creator": "Scritshell",
+        "version": "Facil",
+        "keys": 10,
+        "objects": 290,
+        "ln_ratio": 0.148,
+        "max_held": 1,
+        "duration_ms": 76949,
+        "average_nps": 3.77,
+        "active_nps95": 5.0,
+        "peak_nps": 6,
+        "ln_duration_ms": {
+          "10": 339,
+          "50": 339,
+          "90": 339,
+          "100": 678
+        },
+        "preferences": {
+          "density": 5,
+          "ln_ratio": 0.148,
+          "min_ln": 320,
+          "chord_size": 2,
+          "max_held": 1
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 5.0,
+        "ln_ratio": 0.148,
+        "min_ln": 320,
+        "max_held": 1,
+        "release_gap": 55,
+        "chord_size": 2,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 176.9999999999998,
+        "offset": 2.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 5359181,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {},
+      "skipped": "Changing reference tempo or phase",
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 5487297,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1328,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              71,
+              116,
+              158,
+              192,
+              147,
+              156,
+              182,
+              143,
+              102,
+              61
+            ]
+          },
+          "grid": {
+            "endpoints": 1328,
+            "off_grid": 0,
+            "max_error_ms": 0.4545,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 3768,
+            "selected": 1328,
+            "omitted": 2440,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 1328
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 20,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/1328）。"
+          },
+          "attacks": {
+            "predicted": 1276,
+            "reference": 767,
+            "matched": 518,
+            "precision": 0.406,
+            "recall": 0.6754,
+            "f1": 0.5071,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1323,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              54,
+              109,
+              153,
+              187,
+              160,
+              177,
+              196,
+              139,
+              93,
+              55
+            ]
+          },
+          "grid": {
+            "endpoints": 1323,
+            "off_grid": 0,
+            "max_error_ms": 0.4545,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 0,
+            "ratio": 0.0,
+            "percentiles_ms": [],
+            "over_1s": 0,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 8453,
+            "selected": 1323,
+            "omitted": 7130,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 283,
+              "drums": 632,
+              "other": 280,
+              "vocals": 128
+            },
+            "phrase_attacks": 19,
+            "selected_large_attack_shifts": 9,
+            "target_ln_ratio": 0.0,
+            "target_ln_count": 0,
+            "actual_ln_ratio": 0.0,
+            "eligible_ln_count": 0,
+            "feasible_ln_count": 0,
+            "feasible_ln_ratio": 0.0,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.0%（0/1323）。"
+          },
+          "attacks": {
+            "predicted": 1282,
+            "reference": 767,
+            "matched": 639,
+            "precision": 0.4984,
+            "recall": 0.8331,
+            "f1": 0.6237,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            },
+            "overlap": {
+              "predicted": 0,
+              "reference": 0,
+              "matched": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "Side by Side",
+        "creator": "Kurisu Makise",
+        "version": "Intermediate",
+        "keys": 10,
+        "objects": 979,
+        "ln_ratio": 0.0,
+        "max_held": 0,
+        "duration_ms": 232545,
+        "average_nps": 4.21,
+        "active_nps95": 6.0,
+        "peak_nps": 7,
+        "ln_duration_ms": {},
+        "preferences": {
+          "density": 6,
+          "ln_ratio": 0.0,
+          "min_ln": 240,
+          "chord_size": 2,
+          "max_held": 1
+        },
+        "warnings": [],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 6.0,
+        "ln_ratio": 0.0,
+        "min_ln": 240,
+        "max_held": 1,
+        "release_gap": 55,
+        "chord_size": 2,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 164.99999999999983,
+        "offset": 1429.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
+    },
+    {
+      "beatmap_id": 5535105,
+      "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+      "modes": {
+        "basic": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1399,
+            "ln": 6,
+            "ln_ratio": 0.004,
+            "max_held": 2,
+            "longest_ln_ms": 2083,
+            "lane_counts": [
+              80,
+              110,
+              146,
+              182,
+              176,
+              176,
+              178,
+              150,
+              109,
+              92
+            ]
+          },
+          "grid": {
+            "endpoints": 1405,
+            "off_grid": 0,
+            "max_error_ms": 0.3333,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 6,
+            "ratio": 0.0043,
+            "percentiles_ms": [
+              1375,
+              1542,
+              1708,
+              1916,
+              2083
+            ],
+            "over_1s": 5,
+            "over_3s": 0
+          },
+          "selection": {
+            "candidates": 1478,
+            "selected": 1399,
+            "omitted": 79,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "mix": 1399
+            },
+            "phrase_attacks": 0,
+            "selected_large_attack_shifts": 231,
+            "target_ln_ratio": 0.004,
+            "target_ln_count": 6,
+            "actual_ln_ratio": 0.0043,
+            "eligible_ln_count": 308,
+            "feasible_ln_count": 290,
+            "feasible_ln_ratio": 0.2073,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.4%（6/1399）。"
+          },
+          "attacks": {
+            "predicted": 1148,
+            "reference": 1032,
+            "matched": 807,
+            "precision": 0.703,
+            "recall": 0.782,
+            "f1": 0.7404,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 6,
+              "reference": 6,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 6,
+              "reference": 6,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        },
+        "deep": {
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 2567,
+            "ln": 10,
+            "ln_ratio": 0.004,
+            "max_held": 1,
+            "longest_ln_ms": 4083,
+            "lane_counts": [
+              194,
+              223,
+              268,
+              305,
+              303,
+              310,
+              299,
+              244,
+              224,
+              197
+            ]
+          },
+          "grid": {
+            "endpoints": 2577,
+            "off_grid": 0,
+            "max_error_ms": 0.3333,
+            "tolerance_ms": 0.501
+          },
+          "holds": {
+            "count": 10,
+            "ratio": 0.0039,
+            "percentiles_ms": [
+              2021,
+              2375,
+              2563,
+              3558,
+              4083
+            ],
+            "over_1s": 10,
+            "over_3s": 2
+          },
+          "selection": {
+            "candidates": 3885,
+            "selected": 2567,
+            "omitted": 1318,
+            "muted_voice_candidates": 0,
+            "attack_selection": "global",
+            "attack_optimal": true,
+            "selected_voices": {
+              "bass": 187,
+              "drums": 521,
+              "other": 1539,
+              "vocals": 320
+            },
+            "phrase_attacks": 16,
+            "selected_large_attack_shifts": 253,
+            "target_ln_ratio": 0.004,
+            "target_ln_count": 10,
+            "actual_ln_ratio": 0.0039,
+            "eligible_ln_count": 901,
+            "feasible_ln_count": 680,
+            "feasible_ln_ratio": 0.2649,
+            "maximum_proven": true,
+            "message": "LN 目标 0%，实际 0.4%（10/2567）。"
+          },
+          "attacks": {
+            "predicted": 1249,
+            "reference": 1032,
+            "matched": 895,
+            "precision": 0.7166,
+            "recall": 0.8672,
+            "f1": 0.7847,
+            "tolerance_ms": 20
+          },
+          "ln": {
+            "endpoints": {
+              "predicted": 10,
+              "reference": 6,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 10,
+              "reference": 6,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
+          },
+          "long_reference": {
+            "800": {
+              "reference": 1,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": 0.0,
+              "overlap_recall": 0.0
+            },
+            "2000": {
+              "reference": 0,
+              "endpoints_matched": 0,
+              "overlap_matched": 0,
+              "endpoints_recall": null,
+              "overlap_recall": null
+            }
+          }
+        }
+      },
+      "style": {
+        "title": "Kyoka Suigetsu",
+        "creator": "XDerbyX",
+        "version": "LEGGENDARIA",
+        "keys": 10,
+        "objects": 2119,
+        "ln_ratio": 0.004,
+        "max_held": 2,
+        "duration_ms": 118687,
+        "average_nps": 17.85,
+        "active_nps95": 26.0,
+        "peak_nps": 34,
+        "ln_duration_ms": {
+          "10": 167,
+          "50": 583,
+          "90": 767,
+          "100": 1000
+        },
+        "preferences": {
+          "density": 24,
+          "ln_ratio": 0.004,
+          "min_ln": 160,
+          "chord_size": 6,
+          "max_held": 2
+        },
+        "warnings": [
+          "参考图局部密度超过当前 24 物件/秒上限，建议值已限制到支持范围。"
+        ],
+        "notice": "只提取密度、LN 比例及占轨规模，不复制旋律、音符时间或轨道，也不代表难度或制谱质量。"
+      },
+      "settings": {
+        "keys": 10,
+        "density": 24.0,
+        "ln_ratio": 0.004,
+        "min_ln": 160,
+        "max_held": 2,
+        "release_gap": 55,
+        "chord_size": 6,
+        "pitch_follow": 0.55,
+        "balance": 0.8,
+        "jack_avoid": 0.8,
+        "seed": 42,
+        "onset_threshold": 0.45,
+        "frame_threshold": 0.3,
+        "focus": "balanced",
+        "phrase_ln": 0.65,
+        "layout_engine": "beam",
+        "pattern_prior": 0.35,
+        "drums_weight": 1.0,
+        "bass_weight": 1.0,
+        "vocals_weight": 1.0,
+        "other_weight": 1.0
+      },
+      "reference_tempo": {
+        "bpm": 180.0000000000002,
+        "offset": -352.0,
+        "division": 4,
+        "stable": true
+      },
+      "audio_shift_ms": 22.5,
+      "group": "audio-extension2-10k"
     }
   ],
   "errors": []

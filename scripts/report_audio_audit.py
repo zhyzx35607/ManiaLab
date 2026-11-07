@@ -2,12 +2,19 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from statistics import median
 
 
 def summarize(folders):
+    root=Path(__file__).resolve().parents[1]
+    base_model=json.loads((root/'assets/model-manifest.json').read_text(encoding='utf-8'))['basic_pitch']
+    if hashlib.sha256((root/'assets/basic-pitch.onnx').read_bytes()).hexdigest()!=base_model['sha256']:
+        raise ValueError('Basic Pitch file differs from its pinned manifest')
+    deep_models=json.loads((root/'assets/deep-models.json').read_text(encoding='utf-8'))['models']
+    expected_deep={r['filename']:r['sha256'] for r in deep_models}
     rows, fingerprints, identities = [], {}, set()
     for folder in folders:
         for path in sorted(folder.glob('*/audit.json')):
@@ -20,6 +27,11 @@ def summarize(folders):
                 raise ValueError(f'Incomplete audio comparison: {path}')
             fingerprint = item['source_fingerprint']
             fingerprints[fingerprint['sha256']] = fingerprint
+            analysis=json.loads((path.parent/'deep/analysis.json').read_text(encoding='utf-8'))
+            separation=analysis['separation']
+            if (separation['model_sha256']!=expected_deep['hdemucs_high_trained.pt'] or
+                    separation['beat_evidence']['model_sha256']!=expected_deep['beat-this-final0.ckpt']):
+                raise ValueError(f'Audio snapshot uses unexpected separation/beat weights: {path}')
             automatic = json.loads((path.parent/'auto-audit.json').read_text(encoding='utf-8'))
             if (automatic['source_fingerprint'] != fingerprint['sha256'] or
                     automatic['audio_shift_ms'] != item['audio_shift_ms'] or
@@ -90,7 +102,10 @@ def summarize(folders):
             leakage='Development sets have been examined during iteration; this is not an unseen benchmark',
             runtime='Analysis caches are reused; these run times must not be presented as cold inference speed',
         ),
-        source_fingerprint=next(iter(fingerprints.values())), groups=groups, songs=rows,
+        source_fingerprint=next(iter(fingerprints.values())),
+        audio_models=dict(basic_pitch=base_model,separation_and_beats=deep_models,
+            verification='Every deep snapshot records matching separator/beat SHA256; current Basic Pitch file matches the pinned manifest. Basic snapshots did not separately record a model checksum.'),
+        groups=groups, songs=rows,
     )
 
 

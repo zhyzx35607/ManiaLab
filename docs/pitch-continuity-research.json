@@ -1,0 +1,1163 @@
+{
+  "notice": "Research only; continuity reinterpretation is not enabled in the application.",
+  "positive_synthetic": {
+    "extended": 30,
+    "modes": {
+      "baseline": {
+        "pitched_intervals": {
+          "predicted": 270,
+          "reference": 130,
+          "matched": 69,
+          "precision": 0.2556,
+          "recall": 0.5308,
+          "f1": 0.345
+        },
+        "over_2s": 1
+      },
+      "probe": {
+        "pitched_intervals": {
+          "predicted": 270,
+          "reference": 130,
+          "matched": 84,
+          "precision": 0.3111,
+          "recall": 0.6462,
+          "f1": 0.42
+        },
+        "over_2s": 19
+      }
+    }
+  },
+  "negative_rearticulation": {
+    "real_chord_attacks": 16,
+    "real_pitched_events": 48,
+    "real_duration_ms": 470,
+    "model_pitched_events": 41,
+    "false_long_reinterpretations": 4,
+    "examples": [
+      {
+        "start": 121,
+        "end": 4093,
+        "pitch": 64
+      },
+      {
+        "start": 5121,
+        "end": 9094,
+        "pitch": 64
+      },
+      {
+        "start": 121,
+        "end": 4081,
+        "pitch": 67
+      },
+      {
+        "start": 5121,
+        "end": 9083,
+        "pitch": 67
+      }
+    ]
+  },
+  "real_reference_grid": {
+    "rows": [
+      {
+        "id": 2759255,
+        "extended": 59,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 84,
+              "reference": 234,
+              "matched": 4,
+              "precision": 0.0476,
+              "recall": 0.0171,
+              "f1": 0.0252
+            },
+            "overlap": {
+              "predicted": 84,
+              "reference": 234,
+              "matched": 8,
+              "precision": 0.0952,
+              "recall": 0.0342,
+              "f1": 0.0503
+            },
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            },
+            "objects": 597,
+            "ln": 88
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 90,
+              "reference": 234,
+              "matched": 4,
+              "precision": 0.0444,
+              "recall": 0.0171,
+              "f1": 0.0247
+            },
+            "overlap": {
+              "predicted": 90,
+              "reference": 234,
+              "matched": 8,
+              "precision": 0.0889,
+              "recall": 0.0342,
+              "f1": 0.0494
+            },
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            },
+            "objects": 597,
+            "ln": 93
+          }
+        }
+      },
+      {
+        "id": 2950142,
+        "extended": 24,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 86,
+              "reference": 50,
+              "matched": 30,
+              "precision": 0.3488,
+              "recall": 0.6,
+              "f1": 0.4412
+            },
+            "overlap": {
+              "predicted": 86,
+              "reference": 50,
+              "matched": 39,
+              "precision": 0.4535,
+              "recall": 0.78,
+              "f1": 0.5735
+            },
+            "long_reference": {
+              "800": {
+                "reference": 50,
+                "endpoints_matched": 30,
+                "overlap_matched": 39,
+                "endpoints_recall": 0.6,
+                "overlap_recall": 0.78
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.5
+              }
+            },
+            "objects": 159,
+            "ln": 87
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 87,
+              "reference": 50,
+              "matched": 27,
+              "precision": 0.3103,
+              "recall": 0.54,
+              "f1": 0.3942
+            },
+            "overlap": {
+              "predicted": 87,
+              "reference": 50,
+              "matched": 39,
+              "precision": 0.4483,
+              "recall": 0.78,
+              "f1": 0.5693
+            },
+            "long_reference": {
+              "800": {
+                "reference": 50,
+                "endpoints_matched": 27,
+                "overlap_matched": 39,
+                "endpoints_recall": 0.54,
+                "overlap_recall": 0.78
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.5
+              }
+            },
+            "objects": 159,
+            "ln": 87
+          }
+        }
+      },
+      {
+        "id": 3113732,
+        "extended": 85,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 79,
+              "reference": 487,
+              "matched": 2,
+              "precision": 0.0253,
+              "recall": 0.0041,
+              "f1": 0.0071
+            },
+            "overlap": {
+              "predicted": 79,
+              "reference": 487,
+              "matched": 6,
+              "precision": 0.0759,
+              "recall": 0.0123,
+              "f1": 0.0212
+            },
+            "long_reference": {
+              "800": {
+                "reference": 34,
+                "endpoints_matched": 0,
+                "overlap_matched": 3,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0882
+              },
+              "2000": {
+                "reference": 10,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.1
+              }
+            },
+            "objects": 1248,
+            "ln": 79
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 98,
+              "reference": 487,
+              "matched": 4,
+              "precision": 0.0408,
+              "recall": 0.0082,
+              "f1": 0.0137
+            },
+            "overlap": {
+              "predicted": 98,
+              "reference": 487,
+              "matched": 8,
+              "precision": 0.0816,
+              "recall": 0.0164,
+              "f1": 0.0274
+            },
+            "long_reference": {
+              "800": {
+                "reference": 34,
+                "endpoints_matched": 2,
+                "overlap_matched": 5,
+                "endpoints_recall": 0.0588,
+                "overlap_recall": 0.1471
+              },
+              "2000": {
+                "reference": 10,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.1
+              }
+            },
+            "objects": 1248,
+            "ln": 99
+          }
+        }
+      },
+      {
+        "id": 3472306,
+        "extended": 92,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 191,
+              "reference": 106,
+              "matched": 10,
+              "precision": 0.0524,
+              "recall": 0.0943,
+              "f1": 0.0673
+            },
+            "overlap": {
+              "predicted": 191,
+              "reference": 106,
+              "matched": 18,
+              "precision": 0.0942,
+              "recall": 0.1698,
+              "f1": 0.1212
+            },
+            "long_reference": {
+              "800": {
+                "reference": 12,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 496,
+            "ln": 202
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 213,
+              "reference": 106,
+              "matched": 9,
+              "precision": 0.0423,
+              "recall": 0.0849,
+              "f1": 0.0564
+            },
+            "overlap": {
+              "predicted": 213,
+              "reference": 106,
+              "matched": 18,
+              "precision": 0.0845,
+              "recall": 0.1698,
+              "f1": 0.1129
+            },
+            "long_reference": {
+              "800": {
+                "reference": 12,
+                "endpoints_matched": 1,
+                "overlap_matched": 3,
+                "endpoints_recall": 0.0833,
+                "overlap_recall": 0.25
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.5
+              }
+            },
+            "objects": 496,
+            "ln": 221
+          }
+        }
+      },
+      {
+        "id": 3578838,
+        "extended": 26,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 153,
+              "reference": 50,
+              "matched": 22,
+              "precision": 0.1438,
+              "recall": 0.44,
+              "f1": 0.2167
+            },
+            "overlap": {
+              "predicted": 153,
+              "reference": 50,
+              "matched": 26,
+              "precision": 0.1699,
+              "recall": 0.52,
+              "f1": 0.2562
+            },
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 6,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 373,
+            "ln": 188
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 163,
+              "reference": 50,
+              "matched": 24,
+              "precision": 0.1472,
+              "recall": 0.48,
+              "f1": 0.2254
+            },
+            "overlap": {
+              "predicted": 163,
+              "reference": 50,
+              "matched": 28,
+              "precision": 0.1718,
+              "recall": 0.56,
+              "f1": 0.2629
+            },
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 2,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.25,
+                "overlap_recall": 0.25
+              },
+              "2000": {
+                "reference": 6,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 373,
+            "ln": 193
+          }
+        }
+      },
+      {
+        "id": 3619067,
+        "extended": 57,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 332,
+              "reference": 114,
+              "matched": 14,
+              "precision": 0.0422,
+              "recall": 0.1228,
+              "f1": 0.0628
+            },
+            "overlap": {
+              "predicted": 332,
+              "reference": 114,
+              "matched": 30,
+              "precision": 0.0904,
+              "recall": 0.2632,
+              "f1": 0.1345
+            },
+            "long_reference": {
+              "800": {
+                "reference": 66,
+                "endpoints_matched": 1,
+                "overlap_matched": 6,
+                "endpoints_recall": 0.0152,
+                "overlap_recall": 0.0909
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            },
+            "objects": 702,
+            "ln": 386
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 339,
+              "reference": 114,
+              "matched": 19,
+              "precision": 0.056,
+              "recall": 0.1667,
+              "f1": 0.0839
+            },
+            "overlap": {
+              "predicted": 339,
+              "reference": 114,
+              "matched": 40,
+              "precision": 0.118,
+              "recall": 0.3509,
+              "f1": 0.1766
+            },
+            "long_reference": {
+              "800": {
+                "reference": 66,
+                "endpoints_matched": 6,
+                "overlap_matched": 16,
+                "endpoints_recall": 0.0909,
+                "overlap_recall": 0.2424
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            },
+            "objects": 702,
+            "ln": 386
+          }
+        }
+      },
+      {
+        "id": 3630228,
+        "extended": 68,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 152,
+              "reference": 102,
+              "matched": 6,
+              "precision": 0.0395,
+              "recall": 0.0588,
+              "f1": 0.0472
+            },
+            "overlap": {
+              "predicted": 152,
+              "reference": 102,
+              "matched": 10,
+              "precision": 0.0658,
+              "recall": 0.098,
+              "f1": 0.0787
+            },
+            "long_reference": {
+              "800": {
+                "reference": 21,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 1225,
+            "ln": 155
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 157,
+              "reference": 102,
+              "matched": 5,
+              "precision": 0.0318,
+              "recall": 0.049,
+              "f1": 0.0386
+            },
+            "overlap": {
+              "predicted": 157,
+              "reference": 102,
+              "matched": 12,
+              "precision": 0.0764,
+              "recall": 0.1176,
+              "f1": 0.0927
+            },
+            "long_reference": {
+              "800": {
+                "reference": 21,
+                "endpoints_matched": 0,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0952
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 1225,
+            "ln": 160
+          }
+        }
+      },
+      {
+        "id": 3895553,
+        "extended": 22,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 161,
+              "reference": 39,
+              "matched": 9,
+              "precision": 0.0559,
+              "recall": 0.2308,
+              "f1": 0.09
+            },
+            "overlap": {
+              "predicted": 161,
+              "reference": 39,
+              "matched": 10,
+              "precision": 0.0621,
+              "recall": 0.2564,
+              "f1": 0.1
+            },
+            "long_reference": {
+              "800": {
+                "reference": 19,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 4,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 327,
+            "ln": 180
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 162,
+              "reference": 39,
+              "matched": 12,
+              "precision": 0.0741,
+              "recall": 0.3077,
+              "f1": 0.1194
+            },
+            "overlap": {
+              "predicted": 162,
+              "reference": 39,
+              "matched": 14,
+              "precision": 0.0864,
+              "recall": 0.359,
+              "f1": 0.1393
+            },
+            "long_reference": {
+              "800": {
+                "reference": 19,
+                "endpoints_matched": 4,
+                "overlap_matched": 5,
+                "endpoints_recall": 0.2105,
+                "overlap_recall": 0.2632
+              },
+              "2000": {
+                "reference": 4,
+                "endpoints_matched": 2,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.5,
+                "overlap_recall": 0.5
+              }
+            },
+            "objects": 327,
+            "ln": 180
+          }
+        }
+      },
+      {
+        "id": 4185029,
+        "extended": 36,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 69,
+              "reference": 26,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 69,
+              "reference": 26,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 4,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 804,
+            "ln": 69
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 71,
+              "reference": 26,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 71,
+              "reference": 26,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 4,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 804,
+            "ln": 71
+          }
+        }
+      },
+      {
+        "id": 4348413,
+        "extended": 28,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 91,
+              "reference": 22,
+              "matched": 10,
+              "precision": 0.1099,
+              "recall": 0.4545,
+              "f1": 0.177
+            },
+            "overlap": {
+              "predicted": 91,
+              "reference": 22,
+              "matched": 15,
+              "precision": 0.1648,
+              "recall": 0.6818,
+              "f1": 0.2655
+            },
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 1,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.125,
+                "overlap_recall": 0.25
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 183,
+            "ln": 101
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 94,
+              "reference": 22,
+              "matched": 9,
+              "precision": 0.0957,
+              "recall": 0.4091,
+              "f1": 0.1552
+            },
+            "overlap": {
+              "predicted": 94,
+              "reference": 22,
+              "matched": 12,
+              "precision": 0.1277,
+              "recall": 0.5455,
+              "f1": 0.2069
+            },
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 1,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.125,
+                "overlap_recall": 0.25
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 183,
+            "ln": 101
+          }
+        }
+      },
+      {
+        "id": 4949158,
+        "extended": 68,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 75,
+              "reference": 201,
+              "matched": 1,
+              "precision": 0.0133,
+              "recall": 0.005,
+              "f1": 0.0072
+            },
+            "overlap": {
+              "predicted": 75,
+              "reference": 201,
+              "matched": 4,
+              "precision": 0.0533,
+              "recall": 0.0199,
+              "f1": 0.029
+            },
+            "long_reference": {
+              "800": {
+                "reference": 14,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0714
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            },
+            "objects": 720,
+            "ln": 76
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 84,
+              "reference": 201,
+              "matched": 1,
+              "precision": 0.0119,
+              "recall": 0.005,
+              "f1": 0.007
+            },
+            "overlap": {
+              "predicted": 84,
+              "reference": 201,
+              "matched": 4,
+              "precision": 0.0476,
+              "recall": 0.0199,
+              "f1": 0.0281
+            },
+            "long_reference": {
+              "800": {
+                "reference": 14,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0714
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            },
+            "objects": 720,
+            "ln": 85
+          }
+        }
+      },
+      {
+        "id": 4966781,
+        "extended": 83,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 355,
+              "reference": 25,
+              "matched": 5,
+              "precision": 0.0141,
+              "recall": 0.2,
+              "f1": 0.0263
+            },
+            "overlap": {
+              "predicted": 355,
+              "reference": 25,
+              "matched": 10,
+              "precision": 0.0282,
+              "recall": 0.4,
+              "f1": 0.0526
+            },
+            "long_reference": {
+              "800": {
+                "reference": 22,
+                "endpoints_matched": 4,
+                "overlap_matched": 8,
+                "endpoints_recall": 0.1818,
+                "overlap_recall": 0.3636
+              },
+              "2000": {
+                "reference": 3,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.3333
+              }
+            },
+            "objects": 768,
+            "ln": 422
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 362,
+              "reference": 25,
+              "matched": 6,
+              "precision": 0.0166,
+              "recall": 0.24,
+              "f1": 0.031
+            },
+            "overlap": {
+              "predicted": 362,
+              "reference": 25,
+              "matched": 11,
+              "precision": 0.0304,
+              "recall": 0.44,
+              "f1": 0.0568
+            },
+            "long_reference": {
+              "800": {
+                "reference": 22,
+                "endpoints_matched": 5,
+                "overlap_matched": 9,
+                "endpoints_recall": 0.2273,
+                "overlap_recall": 0.4091
+              },
+              "2000": {
+                "reference": 3,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.3333
+              }
+            },
+            "objects": 768,
+            "ln": 422
+          }
+        }
+      },
+      {
+        "id": 5163045,
+        "extended": 82,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 223,
+              "reference": 177,
+              "matched": 9,
+              "precision": 0.0404,
+              "recall": 0.0508,
+              "f1": 0.045
+            },
+            "overlap": {
+              "predicted": 223,
+              "reference": 177,
+              "matched": 17,
+              "precision": 0.0762,
+              "recall": 0.096,
+              "f1": 0.085
+            },
+            "long_reference": {
+              "800": {
+                "reference": 35,
+                "endpoints_matched": 0,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0571
+              },
+              "2000": {
+                "reference": 5,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 861,
+            "ln": 224
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 235,
+              "reference": 177,
+              "matched": 9,
+              "precision": 0.0383,
+              "recall": 0.0508,
+              "f1": 0.0437
+            },
+            "overlap": {
+              "predicted": 235,
+              "reference": 177,
+              "matched": 18,
+              "precision": 0.0766,
+              "recall": 0.1017,
+              "f1": 0.0874
+            },
+            "long_reference": {
+              "800": {
+                "reference": 35,
+                "endpoints_matched": 0,
+                "overlap_matched": 3,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0857
+              },
+              "2000": {
+                "reference": 5,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            },
+            "objects": 861,
+            "ln": 236
+          }
+        }
+      },
+      {
+        "id": 5661702,
+        "extended": 10,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 37,
+              "reference": 103,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 37,
+              "reference": 103,
+              "matched": 2,
+              "precision": 0.0541,
+              "recall": 0.0194,
+              "f1": 0.0286
+            },
+            "long_reference": {
+              "800": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            },
+            "objects": 910,
+            "ln": 37
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 39,
+              "reference": 103,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 39,
+              "reference": 103,
+              "matched": 3,
+              "precision": 0.0769,
+              "recall": 0.0291,
+              "f1": 0.0423
+            },
+            "long_reference": {
+              "800": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.5
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            },
+            "objects": 910,
+            "ln": 39
+          }
+        }
+      }
+    ],
+    "skipped": [
+      "2426683",
+      "4380978",
+      "4452867"
+    ]
+  },
+  "mean_ln_f1_gain": -0.0014142857142857117,
+  "decision": "Rejected: falsely merges repeated chords separated by real 30ms silence. Activation continuity alone cannot establish one continuous sound.",
+  "script_sha256": "8f6e5faa2fb3b04bd8cd96d50198867c85a206fd93d4726d04585e0cc49c457f"
+}

@@ -1,0 +1,79 @@
+{
+  "notice": "Original deterministic synthesized fixture, not natural music or a player-quality benchmark. Includes overlapping chords, bass, harmonic melody, drums and two isolated ending events. No thresholds tuned after observation.",
+  "truth": {
+    "pitched_events": 130,
+    "duration_seconds": 40,
+    "bpm": 120,
+    "raw_offset_ms": 115,
+    "head_tolerance_ms": 40,
+    "tail_tolerance_ms": 80,
+    "exact_pitch_required": true
+  },
+  "source_fingerprint": "27a9b3043354ee1903d4d20f50801bda0cb1f7130d020c19c5d4981b81dcc873",
+  "audio_sha256": "72d9214b2e9651ac07d5c7a11696beb63c99c4ec5c6ad09871cbd41c90d59a7f",
+  "generator_sha256": "5719267d81e0c376f37a907d32e15dced87da04e40133d1f46d2bdf8d1bc6e5b",
+  "modes": {
+    "basic": {
+      "candidates": 337,
+      "cached": false,
+      "pitched_onsets": {
+        "predicted": 243,
+        "reference": 130,
+        "matched": 97,
+        "precision": 0.3992,
+        "recall": 0.7462,
+        "f1": 0.5201
+      },
+      "pitched_intervals": {
+        "predicted": 243,
+        "reference": 130,
+        "matched": 67,
+        "precision": 0.2757,
+        "recall": 0.5154,
+        "f1": 0.3592
+      },
+      "sustained_over_2s": {
+        "reference": 25,
+        "matched": 1
+      },
+      "timing": {
+        "bpm": 120.0,
+        "offset": 115,
+        "stable": false,
+        "coverage": 0.8984,
+        "median_error_ms": 22.67
+      }
+    },
+    "deep": {
+      "candidates": 317,
+      "cached": false,
+      "pitched_onsets": {
+        "predicted": 270,
+        "reference": 130,
+        "matched": 121,
+        "precision": 0.4481,
+        "recall": 0.9308,
+        "f1": 0.605
+      },
+      "pitched_intervals": {
+        "predicted": 270,
+        "reference": 130,
+        "matched": 69,
+        "precision": 0.2556,
+        "recall": 0.5308,
+        "f1": 0.345
+      },
+      "sustained_over_2s": {
+        "reference": 25,
+        "matched": 1
+      },
+      "timing": {
+        "bpm": 120.0,
+        "offset": 114,
+        "stable": true,
+        "coverage": 1.0,
+        "median_error_ms": 1.0
+      }
+    }
+  }
+}
