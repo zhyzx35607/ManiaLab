@@ -18,6 +18,8 @@
 
 首次全曲深度分析会真实运行多个模型，耗时取决于长度与 CPU；再次调整门槛会复用已完成的模型结果。界面显示实际耗时和缓存状态。`SHA256SUMS.txt` 是校验文件，正常使用只需下载 ZIP。
 
+公开 ZIP 已匿名下载复核，并通过 20 分钟容量测试；一次本机观测的耗时、内存和磁盘占用见 [下载包核验](docs/release-verification.md)。这些数据不是最低配置或任意歌曲质量保证。
+
 项目自动保存到 `%LOCALAPPDATA%\ManiaLab\projects`，日志在 `%LOCALAPPDATA%\ManiaLab\ManiaLab.log`。迁移项目可复制项目文件夹。
 
 ## 音频、Timing 和 LN

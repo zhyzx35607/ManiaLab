@@ -17,12 +17,12 @@ from manialab.timing import chart_clock_notes,align_candidates,grid_report
 from manialab.voices import apply_phrase_evidence
 from scripts.evaluate_audio import ROOT,LOADED_SOURCE,match_attacks,durations
 from scripts.evaluate_ln import compare,long_reference_recall
+from scripts.audit_snapshot import assert_snapshot
 
 
 def evaluate(folder):
     audit=json.loads((folder/'audit.json').read_text(encoding='utf-8'))
-    if audit['source_fingerprint']['files'] != LOADED_SOURCE['files']:
-        raise ValueError('Source/model fingerprint differs from the analysis audit')
+    assert_snapshot(audit['source_fingerprint']['files'], LOADED_SOURCE['files'], ROOT)
     result=dict(beatmap_id=audit['beatmap_id'],source_fingerprint=LOADED_SOURCE['sha256'],modes={})
     if not audit['reference']['constant_grid']:
         return result|{'skipped':'Changing reference tempo or phase'}

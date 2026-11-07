@@ -17,6 +17,7 @@ from manialab.arrange import parameters,select_notes
 from manialab.timing import chart_clock_notes,align_candidates
 from manialab.voices import apply_phrase_evidence
 from scripts.evaluate_audio import match_attacks,durations,LOADED_SOURCE
+from scripts.audit_snapshot import assert_snapshot
 
 VOICES=('drums','bass','vocals','other')
 FEATURES=[f'{v}_{f}' for v in VOICES for f in ('count','max_strength','sum_strength','hold_share','duration','alignment')]+[
@@ -25,7 +26,7 @@ FEATURES=[f'{v}_{f}' for v in VOICES for f in ('count','max_strength','sum_stren
 def dataset(folder, automatic=False, invariant=False):
  audit=json.loads((folder/'audit.json').read_text(encoding='utf-8'))
  if not automatic and not audit['reference']['constant_grid']:return None
- if audit['source_fingerprint']['files']!=LOADED_SOURCE['files']:raise ValueError('source fingerprint mismatch')
+ assert_snapshot(audit['source_fingerprint']['files'], LOADED_SOURCE['files'], Path(__file__).resolve().parents[1])
  analysis=json.loads((folder/'deep/analysis.json').read_text(encoding='utf-8'))
  if automatic and not analysis['tempo']['stable']:return None
  reference=parse_osu((folder/'reference.osu').read_text(encoding='utf-8-sig'))

@@ -1,0 +1,1169 @@
+{
+  "enabled": false,
+  "notice": "Research only, not added to alpha.4. The human comparison is from an existing development collection, not unseen physical note-off annotations.",
+  "positive_synthetic": {
+    "protocol": "Research trimming existing pitch candidates at a source's near-silent gap.\n\nNo new attacks or tails are invented. A >=25ms interior gap below the existing\nrelease envelope threshold ends the original interval. The experiment is not\nenabled in the application; broad-source mixtures may mask instrument gaps.\n",
+    "enabled": false,
+    "script_sha256": "c9953648fe248f0ced93b14b4a207b2799c17a17f8f2b7f5ec6850cc51e8be1e",
+    "shortened": 8,
+    "modes": {
+      "baseline": {
+        "intervals": {
+          "predicted": 270,
+          "reference": 130,
+          "matched": 69,
+          "precision": 0.2556,
+          "recall": 0.5308,
+          "f1": 0.345
+        },
+        "long_matched": 1
+      },
+      "probe": {
+        "intervals": {
+          "predicted": 270,
+          "reference": 130,
+          "matched": 76,
+          "precision": 0.2815,
+          "recall": 0.5846,
+          "f1": 0.38
+        },
+        "long_matched": 1
+      }
+    }
+  },
+  "negative_synthetic": {
+    "protocol": "Research trimming existing pitch candidates at a source's near-silent gap.\n\nNo new attacks or tails are invented. A >=25ms interior gap below the existing\nrelease envelope threshold ends the original interval. The experiment is not\nenabled in the application; broad-source mixtures may mask instrument gaps.\n",
+    "enabled": false,
+    "script_sha256": "c9953648fe248f0ced93b14b4a207b2799c17a17f8f2b7f5ec6850cc51e8be1e",
+    "shortened": 2,
+    "modes": {
+      "baseline": {
+        "false_long_on_true_pitches": 4
+      },
+      "probe": {
+        "false_long_on_true_pitches": 3
+      }
+    }
+  },
+  "real_reference_grid": {
+    "protocol": "Research trimming existing pitch candidates at a source's near-silent gap.\n\nNo new attacks or tails are invented. A >=25ms interior gap below the existing\nrelease envelope threshold ends the original interval. The experiment is not\nenabled in the application; broad-source mixtures may mask instrument gaps.\n",
+    "enabled": false,
+    "script_sha256": "c9953648fe248f0ced93b14b4a207b2799c17a17f8f2b7f5ec6850cc51e8be1e",
+    "rows": [
+      {
+        "id": 2759255,
+        "shortened": 0,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 84,
+              "reference": 234,
+              "matched": 4,
+              "precision": 0.0476,
+              "recall": 0.0171,
+              "f1": 0.0252
+            },
+            "overlap": {
+              "predicted": 84,
+              "reference": 234,
+              "matched": 8,
+              "precision": 0.0952,
+              "recall": 0.0342,
+              "f1": 0.0503
+            },
+            "objects": 597,
+            "ln": 88,
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 84,
+              "reference": 234,
+              "matched": 4,
+              "precision": 0.0476,
+              "recall": 0.0171,
+              "f1": 0.0252
+            },
+            "overlap": {
+              "predicted": 84,
+              "reference": 234,
+              "matched": 8,
+              "precision": 0.0952,
+              "recall": 0.0342,
+              "f1": 0.0503
+            },
+            "objects": 597,
+            "ln": 88,
+            "long_reference": {
+              "800": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 2950142,
+        "shortened": 0,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 86,
+              "reference": 50,
+              "matched": 30,
+              "precision": 0.3488,
+              "recall": 0.6,
+              "f1": 0.4412
+            },
+            "overlap": {
+              "predicted": 86,
+              "reference": 50,
+              "matched": 39,
+              "precision": 0.4535,
+              "recall": 0.78,
+              "f1": 0.5735
+            },
+            "objects": 159,
+            "ln": 87,
+            "long_reference": {
+              "800": {
+                "reference": 50,
+                "endpoints_matched": 30,
+                "overlap_matched": 39,
+                "endpoints_recall": 0.6,
+                "overlap_recall": 0.78
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.5
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 86,
+              "reference": 50,
+              "matched": 30,
+              "precision": 0.3488,
+              "recall": 0.6,
+              "f1": 0.4412
+            },
+            "overlap": {
+              "predicted": 86,
+              "reference": 50,
+              "matched": 39,
+              "precision": 0.4535,
+              "recall": 0.78,
+              "f1": 0.5735
+            },
+            "objects": 159,
+            "ln": 87,
+            "long_reference": {
+              "800": {
+                "reference": 50,
+                "endpoints_matched": 30,
+                "overlap_matched": 39,
+                "endpoints_recall": 0.6,
+                "overlap_recall": 0.78
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.5
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 3113732,
+        "shortened": 54,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 79,
+              "reference": 487,
+              "matched": 2,
+              "precision": 0.0253,
+              "recall": 0.0041,
+              "f1": 0.0071
+            },
+            "overlap": {
+              "predicted": 79,
+              "reference": 487,
+              "matched": 6,
+              "precision": 0.0759,
+              "recall": 0.0123,
+              "f1": 0.0212
+            },
+            "objects": 1248,
+            "ln": 79,
+            "long_reference": {
+              "800": {
+                "reference": 34,
+                "endpoints_matched": 0,
+                "overlap_matched": 3,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0882
+              },
+              "2000": {
+                "reference": 10,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.1
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 72,
+              "reference": 487,
+              "matched": 1,
+              "precision": 0.0139,
+              "recall": 0.0021,
+              "f1": 0.0036
+            },
+            "overlap": {
+              "predicted": 72,
+              "reference": 487,
+              "matched": 5,
+              "precision": 0.0694,
+              "recall": 0.0103,
+              "f1": 0.0179
+            },
+            "objects": 1248,
+            "ln": 72,
+            "long_reference": {
+              "800": {
+                "reference": 34,
+                "endpoints_matched": 0,
+                "overlap_matched": 3,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0882
+              },
+              "2000": {
+                "reference": 10,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.1
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 3472306,
+        "shortened": 0,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 191,
+              "reference": 106,
+              "matched": 10,
+              "precision": 0.0524,
+              "recall": 0.0943,
+              "f1": 0.0673
+            },
+            "overlap": {
+              "predicted": 191,
+              "reference": 106,
+              "matched": 18,
+              "precision": 0.0942,
+              "recall": 0.1698,
+              "f1": 0.1212
+            },
+            "objects": 496,
+            "ln": 202,
+            "long_reference": {
+              "800": {
+                "reference": 12,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 191,
+              "reference": 106,
+              "matched": 10,
+              "precision": 0.0524,
+              "recall": 0.0943,
+              "f1": 0.0673
+            },
+            "overlap": {
+              "predicted": 191,
+              "reference": 106,
+              "matched": 18,
+              "precision": 0.0942,
+              "recall": 0.1698,
+              "f1": 0.1212
+            },
+            "objects": 496,
+            "ln": 202,
+            "long_reference": {
+              "800": {
+                "reference": 12,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 3578838,
+        "shortened": 0,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 153,
+              "reference": 50,
+              "matched": 22,
+              "precision": 0.1438,
+              "recall": 0.44,
+              "f1": 0.2167
+            },
+            "overlap": {
+              "predicted": 153,
+              "reference": 50,
+              "matched": 26,
+              "precision": 0.1699,
+              "recall": 0.52,
+              "f1": 0.2562
+            },
+            "objects": 373,
+            "ln": 188,
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 6,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 153,
+              "reference": 50,
+              "matched": 22,
+              "precision": 0.1438,
+              "recall": 0.44,
+              "f1": 0.2167
+            },
+            "overlap": {
+              "predicted": 153,
+              "reference": 50,
+              "matched": 26,
+              "precision": 0.1699,
+              "recall": 0.52,
+              "f1": 0.2562
+            },
+            "objects": 373,
+            "ln": 188,
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 6,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 3619067,
+        "shortened": 0,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 332,
+              "reference": 114,
+              "matched": 14,
+              "precision": 0.0422,
+              "recall": 0.1228,
+              "f1": 0.0628
+            },
+            "overlap": {
+              "predicted": 332,
+              "reference": 114,
+              "matched": 30,
+              "precision": 0.0904,
+              "recall": 0.2632,
+              "f1": 0.1345
+            },
+            "objects": 702,
+            "ln": 386,
+            "long_reference": {
+              "800": {
+                "reference": 66,
+                "endpoints_matched": 1,
+                "overlap_matched": 6,
+                "endpoints_recall": 0.0152,
+                "overlap_recall": 0.0909
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 332,
+              "reference": 114,
+              "matched": 14,
+              "precision": 0.0422,
+              "recall": 0.1228,
+              "f1": 0.0628
+            },
+            "overlap": {
+              "predicted": 332,
+              "reference": 114,
+              "matched": 30,
+              "precision": 0.0904,
+              "recall": 0.2632,
+              "f1": 0.1345
+            },
+            "objects": 702,
+            "ln": 386,
+            "long_reference": {
+              "800": {
+                "reference": 66,
+                "endpoints_matched": 1,
+                "overlap_matched": 6,
+                "endpoints_recall": 0.0152,
+                "overlap_recall": 0.0909
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 3630228,
+        "shortened": 3,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 152,
+              "reference": 102,
+              "matched": 6,
+              "precision": 0.0395,
+              "recall": 0.0588,
+              "f1": 0.0472
+            },
+            "overlap": {
+              "predicted": 152,
+              "reference": 102,
+              "matched": 10,
+              "precision": 0.0658,
+              "recall": 0.098,
+              "f1": 0.0787
+            },
+            "objects": 1225,
+            "ln": 155,
+            "long_reference": {
+              "800": {
+                "reference": 21,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 152,
+              "reference": 102,
+              "matched": 6,
+              "precision": 0.0395,
+              "recall": 0.0588,
+              "f1": 0.0472
+            },
+            "overlap": {
+              "predicted": 152,
+              "reference": 102,
+              "matched": 10,
+              "precision": 0.0658,
+              "recall": 0.098,
+              "f1": 0.0787
+            },
+            "objects": 1225,
+            "ln": 155,
+            "long_reference": {
+              "800": {
+                "reference": 21,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 1,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 3895553,
+        "shortened": 0,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 161,
+              "reference": 39,
+              "matched": 9,
+              "precision": 0.0559,
+              "recall": 0.2308,
+              "f1": 0.09
+            },
+            "overlap": {
+              "predicted": 161,
+              "reference": 39,
+              "matched": 10,
+              "precision": 0.0621,
+              "recall": 0.2564,
+              "f1": 0.1
+            },
+            "objects": 327,
+            "ln": 180,
+            "long_reference": {
+              "800": {
+                "reference": 19,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 4,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 161,
+              "reference": 39,
+              "matched": 9,
+              "precision": 0.0559,
+              "recall": 0.2308,
+              "f1": 0.09
+            },
+            "overlap": {
+              "predicted": 161,
+              "reference": 39,
+              "matched": 10,
+              "precision": 0.0621,
+              "recall": 0.2564,
+              "f1": 0.1
+            },
+            "objects": 327,
+            "ln": 180,
+            "long_reference": {
+              "800": {
+                "reference": 19,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 4,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 4185029,
+        "shortened": 1,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 69,
+              "reference": 26,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 69,
+              "reference": 26,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "objects": 804,
+            "ln": 69,
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 4,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 69,
+              "reference": 26,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 69,
+              "reference": 26,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "objects": 804,
+            "ln": 69,
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 4,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 4348413,
+        "shortened": 0,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 91,
+              "reference": 22,
+              "matched": 10,
+              "precision": 0.1099,
+              "recall": 0.4545,
+              "f1": 0.177
+            },
+            "overlap": {
+              "predicted": 91,
+              "reference": 22,
+              "matched": 15,
+              "precision": 0.1648,
+              "recall": 0.6818,
+              "f1": 0.2655
+            },
+            "objects": 183,
+            "ln": 101,
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 1,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.125,
+                "overlap_recall": 0.25
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 91,
+              "reference": 22,
+              "matched": 10,
+              "precision": 0.1099,
+              "recall": 0.4545,
+              "f1": 0.177
+            },
+            "overlap": {
+              "predicted": 91,
+              "reference": 22,
+              "matched": 15,
+              "precision": 0.1648,
+              "recall": 0.6818,
+              "f1": 0.2655
+            },
+            "objects": 183,
+            "ln": 101,
+            "long_reference": {
+              "800": {
+                "reference": 8,
+                "endpoints_matched": 1,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.125,
+                "overlap_recall": 0.25
+              },
+              "2000": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 4949158,
+        "shortened": 30,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 75,
+              "reference": 201,
+              "matched": 1,
+              "precision": 0.0133,
+              "recall": 0.005,
+              "f1": 0.0072
+            },
+            "overlap": {
+              "predicted": 75,
+              "reference": 201,
+              "matched": 4,
+              "precision": 0.0533,
+              "recall": 0.0199,
+              "f1": 0.029
+            },
+            "objects": 720,
+            "ln": 76,
+            "long_reference": {
+              "800": {
+                "reference": 14,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0714
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 74,
+              "reference": 201,
+              "matched": 1,
+              "precision": 0.0135,
+              "recall": 0.005,
+              "f1": 0.0073
+            },
+            "overlap": {
+              "predicted": 74,
+              "reference": 201,
+              "matched": 3,
+              "precision": 0.0405,
+              "recall": 0.0149,
+              "f1": 0.0218
+            },
+            "objects": 720,
+            "ln": 75,
+            "long_reference": {
+              "800": {
+                "reference": 14,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0714
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 4966781,
+        "shortened": 0,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 355,
+              "reference": 25,
+              "matched": 5,
+              "precision": 0.0141,
+              "recall": 0.2,
+              "f1": 0.0263
+            },
+            "overlap": {
+              "predicted": 355,
+              "reference": 25,
+              "matched": 10,
+              "precision": 0.0282,
+              "recall": 0.4,
+              "f1": 0.0526
+            },
+            "objects": 768,
+            "ln": 422,
+            "long_reference": {
+              "800": {
+                "reference": 22,
+                "endpoints_matched": 4,
+                "overlap_matched": 8,
+                "endpoints_recall": 0.1818,
+                "overlap_recall": 0.3636
+              },
+              "2000": {
+                "reference": 3,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.3333
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 355,
+              "reference": 25,
+              "matched": 5,
+              "precision": 0.0141,
+              "recall": 0.2,
+              "f1": 0.0263
+            },
+            "overlap": {
+              "predicted": 355,
+              "reference": 25,
+              "matched": 10,
+              "precision": 0.0282,
+              "recall": 0.4,
+              "f1": 0.0526
+            },
+            "objects": 768,
+            "ln": 422,
+            "long_reference": {
+              "800": {
+                "reference": 22,
+                "endpoints_matched": 4,
+                "overlap_matched": 8,
+                "endpoints_recall": 0.1818,
+                "overlap_recall": 0.3636
+              },
+              "2000": {
+                "reference": 3,
+                "endpoints_matched": 0,
+                "overlap_matched": 1,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.3333
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 5163045,
+        "shortened": 0,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 223,
+              "reference": 177,
+              "matched": 9,
+              "precision": 0.0404,
+              "recall": 0.0508,
+              "f1": 0.045
+            },
+            "overlap": {
+              "predicted": 223,
+              "reference": 177,
+              "matched": 17,
+              "precision": 0.0762,
+              "recall": 0.096,
+              "f1": 0.085
+            },
+            "objects": 861,
+            "ln": 224,
+            "long_reference": {
+              "800": {
+                "reference": 35,
+                "endpoints_matched": 0,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0571
+              },
+              "2000": {
+                "reference": 5,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 223,
+              "reference": 177,
+              "matched": 9,
+              "precision": 0.0404,
+              "recall": 0.0508,
+              "f1": 0.045
+            },
+            "overlap": {
+              "predicted": 223,
+              "reference": 177,
+              "matched": 17,
+              "precision": 0.0762,
+              "recall": 0.096,
+              "f1": 0.085
+            },
+            "objects": 861,
+            "ln": 224,
+            "long_reference": {
+              "800": {
+                "reference": 35,
+                "endpoints_matched": 0,
+                "overlap_matched": 2,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0571
+              },
+              "2000": {
+                "reference": 5,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 5661702,
+        "shortened": 18,
+        "results": {
+          "baseline": {
+            "endpoints": {
+              "predicted": 37,
+              "reference": 103,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 37,
+              "reference": 103,
+              "matched": 2,
+              "precision": 0.0541,
+              "recall": 0.0194,
+              "f1": 0.0286
+            },
+            "objects": 910,
+            "ln": 37,
+            "long_reference": {
+              "800": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          },
+          "probe": {
+            "endpoints": {
+              "predicted": 37,
+              "reference": 103,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            },
+            "overlap": {
+              "predicted": 37,
+              "reference": 103,
+              "matched": 2,
+              "precision": 0.0541,
+              "recall": 0.0194,
+              "f1": 0.0286
+            },
+            "objects": 910,
+            "ln": 37,
+            "long_reference": {
+              "800": {
+                "reference": 2,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": 0.0,
+                "overlap_recall": 0.0
+              },
+              "2000": {
+                "reference": 0,
+                "endpoints_matched": 0,
+                "overlap_matched": 0,
+                "endpoints_recall": null,
+                "overlap_recall": null
+              }
+            }
+          }
+        }
+      }
+    ],
+    "skipped": [
+      "2426683",
+      "4380978",
+      "4452867"
+    ]
+  },
+  "decision": "Do not enable. Only one of four false repeated-note long intervals is removed, existing long-note misses remain, and human-reference endpoint/overlap F1 decreases slightly.",
+  "summary": {
+    "songs": 14,
+    "shortened_candidates": 106,
+    "endpoints": {
+      "mean_delta": -0.0002429,
+      "worst_delta": -0.0035000000000000005,
+      "best_delta": 0.00010000000000000026,
+      "positive_songs": 1
+    },
+    "overlap": {
+      "mean_delta": -0.00075,
+      "worst_delta": -0.0072000000000000015,
+      "best_delta": 0.0,
+      "positive_songs": 0
+    }
+  }
+}

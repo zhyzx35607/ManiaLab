@@ -19,12 +19,12 @@ from manialab.domain import note_from, parse_osu, export_osu, validate
 from manialab.timing import chart_clock_notes, align_candidates, grid_report
 from manialab.voices import apply_phrase_evidence
 from scripts.evaluate_audio import LOADED_SOURCE, ROOT, match_attacks, durations
+from scripts.audit_snapshot import assert_snapshot
 
 
 def evaluate(folder, shift=22.5):
     audit = json.loads((folder/'audit.json').read_text(encoding='utf-8'))
-    if audit['source_fingerprint']['files'] != LOADED_SOURCE['files']:
-        raise ValueError('Analysis source/model fingerprint differs; rerun the source audit first')
+    assert_snapshot(audit['source_fingerprint']['files'], LOADED_SOURCE['files'], ROOT)
     human = parse_osu((folder/'reference.osu').read_text(encoding='utf-8-sig'))
     prefs = parameters({'keys': human['keys']})
     result = dict(beatmap_id=audit['beatmap_id'], title=audit['title'], keys=human['keys'],

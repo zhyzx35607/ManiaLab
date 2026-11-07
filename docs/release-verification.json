@@ -1,0 +1,34 @@
+{
+  "url": "https://github.com/zhyzx35607/ManiaLab/releases/download/v0.1.0-alpha.4/ManiaLab-0.1.0-alpha.4-windows-x64.zip",
+  "authenticated": false,
+  "bytes": 644726038,
+  "sha256": "4faede8993471ac6c418089149ad29b2371e82af5a1395ab0ed20d2f04566ff1",
+  "download_and_crc_seconds": 68.47,
+  "build_info": {
+    "version": "0.1.0-alpha.4",
+    "source_commit": "fcafd949686daa283b1ad094ffc3c10ef851d061",
+    "executable_sha256": "6214d6d065ea773eff75c702306abd3c7cec2519729f69b398db83c53e8209aa",
+    "worker_sha256": "d0c5d489f2fac834b0ccf7119ee21a4e7d1e91236d0b9e4a9a2daab184f8a152",
+    "pattern_prior_sha256": "0245b1cce5a08dc1650b911eea6c26905e2cb423fcb6bb89bf8320ac0c1e1a10",
+    "static": {
+      "app.js": "180a8c37307a4430eb7f0bccc08532fa008fbbb805cd9df7440b156e8aa5ff71",
+      "audio-clock.js": "e06a080a166355e07739c1833748591e021f81f5913c76b350fe1542dd2ba6b3",
+      "index.html": "3a17079a9f30d9c3e4369b082e701edcb7e705cf0436f203fab4a82687f6d687",
+      "style.css": "a3799e9c378326072e5ad3700fb2f72a5c4218de2f2562d8920d667829a336eb",
+      "timing-detail.js": "b944e2a6530e192d816ff266942c9823b2d04ebaa14965b536f3974519daaec1"
+    },
+    "checks": {
+      "pytest": 126,
+      "real_audio_pairs": 67,
+      "full_remap_charts": 14,
+      "actual_exe_ui_suites": 9,
+      "offline_portable": true,
+      "parent_exit_worker_cleanup": true
+    }
+  },
+  "passed": true,
+  "ci": "https://github.com/zhyzx35607/ManiaLab/actions/runs/42409431833",
+  "published_at_utc": "2026-11-07T20:15:37Z",
+  "tag": "v0.1.0-alpha.4",
+  "unicode_space_install": "Actual EXE analysis, generate/export 6–10K, restart, cancellation, bad audio recovery passed under a Unicode and space-containing installation path."
+}

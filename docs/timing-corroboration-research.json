@@ -1,0 +1,6963 @@
+{
+  "protocol": "Research-only local timing corroboration; never changes the released policy.\n\nKeep the chosen BPM/Offset and global quality gates. A suspect 12-second\nwindow can only be explained by the other source if it has at least ten\nattacks, >=80% coverage, and <=15ms local phase deviation on that same grid.\nThe other source must also meet the existing global coverage/error gates.\nMixture and separated drums are correlated evidence, not independent votes.\n",
+  "enabled": false,
+  "script_sha256": "f3a74e562691fa17164e150e520fb9e6c7cfb6cbf28ce49fa7212398fb5695ee",
+  "notice": "Existing 67-song development audit, not an unseen evaluation. Human-grid compatibility is not physical timing ground truth. No thresholds were revised after this run.",
+  "summary": {
+    "current_accepted": 22,
+    "probe_accepted": 23,
+    "additions_by_reference_class": {
+      "blocked_compatible": 1
+    }
+  },
+  "rows": [
+    {
+      "beatmap_id": 4473089,
+      "group": "audio-audit",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 188.0,
+      "raw_offset": 110,
+      "classification": "blocked_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": true,
+      "alternate_score": {
+        "bpm": 188.0,
+        "offset": 110,
+        "division": 4,
+        "score": 0.6973,
+        "coverage": 0.8275,
+        "median_error_ms": 8.0
+      },
+      "remaining_suspect_windows": [],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 12,
+            "coverage": 0.274,
+            "phase_error_ms": 32.83,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 84,
+            "coverage": 0.858,
+            "phase_error_ms": 3.74,
+            "suspect": false
+          },
+          "explained": true
+        }
+      ]
+    },
+    {
+      "beatmap_id": 273799,
+      "group": "audio-audit",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 158.0,
+      "raw_offset": 36,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 158.0,
+        "offset": 36,
+        "division": 4,
+        "score": 0.6057,
+        "coverage": 0.6842,
+        "median_error_ms": 18.68
+      },
+      "remaining_suspect_windows": [
+        84000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 59,
+            "coverage": 0.643,
+            "phase_error_ms": 0.49,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 55,
+            "coverage": 0.574,
+            "phase_error_ms": -0.49,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 298810,
+      "group": "audio-audit",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 174.0,
+      "raw_offset": 27,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 174.0,
+        "offset": 27,
+        "division": 4,
+        "score": 0.537,
+        "coverage": 0.6955,
+        "median_error_ms": 13.76
+      },
+      "remaining_suspect_windows": [
+        144000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 61,
+            "coverage": 0.646,
+            "phase_error_ms": -1.35,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 126,
+            "coverage": 0.627,
+            "phase_error_ms": 4.04,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4995927,
+      "group": "audio-audit",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 186.0,
+      "raw_offset": 99,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 186.0,
+        "offset": 99,
+        "division": 4,
+        "score": 0.5719,
+        "coverage": 0.7149,
+        "median_error_ms": 11.24
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 3897925,
+      "group": "audio-audit",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 125.0,
+      "raw_offset": 69,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 125.0,
+        "offset": 69,
+        "division": 4,
+        "score": 0.5016,
+        "coverage": 0.7501,
+        "median_error_ms": 16.0
+      },
+      "remaining_suspect_windows": [
+        24000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 18,
+            "coverage": 0.544,
+            "phase_error_ms": 4.38,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 81,
+            "coverage": 0.783,
+            "phase_error_ms": 6.25,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 9,
+            "coverage": 0.401,
+            "phase_error_ms": -50.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 114,
+            "coverage": 0.809,
+            "phase_error_ms": 6.25,
+            "suspect": false
+          },
+          "explained": true
+        }
+      ]
+    },
+    {
+      "beatmap_id": 2926818,
+      "group": "audio-audit",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 219.0,
+      "raw_offset": 141,
+      "classification": "blocked_incompatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 219.0,
+        "offset": 141,
+        "division": 4,
+        "score": 0.3039,
+        "coverage": 0.4185,
+        "median_error_ms": 16.74
+      },
+      "remaining_suspect_windows": [
+        24000,
+        48000,
+        60000,
+        72000,
+        84000,
+        96000,
+        132000,
+        144000,
+        156000,
+        168000,
+        180000,
+        204000,
+        216000,
+        228000,
+        240000,
+        252000,
+        288000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 96,
+            "coverage": 0.633,
+            "phase_error_ms": 10.35,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 105,
+            "coverage": 0.419,
+            "phase_error_ms": 13.91,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 121,
+            "coverage": 0.391,
+            "phase_error_ms": -14.27,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 121,
+            "coverage": 0.51,
+            "phase_error_ms": -10.7,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 106,
+            "coverage": 0.162,
+            "phase_error_ms": -22.83,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 141,
+            "coverage": 0.293,
+            "phase_error_ms": -19.98,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 110,
+            "coverage": 0.157,
+            "phase_error_ms": 33.89,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 122,
+            "coverage": 0.208,
+            "phase_error_ms": -29.25,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 105,
+            "coverage": 0.328,
+            "phase_error_ms": 33.18,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 136,
+            "coverage": 0.373,
+            "phase_error_ms": 31.04,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 59,
+            "coverage": 0.59,
+            "phase_error_ms": 13.2,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 126,
+            "coverage": 0.315,
+            "phase_error_ms": 22.47,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 122,
+            "coverage": 0.519,
+            "phase_error_ms": -13.2,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 133,
+            "coverage": 0.569,
+            "phase_error_ms": -8.92,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 121,
+            "coverage": 0.174,
+            "phase_error_ms": -23.54,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 127,
+            "coverage": 0.302,
+            "phase_error_ms": -18.55,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 123,
+            "coverage": 0.112,
+            "phase_error_ms": 27.11,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 122,
+            "coverage": 0.075,
+            "phase_error_ms": -34.25,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 121,
+            "coverage": 0.388,
+            "phase_error_ms": 16.05,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 132,
+            "coverage": 0.326,
+            "phase_error_ms": 23.19,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 124,
+            "coverage": 0.638,
+            "phase_error_ms": 7.13,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 137,
+            "coverage": 0.471,
+            "phase_error_ms": 11.06,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 143,
+            "coverage": 0.423,
+            "phase_error_ms": -14.63,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 124,
+            "coverage": 0.52,
+            "phase_error_ms": -10.7,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 121,
+            "coverage": 0.299,
+            "phase_error_ms": -21.76,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 142,
+            "coverage": 0.416,
+            "phase_error_ms": -17.48,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 119,
+            "coverage": 0.069,
+            "phase_error_ms": -29.97,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 134,
+            "coverage": 0.158,
+            "phase_error_ms": -25.68,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 109,
+            "coverage": 0.077,
+            "phase_error_ms": 24.26,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 126,
+            "coverage": 0.192,
+            "phase_error_ms": 32.82,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 122,
+            "coverage": 0.319,
+            "phase_error_ms": 17.12,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 137,
+            "coverage": 0.28,
+            "phase_error_ms": 22.12,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 288000,
+            "end_ms": 300000,
+            "attacks": 63,
+            "coverage": 0.425,
+            "phase_error_ms": -16.05,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 288000,
+            "end_ms": 300000,
+            "attacks": 95,
+            "coverage": 0.387,
+            "phase_error_ms": -28.18,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 1505225,
+      "group": "audio-audit",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 181.0,
+      "raw_offset": 109,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 181.0,
+        "offset": 109,
+        "division": 4,
+        "score": 0.5368,
+        "coverage": 0.7052,
+        "median_error_ms": 12.08
+      },
+      "remaining_suspect_windows": [
+        132000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 11,
+            "coverage": 0.143,
+            "phase_error_ms": -34.96,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 27,
+            "coverage": 0.266,
+            "phase_error_ms": -26.76,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 2735104,
+      "group": "audio-audit",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 150.0,
+      "raw_offset": 13,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 150.0,
+        "offset": 13,
+        "division": 4,
+        "score": 0.4211,
+        "coverage": 0.6714,
+        "median_error_ms": 16.0
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 319884,
+      "group": "audio-audit",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 190.0,
+      "raw_offset": 193,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 190.0,
+        "offset": 193,
+        "division": 4,
+        "score": 0.4513,
+        "coverage": 0.7073,
+        "median_error_ms": 12.26
+      },
+      "remaining_suspect_windows": [
+        24000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 37,
+            "coverage": 0.497,
+            "phase_error_ms": 12.75,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 88,
+            "coverage": 0.297,
+            "phase_error_ms": 20.15,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4973962,
+      "group": "audio-audit",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 75.0,
+      "raw_offset": 329,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 75.0,
+        "offset": 329,
+        "division": 4,
+        "score": 0.3689,
+        "coverage": 0.6779,
+        "median_error_ms": 29.0
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 1740489,
+      "group": "audio-holdout",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 232.0,
+      "raw_offset": 13,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 232.0,
+        "offset": 13,
+        "division": 4,
+        "score": 0.4122,
+        "coverage": 0.4553,
+        "median_error_ms": 15.07
+      },
+      "remaining_suspect_windows": [
+        0,
+        72000,
+        108000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 71,
+            "coverage": 0.623,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 126,
+            "coverage": 0.529,
+            "phase_error_ms": 1.68,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 133,
+            "coverage": 0.634,
+            "phase_error_ms": -1.68,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 139,
+            "coverage": 0.483,
+            "phase_error_ms": -2.69,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 113,
+            "coverage": 0.535,
+            "phase_error_ms": -1.68,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 123,
+            "coverage": 0.38,
+            "phase_error_ms": -13.47,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4007091,
+      "group": "audio-holdout",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 135.0,
+      "raw_offset": 318,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 135.0,
+        "offset": 318,
+        "division": 4,
+        "score": 0.4616,
+        "coverage": 0.7148,
+        "median_error_ms": 16.06
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 3441405,
+      "group": "audio-holdout",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 130.0,
+      "raw_offset": 179,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 130.0,
+        "offset": 179,
+        "division": 4,
+        "score": 0.4964,
+        "coverage": 0.7332,
+        "median_error_ms": 16.81
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 259320,
+      "group": "audio-holdout",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 220.0,
+      "raw_offset": 72,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 220.0,
+        "offset": 72,
+        "division": 4,
+        "score": 0.5901,
+        "coverage": 0.73,
+        "median_error_ms": 7.73
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 5219674,
+      "group": "audio-holdout",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 124.0,
+      "raw_offset": 128,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 124.0,
+        "offset": 128,
+        "division": 4,
+        "score": 0.4919,
+        "coverage": 0.7293,
+        "median_error_ms": 17.71
+      },
+      "remaining_suspect_windows": [],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 45,
+            "coverage": 0.386,
+            "phase_error_ms": 27.09,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 57,
+            "coverage": 0.915,
+            "phase_error_ms": 1.26,
+            "suspect": false
+          },
+          "explained": true
+        }
+      ]
+    },
+    {
+      "beatmap_id": 3945798,
+      "group": "audio-holdout",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 200.0,
+      "raw_offset": 159,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 200.0,
+        "offset": 159,
+        "division": 4,
+        "score": 0.6195,
+        "coverage": 0.7438,
+        "median_error_ms": 9.0
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 437109,
+      "group": "audio-holdout",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 145.0,
+      "raw_offset": 132,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": true,
+      "alternate_score": {
+        "bpm": 145.0,
+        "offset": 132,
+        "division": 4,
+        "score": 0.6894,
+        "coverage": 0.8818,
+        "median_error_ms": 3.83
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 587625,
+      "group": "audio-holdout",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 174.0,
+      "raw_offset": 49,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 174.0,
+        "offset": 49,
+        "division": 4,
+        "score": 0.4605,
+        "coverage": 0.6297,
+        "median_error_ms": 14.48
+      },
+      "remaining_suspect_windows": [
+        24000,
+        36000,
+        96000,
+        144000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 78,
+            "coverage": 0.603,
+            "phase_error_ms": -3.59,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 98,
+            "coverage": 0.804,
+            "phase_error_ms": -1.35,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 29,
+            "coverage": 0.334,
+            "phase_error_ms": -38.61,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 114,
+            "coverage": 0.447,
+            "phase_error_ms": -0.9,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 52,
+            "coverage": 0.646,
+            "phase_error_ms": 0.9,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 115,
+            "coverage": 0.566,
+            "phase_error_ms": -0.9,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 36,
+            "coverage": 0.582,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 99,
+            "coverage": 0.631,
+            "phase_error_ms": 5.84,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 27,
+            "coverage": 0.442,
+            "phase_error_ms": -3.59,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 43,
+            "coverage": 0.534,
+            "phase_error_ms": -3.14,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 418216,
+      "group": "audio-holdout",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 130.0,
+      "raw_offset": 135,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 130.0,
+        "offset": 135,
+        "division": 4,
+        "score": 0.4199,
+        "coverage": 0.6214,
+        "median_error_ms": 22.92
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 4540611,
+      "group": "audio-holdout",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 297.0,
+      "raw_offset": 200,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 297.0,
+        "offset": 200,
+        "division": 4,
+        "score": 0.3584,
+        "coverage": 0.4441,
+        "median_error_ms": 11.9
+      },
+      "remaining_suspect_windows": [
+        0,
+        12000,
+        24000,
+        36000,
+        48000,
+        60000,
+        72000,
+        84000,
+        96000,
+        108000,
+        120000,
+        132000,
+        144000,
+        156000,
+        168000,
+        180000,
+        192000,
+        204000,
+        216000,
+        228000,
+        240000,
+        252000,
+        264000,
+        276000,
+        288000,
+        300000,
+        312000,
+        324000,
+        336000,
+        348000,
+        360000,
+        372000,
+        384000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 100,
+            "coverage": 0.335,
+            "phase_error_ms": 22.1,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 40,
+            "coverage": 0.205,
+            "phase_error_ms": 19.99,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 141,
+            "coverage": 0.378,
+            "phase_error_ms": 24.99,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 84,
+            "coverage": 0.471,
+            "phase_error_ms": 1.32,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 133,
+            "coverage": 0.465,
+            "phase_error_ms": 7.89,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 91,
+            "coverage": 0.462,
+            "phase_error_ms": 5.0,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 116,
+            "coverage": 0.386,
+            "phase_error_ms": 10.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 115,
+            "coverage": 0.487,
+            "phase_error_ms": 7.1,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 126,
+            "coverage": 0.397,
+            "phase_error_ms": 11.84,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 110,
+            "coverage": 0.444,
+            "phase_error_ms": 10.52,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 122,
+            "coverage": 0.331,
+            "phase_error_ms": 24.46,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 102,
+            "coverage": 0.421,
+            "phase_error_ms": -1.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 132,
+            "coverage": 0.438,
+            "phase_error_ms": 1.84,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 78,
+            "coverage": 0.412,
+            "phase_error_ms": -14.2,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 129,
+            "coverage": 0.36,
+            "phase_error_ms": 19.2,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 107,
+            "coverage": 0.375,
+            "phase_error_ms": 17.36,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 126,
+            "coverage": 0.387,
+            "phase_error_ms": -14.47,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 109,
+            "coverage": 0.41,
+            "phase_error_ms": -9.21,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 129,
+            "coverage": 0.458,
+            "phase_error_ms": 1.32,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 109,
+            "coverage": 0.429,
+            "phase_error_ms": -2.37,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 137,
+            "coverage": 0.389,
+            "phase_error_ms": -13.15,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 125,
+            "coverage": 0.405,
+            "phase_error_ms": -11.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 135,
+            "coverage": 0.456,
+            "phase_error_ms": 4.47,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 118,
+            "coverage": 0.435,
+            "phase_error_ms": -11.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 124,
+            "coverage": 0.49,
+            "phase_error_ms": -1.84,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 118,
+            "coverage": 0.526,
+            "phase_error_ms": -2.37,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 121,
+            "coverage": 0.382,
+            "phase_error_ms": -9.21,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 99,
+            "coverage": 0.41,
+            "phase_error_ms": -10.52,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 125,
+            "coverage": 0.512,
+            "phase_error_ms": -4.21,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 106,
+            "coverage": 0.464,
+            "phase_error_ms": -8.15,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 122,
+            "coverage": 0.485,
+            "phase_error_ms": -3.95,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 92,
+            "coverage": 0.582,
+            "phase_error_ms": -3.68,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 192000,
+            "end_ms": 204000,
+            "attacks": 122,
+            "coverage": 0.365,
+            "phase_error_ms": 19.73,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 192000,
+            "end_ms": 204000,
+            "attacks": 104,
+            "coverage": 0.464,
+            "phase_error_ms": 6.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 107,
+            "coverage": 0.521,
+            "phase_error_ms": -4.47,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 82,
+            "coverage": 0.524,
+            "phase_error_ms": -2.1,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 118,
+            "coverage": 0.445,
+            "phase_error_ms": -11.84,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 91,
+            "coverage": 0.482,
+            "phase_error_ms": -6.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 121,
+            "coverage": 0.345,
+            "phase_error_ms": -13.42,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 95,
+            "coverage": 0.517,
+            "phase_error_ms": -4.21,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 134,
+            "coverage": 0.406,
+            "phase_error_ms": -5.26,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 37,
+            "coverage": 0.46,
+            "phase_error_ms": -5.52,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 125,
+            "coverage": 0.352,
+            "phase_error_ms": 20.78,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 55,
+            "coverage": 0.272,
+            "phase_error_ms": 24.99,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 264000,
+            "end_ms": 276000,
+            "attacks": 122,
+            "coverage": 0.476,
+            "phase_error_ms": 7.63,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 264000,
+            "end_ms": 276000,
+            "attacks": 52,
+            "coverage": 0.445,
+            "phase_error_ms": 7.63,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 276000,
+            "end_ms": 288000,
+            "attacks": 103,
+            "coverage": 0.384,
+            "phase_error_ms": -21.04,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 276000,
+            "end_ms": 288000,
+            "attacks": 39,
+            "coverage": 0.388,
+            "phase_error_ms": -11.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 288000,
+            "end_ms": 300000,
+            "attacks": 106,
+            "coverage": 0.463,
+            "phase_error_ms": -9.47,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 300000,
+            "end_ms": 312000,
+            "attacks": 114,
+            "coverage": 0.469,
+            "phase_error_ms": 1.32,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 312000,
+            "end_ms": 324000,
+            "attacks": 103,
+            "coverage": 0.449,
+            "phase_error_ms": 5.52,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 312000,
+            "end_ms": 324000,
+            "attacks": 32,
+            "coverage": 0.635,
+            "phase_error_ms": -3.95,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 324000,
+            "end_ms": 336000,
+            "attacks": 130,
+            "coverage": 0.335,
+            "phase_error_ms": 23.67,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 324000,
+            "end_ms": 336000,
+            "attacks": 99,
+            "coverage": 0.389,
+            "phase_error_ms": -24.46,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 336000,
+            "end_ms": 348000,
+            "attacks": 145,
+            "coverage": 0.432,
+            "phase_error_ms": -9.21,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 336000,
+            "end_ms": 348000,
+            "attacks": 115,
+            "coverage": 0.44,
+            "phase_error_ms": -4.47,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 348000,
+            "end_ms": 360000,
+            "attacks": 147,
+            "coverage": 0.422,
+            "phase_error_ms": 10.52,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 348000,
+            "end_ms": 360000,
+            "attacks": 145,
+            "coverage": 0.402,
+            "phase_error_ms": 10.0,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 360000,
+            "end_ms": 372000,
+            "attacks": 116,
+            "coverage": 0.387,
+            "phase_error_ms": 7.1,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 360000,
+            "end_ms": 372000,
+            "attacks": 97,
+            "coverage": 0.373,
+            "phase_error_ms": 13.94,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 372000,
+            "end_ms": 384000,
+            "attacks": 114,
+            "coverage": 0.43,
+            "phase_error_ms": 5.26,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 372000,
+            "end_ms": 384000,
+            "attacks": 60,
+            "coverage": 0.362,
+            "phase_error_ms": 9.73,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 384000,
+            "end_ms": 396000,
+            "attacks": 29,
+            "coverage": 0.417,
+            "phase_error_ms": 5.26,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4157803,
+      "group": "audio-holdout",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 128.0,
+      "raw_offset": 212,
+      "classification": "blocked_incompatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 128.0,
+        "offset": 212,
+        "division": 4,
+        "score": 0.1721,
+        "coverage": 0.3985,
+        "median_error_ms": 29.13
+      },
+      "remaining_suspect_windows": [
+        12000,
+        24000,
+        36000,
+        60000,
+        72000,
+        84000,
+        96000,
+        120000,
+        132000,
+        144000,
+        156000,
+        192000,
+        204000,
+        216000,
+        252000,
+        264000,
+        276000,
+        288000,
+        300000,
+        336000,
+        348000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 43,
+            "coverage": 0.181,
+            "phase_error_ms": 50.05,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 81,
+            "coverage": 0.203,
+            "phase_error_ms": 54.93,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 59,
+            "coverage": 0.165,
+            "phase_error_ms": 25.63,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 73,
+            "coverage": 0.129,
+            "phase_error_ms": 42.72,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 57,
+            "coverage": 0.462,
+            "phase_error_ms": 15.26,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 97,
+            "coverage": 0.508,
+            "phase_error_ms": 18.31,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 81,
+            "coverage": 0.315,
+            "phase_error_ms": -23.8,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 119,
+            "coverage": 0.536,
+            "phase_error_ms": -20.75,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 79,
+            "coverage": 0.083,
+            "phase_error_ms": -46.39,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 121,
+            "coverage": 0.207,
+            "phase_error_ms": -44.56,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 92,
+            "coverage": 0.105,
+            "phase_error_ms": 46.39,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 126,
+            "coverage": 0.268,
+            "phase_error_ms": 50.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 91,
+            "coverage": 0.515,
+            "phase_error_ms": 24.41,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 123,
+            "coverage": 0.372,
+            "phase_error_ms": 29.3,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 74,
+            "coverage": 0.649,
+            "phase_error_ms": -3.05,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 108,
+            "coverage": 0.613,
+            "phase_error_ms": -4.27,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 93,
+            "coverage": 0.184,
+            "phase_error_ms": -27.47,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 104,
+            "coverage": 0.309,
+            "phase_error_ms": -26.25,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 103,
+            "coverage": 0.129,
+            "phase_error_ms": -50.05,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 123,
+            "coverage": 0.186,
+            "phase_error_ms": -45.78,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 83,
+            "coverage": 0.142,
+            "phase_error_ms": 43.95,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 118,
+            "coverage": 0.231,
+            "phase_error_ms": 48.22,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 192000,
+            "end_ms": 204000,
+            "attacks": 91,
+            "coverage": 0.325,
+            "phase_error_ms": -26.86,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 192000,
+            "end_ms": 204000,
+            "attacks": 123,
+            "coverage": 0.378,
+            "phase_error_ms": -25.63,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 99,
+            "coverage": 0.117,
+            "phase_error_ms": -51.27,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 125,
+            "coverage": 0.195,
+            "phase_error_ms": -48.22,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 115,
+            "coverage": 0.148,
+            "phase_error_ms": 42.72,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 126,
+            "coverage": 0.188,
+            "phase_error_ms": 47.0,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 75,
+            "coverage": 0.647,
+            "phase_error_ms": -8.54,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 119,
+            "coverage": 0.559,
+            "phase_error_ms": -6.1,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 264000,
+            "end_ms": 276000,
+            "attacks": 90,
+            "coverage": 0.085,
+            "phase_error_ms": -32.35,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 264000,
+            "end_ms": 276000,
+            "attacks": 110,
+            "coverage": 0.371,
+            "phase_error_ms": -26.25,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 276000,
+            "end_ms": 288000,
+            "attacks": 73,
+            "coverage": 0.085,
+            "phase_error_ms": -54.93,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 276000,
+            "end_ms": 288000,
+            "attacks": 121,
+            "coverage": 0.164,
+            "phase_error_ms": -50.66,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 288000,
+            "end_ms": 300000,
+            "attacks": 87,
+            "coverage": 0.172,
+            "phase_error_ms": 39.06,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 288000,
+            "end_ms": 300000,
+            "attacks": 123,
+            "coverage": 0.194,
+            "phase_error_ms": 44.56,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 300000,
+            "end_ms": 312000,
+            "attacks": 86,
+            "coverage": 0.532,
+            "phase_error_ms": 15.26,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 300000,
+            "end_ms": 312000,
+            "attacks": 124,
+            "coverage": 0.423,
+            "phase_error_ms": 33.57,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 336000,
+            "end_ms": 348000,
+            "attacks": 41,
+            "coverage": 0.045,
+            "phase_error_ms": -34.79,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 336000,
+            "end_ms": 348000,
+            "attacks": 67,
+            "coverage": 0.245,
+            "phase_error_ms": -33.57,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 348000,
+            "end_ms": 360000,
+            "attacks": 30,
+            "coverage": 0.362,
+            "phase_error_ms": 31.74,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 348000,
+            "end_ms": 360000,
+            "attacks": 93,
+            "coverage": 0.254,
+            "phase_error_ms": -57.37,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 733545,
+      "group": "audio-holdout",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 150.0,
+      "raw_offset": 26,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 150.0,
+        "offset": 26,
+        "division": 4,
+        "score": 0.3532,
+        "coverage": 0.5268,
+        "median_error_ms": 23.0
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 4591888,
+      "group": "audio-holdout",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 136.0,
+      "raw_offset": 181,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": true,
+      "alternate_score": {
+        "bpm": 136.0,
+        "offset": 181,
+        "division": 3,
+        "score": 0.5547,
+        "coverage": 0.8299,
+        "median_error_ms": 13.88
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 4775395,
+      "group": "audio-holdout",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 125.0,
+      "raw_offset": 241,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 125.0,
+        "offset": 241,
+        "division": 3,
+        "score": 0.6936,
+        "coverage": 0.6393,
+        "median_error_ms": 40.0
+      },
+      "remaining_suspect_windows": [
+        0,
+        12000,
+        24000,
+        36000,
+        48000,
+        60000,
+        72000,
+        84000,
+        96000,
+        108000,
+        120000,
+        132000,
+        156000,
+        168000,
+        180000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 106,
+            "coverage": 0.416,
+            "phase_error_ms": -1.67,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 61,
+            "coverage": 0.546,
+            "phase_error_ms": -2.5,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 100,
+            "coverage": 0.499,
+            "phase_error_ms": -2.5,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 76,
+            "coverage": 0.685,
+            "phase_error_ms": -2.5,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 105,
+            "coverage": 0.548,
+            "phase_error_ms": -2.5,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 79,
+            "coverage": 0.76,
+            "phase_error_ms": -2.5,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 119,
+            "coverage": 0.558,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 106,
+            "coverage": 0.662,
+            "phase_error_ms": -0.83,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 126,
+            "coverage": 0.462,
+            "phase_error_ms": -2.5,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 99,
+            "coverage": 0.605,
+            "phase_error_ms": -1.67,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 115,
+            "coverage": 0.504,
+            "phase_error_ms": -1.67,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 100,
+            "coverage": 0.584,
+            "phase_error_ms": -1.67,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 92,
+            "coverage": 0.429,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 82,
+            "coverage": 0.49,
+            "phase_error_ms": 0.83,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 100,
+            "coverage": 0.428,
+            "phase_error_ms": 3.33,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 79,
+            "coverage": 0.677,
+            "phase_error_ms": -2.5,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 126,
+            "coverage": 0.497,
+            "phase_error_ms": 1.67,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 102,
+            "coverage": 0.659,
+            "phase_error_ms": -1.67,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 107,
+            "coverage": 0.493,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 104,
+            "coverage": 0.609,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 112,
+            "coverage": 0.455,
+            "phase_error_ms": 1.67,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 61,
+            "coverage": 0.538,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 112,
+            "coverage": 0.638,
+            "phase_error_ms": 0.83,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 84,
+            "coverage": 0.78,
+            "phase_error_ms": 0.0,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 104,
+            "coverage": 0.363,
+            "phase_error_ms": -20.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 27,
+            "coverage": 0.895,
+            "phase_error_ms": -5.83,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 111,
+            "coverage": 0.421,
+            "phase_error_ms": -0.83,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 75,
+            "coverage": 0.653,
+            "phase_error_ms": -0.83,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 108,
+            "coverage": 0.496,
+            "phase_error_ms": -1.67,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 94,
+            "coverage": 0.603,
+            "phase_error_ms": -0.83,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 24,
+            "coverage": 0.466,
+            "phase_error_ms": 4.17,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 26,
+            "coverage": 0.541,
+            "phase_error_ms": 4.17,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5877693,
+      "group": "user-audio-audit",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 130.0,
+      "raw_offset": 0,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 130.0,
+        "offset": 0,
+        "division": 4,
+        "score": 0.2935,
+        "coverage": 0.5463,
+        "median_error_ms": 23.38
+      },
+      "remaining_suspect_windows": [
+        96000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 23,
+            "coverage": 0.435,
+            "phase_error_ms": 25.24,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 120,
+            "coverage": 0.547,
+            "phase_error_ms": 12.02,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5894796,
+      "group": "user-audio-audit",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 124.0,
+      "raw_offset": 221,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 124.0,
+        "offset": 221,
+        "division": 4,
+        "score": 0.3529,
+        "coverage": 0.6047,
+        "median_error_ms": 21.47
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 5900981,
+      "group": "user-audio-audit",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 130.0,
+      "raw_offset": 51,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 130.0,
+        "offset": 51,
+        "division": 4,
+        "score": 0.2547,
+        "coverage": 0.4723,
+        "median_error_ms": 26.69
+      },
+      "remaining_suspect_windows": [
+        0,
+        12000,
+        96000,
+        108000,
+        120000,
+        240000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 85,
+            "coverage": 0.547,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 94,
+            "coverage": 0.546,
+            "phase_error_ms": -2.4,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 54,
+            "coverage": 0.45,
+            "phase_error_ms": -7.21,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 122,
+            "coverage": 0.407,
+            "phase_error_ms": -0.6,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 59,
+            "coverage": 0.585,
+            "phase_error_ms": -3.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 110,
+            "coverage": 0.455,
+            "phase_error_ms": 10.22,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 115,
+            "coverage": 0.561,
+            "phase_error_ms": -6.61,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 121,
+            "coverage": 0.466,
+            "phase_error_ms": -3.0,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 107,
+            "coverage": 0.521,
+            "phase_error_ms": -1.8,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 136,
+            "coverage": 0.45,
+            "phase_error_ms": 8.41,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 7,
+            "coverage": 0.346,
+            "phase_error_ms": -38.46,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 118,
+            "coverage": 0.433,
+            "phase_error_ms": 6.61,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 2426683,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 103.0,
+      "raw_offset": 53,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 103.0,
+        "offset": 53,
+        "division": 4,
+        "score": 0.2289,
+        "coverage": 0.4616,
+        "median_error_ms": 34.56
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 2759255,
+      "group": "audio-additional-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 180.0,
+      "raw_offset": 33,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 180.0,
+        "offset": 33,
+        "division": 4,
+        "score": 0.5845,
+        "coverage": 0.7386,
+        "median_error_ms": 9.83
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 2950142,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 68.0,
+      "raw_offset": 473,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 68.0,
+        "offset": 473,
+        "division": 3,
+        "score": 0.4354,
+        "coverage": 0.5481,
+        "median_error_ms": 55.12
+      },
+      "remaining_suspect_windows": [
+        0,
+        12000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 48,
+            "coverage": 0.591,
+            "phase_error_ms": -1.53,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 46,
+            "coverage": 0.545,
+            "phase_error_ms": -1.53,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 3113732,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 288.0,
+      "raw_offset": 55,
+      "classification": "blocked_incompatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 288.0,
+        "offset": 55,
+        "division": 4,
+        "score": 0.383,
+        "coverage": 0.687,
+        "median_error_ms": 5.67
+      },
+      "remaining_suspect_windows": [
+        0,
+        12000,
+        36000,
+        60000,
+        72000,
+        96000,
+        108000,
+        132000,
+        156000,
+        168000,
+        180000,
+        192000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 123,
+            "coverage": 0.544,
+            "phase_error_ms": 2.98,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 78,
+            "coverage": 0.544,
+            "phase_error_ms": 1.36,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 117,
+            "coverage": 0.5,
+            "phase_error_ms": 4.61,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 70,
+            "coverage": 0.783,
+            "phase_error_ms": -0.54,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 124,
+            "coverage": 0.481,
+            "phase_error_ms": -0.27,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 122,
+            "coverage": 0.606,
+            "phase_error_ms": 0.27,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 117,
+            "coverage": 0.399,
+            "phase_error_ms": -11.66,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 106,
+            "coverage": 0.861,
+            "phase_error_ms": -2.44,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 105,
+            "coverage": 0.458,
+            "phase_error_ms": 4.61,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 67,
+            "coverage": 0.648,
+            "phase_error_ms": -5.43,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 119,
+            "coverage": 0.393,
+            "phase_error_ms": 13.83,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 107,
+            "coverage": 0.704,
+            "phase_error_ms": -2.71,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 113,
+            "coverage": 0.489,
+            "phase_error_ms": 0.54,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 100,
+            "coverage": 0.826,
+            "phase_error_ms": -2.98,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 109,
+            "coverage": 0.48,
+            "phase_error_ms": 1.09,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 114,
+            "coverage": 0.641,
+            "phase_error_ms": -1.63,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 123,
+            "coverage": 0.413,
+            "phase_error_ms": 13.02,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 92,
+            "coverage": 0.737,
+            "phase_error_ms": -3.26,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 120,
+            "coverage": 0.346,
+            "phase_error_ms": 24.14,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 99,
+            "coverage": 0.844,
+            "phase_error_ms": -2.17,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 104,
+            "coverage": 0.468,
+            "phase_error_ms": 7.05,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 115,
+            "coverage": 0.489,
+            "phase_error_ms": 5.43,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 107,
+            "coverage": 0.429,
+            "phase_error_ms": 14.38,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 89,
+            "coverage": 0.827,
+            "phase_error_ms": -3.26,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 117,
+            "coverage": 0.474,
+            "phase_error_ms": 4.61,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 110,
+            "coverage": 0.551,
+            "phase_error_ms": -2.17,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 127,
+            "coverage": 0.458,
+            "phase_error_ms": 9.49,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 87,
+            "coverage": 0.691,
+            "phase_error_ms": 0.0,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 110,
+            "coverage": 0.453,
+            "phase_error_ms": -0.81,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 78,
+            "coverage": 0.7,
+            "phase_error_ms": 0.27,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 192000,
+            "end_ms": 204000,
+            "attacks": 6,
+            "coverage": 0.496,
+            "phase_error_ms": -11.39,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 3472306,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 142.0,
+      "raw_offset": 234,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "reason": "No alternate-source attacks"
+    },
+    {
+      "beatmap_id": 3578838,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 86.0,
+      "raw_offset": 351,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 86.0,
+        "offset": 351,
+        "division": 4,
+        "score": 0.0698,
+        "coverage": 0.2236,
+        "median_error_ms": 51.37
+      },
+      "remaining_suspect_windows": [
+        48000,
+        60000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 107,
+            "coverage": 0.555,
+            "phase_error_ms": 3.63,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 63,
+            "coverage": 0.52,
+            "phase_error_ms": 7.27,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 62,
+            "coverage": 0.223,
+            "phase_error_ms": -50.87,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 3619067,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 120.0,
+      "raw_offset": 72,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 120.0,
+        "offset": 72,
+        "division": 3,
+        "score": 0.1719,
+        "coverage": 0.3022,
+        "median_error_ms": 46.5
+      },
+      "remaining_suspect_windows": [
+        24000,
+        36000,
+        48000,
+        60000,
+        72000,
+        84000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 126,
+            "coverage": 0.556,
+            "phase_error_ms": -1.74,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 135,
+            "coverage": 0.532,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 124,
+            "coverage": 0.497,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 132,
+            "coverage": 0.504,
+            "phase_error_ms": 3.47,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 123,
+            "coverage": 0.459,
+            "phase_error_ms": 2.6,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 118,
+            "coverage": 0.53,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 3630228,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 172.0,
+      "raw_offset": 228,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 172.0,
+        "offset": 228,
+        "division": 4,
+        "score": 0.5048,
+        "coverage": 0.7116,
+        "median_error_ms": 11.72
+      },
+      "remaining_suspect_windows": [
+        36000,
+        96000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 96,
+            "coverage": 0.639,
+            "phase_error_ms": -2.73,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 126,
+            "coverage": 0.571,
+            "phase_error_ms": -4.09,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 16,
+            "coverage": 0.324,
+            "phase_error_ms": -34.07,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 106,
+            "coverage": 0.505,
+            "phase_error_ms": -2.27,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 3895553,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 194.0,
+      "raw_offset": 294,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 194.0,
+        "offset": 294,
+        "division": 4,
+        "score": 0.2081,
+        "coverage": 0.3608,
+        "median_error_ms": 22.12
+      },
+      "remaining_suspect_windows": [
+        36000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 66,
+            "coverage": 0.583,
+            "phase_error_ms": 6.85,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4185029,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 191.0,
+      "raw_offset": 97,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 191.0,
+        "offset": 97,
+        "division": 4,
+        "score": 0.3555,
+        "coverage": 0.4935,
+        "median_error_ms": 16.87
+      },
+      "remaining_suspect_windows": [
+        84000,
+        96000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 110,
+            "coverage": 0.568,
+            "phase_error_ms": 2.05,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 131,
+            "coverage": 0.469,
+            "phase_error_ms": 12.27,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 93,
+            "coverage": 0.603,
+            "phase_error_ms": 2.86,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 136,
+            "coverage": 0.567,
+            "phase_error_ms": 6.95,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4348413,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 240.0,
+      "raw_offset": 179,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "reason": "No alternate-source attacks"
+    },
+    {
+      "beatmap_id": 4380978,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 168.0,
+      "raw_offset": 19,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "reason": "No alternate-source attacks"
+    },
+    {
+      "beatmap_id": 4452867,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 92.0,
+      "raw_offset": 649,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 92.0,
+        "offset": 649,
+        "division": 4,
+        "score": 0.2539,
+        "coverage": 0.4891,
+        "median_error_ms": 28.2
+      },
+      "remaining_suspect_windows": [
+        0,
+        24000,
+        36000,
+        48000,
+        60000,
+        72000,
+        84000,
+        96000,
+        108000,
+        120000,
+        132000,
+        144000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 108,
+            "coverage": 0.417,
+            "phase_error_ms": -5.94,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 39,
+            "coverage": 0.555,
+            "phase_error_ms": 10.19,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 106,
+            "coverage": 0.587,
+            "phase_error_ms": -0.85,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 28,
+            "coverage": 0.674,
+            "phase_error_ms": -13.59,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 87,
+            "coverage": 0.56,
+            "phase_error_ms": 4.25,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 67,
+            "coverage": 0.535,
+            "phase_error_ms": -4.25,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 78,
+            "coverage": 0.581,
+            "phase_error_ms": -2.55,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 22,
+            "coverage": 0.538,
+            "phase_error_ms": -2.55,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 117,
+            "coverage": 0.373,
+            "phase_error_ms": -10.19,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 44,
+            "coverage": 0.525,
+            "phase_error_ms": 0.85,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 113,
+            "coverage": 0.42,
+            "phase_error_ms": -0.85,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 28,
+            "coverage": 0.738,
+            "phase_error_ms": 2.55,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 93,
+            "coverage": 0.306,
+            "phase_error_ms": 41.61,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 19,
+            "coverage": 0.194,
+            "phase_error_ms": 25.48,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 100,
+            "coverage": 0.143,
+            "phase_error_ms": 41.61,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 20,
+            "coverage": 0.0,
+            "phase_error_ms": 26.32,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 108,
+            "coverage": 0.201,
+            "phase_error_ms": 38.21,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 13,
+            "coverage": 0.152,
+            "phase_error_ms": -34.82,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 121,
+            "coverage": 0.303,
+            "phase_error_ms": 27.17,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 35,
+            "coverage": 0.264,
+            "phase_error_ms": 27.17,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 97,
+            "coverage": 0.296,
+            "phase_error_ms": 48.4,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 42,
+            "coverage": 0.193,
+            "phase_error_ms": 28.87,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4949158,
+      "group": "audio-additional-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 140.0,
+      "raw_offset": 208,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 140.0,
+        "offset": 208,
+        "division": 4,
+        "score": 0.508,
+        "coverage": 0.7048,
+        "median_error_ms": 18.29
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 4966781,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 152.0,
+      "raw_offset": 7,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 152.0,
+        "offset": 7,
+        "division": 4,
+        "score": 0.1497,
+        "coverage": 0.4369,
+        "median_error_ms": 20.58
+      },
+      "remaining_suspect_windows": [
+        24000,
+        36000,
+        60000,
+        72000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 80,
+            "coverage": 0.599,
+            "phase_error_ms": 7.2,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 14,
+            "coverage": 0.202,
+            "phase_error_ms": -24.67,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 84,
+            "coverage": 0.643,
+            "phase_error_ms": 6.17,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 20,
+            "coverage": 0.669,
+            "phase_error_ms": -2.06,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 99,
+            "coverage": 0.303,
+            "phase_error_ms": 26.21,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 5,
+            "coverage": 0.35,
+            "phase_error_ms": -14.91,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 82,
+            "coverage": 0.578,
+            "phase_error_ms": 6.68,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 14,
+            "coverage": 0.368,
+            "phase_error_ms": -18.5,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5163045,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 174.0,
+      "raw_offset": 141,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": true,
+      "alternate_score": {
+        "bpm": 174.0,
+        "offset": 141,
+        "division": 4,
+        "score": 0.6774,
+        "coverage": 0.9808,
+        "median_error_ms": 7.52
+      },
+      "remaining_suspect_windows": [
+        12000,
+        24000,
+        108000,
+        120000,
+        132000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 88,
+            "coverage": 0.449,
+            "phase_error_ms": 4.04,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 10,
+            "coverage": 0.923,
+            "phase_error_ms": -7.63,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 87,
+            "coverage": 0.494,
+            "phase_error_ms": 10.33,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 5,
+            "coverage": 1.0,
+            "phase_error_ms": -3.14,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 124,
+            "coverage": 0.425,
+            "phase_error_ms": 6.73,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 123,
+            "coverage": 0.61,
+            "phase_error_ms": -0.9,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 45,
+            "coverage": 0.974,
+            "phase_error_ms": -7.63,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 116,
+            "coverage": 0.423,
+            "phase_error_ms": -5.84,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 107,
+            "coverage": 0.466,
+            "phase_error_ms": -3.14,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 9,
+            "coverage": 0.247,
+            "phase_error_ms": -17.06,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5661702,
+      "group": "audio-additional-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 170.0,
+      "raw_offset": 352,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 170.0,
+        "offset": 352,
+        "division": 3,
+        "score": 0.5185,
+        "coverage": 0.5869,
+        "median_error_ms": 23.26
+      },
+      "remaining_suspect_windows": [
+        0,
+        72000,
+        84000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 65,
+            "coverage": 0.592,
+            "phase_error_ms": 0.61,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 116,
+            "coverage": 0.492,
+            "phase_error_ms": 1.84,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 59,
+            "coverage": 0.531,
+            "phase_error_ms": 8.58,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 132,
+            "coverage": 0.44,
+            "phase_error_ms": 11.64,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 107,
+            "coverage": 0.511,
+            "phase_error_ms": 1.23,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 136,
+            "coverage": 0.467,
+            "phase_error_ms": 2.45,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 1577245,
+      "group": "audio-extension2-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 153.0,
+      "raw_offset": 182,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 153.0,
+        "offset": 182,
+        "division": 4,
+        "score": 0.4363,
+        "coverage": 0.6154,
+        "median_error_ms": 17.36
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 2419420,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 194.0,
+      "raw_offset": 301,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 194.0,
+        "offset": 301,
+        "division": 4,
+        "score": 0.3803,
+        "coverage": 0.5565,
+        "median_error_ms": 14.84
+      },
+      "remaining_suspect_windows": [
+        0
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 64,
+            "coverage": 0.635,
+            "phase_error_ms": 2.82,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 131,
+            "coverage": 0.729,
+            "phase_error_ms": 2.01,
+            "suspect": false
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 2488937,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 299.0,
+      "raw_offset": 62,
+      "classification": "blocked_incompatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 299.0,
+        "offset": 62,
+        "division": 4,
+        "score": 0.3683,
+        "coverage": 0.3962,
+        "median_error_ms": 12.5
+      },
+      "remaining_suspect_windows": [
+        0,
+        12000,
+        24000,
+        36000,
+        48000,
+        60000,
+        72000,
+        84000,
+        96000,
+        108000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 123,
+            "coverage": 0.437,
+            "phase_error_ms": -10.19,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 121,
+            "coverage": 0.393,
+            "phase_error_ms": -14.89,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 134,
+            "coverage": 0.408,
+            "phase_error_ms": -10.71,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 144,
+            "coverage": 0.357,
+            "phase_error_ms": -18.29,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 145,
+            "coverage": 0.44,
+            "phase_error_ms": 7.32,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 119,
+            "coverage": 0.415,
+            "phase_error_ms": 22.47,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 127,
+            "coverage": 0.407,
+            "phase_error_ms": -0.78,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 68,
+            "coverage": 0.341,
+            "phase_error_ms": 13.85,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 138,
+            "coverage": 0.413,
+            "phase_error_ms": 13.85,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 143,
+            "coverage": 0.468,
+            "phase_error_ms": 1.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 134,
+            "coverage": 0.466,
+            "phase_error_ms": 1.57,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 129,
+            "coverage": 0.353,
+            "phase_error_ms": -13.85,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 113,
+            "coverage": 0.459,
+            "phase_error_ms": 1.31,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 74,
+            "coverage": 0.414,
+            "phase_error_ms": 4.18,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 135,
+            "coverage": 0.387,
+            "phase_error_ms": -19.07,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 136,
+            "coverage": 0.396,
+            "phase_error_ms": 4.18,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 127,
+            "coverage": 0.417,
+            "phase_error_ms": 9.93,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 150,
+            "coverage": 0.473,
+            "phase_error_ms": 6.27,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 135,
+            "coverage": 0.381,
+            "phase_error_ms": -17.51,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 110,
+            "coverage": 0.305,
+            "phase_error_ms": -22.21,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 2599562,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 280.0,
+      "raw_offset": 1,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 280.0,
+        "offset": 1,
+        "division": 4,
+        "score": 0.3629,
+        "coverage": 0.4305,
+        "median_error_ms": 13.14
+      },
+      "remaining_suspect_windows": [
+        48000,
+        60000,
+        72000,
+        84000,
+        96000,
+        108000,
+        120000,
+        132000,
+        144000,
+        156000,
+        168000,
+        180000,
+        192000,
+        204000,
+        216000,
+        228000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 117,
+            "coverage": 0.608,
+            "phase_error_ms": -0.84,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 95,
+            "coverage": 0.941,
+            "phase_error_ms": -2.23,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 132,
+            "coverage": 0.565,
+            "phase_error_ms": -5.3,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 112,
+            "coverage": 0.845,
+            "phase_error_ms": -1.67,
+            "suspect": false
+          },
+          "explained": true
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 121,
+            "coverage": 0.532,
+            "phase_error_ms": -0.56,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 87,
+            "coverage": 0.689,
+            "phase_error_ms": 1.4,
+            "suspect": false
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 117,
+            "coverage": 0.459,
+            "phase_error_ms": -4.46,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 95,
+            "coverage": 0.422,
+            "phase_error_ms": 19.25,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 114,
+            "coverage": 0.425,
+            "phase_error_ms": 25.11,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 102,
+            "coverage": 0.367,
+            "phase_error_ms": 5.3,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 101,
+            "coverage": 0.336,
+            "phase_error_ms": 22.32,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 89,
+            "coverage": 0.36,
+            "phase_error_ms": 17.86,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 121,
+            "coverage": 0.211,
+            "phase_error_ms": 20.93,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 52,
+            "coverage": 0.072,
+            "phase_error_ms": 19.53,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 125,
+            "coverage": 0.231,
+            "phase_error_ms": 19.25,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 104,
+            "coverage": 0.079,
+            "phase_error_ms": 19.81,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 125,
+            "coverage": 0.277,
+            "phase_error_ms": 18.69,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 89,
+            "coverage": 0.035,
+            "phase_error_ms": 20.93,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 119,
+            "coverage": 0.221,
+            "phase_error_ms": 18.42,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 105,
+            "coverage": 0.034,
+            "phase_error_ms": 20.93,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 106,
+            "coverage": 0.351,
+            "phase_error_ms": 23.16,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 43,
+            "coverage": 0.112,
+            "phase_error_ms": -25.95,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 118,
+            "coverage": 0.413,
+            "phase_error_ms": -18.97,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 10,
+            "coverage": 0.451,
+            "phase_error_ms": 5.3,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 119,
+            "coverage": 0.446,
+            "phase_error_ms": -0.28,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 81,
+            "coverage": 0.367,
+            "phase_error_ms": -13.11,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 118,
+            "coverage": 0.367,
+            "phase_error_ms": -15.62,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 87,
+            "coverage": 0.458,
+            "phase_error_ms": -5.3,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 192000,
+            "end_ms": 204000,
+            "attacks": 118,
+            "coverage": 0.461,
+            "phase_error_ms": 0.28,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 192000,
+            "end_ms": 204000,
+            "attacks": 106,
+            "coverage": 0.324,
+            "phase_error_ms": -17.3,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 119,
+            "coverage": 0.445,
+            "phase_error_ms": -1.95,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 103,
+            "coverage": 0.4,
+            "phase_error_ms": -21.21,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 118,
+            "coverage": 0.438,
+            "phase_error_ms": -9.21,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 107,
+            "coverage": 0.361,
+            "phase_error_ms": 25.95,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 25,
+            "coverage": 0.364,
+            "phase_error_ms": -25.67,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 21,
+            "coverage": 0.354,
+            "phase_error_ms": 20.65,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 3474858,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 184.0,
+      "raw_offset": 311,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 184.0,
+        "offset": 311,
+        "division": 4,
+        "score": 0.3001,
+        "coverage": 0.5227,
+        "median_error_ms": 17.0
+      },
+      "remaining_suspect_windows": [
+        0,
+        12000,
+        24000,
+        96000,
+        108000,
+        120000,
+        132000,
+        144000,
+        156000,
+        204000,
+        216000,
+        228000,
+        240000,
+        300000,
+        312000,
+        372000,
+        456000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 46,
+            "coverage": 0.385,
+            "phase_error_ms": 16.13,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 92,
+            "coverage": 0.611,
+            "phase_error_ms": 4.25,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 23,
+            "coverage": 0.428,
+            "phase_error_ms": -4.25,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 125,
+            "coverage": 0.438,
+            "phase_error_ms": 8.49,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 27,
+            "coverage": 0.351,
+            "phase_error_ms": 22.08,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 117,
+            "coverage": 0.449,
+            "phase_error_ms": 12.74,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 26,
+            "coverage": 0.301,
+            "phase_error_ms": -24.2,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 136,
+            "coverage": 0.398,
+            "phase_error_ms": -34.39,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 15,
+            "coverage": 0.51,
+            "phase_error_ms": 24.2,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 126,
+            "coverage": 0.448,
+            "phase_error_ms": -4.25,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 50,
+            "coverage": 0.498,
+            "phase_error_ms": -0.85,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 107,
+            "coverage": 0.468,
+            "phase_error_ms": 9.77,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 88,
+            "coverage": 0.331,
+            "phase_error_ms": 31.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 112,
+            "coverage": 0.428,
+            "phase_error_ms": 14.01,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 62,
+            "coverage": 0.461,
+            "phase_error_ms": 14.01,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 128,
+            "coverage": 0.405,
+            "phase_error_ms": 16.13,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 8,
+            "coverage": 0.301,
+            "phase_error_ms": 21.23,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 96,
+            "coverage": 0.422,
+            "phase_error_ms": 4.25,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 71,
+            "coverage": 0.477,
+            "phase_error_ms": 8.07,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 99,
+            "coverage": 0.434,
+            "phase_error_ms": 32.27,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 13,
+            "coverage": 0.531,
+            "phase_error_ms": 13.16,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 118,
+            "coverage": 0.303,
+            "phase_error_ms": 30.57,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 8,
+            "coverage": 0.518,
+            "phase_error_ms": 14.44,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 119,
+            "coverage": 0.371,
+            "phase_error_ms": 22.08,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 56,
+            "coverage": 0.452,
+            "phase_error_ms": 12.31,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 121,
+            "coverage": 0.414,
+            "phase_error_ms": 17.83,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 300000,
+            "end_ms": 312000,
+            "attacks": 30,
+            "coverage": 0.605,
+            "phase_error_ms": 8.49,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 300000,
+            "end_ms": 312000,
+            "attacks": 132,
+            "coverage": 0.44,
+            "phase_error_ms": 8.07,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 312000,
+            "end_ms": 324000,
+            "attacks": 15,
+            "coverage": 0.6,
+            "phase_error_ms": 7.22,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 312000,
+            "end_ms": 324000,
+            "attacks": 68,
+            "coverage": 0.385,
+            "phase_error_ms": 16.56,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 372000,
+            "end_ms": 384000,
+            "attacks": 8,
+            "coverage": 0.32,
+            "phase_error_ms": -35.67,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 372000,
+            "end_ms": 384000,
+            "attacks": 79,
+            "coverage": 0.454,
+            "phase_error_ms": 1.27,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 456000,
+            "end_ms": 468000,
+            "attacks": 25,
+            "coverage": 0.476,
+            "phase_error_ms": -0.42,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 456000,
+            "end_ms": 468000,
+            "attacks": 119,
+            "coverage": 0.563,
+            "phase_error_ms": -5.1,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 3943165,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 190.0,
+      "raw_offset": 62,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 190.0,
+        "offset": 62,
+        "division": 4,
+        "score": 0.3242,
+        "coverage": 0.5336,
+        "median_error_ms": 15.32
+      },
+      "remaining_suspect_windows": [
+        12000,
+        36000,
+        120000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 123,
+            "coverage": 0.632,
+            "phase_error_ms": -0.41,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 129,
+            "coverage": 0.579,
+            "phase_error_ms": -0.82,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 100,
+            "coverage": 0.612,
+            "phase_error_ms": 4.93,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 117,
+            "coverage": 0.49,
+            "phase_error_ms": 10.69,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 68,
+            "coverage": 0.609,
+            "phase_error_ms": 5.35,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 79,
+            "coverage": 0.46,
+            "phase_error_ms": 9.05,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 3953596,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 130.0,
+      "raw_offset": 26,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 130.0,
+        "offset": 26,
+        "division": 4,
+        "score": 0.5226,
+        "coverage": 0.7667,
+        "median_error_ms": 9.88
+      },
+      "remaining_suspect_windows": [
+        96000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 27,
+            "coverage": 0.648,
+            "phase_error_ms": 0.6,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 98,
+            "coverage": 0.389,
+            "phase_error_ms": 3.0,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4053464,
+      "group": "audio-extension2-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 137.0,
+      "raw_offset": 437,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": true,
+      "alternate_score": {
+        "bpm": 137.0,
+        "offset": 437,
+        "division": 4,
+        "score": 0.6602,
+        "coverage": 0.8191,
+        "median_error_ms": 4.23
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 4252009,
+      "group": "audio-extension2-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 164.0,
+      "raw_offset": 15,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 164.0,
+        "offset": 15,
+        "division": 4,
+        "score": 0.4137,
+        "coverage": 0.632,
+        "median_error_ms": 14.41
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 4486256,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 175.0,
+      "raw_offset": 250,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 175.0,
+        "offset": 250,
+        "division": 4,
+        "score": 0.5014,
+        "coverage": 0.7524,
+        "median_error_ms": 9.79
+      },
+      "remaining_suspect_windows": [
+        72000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 76,
+            "coverage": 0.63,
+            "phase_error_ms": 1.34,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 95,
+            "coverage": 0.543,
+            "phase_error_ms": 7.59,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4635410,
+      "group": "audio-extension2-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 137.0,
+      "raw_offset": 69,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 137.0,
+        "offset": 69,
+        "division": 4,
+        "score": 0.5035,
+        "coverage": 0.6966,
+        "median_error_ms": 15.25
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 4890664,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 297.667,
+      "raw_offset": 122,
+      "classification": "blocked_incompatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 297.667,
+        "offset": 122,
+        "division": 4,
+        "score": 0.3447,
+        "coverage": 0.3934,
+        "median_error_ms": 12.96
+      },
+      "remaining_suspect_windows": [
+        0,
+        12000,
+        24000,
+        36000,
+        48000,
+        60000,
+        72000,
+        84000,
+        96000,
+        108000,
+        120000,
+        132000,
+        144000,
+        156000,
+        168000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 94,
+            "coverage": 0.299,
+            "phase_error_ms": 22.31,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 120,
+            "coverage": 0.494,
+            "phase_error_ms": 1.05,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 28,
+            "coverage": 0.4,
+            "phase_error_ms": -7.35,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 141,
+            "coverage": 0.462,
+            "phase_error_ms": -0.79,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 140,
+            "coverage": 0.409,
+            "phase_error_ms": -10.5,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 121,
+            "coverage": 0.461,
+            "phase_error_ms": 0.52,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 123,
+            "coverage": 0.414,
+            "phase_error_ms": 4.72,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 125,
+            "coverage": 0.489,
+            "phase_error_ms": -5.25,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 133,
+            "coverage": 0.431,
+            "phase_error_ms": -8.92,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 151,
+            "coverage": 0.46,
+            "phase_error_ms": -5.77,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 101,
+            "coverage": 0.351,
+            "phase_error_ms": 18.11,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 120,
+            "coverage": 0.404,
+            "phase_error_ms": 12.6,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 21,
+            "coverage": 0.333,
+            "phase_error_ms": 20.73,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 125,
+            "coverage": 0.449,
+            "phase_error_ms": -4.2,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 82,
+            "coverage": 0.461,
+            "phase_error_ms": 4.72,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 113,
+            "coverage": 0.453,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 33,
+            "coverage": 0.437,
+            "phase_error_ms": 12.07,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 125,
+            "coverage": 0.379,
+            "phase_error_ms": -21.26,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 127,
+            "coverage": 0.417,
+            "phase_error_ms": -6.04,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 126,
+            "coverage": 0.451,
+            "phase_error_ms": -1.84,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 139,
+            "coverage": 0.355,
+            "phase_error_ms": 23.88,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 139,
+            "coverage": 0.478,
+            "phase_error_ms": 6.82,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 119,
+            "coverage": 0.395,
+            "phase_error_ms": 12.6,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 154,
+            "coverage": 0.43,
+            "phase_error_ms": -4.72,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 102,
+            "coverage": 0.353,
+            "phase_error_ms": 14.44,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 109,
+            "coverage": 0.461,
+            "phase_error_ms": -6.56,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 60,
+            "coverage": 0.374,
+            "phase_error_ms": 15.49,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 84,
+            "coverage": 0.42,
+            "phase_error_ms": -18.63,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 69,
+            "coverage": 0.318,
+            "phase_error_ms": -24.67,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 4964602,
+      "group": "audio-extension2-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 182.0,
+      "raw_offset": 165,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 182.0,
+        "offset": 165,
+        "division": 4,
+        "score": 0.4312,
+        "coverage": 0.5822,
+        "median_error_ms": 16.18
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 4984293,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 200.0,
+      "raw_offset": 50,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 200.0,
+        "offset": 50,
+        "division": 4,
+        "score": 0.3323,
+        "coverage": 0.4684,
+        "median_error_ms": 19.0
+      },
+      "remaining_suspect_windows": [
+        12000,
+        60000,
+        264000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 76,
+            "coverage": 0.302,
+            "phase_error_ms": 32.81,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 104,
+            "coverage": 0.125,
+            "phase_error_ms": 33.98,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 26,
+            "coverage": 0.619,
+            "phase_error_ms": 1.95,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 100,
+            "coverage": 0.485,
+            "phase_error_ms": 1.95,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 264000,
+            "end_ms": 276000,
+            "attacks": 9,
+            "coverage": 0.594,
+            "phase_error_ms": -0.39,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 264000,
+            "end_ms": 276000,
+            "attacks": 8,
+            "coverage": 0.59,
+            "phase_error_ms": -0.39,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5008549,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 147.0,
+      "raw_offset": 168,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 147.0,
+        "offset": 168,
+        "division": 4,
+        "score": 0.5194,
+        "coverage": 0.6674,
+        "median_error_ms": 19.82
+      },
+      "remaining_suspect_windows": [
+        60000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 143,
+            "coverage": 0.609,
+            "phase_error_ms": 7.44,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 129,
+            "coverage": 0.49,
+            "phase_error_ms": -0.53,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5060312,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 222.0,
+      "raw_offset": 101,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 222.0,
+        "offset": 101,
+        "division": 3,
+        "score": 0.3555,
+        "coverage": 0.4701,
+        "median_error_ms": 19.15
+      },
+      "remaining_suspect_windows": [
+        12000,
+        24000,
+        48000,
+        72000,
+        84000,
+        156000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 37,
+            "coverage": 0.537,
+            "phase_error_ms": -3.75,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 69,
+            "coverage": 0.471,
+            "phase_error_ms": 8.45,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 106,
+            "coverage": 0.64,
+            "phase_error_ms": -1.41,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 126,
+            "coverage": 0.567,
+            "phase_error_ms": -2.82,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 112,
+            "coverage": 0.598,
+            "phase_error_ms": 2.35,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 124,
+            "coverage": 0.323,
+            "phase_error_ms": -18.3,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 105,
+            "coverage": 0.62,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 119,
+            "coverage": 0.447,
+            "phase_error_ms": -20.18,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 41,
+            "coverage": 0.508,
+            "phase_error_ms": 0.94,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 112,
+            "coverage": 0.487,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 94,
+            "coverage": 0.547,
+            "phase_error_ms": -0.47,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 132,
+            "coverage": 0.471,
+            "phase_error_ms": -0.94,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5154697,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 185.0,
+      "raw_offset": 130,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 185.0,
+        "offset": 130,
+        "division": 4,
+        "score": 0.4162,
+        "coverage": 0.6396,
+        "median_error_ms": 14.22
+      },
+      "remaining_suspect_windows": [
+        12000,
+        252000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 6,
+            "coverage": 0.378,
+            "phase_error_ms": -13.94,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 82,
+            "coverage": 0.425,
+            "phase_error_ms": 30.41,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 35,
+            "coverage": 0.417,
+            "phase_error_ms": 17.74,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 79,
+            "coverage": 0.515,
+            "phase_error_ms": -4.65,
+            "suspect": true
+          },
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5189083,
+      "group": "audio-extension2-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 124.0,
+      "raw_offset": 28,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 124.0,
+        "offset": 28,
+        "division": 4,
+        "score": 0.5584,
+        "coverage": 0.7824,
+        "median_error_ms": 11.9
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 5317787,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 299.0,
+      "raw_offset": 123,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": true,
+      "alternate_score": {
+        "bpm": 299.0,
+        "offset": 123,
+        "division": 4,
+        "score": 0.6656,
+        "coverage": 1.0,
+        "median_error_ms": 4.92
+      },
+      "remaining_suspect_windows": [
+        12000,
+        24000,
+        36000,
+        48000,
+        60000,
+        72000,
+        84000,
+        96000,
+        108000,
+        120000,
+        132000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 61,
+            "coverage": 0.229,
+            "phase_error_ms": -16.72,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 70,
+            "coverage": 0.486,
+            "phase_error_ms": 8.88,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 91,
+            "coverage": 0.417,
+            "phase_error_ms": -25.08,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 98,
+            "coverage": 0.369,
+            "phase_error_ms": -14.63,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 91,
+            "coverage": 0.472,
+            "phase_error_ms": -6.27,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 93,
+            "coverage": 0.458,
+            "phase_error_ms": 3.4,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 102,
+            "coverage": 0.487,
+            "phase_error_ms": -4.96,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 94,
+            "coverage": 0.467,
+            "phase_error_ms": 6.79,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 52,
+            "coverage": 0.437,
+            "phase_error_ms": -19.86,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 75,
+            "coverage": 0.46,
+            "phase_error_ms": 4.7,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 39,
+            "coverage": 0.336,
+            "phase_error_ms": 15.15,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5324688,
+      "group": "audio-extension2-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 177.0,
+      "raw_offset": 28,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 177.0,
+        "offset": 28,
+        "division": 4,
+        "score": 0.6423,
+        "coverage": 0.7097,
+        "median_error_ms": 16.41
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 5359181,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "mix",
+      "bpm": 294.0,
+      "raw_offset": 152,
+      "classification": "variable_reference_requires_review",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 294.0,
+        "offset": 152,
+        "division": 4,
+        "score": 0.3707,
+        "coverage": 0.4379,
+        "median_error_ms": 12.39
+      },
+      "remaining_suspect_windows": [
+        0,
+        12000,
+        24000,
+        36000,
+        48000,
+        60000,
+        72000,
+        84000,
+        96000,
+        108000,
+        120000,
+        132000,
+        144000,
+        156000,
+        168000,
+        180000,
+        192000,
+        204000,
+        216000,
+        228000,
+        240000,
+        252000,
+        264000,
+        276000,
+        288000,
+        300000,
+        312000,
+        324000
+      ],
+      "explanations": [
+        {
+          "current": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 85,
+            "coverage": 0.33,
+            "phase_error_ms": 21.79,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 0,
+            "end_ms": 12000,
+            "attacks": 25,
+            "coverage": 0.453,
+            "phase_error_ms": -10.1,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 128,
+            "coverage": 0.488,
+            "phase_error_ms": 6.38,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 12000,
+            "end_ms": 24000,
+            "attacks": 51,
+            "coverage": 0.556,
+            "phase_error_ms": 0.53,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 138,
+            "coverage": 0.386,
+            "phase_error_ms": -14.88,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 24000,
+            "end_ms": 36000,
+            "attacks": 104,
+            "coverage": 0.363,
+            "phase_error_ms": -23.38,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 135,
+            "coverage": 0.4,
+            "phase_error_ms": 7.17,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 36000,
+            "end_ms": 48000,
+            "attacks": 136,
+            "coverage": 0.393,
+            "phase_error_ms": 6.38,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 122,
+            "coverage": 0.455,
+            "phase_error_ms": 1.86,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 48000,
+            "end_ms": 60000,
+            "attacks": 116,
+            "coverage": 0.429,
+            "phase_error_ms": 5.85,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 137,
+            "coverage": 0.362,
+            "phase_error_ms": -23.38,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 60000,
+            "end_ms": 72000,
+            "attacks": 125,
+            "coverage": 0.411,
+            "phase_error_ms": 23.38,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 134,
+            "coverage": 0.395,
+            "phase_error_ms": -15.15,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 72000,
+            "end_ms": 84000,
+            "attacks": 136,
+            "coverage": 0.437,
+            "phase_error_ms": 4.52,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 132,
+            "coverage": 0.494,
+            "phase_error_ms": 2.92,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 84000,
+            "end_ms": 96000,
+            "attacks": 131,
+            "coverage": 0.451,
+            "phase_error_ms": 1.33,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 132,
+            "coverage": 0.374,
+            "phase_error_ms": -12.22,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 96000,
+            "end_ms": 108000,
+            "attacks": 121,
+            "coverage": 0.42,
+            "phase_error_ms": -8.77,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 129,
+            "coverage": 0.415,
+            "phase_error_ms": 0.8,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 108000,
+            "end_ms": 120000,
+            "attacks": 115,
+            "coverage": 0.462,
+            "phase_error_ms": -5.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 114,
+            "coverage": 0.422,
+            "phase_error_ms": -11.43,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 120000,
+            "end_ms": 132000,
+            "attacks": 116,
+            "coverage": 0.496,
+            "phase_error_ms": -1.59,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 117,
+            "coverage": 0.435,
+            "phase_error_ms": 12.49,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 132000,
+            "end_ms": 144000,
+            "attacks": 111,
+            "coverage": 0.503,
+            "phase_error_ms": 3.72,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 117,
+            "coverage": 0.462,
+            "phase_error_ms": -2.92,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 144000,
+            "end_ms": 156000,
+            "attacks": 108,
+            "coverage": 0.485,
+            "phase_error_ms": 1.86,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 128,
+            "coverage": 0.409,
+            "phase_error_ms": -10.36,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 156000,
+            "end_ms": 168000,
+            "attacks": 111,
+            "coverage": 0.41,
+            "phase_error_ms": -15.68,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 126,
+            "coverage": 0.409,
+            "phase_error_ms": -9.03,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 168000,
+            "end_ms": 180000,
+            "attacks": 114,
+            "coverage": 0.35,
+            "phase_error_ms": -15.68,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 131,
+            "coverage": 0.434,
+            "phase_error_ms": 3.99,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 180000,
+            "end_ms": 192000,
+            "attacks": 126,
+            "coverage": 0.507,
+            "phase_error_ms": 3.45,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 192000,
+            "end_ms": 204000,
+            "attacks": 137,
+            "coverage": 0.392,
+            "phase_error_ms": 20.2,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 192000,
+            "end_ms": 204000,
+            "attacks": 142,
+            "coverage": 0.393,
+            "phase_error_ms": 21.26,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 142,
+            "coverage": 0.43,
+            "phase_error_ms": 0.0,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 204000,
+            "end_ms": 216000,
+            "attacks": 122,
+            "coverage": 0.452,
+            "phase_error_ms": 9.03,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 216000,
+            "end_ms": 228000,
+            "attacks": 120,
+            "coverage": 0.5,
+            "phase_error_ms": -1.33,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 114,
+            "coverage": 0.494,
+            "phase_error_ms": 5.85,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 228000,
+            "end_ms": 240000,
+            "attacks": 59,
+            "coverage": 0.451,
+            "phase_error_ms": -2.39,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 124,
+            "coverage": 0.385,
+            "phase_error_ms": 9.83,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 240000,
+            "end_ms": 252000,
+            "attacks": 121,
+            "coverage": 0.422,
+            "phase_error_ms": -11.16,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 135,
+            "coverage": 0.35,
+            "phase_error_ms": -24.98,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 252000,
+            "end_ms": 264000,
+            "attacks": 104,
+            "coverage": 0.386,
+            "phase_error_ms": -11.69,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 264000,
+            "end_ms": 276000,
+            "attacks": 108,
+            "coverage": 0.505,
+            "phase_error_ms": -3.45,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 264000,
+            "end_ms": 276000,
+            "attacks": 122,
+            "coverage": 0.441,
+            "phase_error_ms": -14.08,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 276000,
+            "end_ms": 288000,
+            "attacks": 130,
+            "coverage": 0.447,
+            "phase_error_ms": 7.44,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 276000,
+            "end_ms": 288000,
+            "attacks": 127,
+            "coverage": 0.39,
+            "phase_error_ms": -15.68,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 288000,
+            "end_ms": 300000,
+            "attacks": 145,
+            "coverage": 0.34,
+            "phase_error_ms": -21.26,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 288000,
+            "end_ms": 300000,
+            "attacks": 125,
+            "coverage": 0.364,
+            "phase_error_ms": -23.12,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 300000,
+            "end_ms": 312000,
+            "attacks": 136,
+            "coverage": 0.315,
+            "phase_error_ms": 17.54,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 300000,
+            "end_ms": 312000,
+            "attacks": 130,
+            "coverage": 0.474,
+            "phase_error_ms": -2.66,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 312000,
+            "end_ms": 324000,
+            "attacks": 120,
+            "coverage": 0.435,
+            "phase_error_ms": -2.39,
+            "suspect": true
+          },
+          "alternate": {
+            "start_ms": 312000,
+            "end_ms": 324000,
+            "attacks": 97,
+            "coverage": 0.451,
+            "phase_error_ms": 5.05,
+            "suspect": true
+          },
+          "explained": false
+        },
+        {
+          "current": {
+            "start_ms": 324000,
+            "end_ms": 336000,
+            "attacks": 63,
+            "coverage": 0.474,
+            "phase_error_ms": -7.97,
+            "suspect": true
+          },
+          "alternate": null,
+          "explained": false
+        }
+      ]
+    },
+    {
+      "beatmap_id": 5487297,
+      "group": "audio-extension2-10k",
+      "current_accepted": false,
+      "selected_source": "drums",
+      "bpm": 165.0,
+      "raw_offset": 361,
+      "classification": "blocked_compatible",
+      "probe_accepted": false,
+      "current_global_gate": false,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 165.0,
+        "offset": 361,
+        "division": 4,
+        "score": 0.5121,
+        "coverage": 0.6714,
+        "median_error_ms": 10.45
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    },
+    {
+      "beatmap_id": 5535105,
+      "group": "audio-extension2-10k",
+      "current_accepted": true,
+      "selected_source": "drums",
+      "bpm": 180.0,
+      "raw_offset": 171,
+      "classification": "accepted_compatible",
+      "probe_accepted": true,
+      "current_global_gate": true,
+      "alternate_global_gate": false,
+      "alternate_score": {
+        "bpm": 180.0,
+        "offset": 171,
+        "division": 4,
+        "score": 0.3607,
+        "coverage": 0.5459,
+        "median_error_ms": 17.0
+      },
+      "remaining_suspect_windows": [],
+      "explanations": []
+    }
+  ]
+}

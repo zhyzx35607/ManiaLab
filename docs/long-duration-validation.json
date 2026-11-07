@@ -1,0 +1,131 @@
+{
+  "version": "0.1.0-alpha.4",
+  "duration_seconds": 1200.0,
+  "executable_sha256": "6214d6d065ea773eff75c702306abd3c7cec2519729f69b398db83c53e8209aa",
+  "audio_sha256": "aa21c1cad622820d0b3887c80ae1c08dfef8ab97cf0c05d593644c327ead7f83",
+  "logical_cpu_count": 6,
+  "installed_memory_bytes": 34197258240,
+  "sample_interval_seconds": 0.25,
+  "runs": [
+    {
+      "stage": "cold_analysis",
+      "seconds": 641.52,
+      "candidates": 9483,
+      "peak_tree_rss_bytes": 5032222720,
+      "peak_tree_private_bytes": 6210510848,
+      "maximum_processes": 4,
+      "cached": false
+    },
+    {
+      "stage": "cached_analysis",
+      "seconds": 28.27,
+      "candidates": 9483,
+      "peak_tree_rss_bytes": 3311034368,
+      "peak_tree_private_bytes": 3653087232,
+      "maximum_processes": 4,
+      "cached": true
+    }
+  ],
+  "project_disk_bytes": 926709751,
+  "measurement_note": "Single-host observed process-tree peaks; shared RSS pages may be counted more than once. Browser is not started. No guaranteed minimum RAM or universal runtime claim.",
+  "generation": {
+    "seconds": 24.34,
+    "keys": 10,
+    "supplied_timing": {
+      "bpm": 120.0,
+      "offset": 93,
+      "division": 4
+    },
+    "structure": {
+      "valid": true,
+      "issues": [],
+      "issue_count": 0,
+      "notes": 5882,
+      "ln": 3235,
+      "ln_ratio": 0.55,
+      "max_held": 5,
+      "longest_ln_ms": 2750,
+      "lane_counts": [
+        633,
+        652,
+        748,
+        699,
+        524,
+        438,
+        513,
+        556,
+        538,
+        581
+      ]
+    },
+    "grid": {
+      "endpoints": 9117,
+      "off_grid": 0,
+      "max_error_ms": 0.0,
+      "tolerance_ms": 0.501
+    },
+    "peak_tree_rss_bytes": 287907840,
+    "peak_tree_private_bytes": 652554240
+  },
+  "fixture": "Twenty minutes formed by repeating the original controlled synthetic mix 30 times. This verifies duration capacity, not natural-song transcription accuracy.",
+  "ui": {
+    "counts": {
+      "duration": 1200,
+      "notes": 5882,
+      "candidates": 9483
+    },
+    "loadedMs": 276,
+    "timings": [
+      {
+        "seconds": 1,
+        "mode": "chart",
+        "drawMs": 1.5999999642372131,
+        "visible": 31,
+        "displayed": 5882
+      },
+      {
+        "seconds": 1,
+        "mode": "evidence",
+        "drawMs": 2.600000023841858,
+        "visible": 45,
+        "displayed": 9483
+      },
+      {
+        "seconds": 600,
+        "mode": "chart",
+        "drawMs": 1.9000000357627869,
+        "visible": 31,
+        "displayed": 5882
+      },
+      {
+        "seconds": 600,
+        "mode": "evidence",
+        "drawMs": 2.399999976158142,
+        "visible": 45,
+        "displayed": 9483
+      },
+      {
+        "seconds": 1190,
+        "mode": "chart",
+        "drawMs": 1.5999999642372131,
+        "visible": 16,
+        "displayed": 5882
+      },
+      {
+        "seconds": 1190,
+        "mode": "evidence",
+        "drawMs": 2.900000035762787,
+        "visible": 25,
+        "displayed": 9483
+      }
+    ],
+    "wave": {
+      "start": 1189477.5,
+      "end": 1191477.5
+    },
+    "errors": [],
+    "overflow": false,
+    "note": "Observed browser timings on one host, not a performance guarantee. Source is an original repeated synthetic fixture."
+  },
+  "hardware": "Intel Core i5-9600K, Windows 10, 32 GiB RAM; other local tasks active"
+}

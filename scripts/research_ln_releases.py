@@ -24,6 +24,7 @@ from manialab.domain import note_from, parse_osu
 from manialab.timing import align_candidates, chart_clock_notes
 from manialab.voices import apply_phrase_evidence
 from scripts.evaluate_audio import LOADED_SOURCE
+from scripts.audit_snapshot import assert_snapshot
 from scripts.evaluate_ln import compare, long_reference_recall
 
 VOICES = ('drums', 'bass', 'vocals', 'other')
@@ -45,8 +46,7 @@ def nearest(values, time):
 
 def dataset(folder, automatic=False):
     audit = json.loads((folder/'audit.json').read_text(encoding='utf-8'))
-    if audit['source_fingerprint']['files'] != LOADED_SOURCE['files']:
-        raise ValueError('Analysis/source snapshot mismatch')
+    assert_snapshot(audit['source_fingerprint']['files'], LOADED_SOURCE['files'], Path(__file__).resolve().parents[1])
     if not automatic and not audit['reference']['constant_grid']:
         return None
     analysis = json.loads((folder/'deep/analysis.json').read_text(encoding='utf-8'))

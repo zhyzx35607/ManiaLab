@@ -19,6 +19,7 @@ from manialab.voices import apply_phrase_evidence
 from scripts.evaluate_synthetic_mix import pitched_match
 from scripts.evaluate_ln import compare,long_reference_recall
 from scripts.evaluate_audio import LOADED_SOURCE
+from scripts.audit_snapshot import assert_snapshot
 
 
 def alternatives(frames,times,notes,threshold=.3):
@@ -59,7 +60,7 @@ def supported(folder,analysis):
 def evaluate(folder):
     audit=json.loads((folder/'audit.json').read_text(encoding='utf-8'))
     if not audit['reference']['constant_grid']:return None
-    assert audit['source_fingerprint']['files']==LOADED_SOURCE['files']
+    assert_snapshot(audit['source_fingerprint']['files'], LOADED_SOURCE['files'], Path(__file__).resolve().parents[1])
     analysis=json.loads((folder/'deep/analysis.json').read_text(encoding='utf-8'))
     baseline,extended,count=supported(folder,analysis)
     human=parse_osu((folder/'reference.osu').read_text(encoding='utf-8-sig'))

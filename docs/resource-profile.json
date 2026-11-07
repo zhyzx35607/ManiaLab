@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0-alpha.4",
+  "duration_seconds": 235.200589569161,
+  "executable_sha256": "6214d6d065ea773eff75c702306abd3c7cec2519729f69b398db83c53e8209aa",
+  "audio_sha256": "08b6aff5db874fca7718c6bab0b7c97e01b59648531bfd0c53d5b1628346010d",
+  "logical_cpu_count": 6,
+  "installed_memory_bytes": 34197258240,
+  "sample_interval_seconds": 0.25,
+  "runs": [
+    {
+      "stage": "cold_analysis",
+      "seconds": 141.39,
+      "candidates": 5771,
+      "peak_tree_rss_bytes": 2348867584,
+      "peak_tree_private_bytes": 3553832960,
+      "maximum_processes": 4,
+      "cached": false
+    },
+    {
+      "stage": "cached_analysis",
+      "seconds": 8.09,
+      "candidates": 5771,
+      "peak_tree_rss_bytes": 788406272,
+      "peak_tree_private_bytes": 1090789376,
+      "maximum_processes": 4,
+      "cached": true
+    }
+  ],
+  "project_disk_bytes": 181557312,
+  "measurement_note": "Single-host observed process-tree peaks; shared RSS pages may be counted more than once. Browser is not started. No guaranteed minimum RAM or universal runtime claim.",
+  "fixture": "User-supplied 235.20-second MP3; original kept private",
+  "hardware": "Intel Core i5-9600K, 6 logical CPUs, Windows 10, 32 GiB installed RAM",
+  "runtime_context": "Single observed run; other local tasks and small analysis probes were active. Not a controlled speed comparison.",
+  "disk_note": "Project after cold and cached analysis, before generating a chart; includes source audio and analysis caches."
+}
