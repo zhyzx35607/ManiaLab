@@ -1,0 +1,27 @@
+const {chromium}=require('../test-data/ui/node_modules/playwright');
+const fs=require('fs');
+const path=require('path');
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
+ const page=await browser.newPage({viewport:{width:1512,height:1100},deviceScaleFactor:1});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const base=process.env.MANIALAB_URL||'http://127.0.0.1:8976';
+ await page.goto(base);await page.locator('#files').setInputFiles(path.resolve('tests/artifacts/synthetic.wav'));
+ await page.waitForFunction(()=>document.querySelector('#projectTitle').textContent==='synthetic');
+ await page.locator('#analyze').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('采音候选'),{},{timeout:60000});
+ await page.locator('#generate').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('结构检查通过'),{},{timeout:30000});
+ await page.locator('#seek').fill('1');await page.locator('#seek').dispatchEvent('input');
+ await page.screenshot({path:'tests/artifacts/ui-generation.png',fullPage:true});
+ const stats=await page.locator('#message').textContent();
+ const downloadPromise=page.waitForEvent('download');await page.locator('#exportOsz').click();const download=await downloadPromise;await download.saveAs('tests/artifacts/ui-export.osz');
+ await page.locator('#evidenceView').click();await page.screenshot({path:'tests/artifacts/ui-evidence.png',fullPage:true});
+ await page.locator('#files').setInputFiles(path.resolve('tests/artifacts/public-maps/5900981.osu'));
+ await page.waitForFunction(()=>document.querySelector('#projectSub').textContent.includes('1850'));
+ await page.locator('#generate').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('1850 个物件'),{},{timeout:30000});
+ await page.locator('#chartView').click();await page.locator('#seek').fill('20');await page.locator('#seek').dispatchEvent('input');
+ await page.screenshot({path:'tests/artifacts/ui-remap.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});await page.screenshot({path:'tests/artifacts/ui-mobile.png',fullPage:true});
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth);
+ console.log(JSON.stringify({stats,errors,mobileOverflow:overflow}));
+ await browser.close();if(errors.length||overflow)process.exit(1);
+})().catch(e=>{console.error(e);process.exit(1)});

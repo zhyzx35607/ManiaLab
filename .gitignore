@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.pytest_cache/
+build/
+dist/
+release/
+*.spec
+*.log
+tests/artifacts/
+scripts/reference-*.py
+test-data/
+.env
+*.key
+assets/runtime/
+licenses/runtime/
+licenses/runtime-inventory.json

@@ -1,0 +1,16 @@
+{
+  "basic_pitch": {
+    "version": "v0.4.0",
+    "url": "https://raw.githubusercontent.com/spotify/basic-pitch/v0.4.0/basic_pitch/saved_models/icassp_2022/nmp.onnx",
+    "sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec"
+  },
+  "mapperatorinator": {
+    "repository": "https://github.com/OliBomby/Mapperatorinator",
+    "commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+    "source_archive_sha256": "52f02203174988b00798a24ecb59d81c0a3289961fc93d168ec0d97c458cdc92",
+    "license": "MIT",
+    "model_repository": "OliBomby/Mapperatorinator-v32",
+    "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+    "subfolder": "gamemode=3"
+  }
+}
