@@ -39,6 +39,11 @@ def main():
         sys.stdout = (root / "ManiaLab.log").open("a", encoding="utf-8", buffering=1)
     if sys.stderr is None:
         sys.stderr = sys.stdout
+    # Frozen Python can ignore PYTHONUTF8 on English Windows. Redirected
+    # stdout then uses cp1252 and even our startup message would abort launch.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8', errors='backslashreplace')
     logging.basicConfig(filename=root / "ManiaLab.log", level=logging.INFO, encoding="utf-8")
     from manialab.server import create_app
     from waitress import create_server

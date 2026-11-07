@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 import math
@@ -19,6 +20,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from manialab import __version__
 from manialab.domain import parse_osu, validate
 from manialab.timing import grid_report
 
@@ -46,6 +48,7 @@ def run(executable, work):
     environment['PATH']=str(Path(os.environ['SystemRoot'])/'System32')
     environment.update(HTTP_PROXY='http://127.0.0.1:9',HTTPS_PROXY='http://127.0.0.1:9',NO_PROXY='127.0.0.1,localhost',PYTHONUTF8='1')
     process=None;log=None;url='';token='';checks=[]
+    local_http=urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     def start():
         nonlocal process,log,url,token
@@ -59,7 +62,14 @@ def run(executable, work):
             if time.monotonic()>deadline:raise TimeoutError('Packaged startup exceeded 60s')
             time.sleep(.2)
         url=marker.read_text(encoding='utf-8').strip()
-        html=urllib.request.urlopen(url,timeout=10).read().decode()
+        while True:
+            if process.poll() is not None:raise RuntimeError('Packaged process exited before HTTP readiness; inspect launch log')
+            try:
+                html=local_http.open(url,timeout=2).read().decode()
+                break
+            except (urllib.error.URLError,TimeoutError):
+                if time.monotonic()>deadline:raise TimeoutError('Packaged HTTP service did not become ready')
+                time.sleep(.2)
         token=re.search(r'name="manialab-token" content="([^"]+)"',html).group(1)
 
     def stop():
@@ -76,7 +86,7 @@ def run(executable, work):
         elif payload is not None:
             body=json.dumps(payload).encode();headers['Content-Type']='application/json'
         if body is not None:headers['X-ManiaLab-Token']=token
-        with urllib.request.urlopen(urllib.request.Request(url+path,data=body,headers=headers),timeout=30) as response:
+        with local_http.open(urllib.request.Request(url+path,data=body,headers=headers),timeout=30) as response:
             raw=response.read()
             return json.loads(raw) if 'application/json' in response.headers.get('Content-Type','') else raw
 
@@ -89,8 +99,12 @@ def run(executable, work):
         raise TimeoutError('Packaged job exceeded timeout')
 
     try:
+        expected_prior=hashlib.sha256((ROOT/'assets/pattern-prior.json').read_bytes()).hexdigest()
+        bundled_prior=hashlib.sha256((executable.parent/'_internal/assets/pattern-prior.json').read_bytes()).hexdigest()
+        assert bundled_prior==expected_prior, 'Packaged layout model differs from the source release'
+        checks.append(dict(check='bundled_model',sha256=bundled_prior))
         start();status=request('/api/status')
-        assert status['version']=='0.1.0-alpha.4' and status['separator']['available'],status
+        assert status['version']==__version__ and status['separator']['available'],status
         checks.append(dict(check='startup',version=status['version'],separator=status['separator'],prior=status['pattern_prior']))
         state=request('/api/import',upload=('files',source.name,source.read_bytes()));pid=state['id'];base='/api/projects/'+pid
         job=wait(request(base+'/analyze',dict(engine='deep',settings={},audio_shift_ms=22.5)))
@@ -130,7 +144,7 @@ def run(executable, work):
         bad=request('/api/import',upload=('files','bad.wav',b'invalid audio'))
         failure=wait(request('/api/projects/'+bad['id']+'/analyze',dict(engine='basic',settings={})))
         assert failure['status']=='error'
-        assert request('/api/status')['version']=='0.1.0-alpha.4'
+        assert request('/api/status')['version']==__version__
         checks.append(dict(check='cancel_and_failure',cancelled=cancelled['status'],bad_audio=failure['status'],service_alive=True))
     finally:
         stop()
