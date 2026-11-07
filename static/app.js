@@ -24,20 +24,30 @@ function loadState(s){
   $('mode').value=s.mode;options($('charts'),s.charts.map(c=>[c.path,c.label]));$('charts').classList.toggle('hidden',!s.charts.length);if(s.original)$('charts').value=s.original;
   if(s.audio){const src=`/api/projects/${s.id}/audio`;if(changed||!audio.src){audio.src=src;manualTime=0;}}else{audio.removeAttribute('src');audio.load();}
   const v=variant();if(v)$('mode').value=v.mode;
-  const tempo=v||s.analysis?.tempo;if(tempo){$('bpm').value=tempo.bpm;$('offset').value=tempo.offset;}
-  $('timingConfirmed').checked=!!v?.timing_confirmed;$('snap').checked=v?.snap!==false;$('division').value=tempo?.division||4;
+  const tempo=v||s.analysis?.tempo;$('bpm').value=tempo?.bpm??120;$('offset').value=Math.round(tempo?.offset??0);
+  $('timingConfirmed').checked=!!v?.timing_confirmed;$('division').value=tempo?.division||4;
   const tc=s.analysis?.tempo?.candidates||[];options($('tempoCandidates'),[['','选择其他节拍解释…'],...tc.map((c,i)=>[i,`${c.bpm} BPM · 偏移 ${c.offset} ms · 匹配 ${(c.coverage*100).toFixed(0)}%`])]);
-  if(s.analysis)$('tempoNote').textContent=s.analysis.tempo.reliability;
+  $('tempoNote').textContent=s.analysis?.tempo?.reliability||'分析后校准 BPM / Offset，再生成谱面。';
   $('timingReport').textContent=s.analysis?`起音融合 ${s.analysis.fused_attacks||0} 处 · 分析耗时 ${s.analysis.elapsed_seconds??'未知'} 秒 · ${s.analysis.cached?'复用音高缓存':'本次运行音高模型'}`:'';
   timingSections=v?.timing_sections||s.analysis?.tempo?.sections||[];
   $('planText').textContent=s.plan?.explanation||'';
   options($('variants'),s.variants.length?s.variants.map((v,i)=>[i,`候选 ${i+1} · ${v.settings.keys}K · seed ${v.settings.seed} · ${v.notes.length} 物件${v.region?' · 局部':''}`]):[['','尚未生成']]);$('variants').value=s.active;
   [['exportOsu','osu'],['exportOsz','osz'],['exportJson','json']].forEach(([id,kind])=>{const a=$(id);a.classList.toggle('disabled',!v||(kind==='osz'&&!s.audio));a.title=kind==='osz'&&!s.audio?'请导入配套音频后导出谱包':'';if(v)a.href=`/api/projects/${s.id}/export/${kind}`;else a.removeAttribute('href');a.download='ManiaLab.'+kind;});
   const report=v?.report;const vals=report?[report.notes,`${(report.ln_ratio*100).toFixed(1)}%`,report.max_held,`${(report.longest_ln_ms/1000).toFixed(2)}s`]:['—','—','—','—'];document.querySelectorAll('.metrics strong').forEach((e,i)=>e.textContent=vals[i]);
-  selected=null;setMode();draw();refreshRecent();
+  selected=null;setMode();updateGridStatus();draw();refreshRecent();
+}
+function updateGridStatus(){
+  const v=variant(),audioMode=v?.mode==='audio';
+  const mismatch=audioMode&&(['bpm','offset','division'].some(k=>Number($(k).value)!==v[k]));
+  const stale=audioMode&&(v.timing_revision||0)<3;
+  const g=v?.report?.grid;
+  const diagnosis=$('exportJson'),hasDiagnosis=!!(v||state?.analysis);
+  diagnosis.classList.toggle('disabled',!hasDiagnosis);if(hasDiagnosis)diagnosis.href=`/api/projects/${state.id}/export/json`;else diagnosis.removeAttribute('href');
+  $('gridReport').textContent=stale?'旧版候选：请重新分析并生成整谱，才能导出。':mismatch?'当前 BPM / Offset / 细分与预览候选不同，请重新生成后导出。':g?`落线检查：${g.endpoints-g.off_grid} / ${g.endpoints} 个短键起点与 LN 起止在网格上；最大舍入误差 ${g.max_error_ms} ms。落线检查不判断采音是否正确。`:'';
+  ['exportOsu','exportOsz'].forEach(id=>{const a=$(id),blocked=!v||stale||mismatch||(id==='exportOsz'&&!state?.audio);a.classList.toggle('disabled',blocked);if(blocked)a.removeAttribute('href');else a.href=`/api/projects/${state.id}/export/${id==='exportOsu'?'osu':'osz'}`;});
 }
 async function refreshRecent(){const status=await api('/api/status');options($('recent'),[['','打开已保存项目…'],...status.projects.map(p=>[p.id,p.title])]);if(state)$('recent').value=state.id;$('engineStatus').textContent=status.engine.installed?`运行环境已就绪 · ${status.engine.model_downloaded?'模型权重已下载':'模型权重将在首次生成时下载'}`:'原模型未安装 · 不影响基础采音与定轨';}
-function setMode(){const remap=$('mode').value==='remap';$('musical').classList.toggle('hidden',remap);$('strictHint').classList.toggle('hidden',!remap);$('bpm').disabled=remap;$('offset').disabled=remap;['tempoCandidates','halfBpm','doubleBpm','division','snap','timingConfirmed','checkTiming'].forEach(id=>$(id).disabled=remap);$('generate').firstChild.textContent=remap?'严格重新定轨 ':'生成候选谱面 ';}
+function setMode(){const remap=$('mode').value==='remap';$('musical').classList.toggle('hidden',remap);$('strictHint').classList.toggle('hidden',!remap);$('bpm').disabled=remap;$('offset').disabled=remap;['tempoCandidates','halfBpm','doubleBpm','division','timingConfirmed','checkTiming','refitTiming','referenceTiming','applyTiming'].forEach(id=>$(id).disabled=remap);$('generate').firstChild.textContent=remap?'严格重新定轨 ':'生成候选谱面 ';}
 function setBusy(value){busy=value;['analyze','generate','another','regenerate','plan','charts','variants','recent','files','clearPlan','engineInstall','engineGenerate'].forEach(id=>$(id).disabled=value);$('job').classList.toggle('hidden',!value);}
 async function runJob(action,payload){
   if(!state)throw Error('请先导入素材');if(busy)return;setBusy(true);
@@ -49,7 +59,7 @@ async function runJob(action,payload){
   }finally{jobId=null;setBusy(false);}
 }
 async function importFiles(files){if(!files.length||busy)return;setBusy(true);$('jobText').textContent='导入素材…';try{const data=new FormData();for(const f of files)data.append('files',f);loadState(await api('/api/import',data,true));msg(state.mode==='remap'?'原谱已导入，可直接严格重新定轨。':'音频已导入，点击分析音频开始。');}finally{setBusy(false);$('files').value='';}}
-async function generate(region){await runJob('generate',{settings:settings(),mode:$('mode').value,bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),snap:$('snap').checked,timing_confirmed:$('timingConfirmed').checked,...(region?{region}:{})});}
+async function generate(region){$('offset').value=Math.round(Number($('offset').value));await runJob('generate',{settings:settings(),mode:$('mode').value,bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),snap:true,timing_confirmed:$('timingConfirmed').checked,...(region?{region}:{})});}
 numbers.forEach(k=>$(k).addEventListener('input',updateOutputs));
 document.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{keys=Number(b.dataset.key);updateKeys();});
 $('files').onchange=guarded(e=>importFiles(e.target.files));
@@ -96,18 +106,40 @@ function timingPoints(){
 }
 function beatsBetween(start,end){
   const points=timingPoints(),out=[];
-  points.forEach((p,i)=>{const finish=points[i+1]?.offset??Infinity;const a=Math.max(start*1000,p.offset),b=Math.min(end*1000,finish);
-    for(let j=Math.max(0,Math.ceil((a-p.offset)/p.beat));p.offset+j*p.beat<b&&out.length<500;j++)out.push({time:(p.offset+j*p.beat)/1000,accent:j%4===0});});return out;
+  points.forEach((p,i)=>{const finish=points[i+1]?.offset??Infinity;const a=i===0?start*1000:Math.max(start*1000,p.offset),b=Math.min(end*1000,finish);
+    for(let j=Math.ceil((a-p.offset)/p.beat);p.offset+j*p.beat<b&&out.length<500;j++)out.push({time:(p.offset+j*p.beat)/1000,accent:j%4===0});});return out;
 }
 function drawBeatGrid(c,left,width,bottom,scale,t,span){
+  if($('mode').value==='audio'){
+    const p=timingPoints()[0],div=Number($('division').value);
+    if(p){const tick=p.beat/div;for(let j=Math.ceil((t*1000-p.offset)/tick),count=0;p.offset+j*tick<(t+span)*1000&&count<1500;j++,count++){
+      if(j%div===0)continue;const y=bottom-((p.offset+j*tick)/1000-t)*scale;c.strokeStyle=j%div===div/2?'#334952':'#21343d';c.lineWidth=.7;c.beginPath();c.moveTo(left,y);c.lineTo(width-12,y);c.stroke();
+    }}
+  }
   for(const b of beatsBetween(t,t+span)){const y=bottom-(b.time-t)*scale;c.strokeStyle=b.accent?'#52766d':'#2e4a4a';c.lineWidth=b.accent?1.5:1;c.beginPath();c.moveTo(left,y);c.lineTo(width-12,y);c.stroke();}
   c.lineWidth=1;
 }
-function timingChanged(){ $('timingConfirmed').checked=false;timingSections=[];lastScheduledBeat=-Infinity;draw(); }
+function timingChanged(){ $('timingConfirmed').checked=false;timingSections=[];lastScheduledBeat=-Infinity;updateGridStatus();draw(); }
 ['bpm','offset','division'].forEach(id=>$(id).addEventListener('input',timingChanged));
 $('tempoCandidates').onchange=()=>{const i=$('tempoCandidates').value;if(i==='')return;const c=state.analysis.tempo.candidates[Number(i)];$('bpm').value=c.bpm;$('offset').value=c.offset;$('division').value=c.division;timingChanged();};
 $('halfBpm').onclick=()=>{$('bpm').value=Math.max(10,Number($('bpm').value)/2);timingChanged();};
 $('doubleBpm').onclick=()=>{$('bpm').value=Math.min(1000,Number($('bpm').value)*2);timingChanged();};
+$('applyTiming').onclick=guarded(()=>{
+  const text=$('referenceTiming').value;
+  const bpm=text.match(/BPM\s*[:：=]\s*([\d.]+)/i),offset=text.match(/Offset\s*[:：=]\s*([+-]?[\d.]+)/i);
+  const pair=text.trim().split(/[\s,，;；]+/).map(Number);
+  const b=bpm?Number(bpm[1]):pair.length===2?pair[0]:NaN,o=offset?Number(offset[1]):pair.length===2?pair[1]:NaN;
+  if(!Number.isFinite(b)||b<10||b>1000||!Number.isFinite(o)||Math.abs(o)>600000)throw Error('请粘贴 BPM: 210 与 Offset: 91，或两个用空格分隔的数字');
+  $('bpm').value=b;$('offset').value=Math.round(o);timingChanged();msg(`已应用参考：${b} BPM，Offset ${Math.round(o)} ms。请试听确认后重新生成整谱。`);
+});
+$('refitTiming').onclick=guarded(async()=>{
+  if(!state)throw Error('请先分析音频');
+  const pid=state.id,bpm=Number($('bpm').value),offset=Number($('offset').value),division=Number($('division').value);
+  const r=await api(`/api/projects/${pid}/timing-refit`,{bpm,offset,division});
+  if(state.id!==pid||Number($('bpm').value)!==bpm||Number($('offset').value)!==offset||Number($('division').value)!==division)return;
+  $('offset').value=r.offset;timingChanged();timingSections=r.sections;draw();
+  $('timingReport').textContent=`按 ${r.bpm} BPM 重新估计 Offset：${r.offset} ms。${r.suspect} 段可能错位；请试听确认。`;
+});
 $('checkTiming').onclick=guarded(async()=>{if(!state)throw Error('请先分析音频');const r=await api(`/api/projects/${state.id}/timing-check`,{bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value)});timingSections=r.sections;const suspicious=r.sections.filter(s=>s.suspect);$('timingReport').textContent=`检查 ${r.sections.length} 段，${r.suspect} 段可能错位。`+(suspicious.length?'请定位试听：'+suspicious.slice(0,8).map(s=>`${(s.start_ms/1000).toFixed(0)}–${(s.end_ms/1000).toFixed(0)}s（相位偏差 ${s.phase_error_ms}ms）`).join('；'):'请再用节拍器确认倍速、半速和弱起。');draw();});
 function scheduleMetronome(now){
   if(!$('metronome').checked||!audioContext)return;

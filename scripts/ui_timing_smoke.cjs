@@ -8,6 +8,7 @@ const path=require('path');
  await page.locator('#files').setInputFiles(path.resolve('tests/artifacts/synthetic.wav'));
  await page.waitForFunction(()=>document.querySelector('#projectTitle').textContent==='synthetic');
  await page.locator('#analyze').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('采音候选'),{},{timeout:90000});
+ await page.locator('#bpm').fill('120');await page.locator('#offset').fill('0');await page.locator('#timingConfirmed').check();
  const ratios=[];
  for(const ratio of ['1','0','0.6']){
   await page.locator('#ln_ratio').fill(ratio);await page.locator('#ln_ratio').dispatchEvent('input');
@@ -17,7 +18,7 @@ const path=require('path');
   if(Math.abs(v.report.ln_ratio-Number(ratio))>.001)throw Error(JSON.stringify(v.report));
  }
  await page.locator('#seek').fill('1');await page.locator('#seek').dispatchEvent('input');
- await page.screenshot({path:'tests/artifacts/alpha2-ln-controls.png',fullPage:true});
+ await page.screenshot({path:'tests/artifacts/alpha3-ln-controls.png',fullPage:true});
  await page.locator('#files').setInputFiles(path.resolve('tests/artifacts/timing-137.wav'));
  await page.waitForFunction(()=>document.querySelector('#projectTitle').textContent==='timing-137');
  await page.locator('#analyze').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('采音候选'),{},{timeout:90000});
@@ -31,6 +32,6 @@ const path=require('path');
  await page.locator('#tempoCandidates').selectOption('0');
  await page.locator('#generate').click();await page.waitForFunction(()=>!document.querySelector('#generate').disabled,{},{timeout:60000});
  if(await page.locator('#message').evaluate(e=>e.classList.contains('error')))throw Error(await page.locator('#message').textContent());
- await page.screenshot({path:'tests/artifacts/alpha2-timing-controls.png',fullPage:true});
+ await page.screenshot({path:'tests/artifacts/alpha3-timing-controls.png',fullPage:true});
  console.log(JSON.stringify({ratios,bpm,check,errors}));await browser.close();if(errors.length)process.exit(1);
 })().catch(e=>{console.error(e);process.exit(1)});

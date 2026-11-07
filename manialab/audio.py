@@ -217,7 +217,7 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
                          "transients": sum(n.source == "transient" for n in local),
                          "sustains_over_800ms": sum(n.end - n.start >= 800 for n in local)})
     progress(100, "采音候选已准备好")
-    return {"revision": 2, "duration": duration, "waveform": waveform, "tempo": tempo, "segments": segments,
+    return {"revision": 3, "duration": duration, "waveform": waveform, "tempo": tempo, "segments": segments,
             "elapsed_seconds": round(time.perf_counter() - started, 2), "cached": cached is not None,
             "timing_attacks": [n.data() for n in transients], "fused_attacks": fused,
             "candidates": [n.data() for n in candidates], "thresholds": {k: settings[k] for k in ("onset_threshold", "frame_threshold")},

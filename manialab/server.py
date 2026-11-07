@@ -17,7 +17,7 @@ from flask import Flask, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
 
 from .arrange import DEFAULTS, assign_lanes, parameters, select_notes, layout_metrics
-from .timing import align_candidates, grid_diagnostics
+from .timing import align_candidates, grid_diagnostics, grid_report, refit_offset
 from .audio import analyze
 from .domain import clean_meta, export_osu, note_from, parse_osu, upstream_events, validate
 from .planner import plan
@@ -68,7 +68,7 @@ def create_app(resources, data_root):
 
     @app.get("/api/status")
     def status():
-        return jsonify(version="0.1.0-alpha.2", defaults=DEFAULTS, projects=projects.recent(),
+        return jsonify(version="0.1.0-alpha.3", defaults=DEFAULTS, projects=projects.recent(),
                        capabilities={"audio": True, "remap": True, "api_planner": True, "trained_10k": False}, engine=engine.status())
 
     def busy(pid):
@@ -218,6 +218,10 @@ def create_app(resources, data_root):
         def operation(state, progress, cancelled):
             state["analysis"] = analyze(current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx", prefs, progress, cancelled)
             state["settings"] = prefs
+            # Keep old variants selectable, but never mask a fresh timing result
+            # with the previously selected candidate's BPM / Offset.
+            if state["mode"] == "audio":
+                state["active"] = -1
             return {"candidates": len(state["analysis"]["candidates"])}
         return submit(pid, operation)
 
@@ -230,7 +234,16 @@ def create_app(resources, data_root):
         if type(division) is not int or division not in (3, 4):
             raise ValueError("拍内细分必须为 3 或 4")
         unchanged = abs(bpm - detected["bpm"]) < .0001 and abs(offset - detected["offset"]) < .01 and division == detected.get("division", 4)
-        return detected | dict(bpm=bpm, offset=offset, division=division, stable=bool(unchanged and detected.get("stable")))
+        return detected | dict(bpm=bpm, offset=round(offset), division=division, stable=bool(unchanged and detected.get("stable")))
+
+    @app.post("/api/projects/<pid>/timing-refit")
+    def timing_refit(pid):
+        state = projects.load(pid)
+        tempo = requested_tempo(request.json, state)
+        attacks = [note_from(n) for n in state.get("analysis", {}).get("timing_attacks", [])]
+        fitted = refit_offset(attacks, tempo["bpm"], tempo["division"])
+        checks = grid_diagnostics(attacks, fitted["bpm"], fitted["offset"], fitted["division"])
+        return jsonify(**fitted, sections=checks, suspect=sum(s["suspect"] for s in checks))
 
     @app.post("/api/projects/<pid>/timing-check")
     def timing_check(pid):
@@ -263,14 +276,15 @@ def create_app(resources, data_root):
             else:
                 if not state.get("analysis"):
                     raise ValueError("请先完成音频分析")
-                if state["analysis"].get("revision", 1) < 2:
+                if state["analysis"].get("revision", 1) < 3:
                     raise ValueError("该项目使用旧版采音结果，请先点击「分析音频」更新拍线和 LN 候选；音高缓存会自动复用")
                 candidates, alignment = align_candidates([note_from(n) for n in state["analysis"]["candidates"]],
                     tempo, enabled=payload.get("snap", True) is True, confirmed=payload.get("timing_confirmed", False) is True)
                 progress(25, "按目标 LN 比例求解持续音与未来占轨约束")
                 selected, selection = select_notes(candidates, prefs, state.get("plan", {}).get("segments", []))
                 selection["alignment"] = alignment
-                selection["message"] += f" 起音吸附 {alignment['moved']} 个。" + alignment["reason"]
+                selection["message"] += (f" 量化起点 {alignment['moved']} 个、LN 尾端 {alignment['tails_moved']} 个；"
+                    f"{alignment['large_attack_shifts']} 个候选起音移动超过 30ms。" + alignment["reason"])
                 if not selected:
                     raise ValueError("未找到可生成的采音候选，请降低检测阈值或更换音源")
             locked = []
@@ -281,6 +295,9 @@ def create_app(resources, data_root):
                 variant = state["variants"][state["active"]]
                 if variant["settings"]["keys"] != prefs["keys"] or variant["mode"] != mode:
                     raise ValueError("局部重写不能改变键数或生成模式")
+                if mode == "audio" and (variant.get("timing_revision", 0) < 3 or
+                    any(variant.get(k) != tempo[k] for k in ("bpm", "offset", "division"))):
+                    raise ValueError("Timing 已改变或候选来自旧版，请先重新生成整谱，避免局部重写混用不同拍线")
                 if not isinstance(region, list) or len(region) != 2 or not all(type(x) in (int, float) and math.isfinite(x) for x in region) or not 0 <= region[0] < region[1]:
                     raise ValueError("局部时间范围无效")
                 a, b = region
@@ -291,6 +308,10 @@ def create_app(resources, data_root):
             output = assign_lanes(selected, prefs, locked, beat_ms=60000 / tempo["bpm"], progress=progress, cancelled=cancelled)
             progress(90, "校验谱面并保存候选")
             report = validate(output, prefs["keys"])
+            if mode == "audio":
+                report["grid"] = grid_report(output, tempo)
+                if report["grid"]["off_grid"]:
+                    raise ValueError("生成结果存在离线音符，未保存；请重新分析并生成整谱")
             report["layout"] = layout_metrics(output, prefs["keys"], 60000 / tempo["bpm"])
             timing_sections = grid_diagnostics([note_from(n) for n in state.get("analysis", {}).get("timing_attacks", [])],
                                               tempo["bpm"], tempo["offset"], tempo["division"]) if mode == "audio" else []
@@ -298,6 +319,7 @@ def create_app(resources, data_root):
                 selection["message"] = f"局部定轨完成；整谱实际 LN 比例 {report['ln_ratio']:.1%}。区域外物件已锁定。"
             variant = dict(notes=[n.data() for n in output], settings=prefs, mode=mode, report=report, selection=selection,
                            bpm=tempo["bpm"], offset=tempo["offset"], division=tempo["division"],
+                           timing_revision=3,
                            timing_sections=timing_sections,
                            snap=payload.get("snap", True) is True, timing_confirmed=payload.get("timing_confirmed", False) is True,
                            elapsed_seconds=round(time.perf_counter() - started, 2), created=time.time(), region=region,
@@ -385,10 +407,18 @@ def create_app(resources, data_root):
     @app.get("/api/projects/<pid>/export/<kind>")
     def export(pid, kind):
         state = projects.load(pid)
+        if kind == "json":
+            if not state.get("analysis") and state["active"] < 0:
+                raise ValueError("请先分析音频或生成候选，再下载分析 JSON")
+            evidence = {"title": state["title"], "variant": state["variants"][state["active"]] if state["active"] >= 0 else None,
+                        "analysis": state.get("analysis"), "plan": state.get("plan")}
+            return send_file(io.BytesIO(json.dumps(evidence, ensure_ascii=False, indent=2).encode()), download_name="ManiaLab-analysis.json", as_attachment=True, mimetype="application/json")
         if state["active"] < 0:
             raise ValueError("请先生成谱面")
         variant = state["variants"][state["active"]]
         notes = [note_from(n) for n in variant["notes"]]
+        if variant["mode"] == "audio" and variant.get("timing_revision", 0) < 3:
+            raise ValueError("该候选来自旧版，未通过完整落线检查；请重新分析音频并生成整谱后导出")
         base = projects.path(pid) / "files"
         original = None
         folder = Path()
@@ -398,12 +428,10 @@ def create_app(resources, data_root):
         content = export_osu(notes, variant["settings"]["keys"], resources / "vendor" / "mapperatorinator" / "template.osu",
                              title=state["title"], artist=state["artist"], audio=state.get("audio") or "audio.ogg",
                              bpm=variant["bpm"], offset=variant["offset"], original=original,
+                             grid_division=variant["division"] if variant["mode"] == "audio" else None,
                              version=f'ManiaLab {variant["settings"]["seed"]}')
         if kind == "osu":
             return send_file(io.BytesIO(content.encode("utf-8")), download_name="ManiaLab.osu", as_attachment=True, mimetype="application/octet-stream")
-        if kind == "json":
-            evidence = {"title": state["title"], "variant": variant, "analysis": state.get("analysis"), "plan": state.get("plan")}
-            return send_file(io.BytesIO(json.dumps(evidence, ensure_ascii=False, indent=2).encode()), download_name="ManiaLab-analysis.json", as_attachment=True, mimetype="application/json")
         if kind != "osz":
             raise ValueError("不支持的导出格式")
         current_audio(state)

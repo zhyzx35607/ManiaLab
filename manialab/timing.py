@@ -15,6 +15,18 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.signal import find_peaks
 
 
+def normalize_bpm(bpm):
+    """Keep common musical fractions within 0.01 BPM; otherwise round half up.
+
+    This is an inference policy, never applied to a manually supplied tempo.
+    Diagnostics must be recomputed after changing the period.
+    """
+    whole = math.floor(bpm)
+    fractions = (.25, .333, .5, .667, .75)
+    nearest = min((whole + f for f in fractions), key=lambda x: abs(x - bpm))
+    return round(nearest, 3) if abs(nearest - bpm) <= .01 else float(math.floor(bpm + .5))
+
+
 def _phase(times, weights, period):
     bins = 192
     phases = np.mod(times, period)
@@ -41,9 +53,13 @@ def _fit(times, weights, bpm, division):
         if abs(fitted / tick - 1) > .025:
             break
         period, offset = fitted * division, float(ym - fitted * xm)
-    offset %= period
+    return _score(times, weights, 60000 / period, offset % period, division)
+
+
+def _score(times, weights, bpm, offset, division, choose_phase=True):
+    period = 60000 / bpm
     # Reconsider the beat phase, since regression operates on subdivisions.
-    offsets = [(offset + k * period / division) % period for k in range(division)]
+    offsets = [(offset + k * period / division) % period for k in range(division)] if choose_phase else [offset]
     best = None
     for phase in offsets:
         pos = (times - phase) / period
@@ -66,6 +82,29 @@ def _fit(times, weights, bpm, division):
     return dict(bpm=round(60000 / period, 5), offset=round(offset, 3), division=division,
                 score=round(float(score), 4), coverage=round(float(np.average(dist < tolerance, weights=weights)), 4),
                 median_error_ms=round(float(np.median(dist)), 2))
+
+
+def refit_offset(attacks, bpm, division=4):
+    """Fit phase with the BPM fixed, so rounding tempo cannot retain stale phase."""
+    if not attacks:
+        raise ValueError("没有可用于校准偏移的起音，请先分析音频")
+    times = np.asarray([n.start for n in attacks], float)
+    weights = np.asarray([max(.05, n.strength) for n in attacks])
+    period, tick = 60000 / bpm, 60000 / bpm / division
+    offset = _phase(times, weights, tick)
+    # A modal phase followed by a weighted median is less sensitive to late
+    # soft attacks than a least-squares mean over unrelated voices.
+    for _ in range(3):
+        residual = (times - offset + tick / 2) % tick - tick / 2
+        good = np.abs(residual) < min(30, tick * .24)
+        if not np.any(good):
+            break
+        order = np.argsort(residual[good])
+        r, w = residual[good][order], weights[good][order]
+        offset += float(r[np.searchsorted(np.cumsum(w), w.sum() / 2)])
+    scored = _score(times, weights, bpm, offset % period, division)
+    # Evaluate the *integer* offset that will be displayed and exported.
+    return _score(times, weights, bpm, round(scored["offset"]), division, choose_phase=False) | {"offset": round(scored["offset"])}
 
 
 def grid_diagnostics(attacks, bpm, offset, division=4):
@@ -116,8 +155,17 @@ def estimate_timing(attacks, duration):
                 seeds.append(float(bpm))
     fitted = [_fit(times, weights, bpm, division) for bpm in seeds for division in (4, 3)]
     fitted.sort(key=lambda c: c["score"], reverse=True)
+    normalized = {}
+    for raw in fitted:
+        bpm = normalize_bpm(raw["bpm"])
+        key = (bpm, raw["division"])
+        if not 44 <= bpm <= 301 or key in normalized:
+            continue
+        c = refit_offset(attacks, bpm, raw["division"])
+        c.update(raw_bpm=raw["bpm"], raw_offset=raw["offset"])
+        normalized[key] = c
     candidates = []
-    for c in fitted:
+    for c in sorted(normalized.values(), key=lambda c: c["score"], reverse=True):
         if not 44 <= c["bpm"] <= 301 or any(abs(c["bpm"] - p["bpm"]) < .15 for p in candidates):
             continue
         candidates.append(c)
@@ -130,33 +178,49 @@ def estimate_timing(attacks, duration):
     suspect = sum(s["suspect"] for s in sections)
     stable = best["coverage"] >= .8 and best["median_error_ms"] <= 18 and suspect == 0 and len(sections) >= 2
     confidence = round(best["coverage"] * (1 - suspect / max(1, len(sections))), 3)
-    explanation = "全曲拍线一致；仍需试听确认倍速 / 半速和弱起" if stable else "拍线不稳定或证据不足：可能有变速、切分或误检；自动吸附已停用"
+    explanation = "起音与网格整体一致；仍需试听确认 Offset、倍速 / 半速和弱起" if stable else "拍线不稳定或证据不足：请校准 BPM / Offset 并试听确认后再生成"
     return {**best, "estimated": True, "confidence": confidence, "stable": stable,
             "candidates": candidates, "sections": sections, "reliability": explanation}
 
 
+def grid_report(notes, tempo):
+    """Check every exported endpoint, allowing only integer-ms serialization."""
+    tick = 60000 / tempo["bpm"] / tempo.get("division", 4)
+    times = [t for n in notes for t in ([n.start, n.end] if n.hold else [n.start])]
+    errors = [abs((t - tempo["offset"] + tick / 2) % tick - tick / 2) for t in times]
+    return dict(endpoints=len(times), off_grid=sum(e > .501 for e in errors),
+                max_error_ms=round(max(errors, default=0), 4), tolerance_ms=.501)
+
+
 def align_candidates(notes, tempo, enabled=True, tolerance=30, confirmed=False):
-    """Move only nearby attacks on a verified grid; never extend a sustain tail."""
-    if not enabled or not (confirmed or tempo.get("stable", False)):
-        return list(notes), dict(enabled=False, moved=0, reason="拍线未确认或已关闭吸附")
+    """Quantize both endpoints; keep original evidence in the analysis, not here.
+
+    tolerance is a reporting threshold, never a bypass for off-grid objects.
+    A short interval collapsing to one tick becomes a tap.
+    """
+    if not enabled:
+        raise ValueError("从音频生成需要完整拍线量化；原始检测时间可在「采音证据」查看")
+    if not (confirmed or tempo.get("stable", False)):
+        raise ValueError("当前自动 Timing 不可靠。请校准 BPM / Offset，试听并勾选确认后再生成")
     bpm, offset = float(tempo["bpm"]), float(tempo["offset"])
     division = int(tempo.get("division", 4))
     tick = 60000 / bpm / division
-    limit = min(tolerance, tick * .23)
-    aligned, deltas = [], []
+    first = math.ceil(-offset / tick)
+    def snap(time):
+        return round(offset + max(first, math.floor((time - offset) / tick + .5)) * tick)
+    aligned, deltas, tail_deltas = [], [], []
+    collapsed = 0
     for n in notes:
-        start = max(0, round(offset + round((n.start - offset) / tick) * tick))
-        if abs(start - n.start) > limit:
-            start = n.start
-        if n.hold and start >= n.end:
-            start = n.start
-        end = max(start, n.end) if n.hold else start
+        start = snap(n.start)
+        end = max(start, snap(n.end)) if n.hold else start
         if n.hold:
-            snapped_end = round(offset + math.floor((n.end - offset) / tick + 1e-9) * tick)
-            if 0 <= n.end - snapped_end <= limit and snapped_end > start:
-                end = snapped_end
+            tail_deltas.append(abs(end - n.end))
+            collapsed += end == start
         if start != n.start:
             deltas.append(abs(start - n.start))
-        aligned.append(replace(n, start=start, end=end))
-    return aligned, dict(enabled=True, moved=len(deltas), max_shift_ms=max(deltas, default=0),
-                          tolerance_ms=limit, reason="仅吸附容差内的起音；LN 尾端仅允许向前收齐")
+        aligned.append(replace(n, start=start, end=end, raw=""))
+    return aligned, dict(enabled=True, moved=len(deltas), tails_moved=sum(d > 0 for d in tail_deltas),
+                         max_shift_ms=max(deltas + tail_deltas, default=0),
+                         large_attack_shifts=sum(d > tolerance for d in deltas),
+                         collapsed_holds=collapsed, warning_threshold_ms=tolerance,
+                         reason="短键与 LN 起止均已量化；超过 30ms 的起音移动需回听检查，落线不代表采音正确")

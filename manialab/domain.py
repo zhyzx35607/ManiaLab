@@ -128,7 +128,7 @@ def clean_meta(value):
 
 
 def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unknown", audio="audio.ogg",
-               bpm=120.0, offset=0.0, original=None, version="ManiaLab", creator="ManiaLab"):
+               bpm=120.0, offset=0.0, original=None, version="ManiaLab", creator="ManiaLab", grid_division=None):
     report = validate(notes, keys)
     if not report["valid"]:
         raise ValueError("谱面未通过结构校验：" + report["issues"][0])
@@ -159,7 +159,18 @@ def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unkno
         hp_drain_rate=5, circle_size=keys, overall_difficulty=7, approach_rate=5,
         slider_multiplier=1.4, slider_tick_rate=1, background_line="",
         timing_points=f"{float(offset):.3f},{60000 / float(bpm):.8f},4,2,0,70,1,0", hit_objects="\n".join(lines))
-    return Template(template_path.read_text(encoding="utf-8")).substitute(substitutions)
+    content = Template(template_path.read_text(encoding="utf-8")).substitute(substitutions)
+    if grid_division is not None:
+        from .timing import grid_report
+        content = re.sub(r"(?m)^BeatDivisor:.*$", f"BeatDivisor: {grid_division}", content)
+        # Verify serialized hit objects against the serialized red line, not
+        # just an earlier in-memory candidate that may differ from the export.
+        parsed = parse_osu(content)
+        red = next(line.split(",") for line in parsed["timing"] if line.strip())
+        check = grid_report(parsed["notes"], dict(bpm=60000 / float(red[1]), offset=float(red[0]), division=grid_division))
+        if check["off_grid"]:
+            raise ValueError(f"导出落线检查失败：{check['off_grid']} 个起点或 LN 尾端偏离拍线，请重新生成整谱")
+    return content
 
 
 def invariant(notes):
