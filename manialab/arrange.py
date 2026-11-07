@@ -1,24 +1,41 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from bisect import bisect_left
+from bisect import bisect_left, bisect_right
 from dataclasses import replace
 import math
 import random
+import threading
+import warnings
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment, milp, Bounds, LinearConstraint
 from scipy.sparse import csc_matrix, vstack
 
 from .domain import Note, invariant, validate
+from .timing import BeatClock
+
+
+_solver_lock = threading.Lock()
+
+
+def _solve_binary(*args, **kwargs):
+    # HiGHS owns a process-wide scheduler. Flask jobs run on worker threads;
+    # one solver thread avoids reusing a native thread pool across those jobs.
+    options = dict(kwargs.pop("options", {}), threads=1, parallel=False)
+    with _solver_lock, warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Unrecognized options detected:.*", category=RuntimeWarning)
+        return milp(*args, options=options, **kwargs)
 
 
 DEFAULTS = dict(keys=10, density=7.0, ln_ratio=.55, min_ln=240, max_held=5, release_gap=55,
                 chord_size=4, pitch_follow=.55, balance=.8, jack_avoid=.8, seed=42,
-                onset_threshold=.45, frame_threshold=.3, focus="balanced")
+                onset_threshold=.45, frame_threshold=.3, focus="balanced", phrase_ln=.65, layout_engine="beam", pattern_prior=.35,
+                drums_weight=1., bass_weight=1., vocals_weight=1., other_weight=1.)
 BOUNDS = dict(keys=(6, 10), density=(1, 24), ln_ratio=(0, 1), min_ln=(100, 2000), max_held=(1, 10),
               release_gap=(0, 250), chord_size=(1, 10), pitch_follow=(0, 1), balance=(0, 1),
-              jack_avoid=(0, 1), seed=(0, 2147483647), onset_threshold=(.1, .9), frame_threshold=(.1, .8))
+              jack_avoid=(0, 1), seed=(0, 2147483647), onset_threshold=(.1, .9), frame_threshold=(.1, .8), phrase_ln=(0, 1), pattern_prior=(0,1),
+              drums_weight=(0,2), bass_weight=(0,2), vocals_weight=(0,2), other_weight=(0,2))
 INTEGER = {"keys", "min_ln", "max_held", "release_gap", "chord_size", "seed"}
 
 
@@ -36,6 +53,10 @@ def parameters(raw=None):
             if v not in ("balanced", "pitched", "transient"):
                 raise ValueError("采音侧重无效")
             result[k] = v
+        elif k == "layout_engine":
+            if v not in ("beam", "classic"):
+                raise ValueError("定轨引擎无效")
+            result[k] = v
         else:
             raise ValueError(f"未知参数：{k}")
     result["max_held"] = min(result["keys"], result["max_held"])
@@ -49,14 +70,24 @@ def hand_weights(keys, lane):
     return (1., 0.) if lane < keys // 2 else (0., 1.)
 
 
-def layout_metrics(notes, keys, beat_ms=500):
+def settings_at(settings, time, segments):
+    local = settings.copy()
+    for segment in segments:
+        if segment["start_ms"] <= time < segment["end_ms"]:
+            local.update(segment["preferences"])
+    return local
+
+
+def layout_metrics(notes, keys, beat_ms=500, timing_points=()):
     """Comparable ergonomic costs, not a learned or player-validated quality grade."""
     last = [-100000] * keys
     released = [-100000] * keys
     pressure = [0., 0.]
     previous_time = 0
     cost, jacks, releases, peak = 0., 0, 0, 0.
+    clock = BeatClock(timing_points, beat_ms)
     for n in sorted(notes, key=lambda n: (n.start, n.lane)):
+        beat_ms = clock(n.start)
         decay = math.exp(-(n.start - previous_time) / max(250, beat_ms * 2))
         pressure = [v * decay for v in pressure]
         hands = hand_weights(keys, n.lane)
@@ -81,21 +112,32 @@ def layout_metrics(notes, keys, beat_ms=500):
                 peak_hand_pressure=round(peak, 3))
 
 
-def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None, cancelled=lambda: False):
+def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None, cancelled=lambda: False, segment_preferences=(), timing_points=()):
     """Compare complete assignments against hand/LN-release costs."""
     p = parameters(settings)
     notes, locked = list(notes), list(locked)
+    if p["layout_engine"] == "beam":
+        from .layout import search_layout
+        try:
+            return search_layout(notes, p, locked, beat_ms, progress=progress, cancelled=cancelled,
+                                 segment_preferences=segment_preferences, timing_points=timing_points)
+        except ValueError:
+            # Ordered subsets deliberately limit the search space. The exact
+            # per-chord assignment remains a fallback for feasible irregular
+            # intervals and local rewrites with many locked future objects.
+            if progress:
+                progress(45, "连续搜索未找到路径，尝试完整和弦匹配")
     best, best_cost, failure = None, float("inf"), None
     for attempt in range(6):
         if cancelled():
             raise InterruptedError("已取消定轨搜索")
         trial = p | {"seed": (p["seed"] + attempt * 104729) % 2147483648}
         try:
-            output = _assign_once(notes, trial, locked, beat_ms, cancelled)
+            output = _assign_once(notes, trial, locked, beat_ms, cancelled, segment_preferences, timing_points)
         except ValueError as error:
             failure = error
             continue
-        cost = layout_metrics(output, p["keys"], beat_ms)["cost"]
+        cost = layout_metrics(output, p["keys"], beat_ms, timing_points)["cost"]
         if cost < best_cost:
             best, best_cost = output, cost
         if progress:
@@ -105,7 +147,7 @@ def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None, ca
     return best
 
 
-def _assign_once(notes, settings=None, locked=(), beat_ms=500, cancelled=lambda: False):
+def _assign_once(notes, settings=None, locked=(), beat_ms=500, cancelled=lambda: False, segment_preferences=(), timing_points=()):
     """Interval coloring with Hungarian chord assignment. Never edits event times/types."""
     p = parameters(settings)
     keys, rng = p["keys"], random.Random(p["seed"])
@@ -122,7 +164,10 @@ def _assign_once(notes, settings=None, locked=(), beat_ms=500, cancelled=lambda:
     fixed_index, previous_start = 0, 0
     source_lane = {}
     result = []
+    clock = BeatClock(timing_points, beat_ms)
     for start, chord in sorted(groups.items()):
+        beat_ms = clock(start)
+        local = settings_at(p, start, segment_preferences)
         if cancelled():
             raise InterruptedError("已取消定轨搜索")
         load = [v * math.exp(-(start - previous_start) / max(500, beat_ms * 4)) for v in load]
@@ -156,10 +201,10 @@ def _assign_once(notes, settings=None, locked=(), beat_ms=500, cancelled=lambda:
                 source = (n.source, n.pitch if n.source == "pitch" else n.lane)
                 continuity = .3 if source in source_lane and source_lane[source] != lane else 0
                 jack_window = min(220, max(90, beat_ms * .4))
-                costs[i, lane] = (follow * p["pitch_follow"] * 2 + load[lane] / total_load * p["balance"] * 5 +
-                    hand_load / total_load * p["balance"] * 2 + held_hand * .35 +
-                    max(0, jack_window - elapsed) / jack_window * p["jack_avoid"] * 3 + continuity +
-                    (2 if elapsed < p["release_gap"] else 0) + rng.random() * .65)
+                costs[i, lane] = (follow * local["pitch_follow"] * 2 + load[lane] / total_load * local["balance"] * 5 +
+                    hand_load / total_load * local["balance"] * 2 + held_hand * .35 +
+                    max(0, jack_window - elapsed) / jack_window * local["jack_avoid"] * 3 + continuity +
+                    (2 if elapsed < local["release_gap"] else 0) + rng.random() * .65)
         rows, cols = linear_sum_assignment(costs)
         if len(rows) != len(chord) or any(costs[r, c] > 1e11 for r, c in zip(rows, cols)):
             raise ValueError(f"{start}ms 的 LN 占轨后没有足够轨道（{keys}K）；未删除或缩短任何音符")
@@ -181,38 +226,79 @@ def select_notes(candidates, settings=None, segment_preferences=()):
     p = parameters(settings)
     grouped = []
     for n in sorted(candidates, key=lambda n: (n.start, n.pitch)):
-        if not grouped or n.start - grouped[-1][0].start > 18:
+        if not grouped or n.start != grouped[-1][0].start:
             grouped.append([])
         grouped[-1].append(n)
-    result, recent, skipped = [], [], 0
-    local_preferences = []
+    pool, preferences, scores, chord_ranges = [], [], [], []
+    muted = 0
     for chord in grouped:
         start = min(n.start for n in chord)
-        local = p.copy()
-        for segment in segment_preferences:
-            if segment["start_ms"] <= start < segment["end_ms"]:
-                local.update(segment["preferences"])
-        recent = [t for t in recent if t > start - 1000]
-        budget = max(0, min(local["chord_size"], p["keys"], math.ceil(local["density"]) - len(recent)))
+        local = settings_at(p, start, segment_preferences)
         def priority(n):
-            weight = 1.0
+            weight = local.get(n.voice + "_weight", 1.)
             if local["focus"] == "pitched" and n.source == "pitch":
-                weight = 1.6
+                weight *= 1.6
             if local["focus"] == "transient" and n.source == "transient":
-                weight = 1.6
-            return n.strength * weight
+                weight *= 1.6
+            # A supported vocal phrase is one optional sustained gesture.
+            # Give its existing attack a small preference; never create an
+            # attack or extend a tail here just to meet an LN percentage.
+            phrase = .35 * local["phrase_ln"] * n.support_coverage if n.phrase else 0.
+            shift = abs(n.start - n.evidence_start) if n.evidence_start is not None else 0.
+            # Quantization does not turn an uncertain off-beat detection into
+            # strong evidence. Prefer closer attacks when the density budget
+            # forces a choice, retaining the raw timestamp for inspection.
+            alignment = .4 + .6 * math.exp(-.5 * (shift / 20) ** 2)
+            return .15 + (max(0., n.strength) * weight + phrase) * alignment
         used_pitches = set()
+        first = len(pool)
         for n in sorted(chord, key=priority, reverse=True):
-            if budget <= 0 or (n.pitch, n.source) in used_pitches:
-                skipped += 1
+            if local.get(n.voice + "_weight", 1.) <= 0:
+                muted += 1
                 continue
-            result.append(n)
-            local_preferences.append(local)
-            recent.append(n.start)
-            used_pitches.add((n.pitch, n.source))
-            budget -= 1
+            if (n.pitch, n.source, n.voice) in used_pitches:
+                continue
+            pool.append(n)
+            preferences.append(local)
+            scores.append(priority(n))
+            used_pitches.add((n.pitch, n.source, n.voice))
+        chord_ranges.append((first, len(pool), min(local["chord_size"], p["keys"])))
+    if not pool:
+        result, local_preferences, attack_report = [], [], {"attack_selection": "global", "attack_optimal": True}
+    else:
+        # The old chronological budget spent the next second's allowance on
+        # early weak sounds before seeing a stronger musical attack. Optimize
+        # the complete candidate set under the same rolling density/chord caps.
+        order = sorted(range(len(pool)), key=lambda i: (pool[i].start, i))
+        time_values = [pool[i].start for i in order]
+        rows, cols, values, upper = [], [], [], []
+        for first, last, cap in chord_ranges:
+            row = len(upper); upper.append(cap)
+            rows.extend([row] * (last - first)); cols.extend(range(first, last)); values.extend([1.] * (last - first))
+        for time in sorted(set(time_values)):
+            a, b = bisect_right(time_values, time - 1000), bisect_right(time_values, time)
+            at = order[b - 1]
+            cap = math.ceil(preferences[at]["density"])
+            indices = order[a:b]
+            row = len(upper); upper.append(cap)
+            rows.extend([row] * len(indices)); cols.extend(indices); values.extend([1.] * len(indices))
+        matrix = csc_matrix((values, (rows, cols)), shape=(len(upper), len(pool)))
+        solved = _solve_binary(-np.asarray(scores), integrality=np.ones(len(pool)), bounds=Bounds(0, 1),
+            constraints=LinearConstraint(matrix, -np.inf, np.asarray(upper)), options={"time_limit": 10., "mip_rel_gap": 0.})
+        if solved.x is None:
+            raise ValueError("采音选择未找到满足密度上限的方案；请降低候选数量后重试")
+        chosen = {i for i in np.flatnonzero(solved.x > .5)}
+        if np.any(matrix @ np.array([i in chosen for i in range(len(pool))], float) > np.asarray(upper) + 1e-6):
+            raise ValueError("采音选择结果未通过密度与和弦约束检查")
+        result = [pool[i] for i in order if i in chosen]
+        local_preferences = [preferences[i] for i in order if i in chosen]
+        attack_report = dict(attack_selection="global", attack_optimal=solved.status == 0,
+                             selected_voices={v: sum(n.voice == v for n in result) for v in sorted({n.voice for n in pool})},
+                             phrase_attacks=sum(n.phrase for n in result),
+                             selected_large_attack_shifts=sum(abs(n.start-n.evidence_start)>30 for n in result if n.evidence_start is not None))
     selected, report = choose_holds(result, local_preferences, p)
-    return selected, {"candidates": len(candidates), "selected": len(result), "omitted": skipped, **report}
+    return selected, {"candidates": len(candidates), "selected": len(result), "omitted": len(candidates) - len(result),
+                      "muted_voice_candidates": muted, **attack_report, **report}
 
 
 def choose_holds(notes, local, settings):
@@ -250,7 +336,7 @@ def choose_holds(notes, local, settings):
         upper = np.array([v for t in starts for v in (limits[t], settings["keys"] - chord_sizes[t])], float)
         constraint = LinearConstraint(matrix, -np.inf, upper)
         options = {"time_limit": 10., "mip_rel_gap": 0.}
-        maximum = milp(-np.ones(len(eligible)), integrality=np.ones(len(eligible)),
+        maximum = _solve_binary(-np.ones(len(eligible)), integrality=np.ones(len(eligible)),
                        bounds=Bounds(0, 1), constraints=constraint, options=options)
         if maximum.x is None:
             raise ValueError("LN 约束求解失败，请降低密度或和弦上限")
@@ -261,7 +347,7 @@ def choose_holds(notes, local, settings):
             quality = np.array([notes[i].strength + math.log1p((notes[i].end - notes[i].start) / 500) +
                                 local[i]["ln_ratio"] * 2 for i in eligible])
             matrix2 = vstack([matrix, np.ones((1, len(eligible)))], format="csc")
-            best = milp(-quality, integrality=np.ones(len(eligible)), bounds=Bounds(0, 1),
+            best = _solve_binary(-quality, integrality=np.ones(len(eligible)), bounds=Bounds(0, 1),
                         constraints=LinearConstraint(matrix2, np.r_[np.full(len(upper), -np.inf), requested],
                                                      np.r_[upper, requested]), options=options)
             if best.x is not None:
@@ -269,7 +355,8 @@ def choose_holds(notes, local, settings):
             else:
                 # Any subset of a feasible interval solution stays feasible.
                 chosen = {eligible[j] for j in sorted(pool, key=lambda j: quality[j], reverse=True)[:requested]}
-    result = [replace(n, end=n.end if i in chosen else n.start) for i, n in enumerate(notes)]
+    result = [replace(n, end=n.end if i in chosen else n.start,
+                      phrase=n.phrase and i in chosen) for i, n in enumerate(notes)]
     actual = len(chosen) / max(1, count)
     message = f"LN 目标 {target_ratio:.0%}，实际 {actual:.1%}（{len(chosen)}/{count}）。"
     if len(chosen) < wanted:

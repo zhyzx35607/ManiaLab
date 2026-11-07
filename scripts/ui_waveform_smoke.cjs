@@ -1,0 +1,25 @@
+const {chromium}=require('../test-data/ui/node_modules/playwright');
+const path=require('path');
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
+ const page=await browser.newPage({viewport:{width:1512,height:1100}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ const base=process.env.MANIALAB_URL||'http://127.0.0.1:8981';await page.goto(base);
+ await page.locator('#files').setInputFiles(path.resolve('tests/artifacts/synthetic.wav'));
+ await page.waitForFunction(()=>document.querySelector('#projectTitle').textContent==='synthetic');
+ await page.locator('#analysisEngine').selectOption('basic');await page.locator('#analyze').click();
+ await page.waitForFunction(()=>!document.querySelector('#analyze').disabled,{},{timeout:120000});
+ await page.locator('#waveDetailPanel summary').click();await page.locator('#waveHere').click();
+ await page.waitForFunction(()=>document.querySelector('#waveDetailInfo').textContent.includes('原始采样'));
+ await page.locator('#bpm').fill('120');await page.locator('#offset').fill('0');
+ await page.locator('#waveCursor').fill('1091');await page.locator('#waveAlign').click();
+ if(await page.locator('#offset').inputValue()!=='-34')throw Error('wrong nearest-subdivision phase adjustment');
+ if(await page.locator('#timingConfirmed').isChecked())throw Error('offset edit remained confirmed');
+ await page.locator('#waveSpan').selectOption('500');
+ await page.waitForFunction(()=>waveDetail&&Math.abs(waveDetail.end_ms-waveDetail.start_ms-500)<.1);
+ await page.screenshot({path:'tests/artifacts/alpha4-waveform-detail.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1);
+ console.log(JSON.stringify({offset:await page.locator('#offset').inputValue(),info:await page.locator('#waveDetailInfo').textContent(),overflow,errors}));
+ await browser.close();if(errors.length||overflow)process.exit(1);
+})().catch(e=>{console.error(e);process.exit(1)});

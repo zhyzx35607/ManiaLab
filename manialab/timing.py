@@ -7,12 +7,51 @@ merely because it has a strong autocorrelation peak.
 from __future__ import annotations
 
 from dataclasses import replace
+from bisect import bisect_right
 import math
 
 import numpy as np
 from scipy.fft import rfft, rfftfreq, next_fast_len
 from scipy.ndimage import gaussian_filter1d
 from scipy.signal import find_peaks
+
+DIVISIONS = (3, 4, 6, 8, 12, 16)
+
+
+def chart_clock_notes(notes, audio_shift_ms=0):
+    """Convert measured audio times to an explicit mapping convention.
+
+    A positive shift places chart events earlier. This is not a decoder fix or
+    a change to the source audio; raw detection remains available in analysis.
+    """
+    if not math.isfinite(audio_shift_ms) or abs(audio_shift_ms) > 100:
+        raise ValueError("制谱提前量必须在 -100–100 ms 内")
+    return [replace(n, start=max(0, math.floor(n.start-audio_shift_ms+.5)),
+                    end=max(0, math.floor(n.end-audio_shift_ms+.5))) for n in notes]
+
+
+class BeatClock:
+    """Read original red lines for arrangement without changing their timestamps."""
+
+    def __init__(self, timing_points=(), fallback=500.):
+        points = {}
+        for line in timing_points:
+            fields = line.split(',')
+            try:
+                offset, period = float(fields[0]), float(fields[1])
+                red = len(fields) < 7 or fields[6].strip() == '1'
+            except (ValueError, IndexError):
+                continue
+            if red and math.isfinite(offset) and math.isfinite(period) and period > 0:
+                points[offset] = period
+        self.offsets = sorted(points)
+        self.periods = [points[t] for t in self.offsets]
+        self.fallback = fallback
+
+    def __call__(self, time):
+        if not self.offsets:
+            return self.fallback
+        return self.periods[max(0, bisect_right(self.offsets, time) - 1)]
 
 
 def normalize_bpm(bpm):
@@ -129,9 +168,52 @@ def grid_diagnostics(attacks, bpm, offset, division=4):
     return result
 
 
-def estimate_timing(attacks, duration):
+def _precision_candidate(attacks, raw, rounded, duration):
+    """Expose a real fractional tempo instead of hiding it as another harmonic.
+
+    Normal rounding remains the default UI policy. Only a substantial loss of
+    whole-song fit warrants a separate, explicit precision suggestion. Tiny
+    estimator decimals such as 210.00073 never create one.
+    """
+    span = max(0, attacks[-1].start - attacks[0].start)
+    drift = span * abs(1 - raw["bpm"] / rounded["bpm"])
+    if (span < 30000 or drift < 25 or raw["coverage"] < .7 or
+            raw["score"] < rounded["score"] + .06):
+        return None
+    # Prefer the shortest decimal that changes the fitted grid by at most 8ms
+    # over the observed span, then recompute offset and all quality measures.
+    bpm = raw["bpm"]
+    for digits in (1, 2, 3):
+        simple = round(bpm, digits)
+        if span * abs(1 - bpm / simple) <= 8:
+            bpm = simple
+            break
+    candidate = refit_offset(attacks, bpm, raw["division"])
+    if candidate["coverage"] < .7 or candidate["score"] < rounded["score"] + .05:
+        return None
+    candidate.update(raw_bpm=raw["bpm"], rounded_bpm=rounded["bpm"],
+        rounding_drift_ms=round(duration * 1000 * abs(1 - bpm / rounded["bpm"])),
+        score_gain=round(candidate["score"] - rounded["score"], 4), precision_suggestion=True)
+    return candidate
+
+
+def beat_meter_support(beats_ms, bpm):
+    """Support for the *beat unit*, never use model timestamps as an offset.
+
+    Beat This predicts at 50fps. Consecutive gaps may guide half/double-time
+    selection but cannot establish a millisecond-accurate physical attack.
+    """
+    gaps = np.diff(np.asarray(beats_ms, dtype=float))
+    gaps = gaps[np.isfinite(gaps) & (gaps >= 150) & (gaps <= 1800)]
+    if len(gaps) < 16:
+        return 0.
+    period = 60000 / bpm
+    return float(np.mean(np.exp(-.5 * ((gaps - period) / max(25, period * .04)) ** 2)))
+
+
+def estimate_timing(attacks, duration, beats_ms=None):
     empty = dict(bpm=120., offset=0., estimated=True, confidence=0., stable=False,
-                 candidates=[], sections=[], division=4, reliability="节奏证据不足，请设置 BPM / Offset 后试听")
+                 candidates=[], precise_candidates=[], sections=[], division=4, reliability="节奏证据不足，请设置 BPM / Offset 后试听")
     if len(attacks) < 8 or attacks[-1].start - attacks[0].start < 5000:
         return empty
     times = np.asarray([n.start for n in attacks], float)
@@ -153,9 +235,18 @@ def estimate_timing(attacks, duration):
             bpm = freqs[i] * 60 / harmonic
             if 45 <= bpm <= 300 and all(abs(bpm - s) > .12 for s in seeds):
                 seeds.append(float(bpm))
+    if beats_ms is not None and len(beats_ms) >= 17:
+        gaps = np.diff(np.asarray(beats_ms, dtype=float))
+        gaps = gaps[np.isfinite(gaps) & (gaps >= 200) & (gaps <= 1400)]
+        if len(gaps):
+            for gap in np.percentile(gaps, [25, 50, 75]):
+                for factor in (.5, 1, 2):
+                    bpm = 60000 / gap * factor
+                    if 45 <= bpm <= 300 and all(abs(bpm - s) > .12 for s in seeds):
+                        seeds.append(float(bpm))
     fitted = [_fit(times, weights, bpm, division) for bpm in seeds for division in (4, 3)]
     fitted.sort(key=lambda c: c["score"], reverse=True)
-    normalized = {}
+    normalized, precise = {}, {}
     for raw in fitted:
         bpm = normalize_bpm(raw["bpm"])
         key = (bpm, raw["division"])
@@ -163,9 +254,23 @@ def estimate_timing(attacks, duration):
             continue
         c = refit_offset(attacks, bpm, raw["division"])
         c.update(raw_bpm=raw["bpm"], raw_offset=raw["offset"])
+        exact = _precision_candidate(attacks, raw, c, duration)
+        if exact:
+            precise[key] = exact
+            c.update(exact_bpm=exact["bpm"], rounding_drift_ms=exact["rounding_drift_ms"])
         normalized[key] = c
     candidates = []
-    for c in sorted(normalized.values(), key=lambda c: c["score"], reverse=True):
+    if beats_ms is not None:
+        for c in normalized.values():
+            c["beat_support"] = round(beat_meter_support(beats_ms, c.get("exact_bpm", c["bpm"])), 4)
+    use_meter = max((c.get("beat_support", 0) for c in normalized.values()), default=0) >= .55
+    def rank(c):
+        exact = precise.get((c["bpm"], c["division"]))
+        # Do not replace the strongest original tempo with a different harmonic
+        # just because rounding damaged it. Keep it visible with a warning.
+        acoustic = max(c["score"], exact["score"] * .98) if exact else c["score"]
+        return acoustic + (c.get("beat_support", 0) * .24 if use_meter else 0)
+    for c in sorted(normalized.values(), key=rank, reverse=True):
         if not 44 <= c["bpm"] <= 301 or any(abs(c["bpm"] - p["bpm"]) < .15 for p in candidates):
             continue
         candidates.append(c)
@@ -176,11 +281,18 @@ def estimate_timing(attacks, duration):
     best = candidates[0]
     sections = grid_diagnostics(attacks, best["bpm"], best["offset"], best["division"])
     suspect = sum(s["suspect"] for s in sections)
-    stable = best["coverage"] >= .8 and best["median_error_ms"] <= 18 and suspect == 0 and len(sections) >= 2
+    stable = best["coverage"] >= .8 and best["median_error_ms"] <= 18 and suspect == 0 and len(sections) >= 2 and "exact_bpm" not in best
     confidence = round(best["coverage"] * (1 - suspect / max(1, len(sections))), 3)
     explanation = "起音与网格整体一致；仍需试听确认 Offset、倍速 / 半速和弱起" if stable else "拍线不稳定或证据不足：请校准 BPM / Offset 并试听确认后再生成"
+    if "exact_bpm" in best:
+        explanation = (f"取整为 {best['bpm']:g} BPM 可能造成约 {best['rounding_drift_ms']}ms 的整曲漂移。"
+                       f"另有 {best['exact_bpm']:g} BPM 精确候选，请比较歌曲开头与结尾后采用。")
+    strongest = max((c["score"] for c in normalized.values()), default=0)
+    strongest = max(strongest, max((c["score"] for c in precise.values()), default=0))
+    precise_candidates = sorted((c for c in precise.values() if c["score"] >= strongest * .85), key=lambda c: c["score"], reverse=True)[:4]
     return {**best, "estimated": True, "confidence": confidence, "stable": stable,
-            "candidates": candidates, "sections": sections, "reliability": explanation}
+            "candidates": candidates, "precise_candidates": precise_candidates, "sections": sections, "reliability": explanation,
+            "meter_model_used": use_meter}
 
 
 def grid_report(notes, tempo):
@@ -218,7 +330,9 @@ def align_candidates(notes, tempo, enabled=True, tolerance=30, confirmed=False):
             collapsed += end == start
         if start != n.start:
             deltas.append(abs(start - n.start))
-        aligned.append(replace(n, start=start, end=end, raw=""))
+        aligned.append(replace(n, start=start, end=end, raw="",
+            evidence_start=n.evidence_start if n.evidence_start is not None else n.start,
+            evidence_end=n.evidence_end if n.evidence_end is not None else n.end))
     return aligned, dict(enabled=True, moved=len(deltas), tails_moved=sum(d > 0 for d in tail_deltas),
                          max_shift_ms=max(deltas + tail_deltas, default=0),
                          large_attack_shifts=sum(d > tolerance for d in deltas),

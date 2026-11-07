@@ -7,7 +7,7 @@ const path=require('path');
  const base=process.env.MANIALAB_URL||'http://127.0.0.1:8976';await page.goto(base);
  await page.locator('#files').setInputFiles(path.resolve('tests/artifacts/synthetic.wav'));
  await page.waitForFunction(()=>document.querySelector('#projectTitle').textContent==='synthetic');
- await page.locator('#analyze').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('采音候选'),{},{timeout:90000});
+ await page.locator('#analysisEngine').selectOption('basic');await page.locator('#analyze').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('采音候选'),{},{timeout:90000});
  await page.locator('#bpm').fill('120');await page.locator('#offset').fill('0');await page.locator('#timingConfirmed').check();
  const ratios=[];
  for(const ratio of ['1','0','0.6']){
@@ -21,7 +21,7 @@ const path=require('path');
  await page.screenshot({path:'tests/artifacts/alpha3-ln-controls.png',fullPage:true});
  await page.locator('#files').setInputFiles(path.resolve('tests/artifacts/timing-137.wav'));
  await page.waitForFunction(()=>document.querySelector('#projectTitle').textContent==='timing-137');
- await page.locator('#analyze').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('采音候选'),{},{timeout:90000});
+ await page.locator('#analysisEngine').selectOption('basic');await page.locator('#analyze').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('采音候选'),{},{timeout:90000});
  const bpm=Number(await page.locator('#bpm').inputValue());if(Math.abs(bpm-137)>.01)throw Error('wrong BPM '+bpm);
  await page.locator('#checkTiming').click();await page.waitForFunction(()=>document.querySelector('#timingReport').textContent.includes('检查'));
  const check=await page.locator('#timingReport').textContent();

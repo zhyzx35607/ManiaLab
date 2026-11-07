@@ -1,0 +1,76 @@
+name: Windows validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+      # Tagged releases, manual runs and explicit build commits exercise the EXE.
+      BUILD_PORTABLE: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[portable]') }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: '0.12.1'
+          enable-cache: true
+      - name: Install locked application environment
+        run: |
+          uv venv .venv --python 3.12.10
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          uv pip sync --python .venv/Scripts/python.exe requirements-lock.txt
+      - name: Test timing, LN selection, layout and project APIs
+        run: .venv/Scripts/python.exe -m pytest -q
+      - name: Fetch verified audio models
+        if: env.BUILD_PORTABLE == 'true'
+        run: .venv/Scripts/python.exe scripts/fetch_audio_models.py
+      - name: Install isolated audio environment
+        if: env.BUILD_PORTABLE == 'true'
+        run: |
+          uv venv .venv-audio --python 3.12.10
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          uv pip sync --python .venv-audio/Scripts/python.exe --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match requirements-deep-lock.txt
+      - name: Build portable audio worker
+        if: env.BUILD_PORTABLE == 'true'
+        run: .venv-audio/Scripts/python.exe scripts/build_audio_worker.py
+      - name: Build complete Windows archive
+        if: env.BUILD_PORTABLE == 'true'
+        run: .venv/Scripts/python.exe scripts/build_windows.py
+      - name: Verify actual EXE offline with clean PATH and Unicode data paths
+        if: env.BUILD_PORTABLE == 'true'
+        run: .venv/Scripts/python.exe scripts/verify_portable.py dist/ManiaLab/ManiaLab.exe --work test-data/portable-ci
+      - name: Save portable verification report
+        if: always() && env.BUILD_PORTABLE == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: portable-verification
+          path: |
+            test-data/portable-ci/report.json
+            test-data/portable-ci/launch-*.log
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Save verified build
+        if: success() && env.BUILD_PORTABLE == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ManiaLab-windows-x64
+          path: release/*
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error

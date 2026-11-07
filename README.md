@@ -1,80 +1,79 @@
 # ManiaLab · 6–10K 制谱工作台
 
-面向 **6–10K osu!mania，优先 10K 和 LN** 的 Windows 桌面工作台。以 Mapperatorinator 为上游，增加可检查的音频证据、持续音编排、LN 占轨约束和严格重新定轨。
+为 **6–10K osu!mania、尤其 10K 和 LN** 制作的本地 Windows 工作台。先分离和检查音乐，再选择起音、持续区间与轨道；支持从音频生成，也支持已有谱面的严格重定轨。
 
-**当前版本：0.1.0-alpha.3。可运行的实验版；尚未训练专用 10K 模型。** 本次修复 BPM 数值整理、完整拍线量化及导出落线校验；实际歌曲自动 Offset 的准确性仍待验证。仍不能保证输出达到可发布谱面的音乐表达与手感水平。
+**0.1.0-alpha.4 · 实验版。** 已有四声部采音、跨音高人声长条、连续键型搜索和小型轨道偏好模型。尚未完成端到端 10K 制谱模型训练，也没有证据证明音乐性全面超过 Mapperatorinator。当前版本适合生成、检查和修改候选，再到 osu! 试打。
 
 ![ManiaLab 界面](docs/screenshot.png)
 
-## Windows 直接运行
+## 下载即用
 
-1. 在 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.3-windows-x64.zip`。
-2. **完整解压**后双击 `ManiaLab.exe`。程序会自动打开本机浏览器界面；保持控制台窗口运行，关闭窗口即退出。
-3. 导入音频 → 分析音频 → 校准 BPM / Offset、试听节拍器并确认 → 生成候选 → 下载 `.osz` → 拖入 osu! 测试。
+1. 从 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.4-windows-x64.zip`。
+2. **完整解压**后双击 `ManiaLab.exe`。程序打开本机浏览器界面，关闭控制台窗口退出。
+3. 导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 生成候选 → 下载 `.osz` → 拖入 osu!。
 
-基础功能包含 Python 运行时、ONNX 音高模型和音频解码器，不需要安装 Python、Docker、CUDA 或配置服务。面向 Windows 10/11 x64；本机 Windows 10 已验证，其他电脑兼容性仍待测试。默认在 CPU 上运行。
+完整包自带 CPU 运行时、四声部分离模型、节拍模型、音高模型和 FFmpeg。日常功能离线可用，不需要 Python、Docker、CUDA 或手动部署。仅 API 助手和可选 Mapperatorinator 原模型首次安装需要联网。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
 
-所有项目自动保存到 `%LOCALAPPDATA%\ManiaLab\projects`。可从「最近项目」继续工作；迁移项目时复制该文件夹。日志在 `%LOCALAPPDATA%\ManiaLab\ManiaLab.log`。`.osu` 单文件导出需要自行配套音频；`.osz` 包含音频和支持的图片、音效文件。
+首次全曲深度分析会真实运行多个模型，耗时取决于长度与 CPU；再次调整门槛会复用已完成的模型结果。界面显示实际耗时和缓存状态。`SHA256SUMS.txt` 是校验文件，正常使用只需下载 ZIP。
 
-## 已有功能
+项目自动保存到 `%LOCALAPPDATA%\ManiaLab\projects`，日志在 `%LOCALAPPDATA%\ManiaLab\ManiaLab.log`。迁移项目可复制项目文件夹。
 
-- **音频生成**：Basic Pitch ONNX 检测有音高的起音和持续区间，频谱变化检测瞬态；展示波形、采音证据、音符起止和来源。
-- **拍线校准**：自动 BPM 整理、整数毫秒 Offset、固定 BPM 重新拟合偏移、粘贴参考 Timing、倍速/半速切换、细分网格、节拍器和全曲漂移检查。生成与导出均逐个检查短键与 LN 起止落线。
-- **LN 编排**：LN 只能来自已检测的持续区间；目标比例定义为 LN 数 ÷ 总物件数，以整数约束求解可达比例；保持量化后的选中起音；LN 尾端就近量化，可能向前或向后移动半个细分。控制密度、同时 LN 数、起音组合、最短 LN 和采音侧重。
-- **6–10K 定轨**：比较 6 个完整布局，检查轨道占用、放键间隔、同轨连续敲击、双手短时负担与音高连贯；7K/9K 中间键按共享拇指处理。它是约束和启发式编排，尚不具备成熟谱师的完整键型判断。
-- **严格重定轨**：保留原谱每个物件的数量、整数起止时间、类型、音效和原始 TimingPoints，只改变轨道及相关谱面标识。无法满足占轨约束时报告时间，不删音或缩短 LN。
-- **候选与局部重写**：保留最近 8 个版本；改变种子比较布局，按起音时间局部重写并锁定范围外物件。
-- **可选 API 助手**：接入兼容 `/chat/completions` 的服务，读取本地段落统计和文字要求，产生经过范围校验的参数与段落偏好。不会向文本 API 发送音频，也不让 API 编造音符时间。密钥不落盘。
-- **可选原模型**：内含 Mapperatorinator 固定版本源码快照，通过按钮安装隔离的 CPU 环境并下载固定版本 V32 mania 权重。无需手动配置；首次下载需要网络和数 GB 空间。可与基础采音编排结果比较。
-- `.osu` / `.osz` / 分析 JSON 导出，以及本地训练语料审计脚本。
+## 音频、Timing 和 LN
 
-## 当前边界
+- **深度采音**：Hybrid Demucs 分离鼓、贝斯、人声和其余伴奏，逐声部提取起音及持续音。过滤极弱分离残留；对进入近静音的模型尾巴做有界回收。可逐声部试听、查看波形及原始检测时间。
+- **节拍校准**：起音拟合全曲 BPM 与 Offset，Beat This! 辅助判断半速/倍速。默认整理小数噪声，例如 `210.00073 → 210`；保留常见 `.25/.333/.5/.667/.75`。真实小数若取整会造成漂移，会另列精确候选并要求试听。手动 BPM 不强制取整。
+- **明确的时间基准**：新项目默认「制谱提前量」22.5ms，对应用户参考工具的补偿；设 0 使用原始音频时间。这是可见的制谱选择，不是解码纠错。原始采音保留，换算只发生一次。osu! 官方编辑器采用 20ms 的波形视觉补偿，背景及差异见 [Timing 调查](docs/timing-investigation-165340.md)。不同音源或环境可能需要调整。
+- **完整落线**：短键起点、LN 起止量化到 3/4/6/8/12/16 拍内细分。导出回读实际 `.osu` 红线，允许整数毫秒存储产生的最多 0.501ms 舍入误差。量化移动超过 30ms 的起音会单独列出。**落线不等于采音正确。**
+- **LN 取舍**：先在全曲密度与和弦约束下选择起音，再选择有持续依据且不堵轨的 LN。目标比例是 LN 数÷物件数，显示实际值及约束下可达值。可调最短 LN、同时占轨、声部取舍和放键间隔。
+- **跨音高人声长条**：连续的人声可跨过音高变化形成一条 LN；保留支撑它的音高候选与连续覆盖率，不跨明显呼吸缺口。它是可调的表达选择，并非人工乐句标注。
+- **对音实验室**：音乐和节拍/起止提示音混入同一个 PCM 片段，支持 Offset A/B、单声部与 LN 放键试听。提示按实际导出时间播放，不额外补偿。放大波形可切换原始时钟与制谱时钟。
 
-Basic Pitch 不是乐器分离模型。复杂混音、滑音、混响和音尾会误判；声部连续性、跨音高长 LN、段落音乐表达和高阶 10K 键型尚待改进。检测激活强度不是经过校准的置信概率。
+自动 Timing 不稳定时会阻止直接量化；输入参考 Timing 或手动校准并试听确认后可继续。当前不自动生成多段变速红线。已有变速谱面可严格重定轨并保留原始 TimingPoints。
 
-自动检测的 BPM：接近 .25 / .333 / .5 / .667 / .75（误差不超过 0.01 BPM）时保留该分数，其余四舍五入到整数。例如 210.00073 → 210。随后固定 BPM 重新拟合整数毫秒 Offset，并重新计算全曲诊断；原始拟合值保存在分析 JSON 中。手动输入的 BPM 不强制取整，适用于特殊速度。
+## 定轨与编排助手
 
-确认 Timing 后，生成会把所有短键起点、LN 起点和尾端量化到所选细分；短 LN 若量化为零长则变为短键。报告单独显示超过 30ms 的起音移动。导出回读真实 `.osu`，按其中的红线检查每个端点，只允许整数毫秒存储产生的不超过 0.501ms 误差。**落线是必要条件，不代表采音正确。**
+连续 beam search 保存多排候选、LN 占轨、放键和双手负担状态；6–10K 使用明确的手指布局，7K/9K 中键按共享拇指处理。搜索失败时尝试完整和弦匹配。可切换 alpha.3 的逐排引擎对比。
 
-自动拍线不稳定时会停止生成，需输入参考 Timing 或手动校准后试听确认。可粘贴 `BPM: 210` 和 `Offset: 91`；更改 Timing 后需重新生成整谱，局部重写不能混用拍线。旧版项目需重新分析（音高缓存可复用），旧候选保留供查看，但不能直接导出谱面。分析Timing.exe 不随包分发。当前不自动生成多段变速红线；严格重定轨保留原始 TimingPoints。
+小型神经网络从按歌曲分组的人工谱面中学习**固定起止时间下的轨道偏好**。它不能创造声音、决定 LN 长度或证明手感好；只对达到验证条件的键数启用，权重可设为 0。数据、划分和成绩见 [训练报告](docs/training-report.md)。
 
-手感参数是软偏好；严格重定轨优先保持原谱时间。结构校验通过表示没有同轨重叠、轨道越界等错误，**不表示手感、难度或音乐性已合格**。LN 目标按物件数计算，受持续音证据和占轨约束限制；界面显示目标、实际和当前约束下的可达比例。
+严格重定轨保留原谱数量、起止时间、类型、音效和变速，只重新分配轨道。轨道容量不足时报告冲突时间，不删音或缩短 LN。变速谱按当地 BPM 计算定轨偏好。
 
-API 目前验证了兼容协议和本地模拟服务，未用用户的真实供应商密钥验证。不同供应商可能需要调整模型 ID 或 Base URL。原模型引擎仍为上游通用 mania 权重，不是专训后的 10K 权重。原模型生成会把输出设为当前项目的新原谱并替换候选列表。
+可导入喜欢的 `.osu` 作为数量分布参考，自动提取密度、LN 比例、持续长度与占轨规模。它不复制原谱音符，不改变当前目标键数；实际长条仍需本曲音频依据。
 
-支持不超过 20 分钟音频、单次上传 512MB。谱包导入保留音频、`.osu` 和常见图片；不复制视频和外部 `.osb` 文件。基础版目前没有手工拖动音符编辑器、自动分乐器、稳定的变速识别或 osu! 星级评估。
+保留最近 8 个候选，可更换种子比较布局；局部重写锁定范围外物件。谱面检查会定位短放键接续、快速同轨和同手 LN 配合密集的位置，它们是试打线索，可能属于有意设计，不是错误判定或星级。
 
-## 与上游的关系
+可选大模型 API 支持兼容 `/chat/completions` 的服务，读取段落统计、现有谱面检查与文字要求，返回全局/分段参数，包括声部权重和人声长条倾向。API 只接收统计和文字，不接收音频，不生成音符时间；密钥不落盘。兼容协议经过本地模拟服务验证，真实供应商仍取决于其接口与模型。
 
-- 上游：[OliBomby/Mapperatorinator](https://github.com/OliBomby/Mapperatorinator)，固定 commit `5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa`，MIT。
-- 复用其 `Event` / `EventType` 表示和 `.osu` 模板；原模型运行器直接调用该版本 `inference.py`。
-- 新增音频证据、严格时间不变量、LN 占轨分配、API 参数助手和 Windows 打包工作流。**没有修改或替换上游原目录。**
-- Basic Pitch 模型来自 Spotify `v0.4.0`，Apache-2.0；版本与哈希见 `assets/model-manifest.json`。
-- 定轨设计参考 [Manolo-dl/Torosu](https://github.com/Manolo-dl/Torosu) 的手部布局、释放状态与键型代价思路，固定 commit `b283791f46622b0dd1f47f53afa10bd62d700e66`；本项目独立实现多方案选择。Torosu 的 Inverse 转换不是音频持续音识别。
-- 自有代码 MIT；第三方组件各自保留原许可证，见 `licenses/` 和 `THIRD_PARTY_NOTICES.md`。
+可选 Mapperatorinator V32 仍作为对照引擎：按钮自动安装独立 CPU 环境并下载固定版本 mania 权重。它没有接受本项目 10K 专训，首次需要网络与额外数 GB 空间。运行会将结果设为当前项目的新原谱。
 
-## 分析为什么可能很快
+## 当前限制
 
-默认运行的是小型 Basic Pitch 音符检测模型，然后做拍线拟合、LN 约束求解和多方案定轨。它不是已经训练好的 10K 制谱大模型。首次分析运行神经网络；同一音频调整参数时会复用缓存。界面显示实际分析/编排耗时和缓存状态，不用等待动画模拟深度分析。模型仍可能漏音或错判长条。
+分离会串音，Basic Pitch 会漏音、把谐波当音高或错判尾巴；鼓的复杂细分和非固定 BPM 歌曲仍困难。持续音与人声乐句需要回听，不能靠提高 LN 比例补救采音。
 
-`SHA256SUMS.txt` 是校验文件；正常使用只需下载 Windows ZIP 并完整解压。
+结构检查、统计对照和小型先验验证不能代替玩家盲评。没有自动星级评估、成熟的手工拖音编辑器或保证可发布的制谱质量。支持不超过 20 分钟音频、单次上传 512MB；导入谱包保留音频、常见图片与音效，不复制视频和外部 `.osb`。
 
-## 开发与验证
+## 上游与来源
+
+- [Mapperatorinator](https://github.com/OliBomby/Mapperatorinator)，commit `5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa`：复用 Event 表示、模板和可选原模型运行器；原目录未修改。
+- [Torosu](https://github.com/Manolo-dl/Torosu)，commit `b283791f46622b0dd1f47f53afa10bd62d700e66`：参考手指布局、LN 状态和多排搜索思路，独立实现严格保时的定轨器。Inverse 补空间不是音频持续音识别。
+- [Basic Pitch](https://github.com/spotify/basic-pitch)、[torchaudio Hybrid Demucs](https://github.com/pytorch/audio)、[Beat This!](https://github.com/CPJKU/beat_this)：模型来源、固定哈希和许可证见 `assets/*manifest*`、`assets/deep-models.json`、[第三方声明](THIRD_PARTY_NOTICES.md)。
+
+用户音频、下载谱面、参考 EXE、API 密钥和研究中间文件不进入公开仓库或 Release。
+
+## 开发、构建和验证
+
+主程序与音频 worker 使用独立环境：
 
 ```powershell
 uv venv .venv --python 3.12
-uv pip install --python .venv\Scripts\python.exe -r requirements-dev.txt
-.\.venv\Scripts\python.exe launcher.py
-.\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe scripts\build_windows.py
+uv pip sync --python .venv\Scripts\python.exe requirements-lock.txt
+.venv\Scripts\python.exe scripts\fetch_audio_models.py
+uv venv .venv-audio --python 3.12
+uv pip sync --python .venv-audio\Scripts\python.exe --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match requirements-deep-lock.txt
+.venv-audio\Scripts\python.exe scripts\build_audio_worker.py
+.venv\Scripts\python.exe launcher.py
+.venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\python.exe scripts\build_windows.py
 ```
 
-测试覆盖 6–10K 读写、LN 占轨冲突、严格保时、原始变速、跨边界局部锁定、模型多窗口对齐、持续音长度、ZIP 路径、API 参数约束及 HTTP 接口。浏览器测试脚本 `scripts/ui_smoke.cjs` 需要另外安装 Playwright，并通过 `MANIALAB_URL` 指定运行中的程序；详见 `docs/validation.md`。
-
-训练准备：
-
-```powershell
-.\.venv\Scripts\python.exe scripts\audit_corpus.py D:\YourManiaMaps --output corpus-audit.jsonl
-```
-
-该命令只做本地筛选与分割审计，**不会启动训练**。后续训练重点和验收标准见 [训练计划](docs/training-plan.md)。
+浏览器脚本需 Playwright 和 Edge，可用 `MANIALAB_URL` 指定本地服务。验证范围、真实音频对照与不足见 [验证记录](docs/validation.md)。本地语料审计用 `scripts/audit_corpus.py`；采集与训练脚本见 [训练计划](docs/training-plan.md)。

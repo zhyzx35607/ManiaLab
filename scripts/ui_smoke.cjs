@@ -8,7 +8,7 @@ const path=require('path');
  const base=process.env.MANIALAB_URL||'http://127.0.0.1:8976';
  await page.goto(base);await page.locator('#files').setInputFiles(path.resolve('tests/artifacts/synthetic.wav'));
  await page.waitForFunction(()=>document.querySelector('#projectTitle').textContent==='synthetic');
- await page.locator('#analyze').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('采音候选'),{},{timeout:60000});
+ await page.locator('#analysisEngine').selectOption('basic');await page.locator('#analyze').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('采音候选'),{},{timeout:60000});
  await page.locator('#bpm').fill('120');await page.locator('#offset').fill('0');await page.locator('#timingConfirmed').check();
  await page.locator('#generate').click();await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('结构检查通过'),{},{timeout:30000});
  await page.locator('#seek').fill('1');await page.locator('#seek').dispatchEvent('input');

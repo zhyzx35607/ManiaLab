@@ -4,7 +4,25 @@ import pytest
 
 from manialab.audio import rhythmic_evidence, SR, fuse_attacks
 from manialab.domain import Note
-from manialab.timing import estimate_timing, align_candidates, normalize_bpm, refit_offset, grid_report
+from manialab.timing import BeatClock, chart_clock_notes, estimate_timing, align_candidates, normalize_bpm, refit_offset, grid_report
+
+
+def test_original_red_lines_change_period_and_ignore_inherited_velocity():
+    clock = BeatClock(['1000,500,4,2,0,70,1,0', '2000,-50,4,2,0,70,0,0',
+                       '3000,250,4,2,0,70,1,0', 'bad', '4000,nan,4,2,0,70,1,0'])
+    assert [clock(t) for t in (0, 1000, 2999, 3000, 5000)] == [500, 500, 500, 250, 250]
+    assert BeatClock([], 400)(1000) == 400
+
+
+def test_mapping_clock_is_explicit_and_keeps_raw_audio_evidence():
+    notes = [Note(115, 865, id='tone'), Note(5, 5, id='intro')]
+    before = [n.data() for n in notes]
+    converted = chart_clock_notes(notes, 22.5)
+    assert [(n.start,n.end) for n in converted] == [(93,843),(0,0)]
+    assert [n.data() for n in notes] == before
+    assert chart_clock_notes(notes,0) == notes
+    with pytest.raises(ValueError):
+        chart_clock_notes(notes,float('nan'))
 
 
 def click_track(bpm, seconds=100, offset=.347):
@@ -80,7 +98,54 @@ def test_offset_refit_after_bpm_rounding():
     assert result['coverage'] == 1
 
 
-@pytest.mark.parametrize('bpm,offset,division', [(210,91,4),(105,91,4),(166.667,-91,3),(174.5,91,4)])
+def test_real_fractional_tempo_is_not_hidden_by_rounding():
+    rng = np.random.default_rng(19)
+    expected = np.arange(347, 180000, 60000 / 219.2)
+    attacks = [Note(round(t + noise), round(t + noise), strength=1)
+               for t, noise in zip(expected, rng.normal(0, 1.5, len(expected)))]
+    result = estimate_timing(attacks, 180)
+    assert result['bpm'] == 219
+    assert not result['stable']
+    assert '漂移' in result['reliability']
+    precise = next(c for c in result['precise_candidates'] if c['bpm'] == 219.2)
+    assert precise['rounding_drift_ms'] > 100
+    assert precise['coverage'] > .98
+    period = 60000 / precise['bpm']
+    errors = (expected - precise['offset'] + period / 2) % period - period / 2
+    assert max(abs(errors)) < 3
+
+
+def test_numerical_noise_does_not_request_fractional_bpm():
+    notes = [Note(round(91 + i * 60000 / 210.00073), round(91 + i * 60000 / 210.00073))
+             for i in range(800)]
+    result = estimate_timing(notes, 230)
+    assert result['bpm'] == 210
+    assert result['stable']
+    assert not result['precise_candidates']
+
+
+def test_meter_model_guides_beat_unit_without_setting_the_offset():
+    attacks = [Note(round(91 + i * 400), round(91 + i * 400), strength=1)
+               for i in range(400)]
+    # Model estimates deliberately have a 27ms latency. Only spacing is used.
+    model_beats = [118 + i * 800 for i in range(200)]
+    result = estimate_timing(attacks, 161, model_beats)
+    assert result['bpm'] == 75
+    assert result['meter_model_used']
+    period = 60000 / result['bpm']
+    assert abs((result['offset'] - 91 + period / 4) % (period / 2) - period / 4) < 2
+    assert any(c['bpm'] == 150 for c in result['candidates'])
+
+
+def test_sparse_or_irregular_model_beats_cannot_overrule_audio():
+    attacks = [Note(round(91 + i * 500), round(91 + i * 500), strength=1)
+               for i in range(200)]
+    result = estimate_timing(attacks, 101, [100, 900, 4000])
+    assert result['bpm'] == 120 and not result['meter_model_used']
+
+
+@pytest.mark.parametrize('bpm,offset,division', [(210,91,4),(105,91,4),(166.667,-91,3),(174.5,91,4),
+    (105,91,8),(174.5,-91,16),(137,91,6),(166.667,25,12)])
 def test_serialized_chart_endpoints_on_exported_red_line(tmp_path,bpm,offset,division):
     from pathlib import Path
     from manialab.domain import export_osu,parse_osu

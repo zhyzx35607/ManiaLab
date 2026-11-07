@@ -1,4 +1,5 @@
 .venv/
+.venv-audio/
 __pycache__/
 .pytest_cache/
 build/
@@ -12,8 +13,10 @@ test-data/
 .env
 *.key
 assets/runtime/
+assets/deep/
 licenses/runtime/
 licenses/runtime-inventory.json
+licenses/deep-runtime/
 
 # User-supplied reference executable; not redistributed
 分析Timing.exe

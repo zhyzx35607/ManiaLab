@@ -10,8 +10,18 @@ import sys
 import urllib.request
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
+from manialab import __version__
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
+required=['basic-pitch.onnx','pattern-prior.json','deep/ManiaLabAudio/ManiaLabAudio.exe',
+          'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json']
+for relative in required:
+    if not (ROOT/'assets'/relative).is_file():raise SystemExit(f'Missing release component: assets/{relative}')
+for model in json.loads((ROOT/'assets/deep-models.json').read_text(encoding='utf-8'))['models']:
+    with (ROOT/'assets/deep'/model['filename']).open('rb') as stream:
+        if hashlib.file_digest(stream,'sha256').hexdigest()!=model['sha256']:
+            raise SystemExit('Unexpected model checksum: '+model['name'])
 uv=shutil.which('uv')
 if not uv:raise SystemExit('Install uv first to bundle the optional engine installer.')
 (ROOT/'assets/runtime').mkdir(exist_ok=True)
@@ -49,10 +59,11 @@ for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
     shutil.copy2(ROOT/name,target/name)
 shutil.copytree(ROOT/'licenses',target/'licenses',dirs_exist_ok=True)
 shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
-(target/'开始使用.txt').write_text('完整解压后双击 ManiaLab.exe。\n程序会自动打开浏览器；关闭控制台窗口退出。\n基础功能无需 Python、Docker 或 GPU。\n项目数据：%LOCALAPPDATA%\\ManiaLab\\projects\n这是实验版，尚未训练专用 10K 模型。\n',encoding='utf-8-sig')
+(target/'开始使用.txt').write_text(f'ManiaLab {__version__}\n完整解压后双击 ManiaLab.exe。\n程序会自动打开浏览器；关闭控制台窗口退出。\n深度采音模型已随包提供，无需安装 Python、Docker、CUDA 或下载模型。\n导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 生成 → 下载 .osz。\n新项目制谱提前量默认 22.5ms，可改为 0 使用原始音频时间。\n项目数据：%LOCALAPPDATA%\\ManiaLab\\projects\n这是实验版；包含小型轨道偏好模型，尚非端到端的 10K 制谱模型。\n',encoding='utf-8-sig')
 release=ROOT/'release';release.mkdir(exist_ok=True)
-name='ManiaLab-0.1.0-alpha.3-windows-x64'
+name=f'ManiaLab-{__version__}-windows-x64'
 archive=Path(shutil.make_archive(str(release/name),'zip',ROOT/'dist','ManiaLab'))
-digest=hashlib.sha256(archive.read_bytes()).hexdigest()
+with archive.open('rb') as stream:
+    digest=hashlib.file_digest(stream,'sha256').hexdigest()
 (release/'SHA256SUMS.txt').write_text(f'{digest}  {archive.name}\n',encoding='utf-8')
 print(f'Built: {archive}\nSHA256: {digest}')

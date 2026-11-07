@@ -87,12 +87,22 @@ class MapperEngine:
                      "下载固定版本的 mania 模型权重", progress, cancelled, 10)
         output = Path(output)
         output.mkdir(parents=True, exist_ok=True)
+        # pydub's compressed-file loader needs an external ffprobe, which is
+        # absent on clean Windows installs. Decode with our bundled FFmpeg;
+        # pydub reads PCM WAV directly, preserving the analysis time base.
+        from .audio import run_hidden
+        import imageio_ffmpeg
+        decoded = output / "ManiaLab-source.wav"
+        decode_result = run_hidden([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-y", "-i", str(Path(audio).resolve()),
+            "-vn", "-ar", "44100", "-ac", "2", "-c:a", "pcm_s16le", str(decoded.resolve())], capture_output=True, timeout=180)
+        if decode_result.returncode:
+            raise ValueError("原模型输入音频无法解码")
         argv = [self.python, "inference.py", "-cn", "v32", "gamemode=3", f'keycount={settings["keys"]}', f'circle_size={settings["keys"]}',
                 "device=cpu", "precision=fp32", "use_server=false", "compile=false", "generate_positions=false",
                 "fast_decoder_loop=false", "super_timing_fast_loop=false", "export_osz=false", "max_batch_size=1",
                 "auto_select_gamemode_model=false",
                 f'hold_note_ratio={settings["ln_ratio"]}', f'seed={settings["seed"]}',
-                "audio_path=" + json.dumps(str(Path(audio).resolve()).replace("\\", "/")),
+                "audio_path=" + json.dumps(str(decoded.resolve()).replace("\\", "/")),
                 "output_path=" + json.dumps(str(output.resolve()).replace("\\", "/")),
                 "model_path=" + json.dumps(str((self.root / "model/gamemode=3").resolve()).replace("\\", "/"))]
         if seconds:

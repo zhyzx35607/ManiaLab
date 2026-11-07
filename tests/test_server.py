@@ -98,6 +98,76 @@ def wait_job(client, job):
     raise AssertionError('job timed out')
 
 
+def test_mapping_clock_changes_export_once_and_audition_uses_actual_chart_time(tmp_path):
+    import numpy as np
+    from scipy.io import wavfile
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    projects=Projects(tmp_path/'projects')
+    state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=state['id'];base=f'/api/projects/{pid}'
+    raw=json.loads(json.dumps([Note(115+i*500,865+i*500,source='pitch',id=str(i)).data() for i in range(12)]))
+    state['analysis']=dict(revision=5,candidates=raw,timing_attacks=raw,tempo=dict(bpm=120,offset=115,division=4,stable=True))
+    projects.save(state)
+    payload=dict(mode='audio',audio_shift_ms=22.5,settings={'ln_ratio':1,'density':4})
+    result=wait_job(client,client.post(base+'/generate',json=payload,headers=headers).json)
+    assert result['status']=='done',result
+    saved=client.get(base).json;v=saved['variants'][0]
+    assert saved['analysis']['candidates']==raw
+    assert v['offset']==93 and v['audio_shift_ms']==22.5
+    assert all(n['start']%500==93 and n['end']-n['start']==750 for n in v['notes'])
+    parsed=parse_osu(client.get(base+'/export/osu').data.decode())
+    assert float(parsed['timing'][0].split(',')[0])==93
+    wavfile.write(projects.path(pid)/'preview.wav',22050,np.zeros(22050*8,dtype=np.int16))
+    response=client.post(base+'/audition',json={'mode':'chart','duration_ms':1000},headers=headers)
+    rate,wave=wavfile.read(io.BytesIO(response.data))
+    assert abs(np.flatnonzero(wave[:,0])[0]/rate*1000-93)<.1
+    # Changing the convention cannot silently mix clocks in a local rewrite.
+    failed=wait_job(client,client.post(base+'/generate',json=payload|{'audio_shift_ms':0,'region':[1000,3000]},headers=headers).json)
+    assert failed['status']=='error' and 'Timing' in failed['message']
+    app.extensions['executor'].shutdown()
+
+
+def test_reference_style_preserves_audio_candidates_and_target_keys(tmp_path):
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    projects=Projects(tmp_path/'projects');state['settings']['keys']=10
+    state['analysis']={'sentinel':'original evidence'};projects.save(state)
+    notes=[Note(t,t+500 if i%2 else t,i%10) for i,t in enumerate(range(0,10000,250))]
+    text=export_osu(notes,10,ROOT/'vendor/mapperatorinator/template.osu')
+    response=client.post(f"/api/projects/{state['id']}/reference-style",data={'file':(io.BytesIO(text.encode()),'reference.osu'),
+        'settings':json.dumps({'keys':6,'pitch_follow':.7})},headers=headers)
+    assert response.status_code==200,response.json
+    saved=response.json
+    assert saved['audio']=='song.wav' and saved['analysis']==state['analysis']
+    assert saved['settings']['keys']==6 and saved['settings']['ln_ratio']==.5
+    assert saved['settings']['pitch_follow']==.7
+    assert saved['reference_style']['keys']==10 and saved['reference_style']['objects']==40
+    assert saved['variants']==[] and saved['original'] is None
+    app.extensions['executor'].shutdown()
+
+
+def test_audition_http_preserves_project_and_returns_aligned_wave(tmp_path):
+    import numpy as np
+    from scipy.io import wavfile
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=state['id'];url=f'/api/projects/{pid}/audition'
+    assert client.post(url,json={},headers=headers).status_code==400
+    preview=tmp_path/'projects'/pid/'preview.wav'
+    wavfile.write(preview,22050,np.zeros(22050*10,dtype=np.int16))
+    before=(preview.parent/'state.json').read_bytes()
+    result=client.post(url,json={'bpm':120,'offset':91,'start_ms':0,'duration_ms':5000},headers=headers)
+    assert result.status_code==200 and result.mimetype=='audio/wav'
+    sr,content=wavfile.read(io.BytesIO(result.data))
+    assert sr==22050 and content.shape==(110250,2)
+    first=np.flatnonzero(content[:,0])[0]
+    assert abs(first/22.05-91)<.1
+    assert (preview.parent/'state.json').read_bytes()==before
+    assert client.post(url,json={'duration_ms':float('nan')},headers=headers).status_code==400
+    assert client.post(url,json={'mode':'chart'},headers=headers).status_code==400
+    app.extensions['executor'].shutdown()
+
+
 @pytest.mark.parametrize('keys', range(6,11))
 def test_reference_210_91_export_and_timing_guards(tmp_path,keys,monkeypatch):
     app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}

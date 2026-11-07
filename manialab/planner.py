@@ -6,7 +6,8 @@ import urllib.request
 
 from .arrange import parameters
 
-ALLOWED = {"density", "ln_ratio", "min_ln", "max_held", "chord_size", "focus", "pitch_follow", "balance", "jack_avoid", "release_gap"}
+ALLOWED = {"density", "ln_ratio", "min_ln", "max_held", "chord_size", "focus", "pitch_follow", "balance", "jack_avoid", "release_gap",
+           "phrase_ln", "drums_weight", "bass_weight", "vocals_weight", "other_weight"}
 
 
 def validate_plan(value, segments):
@@ -43,7 +44,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise ValueError("API 地址返回重定向；请填写最终接口地址")
 
 
-def plan(endpoint, model, key, instruction, segments, current):
+def plan(endpoint, model, key, instruction, segments, current, review=None):
     parsed = urllib.parse.urlparse(endpoint)
     if parsed.username or parsed.password or parsed.query or parsed.fragment or not parsed.hostname:
         raise ValueError("API 地址格式无效")
@@ -56,9 +57,12 @@ def plan(endpoint, model, key, instruction, segments, current):
               "结构: {explanation:中文说明,preferences:{参数},segments:[{index:已知段落索引,preferences:{参数}}]}。"
               "允许参数: density 1..24, ln_ratio 0..1, min_ln 100..2000毫秒, max_held 1..10, chord_size 1..10,"
               "focus balanced/pitched/transient, pitch_follow/balance/jack_avoid 0..1, release_gap 0..250毫秒。"
+              "phrase_ln 0..1 控制有连续人声证据的跨音高长条；drums_weight/bass_weight/vocals_weight/other_weight 0..2 控制四声部取舍（0完全不采，1默认）。"
+              "只有提供voices统计的段落才分析过分离声部，否则声部权重不起作用；不能把模型估计当作真实乐器标注。"
+              "如有已有候选的review，它定位短放键、快速同轨和同手LN配合密集位置；结合用户目标调整相应段落，不能把这些提示都当错误。"
               "ln_ratio是目标LN物件数占比；程序在持续音证据和占轨约束下尽量达到，不能通过删短键或虚构音尾凑比例。不够证据时应在说明中指出。")
     payload = {"model": model.strip(), "messages": [{"role": "system", "content": prompt},
-               {"role": "user", "content": json.dumps({"request": instruction[:6000], "current": current, "segments": segments}, ensure_ascii=False)}],
+               {"role": "user", "content": json.dumps({"request": instruction[:6000], "current": current, "segments": segments, "review": review}, ensure_ascii=False)}],
                "temperature": .3, "max_tokens": 2500}
     headers = {"Content-Type": "application/json"}
     if key:

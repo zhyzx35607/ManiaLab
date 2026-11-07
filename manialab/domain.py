@@ -19,6 +19,12 @@ class Note:
     source: str = "import"
     id: str = ""
     raw: str = ""
+    voice: str = "mix"
+    phrase: bool = False
+    support: tuple = ()
+    support_coverage: float = 0.0
+    evidence_start: int | None = None
+    evidence_end: int | None = None
 
     @property
     def hold(self):
