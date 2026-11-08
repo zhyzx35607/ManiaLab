@@ -73,3 +73,12 @@ def test_tail_time_metric_does_not_measure_only_easy_type_tokens():
     ends=dict(t=90)
     labels=[-100,20,95,100,30,96,101,40,94,102]
     assert typed_time_positions(labels,starts,ends)==dict(ln_head_time=[1],ln_tail_time=[4],tap_time=[7])
+
+
+def test_release_only_and_single_attack_windows_remain_training_candidates():
+    from scripts.mapper_training_context import has_musical_target
+    musical={4071,4087,4088,4090}
+    assert has_musical_target([-100,80,4088],musical)  # A release without a new head.
+    assert has_musical_target([-100,90,4090],musical)  # A continuing long hold.
+    assert has_musical_target([-100,100,4071],musical) # One sparse attack.
+    assert not has_musical_target([-100,3,4,5,6,2],musical)

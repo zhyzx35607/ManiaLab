@@ -50,15 +50,20 @@ def main():
     cli.add_argument('--root',type=Path,default=Path('test-data'))
     cli.add_argument('--output',type=Path,default=Path('docs/mapper-audio-research.json'))
     args=cli.parse_args();training=args.root/'mapper-training'
-    report=dict(revision=1,date='2026-11-08',default_model_changed=False,new_release_published=False,
+    report=dict(revision=2,date='2026-11-08',default_model_changed=False,new_release_published=False,
                 data_counts=read(training/'mmrs/manifest.json')['counts'],runs={},free_generation=[],stem_probe=[])
     for name in ('lora','lora-context'):
         report['runs'][name]=summarize_run(training/name)
+    training_conditions=read(training/'lora-context/adapter/conditioning.json')
+    report['training_conditioning']=training_conditions
+    report['strength_ablation']=read(training/'lora-context/adapter-quarter/strength-ablation.json')
     for path in sorted((args.root/'mapper-adapter-probe').glob('*/report.json')):
         probe=read(path)
         names=[name for name in ('baseline','adapter') if name in probe]
         if not names:continue
         report['free_generation'].append(dict(experiment=path.parent.name,
+            paired=set(names)=={'baseline','adapter'},
+            adapter_conditions_match_training=(probe['adapter']['identity'].get('conditioning')==training_conditions) if 'adapter' in names else None,
             variants={name:{key:probe[name][key] for key in ('identity','elapsed_seconds','raw_sha256','comparison','validation')}
                       | dict(incomplete_holds=sum('Incomplete hold' in w for w in probe[name]['warnings']))
                       for name in names}))
@@ -79,6 +84,10 @@ def main():
         'Separated instruments and section plans are not joint model training inputs yet.',
         'No Nova private weights; public Demucs stems only.',
         'No new research adapter is enabled in the application.',
+        'Quarter-strength adapter improved the selected lit(var) interval but regressed on a second 10K Hybrid song; it is not accepted.',
+        '6/7/8/9K free-generation coverage is baseline-only, not a completed fine-tuned comparison.',
+        'The release-only/single-attack sampling fix was implemented after the reported training runs; its effect has not been trained or measured.',
+        'The user song has no instrument transcription truth; its object counts and structural validity do not establish audio quality.',
     ]
     args.output.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(dict(output=str(args.output),runs=list(report['runs']),free_generation=len(report['free_generation']))))

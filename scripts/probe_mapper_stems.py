@@ -43,16 +43,19 @@ def main():
         source=args.audio if voice=='mix' else args.stems/(voice+'.wav')
         digest=hashlib.sha256(source.read_bytes()).hexdigest()
         folder=args.output/voice;manifest=folder/'result.json'
-        context=dict(audio_sha256=digest,start_ms=args.start_ms,seconds=args.seconds,
+        context=dict(probe_revision=2,audio_sha256=digest,start_ms=args.start_ms,seconds=args.seconds,
             bpm=args.bpm,offset=args.offset,keys=10,seed=42,ln_ratio=.55,
             source_commit=engine.status()['source_commit'],model_revision=engine.status()['model_revision'])
         if args.adapter is not None:
             context['adapter_sha256']=hashlib.sha256((args.adapter/'adapter_model.safetensors').read_bytes()).hexdigest()
+            context['adapter_config_sha256']=hashlib.sha256((args.adapter/'adapter_config.json').read_bytes()).hexdigest()
         if conditioning is not None:
             context['conditioning']=conditioning
         if manifest.exists():
             saved=json.loads(manifest.read_text(encoding='utf-8'))
             if saved['context']!=context:raise ValueError('Probe cache differs; use a new output directory')
+            if hashlib.sha256((folder/saved['raw_file']).read_bytes()).hexdigest()!=saved['raw_sha256']:
+                raise ValueError('Raw model output changed after evaluation')
             report.append(saved);continue
         last=[0.]
         def progress(percent,message):
@@ -63,9 +66,9 @@ def main():
         result=engine.generate(source,folder,parameters(),progress,lambda:False,seconds=args.seconds,
             tempo=dict(bpm=args.bpm,offset=args.offset),start_ms=args.start_ms,lora_path=args.adapter,conditioning=conditioning)
         notes=parse_osu(result.read_text(encoding='utf-8-sig'))['notes']
-        local=[n for n in notes if args.start_ms<=n.start<args.start_ms+args.seconds*1000]
+        local=[n for n in notes if n.start<args.start_ms+args.seconds*1000 and n.end>=args.start_ms]
         saved=dict(voice=voice,context=context,elapsed_seconds=round(time.monotonic()-started,2),
-            raw_file=result.name,raw_sha256=hashlib.sha256(result.read_bytes()).hexdigest(),
+            raw_file=result.relative_to(folder).as_posix(),raw_sha256=hashlib.sha256(result.read_bytes()).hexdigest(),
             validation=validate(local,10),warnings=engine.last_warnings,
             notes=[n.data() for n in local],
             notice='Stem-conditioned chart predictions; not exhaustive instrument note labels. Not enabled in the app.')

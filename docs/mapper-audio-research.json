@@ -1,0 +1,2624 @@
+{
+  "revision": 2,
+  "date": "2026-11-08",
+  "default_model_changed": false,
+  "new_release_published": false,
+  "data_counts": {
+    "train": {
+      "charts": 60,
+      "groups": 58,
+      "keys": {
+        "10": 45,
+        "7": 6,
+        "8": 2,
+        "9": 3,
+        "6": 4
+      },
+      "bands": {
+        "hybrid": 25,
+        "tap": 28,
+        "ln": 7
+      }
+    },
+    "validation": {
+      "charts": 15,
+      "groups": 15,
+      "keys": {
+        "10": 10,
+        "6": 2,
+        "9": 1,
+        "8": 1,
+        "7": 1
+      },
+      "bands": {
+        "hybrid": 6,
+        "tap": 7,
+        "ln": 2
+      }
+    }
+  },
+  "runs": {
+    "lora": {
+      "identity": {
+        "manifest": "f1a0f2f31d6e333b5138c4756aaa803c093a8f9a7a129ab55f1e90e569b72548",
+        "weights": "3d5d1c2a01ad462bcc99bafaaf44174bc47be099724574b17cd68016be5a863f",
+        "tokenizer": "737148191316146ba76b6b7b0c59646baff6002ef834734dd113a8eb1e5036da",
+        "upstream_source_sha256": "43865d4af98f9e0037c87d34e5171606fa62d667a44c568ec825f18368b18014",
+        "config": "ac1234197bceb9727e35780112cfa227ebbe4c38e214b78124fd70fee7cb6005",
+        "windows": 2
+      },
+      "trainable_parameters": 442368,
+      "completed_steps": 64,
+      "training_seconds": 292.28,
+      "adapter_sha256": "999627a830839426e472764ef2b8c98ca3e67a150e91948b9e55c34acbc5547d",
+      "enabled_in_application": false,
+      "charts_seen_in_optimizer": 32,
+      "steps_by_keys": {
+        "10": 32,
+        "6": 8,
+        "7": 8,
+        "8": 8,
+        "9": 8
+      },
+      "steps_by_band": {
+        "hybrid": 22,
+        "ln": 26,
+        "tap": 16
+      },
+      "baseline": {
+        "macro": {
+          "all": {
+            "groups": 15,
+            "nll": 1.3787536879380544,
+            "accuracy": 0.693284132083257
+          },
+          "time": {
+            "groups": 15,
+            "nll": 3.709083334604899,
+            "accuracy": 0.20431426639358202
+          },
+          "column": {
+            "groups": 15,
+            "nll": 2.082487614949544,
+            "accuracy": 0.3935770943760872
+          },
+          "ln_head": {
+            "groups": 12,
+            "nll": 1.1564732512148719,
+            "accuracy": 0.6510573625564575
+          },
+          "ln_tail": {
+            "groups": 12,
+            "nll": 0.36724337143487534,
+            "accuracy": 0.9394774486621221
+          },
+          "tap": {
+            "groups": 15,
+            "nll": 0.24229423008509912,
+            "accuracy": 0.9186927457650502
+          }
+        },
+        "by_key": {
+          "10": {
+            "all": {
+              "nll": 1.3971021920442581,
+              "accuracy": 0.6967985987663269
+            },
+            "time": {
+              "nll": 3.788074326515198,
+              "accuracy": 0.1978219762444496
+            },
+            "column": {
+              "nll": 2.216196370124817,
+              "accuracy": 0.3630109615623951
+            },
+            "ln_head": {
+              "nll": 0.7622354107775858,
+              "accuracy": 0.7307784706354141
+            },
+            "ln_tail": {
+              "nll": 0.5269771502371441,
+              "accuracy": 0.9210030138492584
+            },
+            "tap": {
+              "nll": 0.1675261948577827,
+              "accuracy": 0.9464534670114517
+            }
+          },
+          "6": {
+            "all": {
+              "nll": 1.2542389035224915,
+              "accuracy": 0.6842347085475922
+            },
+            "time": {
+              "nll": 3.6195250749588013,
+              "accuracy": 0.19537226855754852
+            },
+            "column": {
+              "nll": 1.5123662948608398,
+              "accuracy": 0.4650723785161972
+            },
+            "ln_head": {
+              "nll": 1.1930601745843887,
+              "accuracy": 0.5682879909873009
+            },
+            "ln_tail": {
+              "nll": 0.1151683069763294,
+              "accuracy": 0.9744831919670105
+            },
+            "tap": {
+              "nll": 0.5136679112911224,
+              "accuracy": 0.8282045274972916
+            }
+          },
+          "9": {
+            "all": {
+              "nll": 1.4676076769828796,
+              "accuracy": 0.6708850264549255
+            },
+            "time": {
+              "nll": 4.427079677581787,
+              "accuracy": 0.0696534663438797
+            },
+            "column": {
+              "nll": 2.1541470885276794,
+              "accuracy": 0.4574257582426071
+            },
+            "ln_head": {
+              "nll": 1.0474635362625122,
+              "accuracy": 0.5967741906642914
+            },
+            "ln_tail": {
+              "nll": 0.18079854547977448,
+              "accuracy": 0.9677419066429138
+            },
+            "tap": {
+              "nll": 0.28683166205883026,
+              "accuracy": 0.8701079785823822
+            }
+          },
+          "8": {
+            "all": {
+              "nll": 1.3317446112632751,
+              "accuracy": 0.6848414540290833
+            },
+            "time": {
+              "nll": 2.8636252880096436,
+              "accuracy": 0.363543301820755
+            },
+            "column": {
+              "nll": 2.1833592653274536,
+              "accuracy": 0.41440944373607635
+            },
+            "ln_head": {
+              "nll": 1.8477666974067688,
+              "accuracy": 0.5416666567325592
+            },
+            "ln_tail": {
+              "nll": 0.30694468319416046,
+              "accuracy": 0.9099999964237213
+            },
+            "tap": {
+              "nll": 0.4480959475040436,
+              "accuracy": 0.8608974516391754
+            }
+          },
+          "7": {
+            "all": {
+              "nll": 1.4024533033370972,
+              "accuracy": 0.7070800960063934
+            },
+            "time": {
+              "nll": 3.2257516384124756,
+              "accuracy": 0.2625529281795025
+            },
+            "column": {
+              "nll": 1.7131115794181824,
+              "accuracy": 0.471566841006279
+            },
+            "ln_head": {
+              "nll": 3.2606805562973022,
+              "accuracy": 0.42222222685813904
+            },
+            "ln_tail": {
+              "nll": 5.629319019817558e-07,
+              "accuracy": 1.0
+            },
+            "tap": {
+              "nll": 0.19688807055354118,
+              "accuracy": 0.9284420311450958
+            }
+          }
+        }
+      },
+      "after": {
+        "macro": {
+          "all": {
+            "groups": 15,
+            "nll": 1.2752917428811392,
+            "accuracy": 0.6994645833969116
+          },
+          "time": {
+            "groups": 15,
+            "nll": 3.4399678627649943,
+            "accuracy": 0.2194819542268912
+          },
+          "column": {
+            "groups": 15,
+            "nll": 1.9161759654680888,
+            "accuracy": 0.399001274506251
+          },
+          "ln_head": {
+            "groups": 12,
+            "nll": 1.0298004429787397,
+            "accuracy": 0.6339271279672781
+          },
+          "ln_tail": {
+            "groups": 12,
+            "nll": 0.32307349446579775,
+            "accuracy": 0.9394774486621221
+          },
+          "tap": {
+            "groups": 15,
+            "nll": 0.21940037499492368,
+            "accuracy": 0.918482114871343
+          }
+        },
+        "by_key": {
+          "10": {
+            "all": {
+              "nll": 1.2894754856824875,
+              "accuracy": 0.7041304141283036
+            },
+            "time": {
+              "nll": 3.5119099855422973,
+              "accuracy": 0.21484727486968042
+            },
+            "column": {
+              "nll": 2.0288267493247987,
+              "accuracy": 0.3711742714047432
+            },
+            "ln_head": {
+              "nll": 0.6857756812657628,
+              "accuracy": 0.7186091606106076
+            },
+            "ln_tail": {
+              "nll": 0.4616489716965069,
+              "accuracy": 0.9210030138492584
+            },
+            "tap": {
+              "nll": 0.15257247337140142,
+              "accuracy": 0.948434254527092
+            }
+          },
+          "6": {
+            "all": {
+              "nll": 1.1697227656841278,
+              "accuracy": 0.6868004649877548
+            },
+            "time": {
+              "nll": 3.3478387594223022,
+              "accuracy": 0.1984390802681446
+            },
+            "column": {
+              "nll": 1.4488263726234436,
+              "accuracy": 0.463773675262928
+            },
+            "ln_head": {
+              "nll": 1.04977747797966,
+              "accuracy": 0.5520059764385223
+            },
+            "ln_tail": {
+              "nll": 0.11152847460340354,
+              "accuracy": 0.9744831919670105
+            },
+            "tap": {
+              "nll": 0.4703972563147545,
+              "accuracy": 0.8203440457582474
+            }
+          },
+          "9": {
+            "all": {
+              "nll": 1.3471874594688416,
+              "accuracy": 0.6755365133285522
+            },
+            "time": {
+              "nll": 4.078765630722046,
+              "accuracy": 0.07465346530079842
+            },
+            "column": {
+              "nll": 1.9769096374511719,
+              "accuracy": 0.447524756193161
+            },
+            "ln_head": {
+              "nll": 0.9285307824611664,
+              "accuracy": 0.5645161271095276
+            },
+            "ln_tail": {
+              "nll": 0.14766348153352737,
+              "accuracy": 0.9677419066429138
+            },
+            "tap": {
+              "nll": 0.2670607417821884,
+              "accuracy": 0.8701079785823822
+            }
+          },
+          "8": {
+            "all": {
+              "nll": 1.2233350276947021,
+              "accuracy": 0.6860512495040894
+            },
+            "time": {
+              "nll": 2.7019330263137817,
+              "accuracy": 0.3664173185825348
+            },
+            "column": {
+              "nll": 2.0069366097450256,
+              "accuracy": 0.403346449136734
+            },
+            "ln_head": {
+              "nll": 1.5939786434173584,
+              "accuracy": 0.5416666567325592
+            },
+            "ln_tail": {
+              "nll": 0.27461809664964676,
+              "accuracy": 0.9099999964237213
+            },
+            "tap": {
+              "nll": 0.39087532460689545,
+              "accuracy": 0.8608974516391754
+            }
+          },
+          "7": {
+            "all": {
+              "nll": 1.3246532678604126,
+              "accuracy": 0.7154759168624878
+            },
+            "time": {
+              "nll": 3.004041910171509,
+              "accuracy": 0.30580762028694153
+            },
+            "column": {
+              "nll": 1.5728729963302612,
+              "accuracy": 0.4948578476905823
+            },
+            "ln_head": {
+              "nll": 2.935111165046692,
+              "accuracy": 0.36666667461395264
+            },
+            "ln_tail": {
+              "nll": 6.04324043251836e-07,
+              "accuracy": 1.0
+            },
+            "tap": {
+              "nll": 0.16655031219124794,
+              "accuracy": 0.9211956560611725
+            }
+          }
+        }
+      },
+      "windows": 150,
+      "capacity_rejections": 0,
+      "complete_candidate_windows": 0,
+      "context_audit": {
+        "windows": 150,
+        "unconditioned_label_tails": 79,
+        "label_tails": 1730
+      },
+      "audio_counterfactual": {
+        "baseline": {
+          "correct_audio": {
+            "ln_head_time": {
+              "nll": 3.1674519727627435,
+              "within_30ms": 0.6710112144549688,
+              "exact_accuracy": 0.31252982032795745
+            },
+            "ln_tail_time": {
+              "nll": 4.2362198531627655,
+              "within_30ms": 0.4709659448514382,
+              "exact_accuracy": 0.15254060473913947
+            },
+            "tap_time": {
+              "nll": 3.52597070535024,
+              "within_30ms": 0.5789716362953186,
+              "exact_accuracy": 0.21165038856367271
+            },
+            "all_time": {
+              "nll": 3.709083334604899,
+              "within_30ms": 0.5618144070108732,
+              "exact_accuracy": 0.20431426639358202
+            }
+          },
+          "other_song_audio": {
+            "ln_head_time": {
+              "nll": 4.18427378932635,
+              "within_30ms": 0.6021129631747802,
+              "exact_accuracy": 0.2088587194060286
+            },
+            "ln_tail_time": {
+              "nll": 5.075376143058141,
+              "within_30ms": 0.3520885035395622,
+              "exact_accuracy": 0.08056713594123721
+            },
+            "tap_time": {
+              "nll": 4.993702085812886,
+              "within_30ms": 0.4029184048374494,
+              "exact_accuracy": 0.08960161519547304
+            },
+            "all_time": {
+              "nll": 5.059411684672038,
+              "within_30ms": 0.41002079198757807,
+              "exact_accuracy": 0.09727634241183598
+            }
+          }
+        },
+        "adapter": {
+          "correct_audio": {
+            "ln_head_time": {
+              "nll": 2.93171634276708,
+              "within_30ms": 0.6979508474469185,
+              "exact_accuracy": 0.31536707033713657
+            },
+            "ln_tail_time": {
+              "nll": 3.9486989552776017,
+              "within_30ms": 0.5095357845226923,
+              "exact_accuracy": 0.15971290366724133
+            },
+            "tap_time": {
+              "nll": 3.26760303179423,
+              "within_30ms": 0.6372152169545492,
+              "exact_accuracy": 0.2231224915633599
+            },
+            "all_time": {
+              "nll": 3.4399678627649943,
+              "within_30ms": 0.6059156253933906,
+              "exact_accuracy": 0.2194819542268912
+            }
+          },
+          "other_song_audio": {
+            "ln_head_time": {
+              "nll": 3.9322331845760345,
+              "within_30ms": 0.6370809792230526,
+              "exact_accuracy": 0.21761720906943083
+            },
+            "ln_tail_time": {
+              "nll": 4.844905743996303,
+              "within_30ms": 0.3598362219830354,
+              "exact_accuracy": 0.08715120702981949
+            },
+            "tap_time": {
+              "nll": 4.7221482515335085,
+              "within_30ms": 0.4242848180234432,
+              "exact_accuracy": 0.09263088901837667
+            },
+            "all_time": {
+              "nll": 4.791115347544352,
+              "within_30ms": 0.4389599618812402,
+              "exact_accuracy": 0.10293292875091235
+            }
+          }
+        }
+      }
+    },
+    "lora-context": {
+      "identity": {
+        "manifest": "f1a0f2f31d6e333b5138c4756aaa803c093a8f9a7a129ab55f1e90e569b72548",
+        "weights": "3d5d1c2a01ad462bcc99bafaaf44174bc47be099724574b17cd68016be5a863f",
+        "tokenizer": "737148191316146ba76b6b7b0c59646baff6002ef834734dd113a8eb1e5036da",
+        "upstream_source_sha256": "43865d4af98f9e0037c87d34e5171606fa62d667a44c568ec825f18368b18014",
+        "context_builder_sha256": "8a176c4a20f8aacd0b38a11c8ef5d0fb3367a3cbfd6d0db907b182f472aa8ae3",
+        "config": "ae307df15ba83ea7471d7d8cb10c974484dbd15e1b187f56c12fd7170dfa0db4",
+        "windows": 2
+      },
+      "trainable_parameters": 442368,
+      "completed_steps": 256,
+      "training_seconds": 1955.88,
+      "adapter_sha256": "9694c2a5e00eb9cad87b3f8dadb25d60f6f0b8635f8262030123f61af92cc102",
+      "enabled_in_application": false,
+      "charts_seen_in_optimizer": 60,
+      "steps_by_keys": {
+        "10": 128,
+        "6": 32,
+        "7": 32,
+        "8": 32,
+        "9": 32
+      },
+      "steps_by_band": {
+        "hybrid": 82,
+        "ln": 98,
+        "tap": 76
+      },
+      "baseline": {
+        "macro": {
+          "all": {
+            "groups": 15,
+            "nll": 0.677897161245346,
+            "accuracy": 0.8203313231468201
+          },
+          "time": {
+            "groups": 15,
+            "nll": 1.456337853272756,
+            "accuracy": 0.5582391837611794
+          },
+          "column": {
+            "groups": 15,
+            "nll": 1.360669779777527,
+            "accuracy": 0.5482893750071526
+          },
+          "ln_head_type": {
+            "groups": 13,
+            "nll": 0.5613876031823636,
+            "accuracy": 0.842429957137658
+          },
+          "ln_tail_type": {
+            "groups": 13,
+            "nll": 0.002043648533533594,
+            "accuracy": 1.0
+          },
+          "tap_type": {
+            "groups": 15,
+            "nll": 0.22356831192540388,
+            "accuracy": 0.9422879536946615
+          },
+          "ln_head_time": {
+            "groups": 13,
+            "nll": 1.2901408116404827,
+            "accuracy": 0.6414802222011181
+          },
+          "ln_tail_time": {
+            "groups": 13,
+            "nll": 1.7454443247272418,
+            "accuracy": 0.5455095070199325
+          },
+          "tap_time": {
+            "groups": 15,
+            "nll": 1.4443764557441077,
+            "accuracy": 0.5473755148549875
+          }
+        },
+        "by_key": {
+          "10": {
+            "all": {
+              "nll": 0.6901708722114563,
+              "accuracy": 0.8285398274660111
+            },
+            "time": {
+              "nll": 1.4893408194184303,
+              "accuracy": 0.5690274654887617
+            },
+            "column": {
+              "nll": 1.4140348523855208,
+              "accuracy": 0.5420120812952518
+            },
+            "ln_head_type": {
+              "nll": 0.2289528550063551,
+              "accuracy": 0.9396460875868797
+            },
+            "ln_tail_type": {
+              "nll": 0.0033187451759650877,
+              "accuracy": 1.0
+            },
+            "tap_type": {
+              "nll": 0.18962396397541853,
+              "accuracy": 0.9566547751426697
+            },
+            "ln_head_time": {
+              "nll": 1.118228486739099,
+              "accuracy": 0.7157594140153378
+            },
+            "ln_tail_time": {
+              "nll": 1.7010880401358008,
+              "accuracy": 0.6161301585379988
+            },
+            "tap_time": {
+              "nll": 1.4987600564956665,
+              "accuracy": 0.546781815867871
+            }
+          },
+          "6": {
+            "all": {
+              "nll": 0.6296382248401642,
+              "accuracy": 0.7959244549274445
+            },
+            "time": {
+              "nll": 1.4347294867038727,
+              "accuracy": 0.462052159011364
+            },
+            "column": {
+              "nll": 1.1609335839748383,
+              "accuracy": 0.5480086877942085
+            },
+            "ln_head_type": {
+              "nll": 1.2001845091581345,
+              "accuracy": 0.7313456684350967
+            },
+            "ln_tail_type": {
+              "nll": 7.244602699074676e-06,
+              "accuracy": 1.0
+            },
+            "tap_type": {
+              "nll": 0.34679537266492844,
+              "accuracy": 0.9020548909902573
+            },
+            "ln_head_time": {
+              "nll": 1.6685636341571808,
+              "accuracy": 0.4373633526265621
+            },
+            "ln_tail_time": {
+              "nll": 1.7622075974941254,
+              "accuracy": 0.3756460025906563
+            },
+            "tap_time": {
+              "nll": 1.324922114610672,
+              "accuracy": 0.48918693885207176
+            }
+          },
+          "9": {
+            "all": {
+              "nll": 0.8570220172405243,
+              "accuracy": 0.7408313453197479
+            },
+            "time": {
+              "nll": 2.712239623069763,
+              "accuracy": 0.11450494825839996
+            },
+            "column": {
+              "nll": 1.2878301739692688,
+              "accuracy": 0.6018811762332916
+            },
+            "ln_head_type": {
+              "nll": 0.49539703130722046,
+              "accuracy": 0.8064516186714172
+            },
+            "ln_tail_type": {
+              "nll": 4.133865587618857e-07,
+              "accuracy": 1.0
+            },
+            "tap_type": {
+              "nll": 0.3907928168773651,
+              "accuracy": 0.8964237570762634
+            },
+            "ln_head_time": {
+              "nll": 2.7712583541870117,
+              "accuracy": 0.09677419066429138
+            },
+            "ln_tail_time": {
+              "nll": 2.4991577863693237,
+              "accuracy": 0.16129031777381897
+            },
+            "tap_time": {
+              "nll": 2.8360562324523926,
+              "accuracy": 0.09176787827163935
+            }
+          },
+          "8": {
+            "all": {
+              "nll": 0.5469034165143967,
+              "accuracy": 0.8296376764774323
+            },
+            "time": {
+              "nll": 0.7224066257476807,
+              "accuracy": 0.7901968657970428
+            },
+            "column": {
+              "nll": 1.4507050514221191,
+              "accuracy": 0.5095275491476059
+            },
+            "ln_head_type": {
+              "nll": 0.7423062026500702,
+              "accuracy": 0.7541666626930237
+            },
+            "ln_tail_type": {
+              "nll": 2.452694062071714e-06,
+              "accuracy": 1.0
+            },
+            "tap_type": {
+              "nll": 0.2458484172821045,
+              "accuracy": 0.9025641083717346
+            },
+            "ln_head_time": {
+              "nll": 0.6061977744102478,
+              "accuracy": 0.8416666686534882
+            },
+            "ln_tail_time": {
+              "nll": 0.8643808364868164,
+              "accuracy": 0.75
+            },
+            "tap_time": {
+              "nll": 0.7156747877597809,
+              "accuracy": 0.785897433757782
+            }
+          },
+          "7": {
+            "all": {
+              "nll": 0.6035468131303787,
+              "accuracy": 0.8572536408901215
+            },
+            "time": {
+              "nll": 0.6475543826818466,
+              "accuracy": 0.8545069694519043
+            },
+            "column": {
+              "nll": 1.209295779466629,
+              "accuracy": 0.5967937111854553
+            },
+            "ln_head_type": {
+              "nll": 1.8283437490463257,
+              "accuracy": 0.41111112385988235
+            },
+            "ln_tail_type": {
+              "nll": 1.142421970357077e-07,
+              "accuracy": 1.0
+            },
+            "tap_type": {
+              "nll": 0.12705305963754654,
+              "accuracy": 0.9646739065647125
+            },
+            "ln_head_time": {
+              "nll": 1.1114192605018616,
+              "accuracy": 0.800000011920929
+            },
+            "ln_tail_time": {
+              "nll": 2.194118082523346,
+              "accuracy": 0.5
+            },
+            "tap_time": {
+              "nll": 0.47647102177143097,
+              "accuracy": 0.8867753744125366
+            }
+          }
+        }
+      },
+      "after": {
+        "macro": {
+          "all": {
+            "groups": 15,
+            "nll": 0.544816384712855,
+            "accuracy": 0.8293706476688385
+          },
+          "time": {
+            "groups": 15,
+            "nll": 1.3373341798782348,
+            "accuracy": 0.595208366215229
+          },
+          "column": {
+            "groups": 15,
+            "nll": 1.191609505812327,
+            "accuracy": 0.5673236062129339
+          },
+          "ln_head_type": {
+            "groups": 13,
+            "nll": 0.3875198977587458,
+            "accuracy": 0.8421664421374981
+          },
+          "ln_tail_type": {
+            "groups": 13,
+            "nll": 0.0017503303056223274,
+            "accuracy": 0.9986263742813697
+          },
+          "tap_type": {
+            "groups": 15,
+            "nll": 0.1816240832490924,
+            "accuracy": 0.9287216246128083
+          },
+          "ln_head_time": {
+            "groups": 13,
+            "nll": 1.181471161544323,
+            "accuracy": 0.6786177808132309
+          },
+          "ln_tail_time": {
+            "groups": 13,
+            "nll": 1.631418723326463,
+            "accuracy": 0.5832897334431226
+          },
+          "tap_time": {
+            "groups": 15,
+            "nll": 1.2989991366863252,
+            "accuracy": 0.5863593827933073
+          }
+        },
+        "by_key": {
+          "10": {
+            "all": {
+              "nll": 0.5412880226969718,
+              "accuracy": 0.8372757911682129
+            },
+            "time": {
+              "nll": 1.3657512053847314,
+              "accuracy": 0.5979665786027908
+            },
+            "column": {
+              "nll": 1.22863772213459,
+              "accuracy": 0.5643672898411751
+            },
+            "ln_head_type": {
+              "nll": 0.17173837406153325,
+              "accuracy": 0.9422502554953098
+            },
+            "ln_tail_type": {
+              "nll": 0.0028273057484966557,
+              "accuracy": 0.9977678582072258
+            },
+            "tap_type": {
+              "nll": 0.1573200080965762,
+              "accuracy": 0.9403849750757217
+            },
+            "ln_head_time": {
+              "nll": 1.0385901844128966,
+              "accuracy": 0.7385314063867554
+            },
+            "ln_tail_time": {
+              "nll": 1.6315264087170362,
+              "accuracy": 0.6307278911117464
+            },
+            "tap_time": {
+              "nll": 1.3219613566994668,
+              "accuracy": 0.585382105410099
+            }
+          },
+          "6": {
+            "all": {
+              "nll": 0.5286629721522331,
+              "accuracy": 0.8084237575531006
+            },
+            "time": {
+              "nll": 1.2641123980283737,
+              "accuracy": 0.5548632219433784
+            },
+            "column": {
+              "nll": 1.0967762917280197,
+              "accuracy": 0.5502774938941002
+            },
+            "ln_head_type": {
+              "nll": 0.8223801702260971,
+              "accuracy": 0.6871148943901062
+            },
+            "ln_tail_type": {
+              "nll": 3.2346903026336804e-05,
+              "accuracy": 1.0
+            },
+            "tap_type": {
+              "nll": 0.2796755973249674,
+              "accuracy": 0.8891969174146652
+            },
+            "ln_head_time": {
+              "nll": 1.4376311749219894,
+              "accuracy": 0.5554114505648613
+            },
+            "ln_tail_time": {
+              "nll": 1.5708600580692291,
+              "accuracy": 0.5030684769153595
+            },
+            "tap_time": {
+              "nll": 1.1695476323366165,
+              "accuracy": 0.5664038509130478
+            }
+          },
+          "9": {
+            "all": {
+              "nll": 0.7575966119766235,
+              "accuracy": 0.7536486983299255
+            },
+            "time": {
+              "nll": 2.660728335380554,
+              "accuracy": 0.15920791774988174
+            },
+            "column": {
+              "nll": 1.093882441520691,
+              "accuracy": 0.6067821681499481
+            },
+            "ln_head_type": {
+              "nll": 0.29321886599063873,
+              "accuracy": 0.838709682226181
+            },
+            "ln_tail_type": {
+              "nll": 8.311863439303124e-06,
+              "accuracy": 1.0
+            },
+            "tap_type": {
+              "nll": 0.2892672121524811,
+              "accuracy": 0.8960863649845123
+            },
+            "ln_head_time": {
+              "nll": 2.7178558111190796,
+              "accuracy": 0.16129031777381897
+            },
+            "ln_tail_time": {
+              "nll": 2.3841294050216675,
+              "accuracy": 0.22580644488334656
+            },
+            "tap_time": {
+              "nll": 2.8370156288146973,
+              "accuracy": 0.10458839125931263
+            }
+          },
+          "8": {
+            "all": {
+              "nll": 0.4564715027809143,
+              "accuracy": 0.8356096744537354
+            },
+            "time": {
+              "nll": 0.6655052304267883,
+              "accuracy": 0.8101968467235565
+            },
+            "column": {
+              "nll": 1.263018250465393,
+              "accuracy": 0.5420866161584854
+            },
+            "ln_head_type": {
+              "nll": 0.4982059448957443,
+              "accuracy": 0.7750000059604645
+            },
+            "ln_tail_type": {
+              "nll": 6.044657766324235e-05,
+              "accuracy": 1.0
+            },
+            "tap_type": {
+              "nll": 0.2000424787402153,
+              "accuracy": 0.8878205120563507
+            },
+            "ln_head_time": {
+              "nll": 0.5299134850502014,
+              "accuracy": 0.8416666686534882
+            },
+            "ln_tail_time": {
+              "nll": 0.7429486811161041,
+              "accuracy": 0.8050000071525574
+            },
+            "tap_time": {
+              "nll": 0.686396598815918,
+              "accuracy": 0.8006410002708435
+            }
+          },
+          "7": {
+            "all": {
+              "nll": 0.4879714846611023,
+              "accuracy": 0.8616959154605865
+            },
+            "time": {
+              "nll": 0.5480422824621201,
+              "accuracy": 0.869328498840332
+            },
+            "column": {
+              "nll": 1.037312090396881,
+              "accuracy": 0.6167574226856232
+            },
+            "ln_head_type": {
+              "nll": 1.2276665270328522,
+              "accuracy": 0.42222222685813904
+            },
+            "ln_tail_type": {
+              "nll": 2.3957379617911556e-06,
+              "accuracy": 1.0
+            },
+            "tap_type": {
+              "nll": 0.10250028222799301,
+              "accuracy": 0.9646739065647125
+            },
+            "ln_head_time": {
+              "nll": 0.9273719787597656,
+              "accuracy": 0.800000011920929
+            },
+            "ln_tail_time": {
+              "nll": 1.8874339312314987,
+              "accuracy": 0.5
+            },
+            "tap_time": {
+              "nll": 0.4028659909963608,
+              "accuracy": 0.9035325944423676
+            }
+          }
+        }
+      },
+      "windows": 150,
+      "capacity_rejections": 67,
+      "complete_candidate_windows": 1449,
+      "context_audit": {
+        "windows": 150,
+        "unconditioned_label_tails": 0,
+        "label_tails": 1645
+      },
+      "audio_counterfactual": {
+        "baseline": {
+          "correct_audio": {
+            "ln_head_time": {
+              "nll": 1.2901408116404827,
+              "within_30ms": 0.9238358185841486,
+              "exact_accuracy": 0.6414802222011181
+            },
+            "ln_tail_time": {
+              "nll": 1.7454443247272418,
+              "within_30ms": 0.8530656191018912,
+              "exact_accuracy": 0.5455095070199325
+            },
+            "tap_time": {
+              "nll": 1.4443764557441077,
+              "within_30ms": 0.9297472774982453,
+              "exact_accuracy": 0.5473755148549875
+            },
+            "all_time": {
+              "nll": 1.456337853272756,
+              "within_30ms": 0.9054002245267232,
+              "exact_accuracy": 0.5582391837611794
+            }
+          },
+          "other_song_audio": {
+            "ln_head_time": {
+              "nll": 3.570450470997737,
+              "within_30ms": 0.7417118446185038,
+              "exact_accuracy": 0.19576675788714334
+            },
+            "ln_tail_time": {
+              "nll": 4.376975371287419,
+              "within_30ms": 0.5300270261672827,
+              "exact_accuracy": 0.13174271655197328
+            },
+            "tap_time": {
+              "nll": 3.9075797756512958,
+              "within_30ms": 0.5724257290363312,
+              "exact_accuracy": 0.10630196332931519
+            },
+            "all_time": {
+              "nll": 4.0600090503692625,
+              "within_30ms": 0.5615425425271193,
+              "exact_accuracy": 0.11831574849784374
+            }
+          }
+        },
+        "adapter": {
+          "correct_audio": {
+            "ln_head_time": {
+              "nll": 1.181471161544323,
+              "within_30ms": 0.9378058153849381,
+              "exact_accuracy": 0.6786177808132309
+            },
+            "ln_tail_time": {
+              "nll": 1.631418723326463,
+              "within_30ms": 0.8572963888828571,
+              "exact_accuracy": 0.5832897334431226
+            },
+            "tap_time": {
+              "nll": 1.2989991366863252,
+              "within_30ms": 0.9287019908428192,
+              "exact_accuracy": 0.5863593827933073
+            },
+            "all_time": {
+              "nll": 1.3373341798782348,
+              "within_30ms": 0.9075361251831054,
+              "exact_accuracy": 0.595208366215229
+            }
+          },
+          "other_song_audio": {
+            "ln_head_time": {
+              "nll": 3.170024899336008,
+              "within_30ms": 0.7548156529664993,
+              "exact_accuracy": 0.22145327997322267
+            },
+            "ln_tail_time": {
+              "nll": 4.059323471326095,
+              "within_30ms": 0.5258433532256347,
+              "exact_accuracy": 0.146547589594355
+            },
+            "tap_time": {
+              "nll": 3.5986692587534588,
+              "within_30ms": 0.5806696981191635,
+              "exact_accuracy": 0.13045191687221327
+            },
+            "all_time": {
+              "nll": 3.7557800650596618,
+              "within_30ms": 0.567387738575538,
+              "exact_accuracy": 0.12525640449797112
+            }
+          }
+        }
+      }
+    }
+  },
+  "free_generation": [
+    {
+      "experiment": "conditioned-litvar",
+      "paired": true,
+      "adapter_conditions_match_training": true,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "8f26f32fbe1464f6de7fbb20a2eed3d9b8524b6044b52004a511a2a12315374f",
+            "chart": "19001cc942ba398ac9cccec89f8aca3cca8413b8ba5e34a405c98452720ef356",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.7628361858190709,
+            "difficulty": 1.9546771485309073,
+            "conditioning": {
+              "add_mapper_token": false,
+              "add_year_token": false,
+              "add_descriptors": false,
+              "add_song_position_token": false
+            }
+          },
+          "elapsed_seconds": 89.19,
+          "raw_sha256": "074b90135a31dfe021cb0090a66fabdd567cd9b4ea41bb54d967e4ec9f644217",
+          "comparison": {
+            "onset_groups": {
+              "reference": 6,
+              "predicted": 5,
+              "matched": 5,
+              "precision": 1.0,
+              "recall": 0.8333333333333334,
+              "f1": 0.9090909090909091,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 8,
+              "predicted": 5,
+              "matched": 5,
+              "precision": 1.0,
+              "recall": 0.625,
+              "f1": 0.7692307692307693,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 8,
+              "predicted": 7,
+              "matched": 5,
+              "precision": 0.7142857142857143,
+              "recall": 0.625,
+              "f1": 0.6666666666666666,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 8,
+            "ln": 7,
+            "ln_ratio": 0.875,
+            "max_held": 2,
+            "longest_ln_ms": 2572,
+            "lane_counts": [
+              1,
+              0,
+              1,
+              1,
+              1,
+              2,
+              0,
+              1,
+              1,
+              0
+            ]
+          },
+          "incomplete_holds": 2
+        },
+        "adapter": {
+          "identity": {
+            "audio": "8f26f32fbe1464f6de7fbb20a2eed3d9b8524b6044b52004a511a2a12315374f",
+            "chart": "19001cc942ba398ac9cccec89f8aca3cca8413b8ba5e34a405c98452720ef356",
+            "adapter": "9694c2a5e00eb9cad87b3f8dadb25d60f6f0b8635f8262030123f61af92cc102",
+            "adapter_config": "a3d13d96ed3967482d372961570400e1c9deb4a0d2580a4edc933be4a9859a10",
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.7628361858190709,
+            "difficulty": 1.9546771485309073,
+            "conditioning": {
+              "add_mapper_token": false,
+              "add_year_token": false,
+              "add_descriptors": false,
+              "add_song_position_token": false
+            }
+          },
+          "elapsed_seconds": 141.03,
+          "raw_sha256": "88d822d737e7dd3f137ac8298a9259decb4b110639a058166282e665e8f84085",
+          "comparison": {
+            "onset_groups": {
+              "reference": 6,
+              "predicted": 5,
+              "matched": 5,
+              "precision": 1.0,
+              "recall": 0.8333333333333334,
+              "f1": 0.9090909090909091,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 8,
+              "predicted": 5,
+              "matched": 5,
+              "precision": 1.0,
+              "recall": 0.625,
+              "f1": 0.7692307692307693,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 8,
+              "predicted": 11,
+              "matched": 6,
+              "precision": 0.5454545454545454,
+              "recall": 0.75,
+              "f1": 0.631578947368421,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 11,
+            "ln": 11,
+            "ln_ratio": 1.0,
+            "max_held": 3,
+            "longest_ln_ms": 5143,
+            "lane_counts": [
+              1,
+              1,
+              2,
+              0,
+              2,
+              1,
+              2,
+              0,
+              0,
+              2
+            ]
+          },
+          "incomplete_holds": 4
+        }
+      }
+    },
+    {
+      "experiment": "context-298810",
+      "paired": false,
+      "adapter_conditions_match_training": null,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "ca77d2a1d45bc5e2f5d7f6cbd2c4d76aa8afed6e96b362b80aae36d34ff5f746",
+            "chart": "88b632bbefe444f113506cee951e6253b7eab6e45c844947204d8c832ee55326",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 6,
+            "seed": 42,
+            "ln_ratio": 0.1290566037735849,
+            "difficulty": 3.6596537146614705
+          },
+          "elapsed_seconds": 905.14,
+          "raw_sha256": "c23ed2fb5e9c3bb8c52ea088961c85d3823ed629e99271e2db27820ce7143556",
+          "comparison": {
+            "onset_groups": {
+              "reference": 62,
+              "predicted": 66,
+              "matched": 61,
+              "precision": 0.9242424242424242,
+              "recall": 0.9838709677419355,
+              "f1": 0.953125,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 20,
+              "predicted": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 19,
+              "predicted": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null,
+                null
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 121,
+            "ln": 0,
+            "ln_ratio": 0.0,
+            "max_held": 0,
+            "longest_ln_ms": 0,
+            "lane_counts": [
+              13,
+              19,
+              25,
+              26,
+              19,
+              19
+            ]
+          },
+          "incomplete_holds": 0
+        }
+      }
+    },
+    {
+      "experiment": "context-3630228",
+      "paired": false,
+      "adapter_conditions_match_training": null,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "dee191fe3050f799c81f4cf0e567fd237246f2825e969c4661d406075992a190",
+            "chart": "7a0a74dcb63ec58c0a564e403910de5ac5b5c4d044bf2181b2050f9c2618d60f",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.24817518248175183,
+            "difficulty": 1.1167768497186723
+          },
+          "elapsed_seconds": 372.39,
+          "raw_sha256": "f73ead0c75c70adf000d2b00ba341ffb4df79c760ab013c15a72569751d20cef",
+          "comparison": {
+            "onset_groups": {
+              "reference": 38,
+              "predicted": 34,
+              "matched": 33,
+              "precision": 0.9705882352941176,
+              "recall": 0.868421052631579,
+              "f1": 0.9166666666666666,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 11,
+              "predicted": 6,
+              "matched": 6,
+              "precision": 1.0,
+              "recall": 0.5454545454545454,
+              "f1": 0.7058823529411765,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 10,
+              "predicted": 6,
+              "matched": 6,
+              "precision": 1.0,
+              "recall": 0.6,
+              "f1": 0.75,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 36,
+            "ln": 6,
+            "ln_ratio": 0.167,
+            "max_held": 1,
+            "longest_ln_ms": 349,
+            "lane_counts": [
+              5,
+              1,
+              4,
+              3,
+              5,
+              4,
+              4,
+              4,
+              0,
+              6
+            ]
+          },
+          "incomplete_holds": 1
+        }
+      }
+    },
+    {
+      "experiment": "context-4775395",
+      "paired": false,
+      "adapter_conditions_match_training": null,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "d9eb01f05eb957fb85dc99fb4d72636a43c4f8ea15cf0a3079f6e454c8f7541c",
+            "chart": "a2acdbe350d3100176e446b747f424d73a4d0b9fddde3327c31d8fb165600463",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 7,
+            "seed": 42,
+            "ln_ratio": 0.21382289416846653,
+            "difficulty": 2.519575791946765
+          },
+          "elapsed_seconds": 358.0,
+          "raw_sha256": "a5c8cbd58317000784d049937eb676f63093a9f08f60bee89de5a64703d0ec98",
+          "comparison": {
+            "onset_groups": {
+              "reference": 66,
+              "predicted": 35,
+              "matched": 35,
+              "precision": 1.0,
+              "recall": 0.5303030303030303,
+              "f1": 0.693069306930693,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 12,
+              "predicted": 4,
+              "matched": 4,
+              "precision": 1.0,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 13,
+              "predicted": 4,
+              "matched": 4,
+              "precision": 1.0,
+              "recall": 0.3076923076923077,
+              "f1": 0.47058823529411764,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 54,
+            "ln": 4,
+            "ln_ratio": 0.074,
+            "max_held": 1,
+            "longest_ln_ms": 480,
+            "lane_counts": [
+              9,
+              9,
+              6,
+              6,
+              10,
+              7,
+              7
+            ]
+          },
+          "incomplete_holds": 0
+        }
+      }
+    },
+    {
+      "experiment": "context-5647839",
+      "paired": false,
+      "adapter_conditions_match_training": null,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "7107c4e56719cb923fcb0340b715f9c89f1fc3b51a1416ecfa48d14fda798101",
+            "chart": "dfd44bd7c7e7910829cff77e82195da4dfbd250f238690acead4d50f8463c9f9",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 9,
+            "seed": 42,
+            "ln_ratio": 0.34458259325044405,
+            "difficulty": 2.134921223397635
+          },
+          "elapsed_seconds": 253.64,
+          "raw_sha256": "07d9e377f45e57e22bc613a55ec83dc64a47dd2d07471666c9b60a3e03d9385b",
+          "comparison": {
+            "onset_groups": {
+              "reference": 62,
+              "predicted": 59,
+              "matched": 52,
+              "precision": 0.8813559322033898,
+              "recall": 0.8387096774193549,
+              "f1": 0.859504132231405,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 34,
+              "predicted": 7,
+              "matched": 2,
+              "precision": 0.2857142857142857,
+              "recall": 0.058823529411764705,
+              "f1": 0.0975609756097561,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 34,
+              "predicted": 7,
+              "matched": 2,
+              "precision": 0.2857142857142857,
+              "recall": 0.058823529411764705,
+              "f1": 0.0975609756097561,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 85,
+            "ln": 7,
+            "ln_ratio": 0.082,
+            "max_held": 1,
+            "longest_ln_ms": 235,
+            "lane_counts": [
+              7,
+              10,
+              11,
+              7,
+              11,
+              11,
+              9,
+              12,
+              7
+            ]
+          },
+          "incomplete_holds": 1
+        }
+      }
+    },
+    {
+      "experiment": "context-587625",
+      "paired": false,
+      "adapter_conditions_match_training": null,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "087a8bc80658b65a241f6154607e93b8bc2f38929f4fbc39a68aeb9a0bac8001",
+            "chart": "b3a728fecbefc9e90efc0e61808fb2ec1dd759ae47104e9ce15ec16a9b337ea8",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 8,
+            "seed": 42,
+            "ln_ratio": 0.18773373223635004,
+            "difficulty": 3.6627903348106687
+          },
+          "elapsed_seconds": 790.44,
+          "raw_sha256": "1f3e1e5b453ec330e5d705bc33f61e4325f4c839236ff9d70a7199bb93fe5c30",
+          "comparison": {
+            "onset_groups": {
+              "reference": 38,
+              "predicted": 49,
+              "matched": 37,
+              "precision": 0.7551020408163265,
+              "recall": 0.9736842105263158,
+              "f1": 0.8505747126436781,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 11,
+              "predicted": 27,
+              "matched": 8,
+              "precision": 0.2962962962962963,
+              "recall": 0.7272727272727273,
+              "f1": 0.42105263157894735,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 28,
+              "predicted": 27,
+              "matched": 5,
+              "precision": 0.18518518518518517,
+              "recall": 0.17857142857142858,
+              "f1": 0.18181818181818182,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 72,
+            "ln": 27,
+            "ln_ratio": 0.375,
+            "max_held": 1,
+            "longest_ln_ms": 689,
+            "lane_counts": [
+              6,
+              8,
+              8,
+              11,
+              13,
+              10,
+              14,
+              2
+            ]
+          },
+          "incomplete_holds": 1
+        }
+      }
+    },
+    {
+      "experiment": "context-litvar",
+      "paired": true,
+      "adapter_conditions_match_training": false,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "8f26f32fbe1464f6de7fbb20a2eed3d9b8524b6044b52004a511a2a12315374f",
+            "chart": "19001cc942ba398ac9cccec89f8aca3cca8413b8ba5e34a405c98452720ef356",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.7628361858190709,
+            "difficulty": 1.9546771485309073
+          },
+          "elapsed_seconds": 116.97,
+          "raw_sha256": "f2a293b60c3a0ebc44c9daf2334276c6afa8cd9bfe53958efb878344faed07c9",
+          "comparison": {
+            "onset_groups": {
+              "reference": 6,
+              "predicted": 6,
+              "matched": 6,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 8,
+              "predicted": 4,
+              "matched": 4,
+              "precision": 1.0,
+              "recall": 0.5,
+              "f1": 0.6666666666666666,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 8,
+              "predicted": 4,
+              "matched": 4,
+              "precision": 1.0,
+              "recall": 0.5,
+              "f1": 0.6666666666666666,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 10,
+            "ln": 4,
+            "ln_ratio": 0.4,
+            "max_held": 1,
+            "longest_ln_ms": 2572,
+            "lane_counts": [
+              1,
+              1,
+              0,
+              1,
+              1,
+              2,
+              0,
+              0,
+              3,
+              1
+            ]
+          },
+          "incomplete_holds": 1
+        },
+        "adapter": {
+          "identity": {
+            "audio": "8f26f32fbe1464f6de7fbb20a2eed3d9b8524b6044b52004a511a2a12315374f",
+            "chart": "19001cc942ba398ac9cccec89f8aca3cca8413b8ba5e34a405c98452720ef356",
+            "adapter": "9694c2a5e00eb9cad87b3f8dadb25d60f6f0b8635f8262030123f61af92cc102",
+            "adapter_config": "a3d13d96ed3967482d372961570400e1c9deb4a0d2580a4edc933be4a9859a10",
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.7628361858190709,
+            "difficulty": 1.9546771485309073
+          },
+          "elapsed_seconds": 133.28,
+          "raw_sha256": "523bbfcff42a7a91f25d3b04c1c1df1e866d398885136e108b16760d6ec92844",
+          "comparison": {
+            "onset_groups": {
+              "reference": 6,
+              "predicted": 6,
+              "matched": 6,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 8,
+              "predicted": 13,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 8,
+              "predicted": 15,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null,
+                null
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 15,
+            "ln": 15,
+            "ln_ratio": 1.0,
+            "max_held": 5,
+            "longest_ln_ms": 4928,
+            "lane_counts": [
+              3,
+              1,
+              2,
+              1,
+              1,
+              0,
+              1,
+              1,
+              3,
+              2
+            ]
+          },
+          "incomplete_holds": 1
+        }
+      }
+    },
+    {
+      "experiment": "litvar",
+      "paired": true,
+      "adapter_conditions_match_training": false,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "8f26f32fbe1464f6de7fbb20a2eed3d9b8524b6044b52004a511a2a12315374f",
+            "chart": "19001cc942ba398ac9cccec89f8aca3cca8413b8ba5e34a405c98452720ef356",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.7628361858190709,
+            "difficulty": 1.9546771485309073
+          },
+          "elapsed_seconds": 116.97,
+          "raw_sha256": "f2a293b60c3a0ebc44c9daf2334276c6afa8cd9bfe53958efb878344faed07c9",
+          "comparison": {
+            "onset_groups": {
+              "reference": 6,
+              "predicted": 6,
+              "matched": 6,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 8,
+              "predicted": 4,
+              "matched": 4,
+              "precision": 1.0,
+              "recall": 0.5,
+              "f1": 0.6666666666666666,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 8,
+              "predicted": 4,
+              "matched": 4,
+              "precision": 1.0,
+              "recall": 0.5,
+              "f1": 0.6666666666666666,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 10,
+            "ln": 4,
+            "ln_ratio": 0.4,
+            "max_held": 1,
+            "longest_ln_ms": 2572,
+            "lane_counts": [
+              1,
+              1,
+              0,
+              1,
+              1,
+              2,
+              0,
+              0,
+              3,
+              1
+            ]
+          },
+          "incomplete_holds": 1
+        },
+        "adapter": {
+          "identity": {
+            "audio": "8f26f32fbe1464f6de7fbb20a2eed3d9b8524b6044b52004a511a2a12315374f",
+            "chart": "19001cc942ba398ac9cccec89f8aca3cca8413b8ba5e34a405c98452720ef356",
+            "adapter": "999627a830839426e472764ef2b8c98ca3e67a150e91948b9e55c34acbc5547d",
+            "adapter_config": "a3d13d96ed3967482d372961570400e1c9deb4a0d2580a4edc933be4a9859a10",
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.7628361858190709,
+            "difficulty": 1.9546771485309073
+          },
+          "elapsed_seconds": 94.56,
+          "raw_sha256": "3587e167136b2707f500eacc77b8a1ae4e1e45f56d4ea9237149b26107fd82e0",
+          "comparison": {
+            "onset_groups": {
+              "reference": 6,
+              "predicted": 6,
+              "matched": 6,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 8,
+              "predicted": 7,
+              "matched": 5,
+              "precision": 0.7142857142857143,
+              "recall": 0.625,
+              "f1": 0.6666666666666666,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 8,
+              "predicted": 8,
+              "matched": 5,
+              "precision": 0.625,
+              "recall": 0.625,
+              "f1": 0.625,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 9,
+            "ln": 8,
+            "ln_ratio": 0.889,
+            "max_held": 2,
+            "longest_ln_ms": 2572,
+            "lane_counts": [
+              1,
+              0,
+              2,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              0
+            ]
+          },
+          "incomplete_holds": 1
+        }
+      }
+    },
+    {
+      "experiment": "quarter-3630228",
+      "paired": true,
+      "adapter_conditions_match_training": true,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "dee191fe3050f799c81f4cf0e567fd237246f2825e969c4661d406075992a190",
+            "chart": "7a0a74dcb63ec58c0a564e403910de5ac5b5c4d044bf2181b2050f9c2618d60f",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.24817518248175183,
+            "difficulty": 1.1167768497186723,
+            "conditioning": {
+              "add_mapper_token": false,
+              "add_year_token": false,
+              "add_descriptors": false,
+              "add_song_position_token": false
+            }
+          },
+          "elapsed_seconds": 148.36,
+          "raw_sha256": "4d47195ecee3a1d90a87d1f0531bb5d59498ff3b0630fbc56fed717e4c668496",
+          "comparison": {
+            "onset_groups": {
+              "reference": 38,
+              "predicted": 34,
+              "matched": 33,
+              "precision": 0.9705882352941176,
+              "recall": 0.868421052631579,
+              "f1": 0.9166666666666666,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 11,
+              "predicted": 6,
+              "matched": 6,
+              "precision": 1.0,
+              "recall": 0.5454545454545454,
+              "f1": 0.7058823529411765,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 10,
+              "predicted": 6,
+              "matched": 6,
+              "precision": 1.0,
+              "recall": 0.6,
+              "f1": 0.75,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 46,
+            "ln": 6,
+            "ln_ratio": 0.13,
+            "max_held": 1,
+            "longest_ln_ms": 349,
+            "lane_counts": [
+              3,
+              4,
+              6,
+              3,
+              7,
+              5,
+              5,
+              3,
+              3,
+              7
+            ]
+          },
+          "incomplete_holds": 1
+        },
+        "adapter": {
+          "identity": {
+            "audio": "dee191fe3050f799c81f4cf0e567fd237246f2825e969c4661d406075992a190",
+            "chart": "7a0a74dcb63ec58c0a564e403910de5ac5b5c4d044bf2181b2050f9c2618d60f",
+            "adapter": "34a5ff14a52b3497b5b47e3b4a9892e7b96259461fd5d0031085130e61d0fc46",
+            "adapter_config": "a3d13d96ed3967482d372961570400e1c9deb4a0d2580a4edc933be4a9859a10",
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.24817518248175183,
+            "difficulty": 1.1167768497186723,
+            "conditioning": {
+              "add_mapper_token": false,
+              "add_year_token": false,
+              "add_descriptors": false,
+              "add_song_position_token": false
+            }
+          },
+          "elapsed_seconds": 95.58,
+          "raw_sha256": "e3cfafafa9d8c5d11a883d57b045c7814e1f99f09bdc19d5efff5c5ac20a5197",
+          "comparison": {
+            "onset_groups": {
+              "reference": 38,
+              "predicted": 34,
+              "matched": 34,
+              "precision": 1.0,
+              "recall": 0.8947368421052632,
+              "f1": 0.9444444444444444,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 11,
+              "predicted": 2,
+              "matched": 2,
+              "precision": 1.0,
+              "recall": 0.18181818181818182,
+              "f1": 0.3076923076923077,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 10,
+              "predicted": 2,
+              "matched": 2,
+              "precision": 1.0,
+              "recall": 0.2,
+              "f1": 0.3333333333333333,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 36,
+            "ln": 2,
+            "ln_ratio": 0.056,
+            "max_held": 1,
+            "longest_ln_ms": 349,
+            "lane_counts": [
+              2,
+              5,
+              2,
+              4,
+              4,
+              6,
+              3,
+              2,
+              6,
+              2
+            ]
+          },
+          "incomplete_holds": 0
+        }
+      }
+    },
+    {
+      "experiment": "quarter-litvar",
+      "paired": true,
+      "adapter_conditions_match_training": true,
+      "variants": {
+        "baseline": {
+          "identity": {
+            "audio": "8f26f32fbe1464f6de7fbb20a2eed3d9b8524b6044b52004a511a2a12315374f",
+            "chart": "19001cc942ba398ac9cccec89f8aca3cca8413b8ba5e34a405c98452720ef356",
+            "adapter": null,
+            "adapter_config": null,
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.7628361858190709,
+            "difficulty": 1.9546771485309073,
+            "conditioning": {
+              "add_mapper_token": false,
+              "add_year_token": false,
+              "add_descriptors": false,
+              "add_song_position_token": false
+            }
+          },
+          "elapsed_seconds": 89.19,
+          "raw_sha256": "074b90135a31dfe021cb0090a66fabdd567cd9b4ea41bb54d967e4ec9f644217",
+          "comparison": {
+            "onset_groups": {
+              "reference": 6,
+              "predicted": 5,
+              "matched": 5,
+              "precision": 1.0,
+              "recall": 0.8333333333333334,
+              "f1": 0.9090909090909091,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 8,
+              "predicted": 5,
+              "matched": 5,
+              "precision": 1.0,
+              "recall": 0.625,
+              "f1": 0.7692307692307693,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 8,
+              "predicted": 7,
+              "matched": 5,
+              "precision": 0.7142857142857143,
+              "recall": 0.625,
+              "f1": 0.6666666666666666,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 8,
+            "ln": 7,
+            "ln_ratio": 0.875,
+            "max_held": 2,
+            "longest_ln_ms": 2572,
+            "lane_counts": [
+              1,
+              0,
+              1,
+              1,
+              1,
+              2,
+              0,
+              1,
+              1,
+              0
+            ]
+          },
+          "incomplete_holds": 2
+        },
+        "adapter": {
+          "identity": {
+            "audio": "8f26f32fbe1464f6de7fbb20a2eed3d9b8524b6044b52004a511a2a12315374f",
+            "chart": "19001cc942ba398ac9cccec89f8aca3cca8413b8ba5e34a405c98452720ef356",
+            "adapter": "34a5ff14a52b3497b5b47e3b4a9892e7b96259461fd5d0031085130e61d0fc46",
+            "adapter_config": "a3d13d96ed3967482d372961570400e1c9deb4a0d2580a4edc933be4a9859a10",
+            "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+            "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+            "start_ms": 24000,
+            "seconds": 12,
+            "keys": 10,
+            "seed": 42,
+            "ln_ratio": 0.7628361858190709,
+            "difficulty": 1.9546771485309073,
+            "conditioning": {
+              "add_mapper_token": false,
+              "add_year_token": false,
+              "add_descriptors": false,
+              "add_song_position_token": false
+            }
+          },
+          "elapsed_seconds": 118.06,
+          "raw_sha256": "49aa31568a6c6c0943d9dea47fdb3bcd4870a715e06c8ba0675389bdfc636d6f",
+          "comparison": {
+            "onset_groups": {
+              "reference": 6,
+              "predicted": 5,
+              "matched": 5,
+              "precision": 1.0,
+              "recall": 0.8333333333333334,
+              "f1": 0.9090909090909091,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "release_groups": {
+              "reference": 8,
+              "predicted": 5,
+              "matched": 5,
+              "precision": 1.0,
+              "recall": 0.625,
+              "f1": 0.7692307692307693,
+              "mean_absolute_error_ms": [
+                0.0
+              ]
+            },
+            "complete_hold_spans": {
+              "reference": 8,
+              "predicted": 9,
+              "matched": 6,
+              "precision": 0.6666666666666666,
+              "recall": 0.75,
+              "f1": 0.7058823529411765,
+              "mean_absolute_error_ms": [
+                0.0,
+                0.0
+              ]
+            },
+            "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+          },
+          "validation": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 9,
+            "ln": 9,
+            "ln_ratio": 1.0,
+            "max_held": 2,
+            "longest_ln_ms": 2572,
+            "lane_counts": [
+              2,
+              0,
+              1,
+              0,
+              2,
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "incomplete_holds": 2
+        }
+      }
+    }
+  ],
+  "stem_probe": [
+    {
+      "voice": "mix",
+      "context": {
+        "audio_sha256": "08b6aff5db874fca7718c6bab0b7c97e01b59648531bfd0c53d5b1628346010d",
+        "start_ms": 24000,
+        "seconds": 12,
+        "bpm": 210.0,
+        "offset": 93.0,
+        "keys": 10,
+        "seed": 42,
+        "ln_ratio": 0.55,
+        "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+        "model_revision": "74f22583400d259bf424819e11027c17933efe54"
+      },
+      "elapsed_seconds": 385.34,
+      "raw_sha256": "37a54f05382e82a6a226d4ec6a7820c44e35659fbe090dc0ad52673a9d55db05",
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 87,
+        "ln": 60,
+        "ln_ratio": 0.69,
+        "max_held": 5,
+        "longest_ln_ms": 2000,
+        "lane_counts": [
+          9,
+          5,
+          10,
+          12,
+          7,
+          8,
+          13,
+          9,
+          8,
+          6
+        ]
+      },
+      "incomplete_holds": 4
+    },
+    {
+      "voice": "vocals",
+      "context": {
+        "audio_sha256": "f6c9f599b583df191cdbae1cb3b6f993a89b96da8b730f8a2aba49cba801471d",
+        "start_ms": 24000,
+        "seconds": 12,
+        "bpm": 210.0,
+        "offset": 93.0,
+        "keys": 10,
+        "seed": 42,
+        "ln_ratio": 0.55,
+        "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+        "model_revision": "74f22583400d259bf424819e11027c17933efe54"
+      },
+      "elapsed_seconds": 242.25,
+      "raw_sha256": "c376ad1eae3ccf173e874d495ca6913b6e09ed51525434a974006c3d5c57a16d",
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 27,
+        "ln": 24,
+        "ln_ratio": 0.889,
+        "max_held": 2,
+        "longest_ln_ms": 786,
+        "lane_counts": [
+          3,
+          2,
+          2,
+          2,
+          5,
+          2,
+          4,
+          2,
+          2,
+          3
+        ]
+      },
+      "incomplete_holds": 0
+    },
+    {
+      "voice": "piano",
+      "context": {
+        "audio_sha256": "c9a09b282883430ecee3feb383cdd51179c963b6adf9d69736bfadebaaa01d79",
+        "start_ms": 24000,
+        "seconds": 12,
+        "bpm": 210.0,
+        "offset": 93.0,
+        "keys": 10,
+        "seed": 42,
+        "ln_ratio": 0.55,
+        "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+        "model_revision": "74f22583400d259bf424819e11027c17933efe54"
+      },
+      "elapsed_seconds": 444.33,
+      "raw_sha256": "25416a0ecd2f3a3d087a80dd597ab81258341cfb3d867024d3b4d335b713e3ec",
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 78,
+        "ln": 0,
+        "ln_ratio": 0.0,
+        "max_held": 0,
+        "longest_ln_ms": 0,
+        "lane_counts": [
+          0,
+          0,
+          25,
+          2,
+          0,
+          0,
+          49,
+          0,
+          2,
+          0
+        ]
+      },
+      "incomplete_holds": 0
+    }
+  ],
+  "training_conditioning": {
+    "add_mapper_token": false,
+    "add_year_token": false,
+    "add_descriptors": false,
+    "add_song_position_token": false
+  },
+  "strength_ablation": {
+    "scale": 0.25,
+    "source_sha256": "9694c2a5e00eb9cad87b3f8dadb25d60f6f0b8635f8262030123f61af92cc102",
+    "scaled_matrices": 24,
+    "notice": "Reduced adapter contribution; no additional training and no quality acceptance implied."
+  },
+  "user_audio_probe": {
+    "baseline": {
+      "context": {
+        "audio_sha256": "08b6aff5db874fca7718c6bab0b7c97e01b59648531bfd0c53d5b1628346010d",
+        "start_ms": 24000,
+        "seconds": 12,
+        "bpm": 210.0,
+        "offset": 93.0,
+        "keys": 10,
+        "seed": 42,
+        "ln_ratio": 0.55,
+        "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+        "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+        "conditioning": {
+          "add_mapper_token": false,
+          "add_year_token": false,
+          "add_descriptors": false,
+          "add_song_position_token": false
+        }
+      },
+      "elapsed_seconds": 338.14,
+      "raw_sha256": "7bcd654bcbb6c7dd4959f8b5ada57131f6c133e465b209c11e690b2fa0800399",
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 94,
+        "ln": 57,
+        "ln_ratio": 0.606,
+        "max_held": 3,
+        "longest_ln_ms": 857,
+        "lane_counts": [
+          8,
+          6,
+          10,
+          9,
+          9,
+          12,
+          10,
+          14,
+          7,
+          9
+        ]
+      },
+      "incomplete_holds": 1
+    },
+    "adapter": {
+      "context": {
+        "audio_sha256": "08b6aff5db874fca7718c6bab0b7c97e01b59648531bfd0c53d5b1628346010d",
+        "start_ms": 24000,
+        "seconds": 12,
+        "bpm": 210.0,
+        "offset": 93.0,
+        "keys": 10,
+        "seed": 42,
+        "ln_ratio": 0.55,
+        "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+        "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+        "adapter_sha256": "9694c2a5e00eb9cad87b3f8dadb25d60f6f0b8635f8262030123f61af92cc102",
+        "conditioning": {
+          "add_mapper_token": false,
+          "add_year_token": false,
+          "add_descriptors": false,
+          "add_song_position_token": false
+        }
+      },
+      "elapsed_seconds": 346.73,
+      "raw_sha256": "669c3d2654f84fcf0c7fb47667d368f972d37f9a73316e6c015e23e77cc51740",
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 93,
+        "ln": 58,
+        "ln_ratio": 0.624,
+        "max_held": 4,
+        "longest_ln_ms": 1143,
+        "lane_counts": [
+          11,
+          8,
+          7,
+          9,
+          7,
+          7,
+          12,
+          9,
+          10,
+          13
+        ]
+      },
+      "incomplete_holds": 1
+    }
+  },
+  "limitations": [
+    "Teacher-forced metrics do not measure free-generation quality.",
+    "Human authored events are one interpretation, not exhaustive instrument transcription truth.",
+    "Fine-tuning validation songs may have appeared in base-model pretraining.",
+    "Separated instruments and section plans are not joint model training inputs yet.",
+    "No Nova private weights; public Demucs stems only.",
+    "No new research adapter is enabled in the application.",
+    "Quarter-strength adapter improved the selected lit(var) interval but regressed on a second 10K Hybrid song; it is not accepted.",
+    "6/7/8/9K free-generation coverage is baseline-only, not a completed fine-tuned comparison.",
+    "The release-only/single-attack sampling fix was implemented after the reported training runs; its effect has not been trained or measured.",
+    "The user song has no instrument transcription truth; its object counts and structural validity do not establish audio quality."
+  ]
+}

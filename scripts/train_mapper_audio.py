@@ -15,7 +15,7 @@ import shutil
 import sys
 import time
 
-from mapper_training_context import context_dataset_class, typed_time_positions
+from mapper_training_context import context_dataset_class, typed_time_positions, has_musical_target
 
 
 def digest(path):
@@ -104,8 +104,9 @@ def main():
             rng=random.Random(row['beatmap_id']);selected=[];eligible=0
             for ordinal,item in enumerate(dataset):
                 labels=item['labels']
-                heads=(labels==tokenizer.event_start[EventType.CIRCLE]) | (labels==tokenizer.event_start[EventType.HOLD_NOTE])
-                if int(heads.sum())<2:continue
+                musical_ids={tokenizer.event_start[k] for k in
+                    (EventType.CIRCLE,EventType.HOLD_NOTE,EventType.HOLD_NOTE_END,EventType.HOLD_NOTE_SUSTAIN)}
+                if not has_musical_target(labels.tolist(),musical_ids):continue
                 entry=dict(ordinal=ordinal,window=item['context_window'],
                            batch={k:v.unsqueeze(0) for k,v in item.items() if torch.is_tensor(v)})
                 eligible+=1

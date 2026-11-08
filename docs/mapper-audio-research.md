@@ -1,6 +1,6 @@
 # Mapperatorinator 音频事件微调记录（2026-11-08，研究中）
 
-本轮开始真正复用 Mapperatorinator V32 的音频编码器、tokenizer、OsuParser、MMRS 数据构造和 mania 解码器进行 LoRA。此前轨道先验、候选取舍模型不能替代这项训练。本轮未修改应用默认模型，也未发布新的 Release。初始实验已出现退步，不能称为交付质量改善。
+本轮真正复用 Mapperatorinator V32 的音频编码器、tokenizer、OsuParser、MMRS 数据构造和 mania 解码器完成两轮 LoRA 实验。此前轨道先验、候选取舍模型不能替代这项训练。上下文训练改善了部分给定前文的预测，但自由生成没有稳定收益；25% 更新幅度在第二首 10K Hybrid 上明显退步。**所有实验权重均未通过启用条件，本轮未修改应用默认模型，也未发布新的 Release。** 机器可读的汇总见 [mapper-audio-research.json](mapper-audio-research.json)。
 
 应用接入处修复了一个对照失真：原模型输出不再自动经过定轨搜索，先保留模型生成的轨道。如果有同轨冲突，候选与界面如实标出，导出继续要求结构校验通过。用户仍可主动执行普通重新定轨；已确认 Timing 的量化行为保留并记录移动。这避免用后处理覆盖新模型学到的 LN 配合，也不把“成功生成候选”显示成“结构检查通过”。
 
@@ -63,6 +63,67 @@ Nova 本地提取物中有公开分离算法与应用符号，但专用权重仍
 
 这些是给定真实前文后的预测，时间 token 间隔为 10ms。与初始短窗实验的输入、抽样窗口不同，不能跨表比较绝对分数。允许 30ms 误差后的放手收益很小，短键类型还有退步，不能描述为采音已解决。
 
+本轮已完成训练仍沿用“至少两个起点才参与抽样”的初始策略。这会排除只有放手、持续状态或单个稀疏起音的片段。随后源码修正了该筛选并补了回归测试，缓存身份随构造代码改变而失效；**这项后续修正尚未计入上表的已训练权重**。已跑实验的构造代码及参数由运行目录快照保留，相关训练逻辑见提交 `9a227da`。
+
+相同验证前文下，把音频编码换成另一首验证歌曲，原模型 LN 尾时间 token 精确预测从 54.55% 降到 13.17%，微调模型从 58.33% 降到 14.65%。这支持模型确实使用音频，不能证明它已经采对音或理解乐器归属。
+
+## 条件一致性与自由生成退步
+
+训练关闭了作者、年份、描述和歌曲位置四项条件 token，最初自由生成沿用了上游 V32 默认值。这会改变解码前缀，不能当成训练／推理条件一致的验证。现已将实际训练条件保存到 `adapter/conditioning.json`；探针默认对原模型和微调模型同时应用这些条件，并纳入缓存身份。不混用不同条件的旧缓存；`--upstream-defaults` 仅用于明确重现旧实验。
+
+下面均是验证歌曲 24–36 秒、同一原音源、完整原 Timing、原谱难度与 LN 条件、seed 42 的自由生成。没有传入人工 HitObjects 或 Bookmarks，没有事后吸附拍线或重排轨道。完整 LN 区间匹配同时要求起点误差 ≤30ms、尾端误差 ≤60ms，使用一对一匹配；跨出试听区间的长条不计为完整区间。
+
+|实验|输入条件|人工完整 LN|原模型完整 LN F1|微调完整 LN F1|结论|
+|---|---|---:|---:|---:|---|
+|64 步，`lit(var)`|上游默认，与训练不一致|8|0.6667|0.6250|初始诊断，不能作为条件一致的验收|
+|256 步，`lit(var)`|上游默认，与训练不一致|8|0.6667|0.0000|明显碎裂，保留失败记录|
+|256 步，`lit(var)`|双方与训练一致|8|0.6667|0.6316|仍未超过原模型|
+|256 步的 25% 更新幅度，`lit(var)`|双方与训练一致|8|0.6667|0.7059|同一开发片段调试，不能据此启用|
+|25% 更新幅度，`LOW BIT FANTASY`|双方与训练一致|10|0.7500|0.3333|另一首 10K Hybrid 退步，拒绝启用|
+
+25% 幅度仅将已训练适配器的 24 个 `lora_B` 矩阵乘以 0.25，没有增加训练。原权重哈希为 `9694c2a5e00eb9cad87b3f8dadb25d60f6f0b8635f8262030123f61af92cc102`，缩放来源和参数保存在 `strength-ablation.json`。这只是开发消融，不能把在一个片段挑选的幅度当成独立测试结论。
+
+条件一致的 `lit(var)` 起音组 F1 在原模型、完整微调、25% 微调均为 0.9091，放手组 F1 均为 0.7692；完整微调生成 11 个完整 LN 区间，原模型 7 个，25% 微调 9 个。因此更多 LN 本身不代表更准。`LOW BIT FANTASY` 中 25% 微调起音组 F1 从 0.9167 升到 0.9444，但完整 LN 仅匹配 2/10，原模型为 6/10；单看起音会掩盖持续表达退化。
+
+这些人工谱相似度只用于检查是否保留一种人工表达，不能把人工省音当成声音不存在，也不能单凭该分数评价制谱音乐性。两首短片段、一个随机种子不足以完成泛化验收；当前观察已足以否决将这批权重直接设为默认。
+
+## 6–10K 基线覆盖
+
+以下只是上游默认条件的原模型基线，尚未完成各键数的微调自由生成对照：
+
+|谱面 ID|键数|起音组 F1|完整 LN F1|
+|---|---:|---:|---:|
+|298810|6K|0.9531|0.0000|
+|4775395|7K|0.6931|0.4706|
+|587625|8K|0.8506|0.1818|
+|5647839|9K|0.8595|0.0976|
+|3630228|10K|0.9167|0.7500|
+
+6K 片段人工有 19 个完整 LN，模型产生 121 个物件却没有 LN。这个结果和钢琴声部探针都说明：能够产生相当接近的起音，不等于能够表达持续音。不能用训练集覆盖全部键数替代每个键数的自由生成检查。
+
+## 用户歌曲与逐声部试听
+
+《有点甜》同一音源 24–36 秒、BPM 210、Offset 93、10K、LN 条件 55% 的结果：
+
+|模型与条件|物件|LN|不完整 LN 警告|
+|---|---:|---:|---:|
+|原模型，上游默认条件|87|60|4|
+|原模型，与训练一致|94|57|1|
+|256 步完整微调，与训练一致|93|58|1|
+
+后两行才是条件一致的配对；数量与结构有效性都不能作为采音准确率。这首歌没有逐乐器起止真值，本轮没有给它计算“准确率”，也没有将原模型输出冒充人工谱。
+
+`scripts/build_mapper_song_review.py` 可从这些已核验的原始结果创建离线试听页。页面并排显示三份模型输出，在同一播放位置切换混音、鼓、贝斯、人声、钢琴、吉他和其余伴奏，再选择某份输出的起止提示。切换试听声部不改变谱面，也不把混音预测自动归属给所选乐器。声部与原音源校验哈希，重新读取原始 `.osu`；所有提示与声音混合成单个 PCM 流，避免多个播放器计时漂移。
+
+页面、音乐、原谱、分离声部和权重仅保存在忽略目录 `test-data`。浏览器已验证共享时钟、播放、跳转、连续切换声部和窄屏布局。这个页面是便于定位漏音、误采及长条起止的工具，不是听辨验收结果。
+
+## 下一步准入要求
+
+- 先建立有真实乐器起止标注的采音诊断，区分漏音、误检、尾端漂移及分离串音。Ranked/Loved 谱面用于学习创作取舍，不能冒充完整乐器转录标签。
+- 逐声部证据、段落选择和最终布局应保留可追溯关系。当前 Mapperatorinator 分支尚未共同接收分离声部与段落方案，不能声称三者已经联合训练完成。
+- 后续训练需包括跨窗持续、只有放手及稀疏起音片段；已有两个已完成实验不包含最后这项抽样修正。
+- 以后以多首歌曲、多种键数的自由生成和试听检查为准，分别记录短键、完整 LN 和放手；不能只看 loss、LN 比例或起音分数。新增测试歌曲应与当前调参片段分开。
+
 ## 本地运行
 
 需已安装固定原模型的独立 Python 环境。配对数据、模型与歌曲放在忽略目录 `test-data`，不会随仓库或 Release 分发。
@@ -71,9 +132,13 @@ Nova 本地提取物中有公开分离算法与应用符号，但专用权重仍
 # 准备脚本要求已核验的配对清单和固定谱面快照；不会自动伪造或下载缺失音源。
 .venv\Scripts\python.exe scripts/prepare_mapper_training.py --ffmpeg <ffmpeg.exe>
 
-test-data\mapperatorinator\venv\Scripts\python.exe scripts/train_mapper_audio.py --steps 256 --threads 2 --output test-data/mapper-training/lora-context
-test-data\mapperatorinator\venv\Scripts\python.exe scripts/evaluate_mapper_audio.py --run test-data/mapper-training/lora-context
-.venv\Scripts\python.exe scripts/probe_mapper_adapter.py --adapter test-data/mapper-training/lora-context/adapter --output test-data/mapper-adapter-probe/context-litvar
+# 新实验使用新目录；当前源码包含尚未计入历史权重的抽样修正。
+test-data\mapperatorinator\venv\Scripts\python.exe scripts/train_mapper_audio.py --steps 256 --threads 2 --output test-data/mapper-training/lora-context-next
+test-data\mapperatorinator\venv\Scripts\python.exe scripts/evaluate_mapper_audio.py --run test-data/mapper-training/lora-context-next
+.venv\Scripts\python.exe scripts/probe_mapper_adapter.py --adapter test-data/mapper-training/lora-context-next/adapter --output test-data/mapper-adapter-probe/context-next-litvar
+
+# 对已有歌曲实验创建无人工真值的多声部试听页。
+.venv\Scripts\python.exe scripts/build_mapper_song_review.py --audio <原音源> --stems <已核验六声部目录> --output test-data/mapper-song-review
 ```
 
 探针生成原始 `.osu`、哈希、警告、匹配报告，以及本地 `review.html` 和原音乐/起止提示 WAV。页面不需要 osu!，三份谱共用音频时钟；点击跳转、切换提示均已做浏览器检查。研究报告应同时保留改善和退步，不用谱面数量、LN 比例或训练步数代替效果验收。

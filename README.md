@@ -6,7 +6,7 @@
 
 **开发测试版 `0.1.0-alpha.6-dev.1`**：新增音乐变化分段、可编辑逐段声部表达、完整音组取舍与省音记录，并检查低音误拆分。可在 [开发测试包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.1) 单独下载；使用顺序与能力边界见 [采音与段落表达修订](docs/music-first-revision.md)。配对音频训练未通过持续音基线，研究权重未启用。该包用于检查新流程，不代表采音质量已解决。下面的常规下载与功能说明仍对应 alpha.5。
 
-**源码研究进展**：正在使用真实 Mapperatorinator 音频／事件序列进行 6–10K LoRA 微调，增加跨窗 LN 状态、放手时间评价和原始生成试听对照。初始微调出现 LN 退步，未启用研究权重、未发布新包；详见 [音频事件微调记录](docs/mapper-audio-research.md)。
+**源码研究进展**：已用真实 Mapperatorinator 音频／事件序列完成两轮 6–10K LoRA 实验，修正跨窗 LN 状态、训练／推理条件和模型轨道被覆盖的问题，增加混音／六声部同步试听对照。自由生成尚无稳定收益，10K Hybrid 对照出现 LN 退步，因此未启用研究权重、未发布新包；详见 [音频事件微调记录](docs/mapper-audio-research.md)。
 
 ![ManiaLab 界面](docs/screenshot.png)
 

@@ -2,6 +2,11 @@
 from bisect import bisect_left
 
 
+def has_musical_target(labels, event_ids):
+    """Release-only and sustained windows are useful LN supervision too."""
+    return any(token in event_ids for token in labels)
+
+
 def target_windows(frame_count, frame_capacity, target_frames):
     """Each frame is a target once; earlier frames are unlabelled context."""
     if not 0 < target_frames < frame_capacity:

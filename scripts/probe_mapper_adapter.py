@@ -54,37 +54,72 @@ def timing_comparison(reference, predicted, start, end):
                 notice='Similarity to one human interpretation, not instrument transcription accuracy or playability.')
 
 
-def write_review(output, source, start, end, results):
+def write_review(output, source, start, end, results, *, labels=None, sources=None, notice=None, keys=10):
     """Local shared-audio timeline; works without osu! or a server."""
+    import re
     from manialab.audition import render_audition
-    clip = output/'review.wav'
-    original, _ = render_audition(source, start, end-start, [], music_volume=1., click_volume=0.)
-    clip.write_bytes(original.getvalue())
-    for name, result in results.items():
-        events = [(n['start'], 'head') for n in result['notes']]
-        events += [(n['end'], 'tail') for n in result['notes'] if n['end'] > n['start']]
-        preview, info = render_audition(source, start, end-start, events)
-        (output/f'review-{name}.wav').write_bytes(preview.getvalue())
-        (output/f'audition-{name}.json').write_text(json.dumps(info, indent=2), encoding='utf-8')
-    charts = dict(start=start, end=end, charts=[dict(name=name, notes=result['notes']) for name, result in results.items()])
-    html = '''<!doctype html><meta charset="utf-8"><title>Mapper 原始生成对照</title>
-<style>body{background:#10151f;color:#e7edf6;font:16px system-ui;margin:24px}audio{width:100%;max-width:900px}
-canvas{display:block;width:100%;height:205px;background:#1b2433;border-radius:8px}h2{font-size:18px}.hint{color:#b4c3d8}</style>
+    labels = labels or dict(reference='人工谱', baseline='原模型', adapter='实验微调')
+    if not results or set(results)-set(labels):
+        raise ValueError('Every chart requires an explicit provenance label')
+    sources = {'mix': dict(label='原混音', path=source), **(sources or {})}
+    if any(not re.fullmatch(r'[a-z][a-z0-9_-]*', name) for name in [*results, *sources]):
+        raise ValueError('Invalid review artifact name')
+    output.mkdir(parents=True, exist_ok=True)
+    audio_sources = []
+    for voice, track in sources.items():
+        prefix = 'review' if voice == 'mix' else f'review-source-{voice}'
+        original, info = render_audition(track['path'], start, end-start, [], music_volume=1., click_volume=0.)
+        if abs(info['samples'] / info['sample_rate'] * 1000 - (end-start)) > 1:
+            raise ValueError('Review sources must cover the same complete time interval')
+        (output/f'{prefix}.wav').write_bytes(original.getvalue())
+        files = {'music': f'{prefix}.wav'}
+        for name, result in results.items():
+            events = [(n['start'], 'head') for n in result['notes']]
+            events += [(n['end'], 'tail') for n in result['notes'] if n['end'] > n['start']]
+            preview, info = render_audition(track['path'], start, end-start, events)
+            filename = f'{prefix}-{name}.wav'
+            (output/filename).write_bytes(preview.getvalue())
+            (output/f'{prefix}-{name}.json').write_text(json.dumps(info, indent=2), encoding='utf-8')
+            files[name] = filename
+        audio_sources.append(dict(name=voice, label=track['label'], files=files))
+    charts = dict(start=start, end=end, keys=keys, sources=audio_sources,
+        notice=notice or '人工谱只是其中一种创作；人工谱相似度不能代替音乐质量判断。',
+        charts=[dict(name=name, label=labels[name], notes=result['notes'],
+                     warnings=result.get('warnings', [])) for name, result in results.items()])
+    html = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mapper 原始生成对照</title>
+<style>body{background:#10151f;color:#e7edf6;font:16px system-ui;margin:24px;line-height:1.6}audio{width:100%;max-width:900px}
+canvas{display:block;width:100%;height:auto;background:#1b2433;border-radius:8px}h2{font-size:18px}.hint{color:#b4c3d8}
+select{max-width:100%;font:inherit;background:#1b2433;color:inherit;padding:6px;border:1px solid #63758d;border-radius:5px}
+.controls{display:flex;gap:16px;flex-wrap:wrap}.controls label{max-width:100%}.warning{color:#ffc88c;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}</style>
 <h1>同一音频、同一 Timing：原始生成对照</h1>
-<p class="hint">reference = 人工谱，baseline = 原模型，adapter = 实验微调。绿色为 LN，蓝色为短键。各图共用同一个播放时钟；点击谱图可跳转。未量化、未重新定轨。人工谱只是其中一种创作。</p>
-<p><label>试听 <select id="track"><option value="review.wav">原音乐</option><option value="review-reference.wav">人工谱起止提示</option><option value="review-baseline.wav">原模型起止提示</option><option value="review-adapter.wav">微调模型起止提示</option></select></label> <span class="hint">高音提示按下，低音提示放开；提示音与音乐已混入同一音频。</span></p>
+<p class="hint">绿色为 LN，蓝色为短键。各图共用同一个播放时钟；点击谱图可跳转。保留原始事件，未量化、未重新定轨。</p>
+<p id="notice" class="hint"></p>
+<div class="controls"><label>声音 <select id="source"></select></label><label>起止提示 <select id="track"></select></label></div>
+<p class="hint">高音提示按下，低音提示放开；提示与声音已混入同一音频。切换声部只改变试听声音，不改变模型输出或给音符自动标注乐器。</p>
 <audio id="audio" controls src="review.wav"></audio><div id="charts"></div>
 <script>const data=CHART_DATA; const audio=document.getElementById('audio');const canvases=[];
-document.getElementById('track').onchange=e=>{const position=audio.currentTime,playing=!audio.paused;audio.pause();audio.src=e.target.value;
-audio.addEventListener('loadedmetadata',()=>{audio.currentTime=Math.min(position,audio.duration);if(playing)audio.play().catch(()=>{});},{once:true});audio.load();};
-for(const chart of data.charts){const title=document.createElement('h2');title.textContent=chart.name;
-const c=document.createElement('canvas');c.width=1400;c.height=205;document.getElementById('charts').append(title,c);canvases.push([c,chart]);
-c.onclick=e=>audio.currentTime=Math.max(0,(e.clientX-c.getBoundingClientRect().left)/c.clientWidth*(data.end-data.start)/1000);}
-function draw(){for(const[c,chart]of canvases){const g=c.getContext('2d'),w=c.width;g.clearRect(0,0,w,c.height);
-const x=t=>(t-data.start)/(data.end-data.start)*w;g.strokeStyle='#344258';g.fillStyle='#a9bbd2';g.font='13px system-ui';
-for(let t=Math.ceil(data.start/1000)*1000;t<data.end;t+=1000){g.beginPath();g.moveTo(x(t),0);g.lineTo(x(t),185);g.stroke();g.fillText((t/1000).toFixed(0)+'s',x(t)+3,201);}
+const sourceSelect=document.getElementById('source'),trackSelect=document.getElementById('track');
+document.getElementById('notice').textContent=data.notice;
+for(const s of data.sources)sourceSelect.add(new Option(s.label,s.name));
+trackSelect.add(new Option('无提示','music'));for(const c of data.charts)trackSelect.add(new Option(c.label,c.name));
+let pendingSeek=null;
+function changeTrack(){const state=pendingSeek||{position:audio.currentTime,playing:!audio.paused};pendingSeek=state;
+audio.pause();audio.src=data.sources.find(s=>s.name===sourceSelect.value).files[trackSelect.value];audio.load();}
+audio.onloadedmetadata=()=>{if(!pendingSeek)return;const state=pendingSeek;pendingSeek=null;audio.currentTime=Math.min(state.position,audio.duration);if(state.playing)audio.play().catch(()=>{});};
+sourceSelect.onchange=changeTrack;trackSelect.onchange=changeTrack;
+for(const chart of data.charts){const title=document.createElement('h2');title.textContent=chart.label;
+const c=document.createElement('canvas');c.width=1400;c.height=data.keys*18+25;c.style.height=c.height+'px';c.setAttribute('aria-label',chart.label+'音符时间轴');
+document.getElementById('charts').append(title,c);canvases.push([c,chart]);
+if(chart.warnings.length){const details=document.createElement('details'),summary=document.createElement('summary'),w=document.createElement('p');
+const incomplete=chart.warnings.filter(s=>s.includes('Incomplete hold')).length;
+details.className='warning';summary.textContent=incomplete?'模型报告 '+incomplete+' 条未闭合 LN · 查看原始日志':'查看运行提示';
+w.textContent=chart.warnings.join('\\n');details.append(summary,w);document.getElementById('charts').append(details);}
+c.onclick=e=>{const time=Math.max(0,Math.min(audio.duration,(e.clientX-c.getBoundingClientRect().left)/c.clientWidth*(data.end-data.start)/1000));if(pendingSeek)pendingSeek.position=time;else audio.currentTime=time;};}
+function draw(){for(const[c,chart]of canvases){if(c.width!==Math.round(c.clientWidth))c.width=Math.round(c.clientWidth);const g=c.getContext('2d'),w=c.width;g.clearRect(0,0,w,c.height);
+const x=t=>(t-data.start)/(data.end-data.start)*w;g.strokeStyle='#344258';g.fillStyle='#a9bbd2';g.font='13px system-ui';const bottom=data.keys*18+5;
+const interval=w<600?2000:1000;for(let t=Math.ceil(data.start/interval)*interval;t<data.end;t+=interval){g.beginPath();g.moveTo(x(t),0);g.lineTo(x(t),bottom);g.stroke();g.fillText((t/1000).toFixed(0)+'s',x(t)+3,c.height-4);}
 for(const n of chart.notes){g.fillStyle=n.end>n.start?'#6bd8b5':'#73aefb';g.fillRect(x(n.start),n.lane*18+4,Math.max(3,x(n.end)-x(n.start)),12);}
-g.fillStyle='#fff';g.fillRect(x(data.start+audio.currentTime*1000),0,2,185);}requestAnimationFrame(draw);}draw();</script>'''
+g.fillStyle='#fff';g.fillRect(x(data.start+audio.currentTime*1000),0,2,bottom);}requestAnimationFrame(draw);}draw();</script></html>'''
     (output/'review.html').write_text(html.replace('CHART_DATA', json.dumps(charts).replace('<', '\\u003c')), encoding='utf-8')
 
 
@@ -158,7 +193,7 @@ def main():
         (args.output/'report.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
         print(json.dumps(dict(variant=name, comparison=saved['comparison'], warnings=saved['warnings'])), flush=True)
     if 'baseline' in results and 'adapter' in results:
-        write_review(args.output, audio, start, end, results)
+        write_review(args.output, audio, start, end, results, keys=row['keys'])
 
 
 if __name__ == '__main__':
