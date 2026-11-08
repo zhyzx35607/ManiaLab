@@ -177,6 +177,18 @@
 
 钢琴预测 320 个物件，匹配作者 328 个中的 298 个；其他伴奏预测 198 个，匹配作者 243 个中的 152 个，仍有明显漏选。这里评价的是已检测起音上的作者层数选择，不是音色分类、LN 起止或完整成品。原始谱面没有参与后段特征或阈值选择，但同曲重复乐句仍存在相关性，模型保持研究用途。
 
+### 跨歌曲层数检查：拒绝通用启用
+
+将冻结的钢琴层数权重、偏置和 22.5ms 制谱提前量原样用于此前固定的《River Flows in You (Lorenzo de Luca Cover)》前 40 秒（谱面 5317787，另一位作者）。没有在这首歌上重新训练、校准或吸附网格。提取特征的公共函数先重现了《樱花草》全部已保存的层数预测，逐组时间、音符索引和层数完全相同。
+
+另一首曲子有 175 个作者物件、117 组起音，其中 46 组双押、6 组三押。模型最多两层，预测 130 个物件、匹配 121 个，物件 F1 **0.7934**；直接按检测音高数限为两层为 **0.9080**，每组单点为 0.7785。模型只给了 11 组双押，漏选明显；三押真值保留在分母，未删去以提高分数。
+
+因此同曲后段的 0.9198 不能作为通用层数模型的启用依据。这是不同作者的制谱取舍对照，不是唯一正确的音乐密度；同时也说明下一步需要结合段落、目标难度和用户选定声部学习取舍，不能直接套用单曲分类器。这张谱参加过另外的定轨先验训练，但没有参加本次层数分类器的拟合或校准；不把整个工程对此曲称为全新盲测。
+
+### 音尾错窗复核：没有足够收益
+
+另对先前固定的六组真实弦乐和三组控制音频运行半窗口错位推理，只允许用另一遍同音高、同乐器、起音一致的显式 note-off 替换被强制截断的音尾。实际结果未显示可靠的真实录音收益，**拒绝接入默认流程**。完整规则、逐例成绩与失败原因见[错窗复核](instrument-overlap-research.md)。这一结果也说明音尾的“显式预测”标签不能当成准确性保证。
+
 ## 本地重现
 
 所有原声轨、原谱、逐音符标签、权重、试听音频都位于忽略目录 `test-data/sakura-benchmark`，不随公开仓库分发。以下命令需要已核验的本地材料与可选 Mapper 环境：
@@ -201,6 +213,7 @@ test-data\yourmt3\venv\Scripts\python.exe scripts/audit_instrument_releases.py -
 .venv\Scripts\python.exe scripts/evaluate_instrument_controls.py
 .venv\Scripts\python.exe scripts/research_source_attack_classes.py --instrument-probe test-data/sakura-benchmark/drums-yourmt3-full --output <新的私有分类实验目录>
 .venv\Scripts\python.exe scripts/research_source_layers.py --role other --output <新的私有层数实验目录>
+.venv\Scripts\python.exe scripts/evaluate_source_layer_transfer.py --output <新的私有跨歌曲实验目录>
 ```
 
 下一步仍是修复实际声部漏音、层叠取舍和成品 LN 表达；还需要独立歌曲、6–9K 与全曲验证。当前实验证据不足以支持“完成版”或“超越 Mapperatorinator”的结论。

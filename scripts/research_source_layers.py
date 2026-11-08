@@ -15,6 +15,33 @@ from scripts.research_source_attack_classes import audio_features
 from manialab.domain import parse_osu
 
 
+def source_features(raw, flags, signal, rate):
+    """Frozen feature contract shared by development and song transfer checks."""
+    import numpy as np
+    groups=[]
+    for index,note in sorted(enumerate(raw),key=lambda pair:pair[1]['onset']):
+        if note['is_drum'] or note['program'] in (100,101):continue
+        if not groups or note['onset']-raw[groups[-1][0]]['onset']>.03:groups.append([])
+        groups[-1].append(index)
+    times=np.asarray([np.median([raw[i]['onset'] for i in g])*1000-22.5 for g in groups])
+    acoustic=audio_features(signal,rate,times+22.5)
+    attributes=[]
+    for group in groups:
+        pitches=[raw[i]['pitch'] for i in group];durations=[raw[i]['offset']-raw[i]['onset'] for i in group]
+        attributes.append([len(group),len(set(pitches)),min(pitches),max(pitches),np.median(pitches),np.ptp(pitches),
+            *np.percentile(durations,[0,25,50,75,100]),
+            sum('forced_segment_boundary' in flags[i] for i in group)/len(group),
+            *[sum(lo<=raw[i]['program']<hi for i in group) for lo,hi in
+                ((0,8),(8,24),(24,32),(32,40),(40,56),(56,80),(80,100))]])
+    return groups,times,np.c_[acoustic,np.asarray(attributes)]
+
+
+def predict_layers(features,model):
+    import numpy as np
+    x=np.c_[np.clip((features-model['mean'])/model['scale'],-8,8),np.ones(len(features))]
+    return model['classes'][(x@model['weights']+model['bias']*model['classes']).argmax(axis=1)]
+
+
 def main():
     cli=argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--root',type=Path,default=Path('test-data/sakura-benchmark'))
@@ -32,12 +59,6 @@ def main():
     if sha(folder/'notes.json')!=audit['notes_sha256']:raise ValueError('Acoustic evidence changed')
     provenance=read(folder/'release-provenance.json')
     flags={p['note_index']:set(p['endpoint_evidence']) for p in provenance}
-    groups=[]
-    for index,note in sorted(enumerate(raw),key=lambda pair:pair[1]['onset']):
-        if note['is_drum'] or note['program'] in (100,101):continue
-        if not groups or note['onset']-raw[groups[-1][0]]['onset']>.03:groups.append([])
-        groups[-1].append(index)
-    times=np.asarray([np.median([raw[i]['onset'] for i in g])*1000-22.5 for g in groups])
     voices=('piano',) if args.role=='piano' else ('other','bass','guitar')
     signal=None;source_hashes={}
     for voice in voices:
@@ -46,16 +67,7 @@ def main():
         source_hashes[str(path)]=sha(path)
         signal=y.astype(np.float32)/32768 if signal is None else signal+y.astype(np.float32)/32768
     if source_hashes!=report['identity']['sources']:raise ValueError('Transcription and acoustic sources differ')
-    acoustic=audio_features(signal,rate,times+22.5)
-    attributes=[]
-    for group in groups:
-        pitches=[raw[i]['pitch'] for i in group];durations=[raw[i]['offset']-raw[i]['onset'] for i in group]
-        attributes.append([len(group),len(set(pitches)),min(pitches),max(pitches),np.median(pitches),np.ptp(pitches),
-            *np.percentile(durations,[0,25,50,75,100]),
-            sum('forced_segment_boundary' in flags[i] for i in group)/len(group),
-            *[sum(lo<=raw[i]['program']<hi for i in group) for lo,hi in
-                ((0,8),(8,24),(24,32),(32,40),(40,56),(56,80),(80,100))]])
-    x=np.c_[acoustic,np.asarray(attributes)]
+    groups,times,x=source_features(raw,flags,signal,rate)
     reference_path=root/'reference.osu';manifest=read(root/'manifest.json')
     if sha(reference_path)!=manifest['charts']['reference']['chart_sha256']:raise ValueError('Author reference changed')
     lanes=range(4,6) if args.role=='piano' else range(6,10)

@@ -11,7 +11,7 @@ def main():
     args=cli.parse_args();root=args.root
     read=lambda name:json.loads((root/name).read_text(encoding='utf-8'))
     manifest=read('manifest.json')
-    result=dict(revision=5,status='development_not_accepted',date='2026-11-08',
+    result=dict(revision=6,status='development_not_accepted',date='2026-11-08',
         reference=dict(beatmapset_id=manifest['beatmapset_id'],archive_sha256=manifest['archive_sha256'],
             charts={role:{k:v for k,v in row.items() if k in ('beatmap_id','official_checksum','chart_sha256','version','validation')}
                     for role,row in manifest['charts'].items()},annotations=manifest['annotations']),
@@ -74,6 +74,8 @@ def main():
     for role in ('piano','other'):
         name=role+'-yourmt3-layers/report.json'
         if (root/name).exists():result['instrument_source_layers'][role]=read(name)
+    transfer='piano-layer-transfer-v1/report.json'
+    if (root/transfer).exists():result['instrument_source_layer_transfer']=read(transfer)
     controls=Path('test-data/yourmt3/control-comparison.json')
     if controls.exists():result['instrument_transcription_controls']=json.loads(controls.read_text())
     result['instrument_release_audits']={}

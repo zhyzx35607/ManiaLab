@@ -44,6 +44,8 @@ def main():
     cli.add_argument('--start-ms',type=int,default=215853)
     cli.add_argument('--seconds',type=float,default=12)
     cli.add_argument('--context-seconds',type=float,default=2.1)
+    cli.add_argument('--segment-phase',type=float,choices=(0.,.5),default=0.,
+        help='Research second pass: shift segmentation by half a model window, retaining physical time')
     cli.add_argument('--threads',type=int,default=2)
     cli.add_argument('--output',type=Path,required=True)
     args=cli.parse_args()
@@ -74,6 +76,7 @@ def main():
     identity=dict(source_commit=commit,checkpoint_sha256=source['sha256'],runner_sha256=sha(__file__),
         sources={str(p):sha(p) for p in args.audio},start_ms=args.start_ms,seconds=args.seconds,
         context_seconds=args.context_seconds,task=model.task_manager.task_name,
+        segment_phase=args.segment_phase,
         decoder_channels=model.task_manager.num_decoding_channels,strict_weights=True)
     print(json.dumps(dict(stage='loaded',identity=identity)),flush=True)
     signals=[];rate=None;length=None
@@ -86,9 +89,12 @@ def main():
     begin=max(0,round((args.start_ms/1000-args.context_seconds)*rate))
     finish=min(len(audio),round((args.start_ms/1000+args.seconds+args.context_seconds)*rate))
     if finish<=begin:raise ValueError('Requested interval is outside audio')
-    real_start=begin/rate
     samples=torchaudio.functional.resample(torch.from_numpy(audio[begin:finish]),rate,model.audio_cfg['sample_rate'])
-    size=model.audio_cfg['input_frames'];count=(len(samples)+size-1)//size
+    size=model.audio_cfg['input_frames'];phase_samples=int(size*args.segment_phase)
+    samples=samples[phase_samples:]
+    if not len(samples):raise ValueError('Interval is shorter than segment phase')
+    real_start=begin/rate+phase_samples/model.audio_cfg['sample_rate']
+    count=(len(samples)+size-1)//size
     segments=torch.nn.functional.pad(samples,(0,count*size-len(samples))).reshape(count,1,size)
     predictions=[];began=time.monotonic()
     with torch.inference_mode():
