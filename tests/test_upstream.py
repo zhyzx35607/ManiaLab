@@ -88,6 +88,37 @@ def test_experimental_adapter_preserves_reference_meter_changes_without_notes(tm
         engine.generate('',output,parameters(),lambda *a:None,lambda:False,tempo={},timing_reference=reference)
 
 
+def test_arrangement_context_is_explicit_and_never_returned_as_prediction(tmp_path,monkeypatch):
+    engine=MapperEngine(tmp_path,ROOT)
+    monkeypatch.setattr(engine,'status',lambda:dict(installed=True,model_downloaded=True))
+    monkeypatch.setattr('manialab.audio.run_hidden',lambda *a,**k:subprocess.CompletedProcess(a,0))
+    original=export_osu([Note(1000,1000,4),Note(1500,2500,6)],10,
+        ROOT/'vendor/mapperatorinator/template.osu',bookmarks=[1000,5000],creator='private mapper')
+    reference=tmp_path/'sketch.osu';reference.write_text(original,encoding='utf-8')
+    output=tmp_path/'out';seen=[]
+    def run(argv,*args):
+        seen.extend(argv)
+        (output/'prediction.osu').write_text(original,encoding='utf-8')
+        return 'ManiaLab sketch context active: 20 events; map-delimited-sketch-v1'
+    monkeypatch.setattr(engine,'run',run)
+    result=engine.generate(tmp_path/'input.wav',output,parameters({'keys':10}),lambda *a:None,lambda:False,
+        arrangement_reference=reference,sketch_codec='map-delimited-sketch-v1')
+    assert result.name=='prediction.osu' and 'in_context=[TIMING,GD]' in seen
+    assert any(str(v).startswith('train.data.context_types=') and '${context_type:gd}' in str(v) for v in seen)
+    content=(output/'arrangement-context.osu').read_text(encoding='utf-8')
+    assert [(n.start,n.end,n.lane) for n in parse_osu(content)['notes']]==[(1000,1000,4),(1500,2500,6)]
+    assert 'Bookmarks: 1000,5000' not in content and 'private mapper' not in content
+    with pytest.raises(ValueError,match='不原生支持'):
+        engine.generate('',output,parameters(),lambda *a:None,lambda:False,arrangement_reference=reference)
+    monkeypatch.setattr(engine,'run',lambda *a:'')
+    with pytest.raises(ValueError,match='拒绝'):
+        engine.generate('',output,parameters(),lambda *a:None,lambda:False,
+            arrangement_reference=reference,sketch_codec='map-delimited-sketch-v1')
+    with pytest.raises(ValueError,match='不能同时'):
+        engine.generate('',output,parameters(),lambda *a:None,lambda:False,
+            arrangement_reference=reference,timing_reference=reference)
+
+
 @pytest.mark.skipif(os.name!='nt',reason='Windows venv process trees')
 def test_cancelling_model_stops_its_child_process(tmp_path):
     import ctypes

@@ -106,8 +106,12 @@ def _score(times, weights, bpm, offset, division, choose_phase=True):
         half_dist = np.abs(pos * 2 - np.round(pos * 2)) * period / 2
         fine_dist = np.abs(pos * division - np.round(pos * division)) * period / division
         proximity = np.maximum(np.exp(-.5 * (beat_dist / 14) ** 2),
-                    np.maximum(.72 * np.exp(-.5 * (half_dist / 14) ** 2),
-                               .5 * np.exp(-.5 * (fine_dist / 14) ** 2)))
+                               .5 * np.exp(-.5 * (fine_dist / 14) ** 2))
+        # A /3 grid cannot represent a half-beat. Rewarding those attacks
+        # here made a triplet grid win even when its exported ticks missed
+        # the straight rhythm. /6 and other even grids do include halves.
+        if division % 2 == 0:
+            proximity = np.maximum(proximity, .72 * np.exp(-.5 * (half_dist / 14) ** 2))
         # Reward regularly populated beats, without rewarding a grid with twice
         # as many empty beats. Half/double-time remains a user-visible choice.
         hit = beat_dist < 25

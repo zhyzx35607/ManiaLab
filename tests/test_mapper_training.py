@@ -1,4 +1,13 @@
 import pytest
+
+
+def test_cold_prefix_loss_covers_one_complete_event_without_context_or_next_note():
+    from scripts.mapper_training_context import cold_prefix_positions
+    labels=[-100,-100,5,26,1648,2877,3897,3980,4071,67,1649,2878,4071,6]
+    assert cold_prefix_positions(labels,(9,1647),{4071,4087})==list(range(3,9))
+    assert cold_prefix_positions([-100,5,6],(9,1647),{4071})==[]
+    with pytest.raises(ValueError,match='Incomplete'):
+        cold_prefix_positions([5,26,1648],(9,1647),{4071})
 from scripts.prepare_mapper_training import grouped_split
 
 
@@ -82,3 +91,46 @@ def test_release_only_and_single_attack_windows_remain_training_candidates():
     assert has_musical_target([-100,90,4090],musical)  # A continuing long hold.
     assert has_musical_target([-100,100,4071],musical) # One sparse attack.
     assert not has_musical_target([-100,3,4,5,6,2],musical)
+
+
+def test_temporal_split_excludes_training_history_from_validation_audio():
+    from scripts.mapper_training_context import window_in_ranges
+    ranges = [[188286, 283840]]
+    # The labels start inside validation but the preceding audio/history does not.
+    assert not window_in_ranges(dict(start_ms=180000, target_ms=188300, end_ms=196500), ranges)
+    assert window_in_ranges(dict(start_ms=188286, target_ms=196500, end_ms=204684), ranges)
+    assert not window_in_ranges(dict(start_ms=275000, target_ms=283000, end_ms=291184), ranges)
+    assert not window_in_ranges(dict(start_ms=0, target_ms=5000, end_ms=12000), [[0, 6000], [8000, 15000]])
+    with pytest.raises(ValueError):
+        window_in_ranges(dict(start_ms=0, target_ms=0, end_ms=100), [[200, 100]])
+
+
+def test_source_training_schedule_never_silently_omits_a_keycount():
+    from scripts.mapper_training_context import key_schedule
+    assert key_schedule({10}, [10]) == [10]
+    assert key_schedule({6, 7, 8, 9, 10}).count(10) == 4
+    with pytest.raises(ValueError):
+        key_schedule({10})
+    with pytest.raises(ValueError):
+        key_schedule({6, 10}, [10])
+
+
+def test_cold_start_discards_orphan_release_groups_without_inventing_heads():
+    from scripts.mapper_training_context import cold_start_group_indices
+    groups=[('hold_note_sustain',0,[0,1]),('hold_note_end',0,[2,3]),
+            ('circle',1,[4,5]),('hold_note',0,[6,7]),
+            ('hold_note_sustain',0,[8,9]),('hold_note_end',0,[10,11])]
+    assert cold_start_group_indices(groups)==list(range(4,12))
+
+
+@pytest.mark.parametrize('types_first',[False,True])
+def test_cold_start_sustain_cannot_attach_to_the_following_tap(types_first):
+    from scripts.mapper_training_context import cold_start_event_indices
+    groups=[('hold_note_sustain',0),('circle',1),('hold_note',2),
+            ('hold_note_sustain',2),('hold_note_end',0),('hold_note_end',2)]
+    events=[]
+    for index,(kind,column) in enumerate(groups):
+        body=[('t',1000+index*100),('column',column)]
+        events.extend([(kind,0)]+body if types_first else body+[(kind,0)])
+    keep=cold_start_event_indices(events,{'circle','hold_note','hold_note_end'},types_first)
+    assert keep==list(range(3,12))+list(range(15,18))

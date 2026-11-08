@@ -140,13 +140,20 @@ class MapperEngine:
         (self.root / "ready.json").write_text(json.dumps(self.status() | {"source_commit": SOURCE_COMMIT}), encoding="utf-8")
 
     def generate(self, audio, output, settings, progress, cancelled, seconds=30, tempo=None, start_ms=0,
-                 timing_reference=None, lora_path=None, difficulty=5.0, conditioning=None):
+                 timing_reference=None, lora_path=None, difficulty=5.0, conditioning=None,
+                 arrangement_reference=None, sketch_codec=None):
         if type(start_ms) is not int or start_ms < 0:
             raise ValueError('原模型片段起点必须是非负整数毫秒')
         if not isinstance(seconds, (int, float)) or isinstance(seconds, bool) or not 0 <= seconds <= 1200:
             raise ValueError('原模型片段时长必须在 0–1200 秒之间')
         if tempo is not None and timing_reference is not None:
             raise ValueError('固定节拍与参考谱节拍不能同时指定')
+        if arrangement_reference is not None and (tempo is not None or timing_reference is not None):
+            raise ValueError('编排参考与独立节拍输入不能同时指定')
+        if arrangement_reference is not None and sketch_codec!='map-delimited-sketch-v1':
+            raise ValueError('当前 mania 权重不原生支持草稿输入，必须明确选择实验草稿编码')
+        if sketch_codec is not None and arrangement_reference is None:
+            raise ValueError('实验草稿编码需要对应的草稿输入')
         if not isinstance(difficulty, (int, float)) or not 0 <= difficulty <= 100:
             raise ValueError('原模型难度必须在 0–100 之间')
         if conditioning is not None:
@@ -157,6 +164,10 @@ class MapperEngine:
             lora_path = Path(lora_path).resolve()
             if not all((lora_path / name).is_file() for name in ('adapter_config.json', 'adapter_model.safetensors')):
                 raise ValueError('实验适配器文件不完整')
+            if arrangement_reference is not None:
+                codec_path=lora_path/'context-codec.json'
+                if not codec_path.exists() or json.loads(codec_path.read_text())['codec']!=sketch_codec:
+                    raise ValueError('实验适配器没有匹配的草稿输入编码')
         if not self.status()["installed"]:
             raise ValueError("请先安装可选原模型引擎")
         if not self.status()["model_downloaded"]:
@@ -186,13 +197,17 @@ class MapperEngine:
             argv += ['lora_path=' + json.dumps(lora_path.as_posix())]
         if conditioning is not None:
             argv += [f'train.data.{key}={str(value).lower()}' for key,value in sorted(conditioning.items())]
+        if arrangement_reference is not None:
+            argv += ['--mania-sketch-context='+sketch_codec,
+                     'train.data.context_types=[{in:["${context_type:timing}","${context_type:gd}"],out:["${context_type:map}"]}]',
+                     'train.data.context_weights=[1]']
         if seconds:
             argv += [f"end_time={start_ms+int(seconds*1000)}"]
         if start_ms:
             # Retain the complete source and global clock: clipping the audio
             # without shifting its reference timing would silently misalign it.
             argv += [f"start_time={start_ms}"]
-        if tempo is not None or timing_reference is not None:
+        if tempo is not None or timing_reference is not None or arrangement_reference is not None:
             # Give the model the already checked chart clock. The upstream
             # generator consumes TIMING context instead of predicting it again.
             from .domain import export_osu, sections
@@ -208,14 +223,31 @@ class MapperEngine:
                 parts=sections(content);parts['TimingPoints']=timing;parts['HitObjects']=[]
                 content='\n'.join(['\n'.join(parts.get('', ['osu file format v14']))] +
                     [f'[{name}]\n'+'\n'.join(body) for name,body in parts.items() if name])+'\n'
+            if arrangement_reference is not None:
+                # Explicitly a different task: consume an onset/source sketch
+                # as GD context. Never infer this from a timing-only argument.
+                from .domain import parse_osu
+                sketch=Path(arrangement_reference).read_text(encoding='utf-8-sig')
+                parsed=parse_osu(sketch)
+                if parsed['keys']!=settings['keys']:
+                    raise ValueError('编排参考与目标键数不一致')
+                parts=sections(content)
+                parts['TimingPoints']=parsed['timing']
+                parts['HitObjects']=[n.raw for n in parsed['notes']]
+                content='\n'.join(['\n'.join(parts.get('', ['osu file format v14']))] +
+                    [f'[{name}]\n'+'\n'.join(body) for name,body in parts.items() if name])+'\n'
+                reference=output/'arrangement-context.osu'
             reference.write_text(content,encoding='utf-8')
             argv += ['beatmap_path='+json.dumps(str(reference.resolve()).replace('\\','/')),
-                     'in_context=[TIMING]','output_type=[MAP]','super_timing=false',
+                     'in_context=[TIMING,GD]' if arrangement_reference is not None else 'in_context=[TIMING]',
+                     'output_type=[MAP]','super_timing=false',
                      'year=2023',f'difficulty={difficulty}']
         log_text = self.run(argv, "原模型生成（CPU 推理可能较慢）", progress, cancelled, 40, self.source,
                             output/'inference.log')
+        if arrangement_reference is not None and 'ManiaLab sketch context active:' not in log_text:
+            raise ValueError('无法验证草稿已经进入模型，拒绝将此次结果视为编排输出')
         self.last_warnings = [line.strip() for line in log_text.splitlines() if "Warning:" in line][:30]
-        files = sorted((p for p in output.rglob('*.osu') if p.name!='timing-context.osu'),
+        files = sorted((p for p in output.rglob('*.osu') if p.name not in ('timing-context.osu','arrangement-context.osu')),
                        key=lambda p: p.stat().st_mtime, reverse=True)
         if not files:
             raise ValueError("原模型没有导出谱面，请查看 engine.log")

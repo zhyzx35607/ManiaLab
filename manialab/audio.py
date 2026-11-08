@@ -245,7 +245,7 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     chunks = np.array_split(np.abs(samples), min(2400, len(samples)))
     waveform = [round(float(np.max(x)), 4) for x in chunks]
     candidates = sorted(notes + unmatched, key=lambda n: (n.start, n.pitch))
-    result = {"revision": 4, "duration": duration, "waveform": waveform, "tempo": tempo,
+    result = {"revision": 5, "duration": duration, "waveform": waveform, "tempo": tempo,
             "elapsed_seconds": round(time.perf_counter() - started, 2), "cached": cached is not None,
             "timing_attacks": [n.data() for n in transients], "fused_attacks": fused,
             "release_refinement": releases,
@@ -347,13 +347,13 @@ def reject_source_bleed(notes, stems, mixture_attacks, sample_rate=SR):
 def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: None, cancelled=lambda: False):
     """Separate sources, then run pitch/attack analysis on each isolated voice."""
     from .voices import vocal_phrases
-    from .stems import profile_for
+    from .stems import separation_voices,separation_label
     started = time.perf_counter()
     samples = decode(path, work)
     duration = len(samples) / SR
     stem_root, separation = separator.separate(path, work, progress, cancelled)
     beats_ms = separation.get("beat_evidence", {}).get("beats_ms")
-    voices = profile_for(separation.get('profile','four'))['voices']
+    voices = separation_voices(separation)
     pitch_cached = []
     all_candidates, phrases, summaries, drum_attacks, tempos = [], [], [], [], {}
     for index, voice in enumerate(voices):
@@ -415,33 +415,35 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
                               articulation_rejections=articulation,
                               release_refinement=None if voice == "drums" else releases,
                               sustains_over_800ms=sum(n.end - n.start >= 800 for n in candidates)))
-        peak = max(float(np.max(np.abs(stem))), 1.)
-        wavfile.write(stem_root / f"{voice}.wav", SR, (np.clip(stem / peak, -1, 1) * 32767).astype(np.int16))
-    progress(94, "比较鼓声与混音拍线，保留人声持续段证据")
+        if separation.get('source')!='provided':
+            peak = max(float(np.max(np.abs(stem))), 1.)
+            wavfile.write(stem_root / f"{voice}.wav", SR, (np.clip(stem / peak, -1, 1) * 32767).astype(np.int16))
+    progress(94, "核对声部与混音拍线，保留持续段证据")
     mix_attacks, mix_tempo = rhythmic_evidence(samples, beats_ms)
     stem_signals = {v:np.load(stem_root/f'{v}.npy',allow_pickle=False,mmap_mode='r') for v in voices if v!='drums'}
     all_candidates, bleed_rejections = reject_source_bleed(all_candidates,stem_signals,mix_attacks)
     for summary in summaries:
         summary['rejected_cross_source_bleed'] = sum(r['note']['voice']==summary['voice'] for r in bleed_rejections)
         summary['candidates'] = sum(n.voice==summary['voice'] for n in all_candidates)
-    drum_tempo = tempos["drums"]
+    drum_tempo = tempos.get("drums",mix_tempo)
     drum_quality, mix_quality = timing_evidence_quality(drum_tempo), timing_evidence_quality(mix_tempo)
     use_drums = len(drum_attacks) >= 24 and drum_quality.get("coverage", 0) >= .7 and drum_quality.get("score", 0) >= mix_quality.get("score", 0) * .9
     tempo = dict(drum_tempo if use_drums else mix_tempo)
     attacks = drum_attacks if use_drums else mix_attacks
     tempo["evidence_source"] = "drums" if use_drums else "mix"
-    tempo["comparisons"] = {"drums": drum_tempo, "mix": mix_tempo}
+    tempo["comparisons"] = ({"drums": drum_tempo, "mix": mix_tempo} if 'drums' in tempos else {"mix":mix_tempo})
     if use_drums:
         tempo, attacks = cover_missing_timing_windows(tempo,drum_attacks,mix_attacks)
     candidates = sorted(all_candidates, key=lambda n: (n.start, n.pitch, n.voice))
-    result = dict(revision=9, duration=duration, tempo=tempo,
+    result = dict(revision=10, duration=duration, tempo=tempo,
         waveform=[round(float(np.max(x)), 4) for x in np.array_split(np.abs(samples), min(2400, len(samples)))],
         elapsed_seconds=round(time.perf_counter() - started, 2), cached=separation["cached"] and all(pitch_cached),
         timing_attacks=[n.data() for n in attacks], fused_attacks=0, candidates=[n.data() for n in candidates],
         phrase_candidates=[n.data() for n in phrases], voices=summaries, separation=separation,
         source_bleed_rejections=bleed_rejections,
         thresholds={k: settings[k] for k in ("onset_threshold", "frame_threshold")},
-        engine=profile_for(separation.get('profile','four'))['label']+" + source-verified Basic Pitch + vocal phrases + Beat This meter",
+        engine=separation_label(separation)+" + source-verified Basic Pitch + vocal phrases"+
+            (" + Beat This meter" if beats_ms else ''),
         notice="分离可能串音或遗漏乐器；声轨更多不代表采音必然更准。跨音高人声 LN 是编排选择，请用独立声部试听检查。")
     from .structure import detect_structure
     progress(97, '比较音色与声部变化，建议音乐段落')

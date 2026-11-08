@@ -22,12 +22,13 @@ from .timing import DIVISIONS, align_candidates, chart_clock_notes, grid_diagnos
 from .audio import analyze, analyze_deep
 from .audition import grid_events, render_audition, waveform_window
 from .separation import Separator
+from .provided_stems import ProvidedStemSeparator,prepare_provided_stems
 from .voices import apply_phrase_evidence
 from .pattern_prior import prior_status
 from .review import review_chart
 from .ln_patterns import analyze_ln_patterns
 from .editing import edit_notes
-from .stems import stem_path
+from .stems import VOICES,stem_path
 from .style import describe_chart
 from .domain import clean_meta, export_osu, note_from, parse_osu, upstream_events, validate
 from .planner import plan
@@ -93,6 +94,7 @@ def create_app(resources, data_root):
         raise ValueError("项目没有音频；请导入包含音频的 .osz，或同时选择 .osu 与音频")
 
     def set_chart(state, relative):
+        previous_audio=state.get('audio')
         base = projects.path(state["id"]) / "files"
         source = safe_path(base, relative)
         parsed = parse_osu(source.read_text(encoding="utf-8-sig"))
@@ -113,6 +115,7 @@ def create_app(resources, data_root):
             pass
         else:
             state["audio"] = None
+        if state.get('audio')!=previous_audio:state.pop('provided_stems',None)
         state.pop("analysis", None)
         for file in ("activations.npz", "preview.wav"):
             (projects.path(state["id"]) / file).unlink(missing_ok=True)
@@ -233,12 +236,14 @@ def create_app(resources, data_root):
         prefs = parameters(request.json.get("settings", {}))
         payload = request.json
         analysis_engine = request.json.get("engine", "basic")
-        if analysis_engine not in ("basic", "deep", "deep6"):
+        if analysis_engine not in ("basic", "deep", "deep6", "provided"):
             raise ValueError("采音引擎无效")
         def operation(state, progress, cancelled):
-            if analysis_engine in ('deep','deep6'):
+            if analysis_engine in ('deep','deep6','provided'):
+                selected_separator=(ProvidedStemSeparator(state.get('provided_stems')) if analysis_engine=='provided'
+                    else Separator(resources,'six') if analysis_engine=='deep6' else separator)
                 state["analysis"] = analyze_deep(current_audio(state), projects.path(pid), resources / "assets/basic-pitch.onnx",
-                    prefs, Separator(resources,'six') if analysis_engine=='deep6' else separator, progress, cancelled)
+                    prefs, selected_separator, progress, cancelled)
             else:
                 state["analysis"] = analyze(current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx", prefs, progress, cancelled)
             state["settings"] = prefs
@@ -256,6 +261,31 @@ def create_app(resources, data_root):
                 state["active"] = -1
             return {"candidates": len(state["analysis"]["candidates"])}
         return submit(pid, operation)
+
+    @app.post('/api/projects/<pid>/provided-stems')
+    def import_provided_stems(pid):
+        with mutex:
+            busy(pid)
+            if any(j['status'] in ('queued','running') for j in jobs.values()):
+                raise ValueError('已有计算任务运行，请完成后再导入声轨')
+            state=projects.load(pid);current_audio(state)
+            if not request.files or set(request.files)-set(VOICES):raise ValueError('请选择并标明声部文件')
+            # Preserve old sets and analyses; each upload has an isolated path.
+            folder=projects.path(pid)/'provided-uploads'/secrets.token_hex(16)
+            sources={}
+            for voice in request.files:
+                uploads=request.files.getlist(voice)
+                if len(uploads)!=1:raise ValueError('每个声部只能选择一个文件')
+                upload=uploads[0]
+                name=Path(upload.filename.replace('\\','/')).name
+                if Path(name).suffix.lower() not in AUDIO:raise ValueError('声部文件必须是音频')
+                target=safe_path(folder/voice,name);target.parent.mkdir(parents=True,exist_ok=True)
+                upload.save(target);sources[voice]=target
+            def operation(state,progress,cancelled):
+                report=prepare_provided_stems(current_audio(state),sources,projects.path(pid),progress,cancelled)
+                state['provided_stems']=report
+                return {'voices':report['voices'],'duration_seconds':report['duration_seconds']}
+            return submit(pid,operation)
 
     def requested_shift(payload, state):
         shift = float(payload.get("audio_shift_ms", state.get("audio_shift_ms", 0)))
