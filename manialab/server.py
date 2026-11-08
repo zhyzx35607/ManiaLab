@@ -616,8 +616,10 @@ def create_app(resources, data_root):
                 text, model_notes, alignment = fixed_timing_output(text, tempo)
             parsed = parse_osu(text)
             selected = model_notes if tempo else parsed['notes']
-            assigned = assign_lanes(selected, prefs, timing_points=parsed["timing"],
-                                    progress=progress, cancelled=cancelled)
+            # This is the model comparison path. Reassigning every column here
+            # erases the learned LN layout before the user can inspect it.
+            # The ordinary remap action remains available after generation.
+            assigned = selected
             name = "Mapperatorinator-" + secrets.token_hex(4) + ".osu"
             (work / "files" / name).write_text(text, encoding="utf-8")
             state.update(original=name, input_notes=[n.data() for n in selected], input_keys=parsed["keys"], input_timing=parsed["timing"], mode="remap", settings=prefs)
@@ -628,7 +630,9 @@ def create_app(resources, data_root):
             report['review']=review_chart(assigned,prefs['keys'],beat,parsed['timing'])
             report['ln_patterns']=analyze_ln_patterns(assigned,prefs['keys'],beat,parsed['timing'])
             warnings = getattr(engine, "last_warnings", [])
-            message = "mania 模型输出已通过 LN 连续搜索重新定轨。此模型尚未进行 10K 专训。"
+            message = "已保留 mania 模型生成的键型。当前应用仍使用原版权重；需要重新定轨时可另行生成候选。"
+            if not report['valid']:
+                message += f" 原始键型存在 {report['issue_count']} 项结构冲突，请先检查或重新定轨。"
             if tempo:
                 report['grid'] = grid_report(assigned, tempo)
                 message += (f" 已按确认的 BPM / Offset 及细分量化模型输出：移动 {alignment['moved']} 个起点、"
@@ -638,7 +642,8 @@ def create_app(resources, data_root):
                 message += "\n原模型警告（可能包含未配对并被上游丢弃的 LN）：\n" + "\n".join(warnings)
             # Source reference is project-level, so discard variants belonging to an older source.
             state["variants"] = [dict(notes=[n.data() for n in assigned], settings=prefs, mode="remap", report=report,
-                selection={"message": message, "upstream_warnings": warnings, 'alignment': alignment},
+                selection={"message": message, "upstream_warnings": warnings, 'alignment': alignment,
+                           'layout_origin': 'mapperatorinator'},
                 bpm=tempo['bpm'] if tempo else 120, offset=tempo['offset'] if tempo else 0,
                 division=tempo.get('division',4) if tempo else 4,
                 audio_shift_ms=tempo.get('audio_shift_ms',0) if tempo else 0,
