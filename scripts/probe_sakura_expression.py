@@ -23,11 +23,13 @@ def main():
     cli.add_argument('--seconds',type=int,default=26)
     cli.add_argument('--adapter',type=Path)
     cli.add_argument('--sketch',type=Path,help='Explicit input sketch; its hash is recorded separately from the finished target')
+    cli.add_argument('--sketch-kind',choices=('author','detected'),default='author',help='Provenance label for a supplied experimental sketch')
     cli.add_argument('--conditioning',type=Path,help='Identical prefix flags for a baseline/adapter comparison')
     cli.add_argument('--output',type=Path)
     cli.add_argument('--state-constraints',action='store_true',help='Experimental event grammar; no default change')
     cli.add_argument('--existing-raw',type=Path,help='Recover a completed raw output whose scoring failed; never regenerate it')
     args=cli.parse_args();root=args.root
+    if args.sketch_kind=='detected' and not args.sketch:raise ValueError('Detected sketch requires an explicit path')
     output=args.output or root/f'expression-{args.start_ms}-{args.seconds}'
     output.mkdir(parents=True,exist_ok=True)
     manifest=json.loads((root/'manifest.json').read_text(encoding='utf-8'))
@@ -50,6 +52,8 @@ def main():
         ln_ratio=ratio,difficulty=4.56727,seed=42,conditioning=conditions,
         adapter=sha(args.adapter/'adapter_model.safetensors') if args.adapter else None,
         source_commit=engine.status()['source_commit'],model_revision=engine.status()['model_revision'])
+    if args.sketch_kind=='detected':
+        identity['task']='arrangement_from_detected_sketch_known_timing_same_song_development'
     result_path=output/'result.json'
     if args.state_constraints:
         identity['state_constraints']=dict(codec='mania-event-state-v1',source_sha256=sha(Path('assets/mania_event_constraints.py')))
@@ -91,9 +95,12 @@ def main():
         result_path.write_text(json.dumps(result,indent=2),encoding='utf-8')
     selected=lambda notes:dict(notes=[n.data() for n in notes if n.start<end and n.end>=start])
     write_review(output,audio,start,end,dict(reference=selected(sketch),finished=selected(human),arrangement=result),
-        labels=dict(reference='输入 · 作者声部采音草稿',finished='评价 · 作者成品 10K',arrangement='模型 · 已知草稿后的编排'),
+        labels=dict(reference='输入 · 检测声部起音草稿' if args.sketch_kind=='detected' else '输入 · 作者声部采音草稿',
+            finished='评价 · 作者成品 10K',arrangement='模型 · 已知草稿后的编排'),
         sources={v:dict(label='Nova '+v,path=root/f'bundled/{v}/preview.wav') for v in ('drums','piano','other')},
-        notice='这一实验把作者 Reference 的音符作为输入，专门检查采音已正确时的编排能力。它不是盲采音，也不是端到端效果。成品音符未进入推理。')
+        notice=('输入为音频检测后组成的起音草稿；使用已知作者 Timing、全曲难度和 LN 条件。声部分类器在同曲前段学习，尚非独立歌曲端到端测试。成品音符未进入推理。'
+            if args.sketch_kind=='detected' else
+            '这一实验把作者 Reference 的音符作为输入，专门检查采音已正确时的编排能力。它不是盲采音，也不是端到端效果。成品音符未进入推理。'))
     print(json.dumps(result['comparison']),flush=True)
 
 

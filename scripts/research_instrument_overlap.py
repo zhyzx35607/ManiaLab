@@ -21,7 +21,7 @@ PROTOCOL = dict(onset_tolerance_seconds=.05, interior_margin_seconds=.08,
     purpose='Research instrument endpoints, not authored LN expression')
 
 
-def refine(base, shifted, base_flags, shifted_flags, *, shifted_start, segment_seconds):
+def refine(base, shifted, base_flags, shifted_flags, *, shifted_start, segment_seconds, only_forced=True):
     """Return copies with traceable tail edits; never join across a reattack."""
     import numpy as np
     from scipy.optimize import linear_sum_assignment
@@ -51,7 +51,7 @@ def refine(base, shifted, base_flags, shifted_flags, *, shifted_start, segment_s
     result = [dict(n) for n in base]
     decisions = []
     for i, n in enumerate(base):
-        if n['is_drum'] or 'forced_segment_boundary' not in base_flags[i]:
+        if n['is_drum'] or (only_forced and 'forced_segment_boundary' not in base_flags[i]):
             continue
         decision = dict(note_index=i, status='no_matching_attack')
         j = pairs.get(i)

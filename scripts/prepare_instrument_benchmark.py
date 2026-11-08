@@ -17,6 +17,7 @@ from scripts.probe_mapper_adapter import sha
 
 TEST_IDS=(1,2,12,13,24,25,31,38,39)
 SELECTED_IDS=(1,2)
+DEVELOPMENT_IDS=(3,4,5,6)
 PROGRAMS=dict(vn=40,va=41,vc=42,db=43,fl=73,ob=68,cl=71,sax=65,bn=70,tpt=56,hn=60,tbn=57,tba=58)
 
 
@@ -24,6 +25,7 @@ def main():
     cli=argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--root',type=Path,default=Path('test-data/urmp'))
     cli.add_argument('--seconds',type=int,default=30)
+    cli.add_argument('--selection',choices=('benchmark','release-development'),default='benchmark')
     args=cli.parse_args();root=args.root.resolve()
     if not 1<=args.seconds<=120:raise ValueError('Use a bounded acoustic interval')
     from scipy.io import wavfile
@@ -31,7 +33,10 @@ def main():
     with archive.open('rb') as stream:md5=hashlib.file_digest(stream,'md5').hexdigest()
     if source['file']['checksum']!='md5:'+md5 or archive.stat().st_size!=source['file']['size']:
         raise ValueError('Archive identity mismatch')
-    output=root/'benchmark'
+    selected=SELECTED_IDS if args.selection=='benchmark' else DEVELOPMENT_IDS
+    if args.selection=='release-development' and set(selected)&set(TEST_IDS):
+        raise ValueError('Release fitting cannot include the published comparison partition')
+    output=root/args.selection
     if (output/'manifest.json').exists():raise ValueError('Preserve the frozen benchmark')
     extracted=root/'audio-and-labels';extracted.mkdir(exist_ok=True)
     with tarfile.open(archive,'r:gz') as stream:
@@ -39,7 +44,7 @@ def main():
             parts=PurePosixPath(item.name).parts
             if len(parts)!=3 or parts[0]!='urmp_yourmt3_16k' or not item.isfile():continue
             match=re.match(r'^(\d+)_',parts[1])
-            if not match or int(match[1]) not in SELECTED_IDS:continue
+            if not match or int(match[1]) not in selected:continue
             if not ((parts[2].startswith(('AuSep_','AuMix_')) and parts[2].endswith('.wav')) or
                     (parts[2].startswith('Notes_') and parts[2].endswith('.txt'))):continue
             target=(extracted/parts[1]/parts[2]).resolve()
@@ -49,7 +54,7 @@ def main():
                 import shutil
                 shutil.copyfileobj(inp,out)
     output.mkdir(exist_ok=True);cases=[]
-    for piece_id in SELECTED_IDS:
+    for piece_id in selected:
         matches=[p for p in extracted.iterdir() if int(p.name.split('_')[0])==piece_id]
         if len(matches)!=1:raise ValueError('Expected one complete piece for each selected ID')
         folder=matches[0];parts=folder.name.split('_');identifier,title=parts[:2];instruments=parts[2:]
@@ -80,13 +85,17 @@ def main():
         if len(samples)/rate<args.seconds:raise ValueError('Selected piece is shorter than the fixed interval')
         truth_path=output/(case['name']+'-labels.json')
         truth_path.write_text(json.dumps(truth,indent=2),encoding='utf-8')
-        inventory.append(dict(**case,audio=str(audio),audio_sha256=sha(audio),start_ms=0,seconds=args.seconds,
+        split='comparison' if args.selection=='benchmark' else 'calibration' if case['piece_id']==6 else 'fit'
+        inventory.append(dict(**case,split=split,audio=str(audio),audio_sha256=sha(audio),start_ms=0,seconds=args.seconds,
             labels_path=str(truth_path),labels_sha256=sha(truth_path),annotations={str(p):sha(p) for p in labels}))
-    manifest=dict(revision=1,archive=source,selected_ids=SELECTED_IDS,published_mt3_test_ids=TEST_IDS,cases=inventory,
-        protocol=['Select the two lowest IDs in the fixed MT3 test partition, all isolated parts and original mixtures.',
+    selection=('Select the two lowest IDs in the fixed MT3 test partition, all isolated parts and original mixtures.'
+        if args.selection=='benchmark' else
+        'Select the four lowest IDs outside the fixed MT3 test partition before inference; fit 3/4/5, calibrate 6; all parts and mixtures.')
+    manifest=dict(revision=2,archive=source,selection=args.selection,selected_ids=selected,published_mt3_test_ids=TEST_IDS,cases=inventory,
+        protocol=[selection,
             'Predict from original audio only, no transcription labels, MIDI, chart Timing or source program hints.',
             'Evaluate onset and release on the same unshifted physical audio clock; no chart lead or grid snapping.',
-            'This partition is also used for upstream validation; it is not a newly held-out model test set.',
+            'The 1/2 comparison partition is also used for upstream validation and has been inspected in development; not new blind data.',
             'Aligned Notes annotations can have boundary uncertainty; report strict and duration-relative tolerances.'])
     (output/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     print(json.dumps(dict(cases=len(inventory),names=[c['name'] for c in inventory])),flush=True)

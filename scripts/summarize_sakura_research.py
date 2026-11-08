@@ -11,7 +11,7 @@ def main():
     args=cli.parse_args();root=args.root
     read=lambda name:json.loads((root/name).read_text(encoding='utf-8'))
     manifest=read('manifest.json')
-    result=dict(revision=6,status='development_not_accepted',date='2026-11-08',
+    result=dict(revision=7,status='development_not_accepted',date='2026-11-09',
         reference=dict(beatmapset_id=manifest['beatmapset_id'],archive_sha256=manifest['archive_sha256'],
             charts={role:{k:v for k,v in row.items() if k in ('beatmap_id','official_checksum','chart_sha256','version','validation')}
                     for role,row in manifest['charts'].items()},annotations=manifest['annotations']),
@@ -33,6 +33,9 @@ def main():
     prefix_path=root/'expression-lora-prefix-v1/report.json'
     if prefix_path.exists() and 'completed_steps' in read('expression-lora-prefix-v1/report.json'):
         training.append(('expression_prefix_weighted_training','expression-lora-prefix-v1'))
+    detected_path=root/'expression-detected-lora-v1/report.json'
+    if detected_path.exists() and 'completed_steps' in read('expression-detected-lora-v1/report.json'):
+        training.append(('expression_detected_sketch_training','expression-detected-lora-v1'))
     for role,folder in training:
         row=read(folder+'/report.json');samples=read(folder+'/samples.json')
         result[role]={k:row[k] for k in ('identity','runner_sha256','steps_requested','completed_steps','trainable_parameters',
@@ -40,7 +43,9 @@ def main():
         result[role]['sample_windows']=samples['charts']
     result['expression_free_generation']={}
     for experiment in ('expression-fixed-215853-12','expression-cold-215853-12','expression-prefix-215853-12',
-            'expression-prefix-241798-12','expression-constrained-v2-215853-12'):
+            'expression-prefix-241798-12','expression-constrained-v2-215853-12',
+            'expression-detected-215853-12','expression-detected-adapted-215853-12',
+            'expression-detected-constrained-215853-12'):
         result['expression_free_generation'][experiment]={}
         for variant in ('baseline','adapter'):
             if not (root/experiment/variant/'result.json').exists():continue
@@ -61,6 +66,11 @@ def main():
         row=read('expression-lora-prefix-v1/real-prefix-report.json')
         result['real_song_prefix_check']=dict(passed=row['all_equal'],comparisons=len(row['rows']),
             notice='Real cached cold training windows match inference prompts from both the original sketch and the application wrapper context. No finished events enter inference.')
+    detected_prefix=root/'expression-detected-lora-v1/real-prefix-report.json'
+    if detected_prefix.exists():
+        row=read('expression-detected-lora-v1/real-prefix-report.json')
+        result['detected_song_prefix_check']=dict(passed=row['all_equal'],comparisons=len(row['rows']),
+            notice='Frozen detected sketch and application wrapper both reproduce all cached cold training inputs; no finished events enter inference.')
     pipeline=root/'provided-pipeline/report.json'
     if pipeline.exists():
         result['application_provided_pipeline']={k:v for k,v in read('provided-pipeline/report.json').items() if k!='expression'}
@@ -76,6 +86,15 @@ def main():
         if (root/name).exists():result['instrument_source_layers'][role]=read(name)
     transfer='piano-layer-transfer-v1/report.json'
     if (root/transfer).exists():result['instrument_source_layer_transfer']=read(transfer)
+    snare='snare-layers-v1/report.json'
+    if (root/snare).exists():result['snare_layer_experiment']=read(snare)
+    sketch='detected-onset-sketch-v1/report.json'
+    if (root/sketch).exists():
+        row=read(sketch)
+        result['detected_source_sketch']={k:v for k,v in row.items() if k!='grid_collisions'}
+        result['detected_source_sketch']['grid_collisions']=len(row['grid_collisions'])
+        if (root/'detected-onset-sketch-v1/comparison.json').exists():
+            result['detected_source_sketch']['comparison']=read('detected-onset-sketch-v1/comparison.json')
     controls=Path('test-data/yourmt3/control-comparison.json')
     if controls.exists():result['instrument_transcription_controls']=json.loads(controls.read_text())
     result['instrument_release_audits']={}

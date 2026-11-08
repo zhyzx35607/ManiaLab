@@ -34,6 +34,7 @@ def main():
     cli=argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--root',type=Path,default=Path('test-data/sakura-benchmark'))
     cli.add_argument('--output',type=Path,default=Path('test-data/sakura-benchmark/expression-mmrs'))
+    cli.add_argument('--detected-sketch',type=Path,help='Frozen audio-derived source sketch, replacing the author input only')
     args=cli.parse_args()
     import pandas as pd
     import rosu_pp_py
@@ -43,6 +44,10 @@ def main():
         path=args.root/(role+'.osu')
         if sha(path)!=manifest['charts'][role]['chart_sha256']:raise ValueError('Author chart changed')
         texts[role]=prepare_chart(path.read_text(encoding='utf-8-sig'),clear_structure=role=='reference')
+    if args.detected_sketch:
+        detected=parse_osu(args.detected_sketch.read_text(encoding='utf-8-sig'))
+        if detected['keys']!=10:raise ValueError('Detected source sketch must use the confirmed 10K source representation')
+        texts['reference']=prepare_chart(args.detected_sketch.read_text(encoding='utf-8-sig'),clear_structure=True)
     source=args.root/'mapper-6664-26/accompaniment.wav'
     rate,audio=wavfile.read(source)
     if rate!=22050 or audio.ndim!=1:raise ValueError('Accompaniment clock changed')
@@ -75,6 +80,11 @@ def main():
             'Input sketch contains source columns/notes and red lines; bookmarks and Kiai flags removed.',
             'Entire audio/history/input-sketch/target window lies within its declared split.',
             'Audio is the author Nova non-vocal accompaniment. Oracle whole-chart difficulty/LN ratio.'])
+    if args.detected_sketch:
+        result['detected_sketch_sha256']=sha(args.detected_sketch)
+        result['validation_scope']='Same-song later-section expression from frozen audio-detected onset sketch; known author Timing, not independent-song testing.'
+        result['protocol'][0]='Only finished chart is a target. Detected source sketch is input-only; never train reverse task.'
+        result['protocol'][1]='Input sketch contains detected source onsets/layers and supplied author red lines; bookmarks and Kiai flags removed.'
     (args.output/'manifest.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
     print(json.dumps(dict(records=len(records),validation_scope=result['validation_scope'])),flush=True)
 
