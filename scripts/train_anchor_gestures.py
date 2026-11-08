@@ -154,6 +154,8 @@ def fit(args):
         raise ValueError('Acoustic feature implementation changed')
     if manifest.get('release_feature_sha256') and manifest['release_feature_sha256'] != sha('manialab/release_candidates.py'):
         raise ValueError('Release feature implementation changed')
+    if manifest.get('stem_feature_sha256') and manifest['stem_feature_sha256'] != sha('manialab/stem_release_evidence.py'):
+        raise ValueError('Stem observation implementation changed')
     if manifest['source'] == 'sakura' and args.initial is None:
         print('Training explicit same-song-only diagnostic without a community initialization', flush=True)
     data = {}
@@ -169,6 +171,9 @@ def fit(args):
         initial = json.loads(args.initial.read_text(encoding='utf-8'))
         if initial['revision'] != manifest['revision'] or initial['features'] != feature_names[:len(initial['features'])]:
             raise ValueError('Incompatible initialization')
+        if (manifest.get('pretraining_dataset_sha256')
+                and initial['dataset_sha256'] != manifest['pretraining_dataset_sha256']):
+            raise ValueError('Initialization was not trained with the declared compatible song splits')
         previous_width = len(initial['features'])
         mean = data['train']['x'].mean(axis=0); scale = np.maximum(.1, data['train']['x'].std(axis=0))
         mean[:previous_width] = initial['mean']; scale[:previous_width] = initial['scale']
@@ -198,23 +203,41 @@ def fit(args):
         score = model(x).squeeze(-1).masked_fill(~mask, -1e9)
         losses = -(torch.log_softmax(score, dim=1)*y).sum(dim=1)
         return (losses*weights).mean()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=.001, weight_decay=.01)
+    freeze_rhythm = getattr(args, 'freeze_rhythm', False)
+    if freeze_rhythm:
+        if args.initial is None or previous_width >= len(feature_names):
+            raise ValueError('Frozen rhythm adaptation requires an initial model and new acoustic inputs')
+        for parameter in model.parameters(): parameter.requires_grad_(False)
+        model[0].weight.requires_grad_(True)
+        gradient_mask = torch.zeros_like(model[0].weight)
+        gradient_mask[:, previous_width:] = 1
+        model[0].weight.register_hook(lambda gradient: gradient*gradient_mask)
+    optimizer = torch.optim.AdamW((p for p in model.parameters() if p.requires_grad),
+                                 lr=.001, weight_decay=0. if freeze_rhythm else .01)
+    def validation_score():
+        model.eval(); validation = []
+        with torch.inference_mode():
+            for offset in range(0, len(data['validation']['lengths']), 256):
+                ids = np.arange(offset, min(offset+256, len(data['validation']['lengths'])))
+                validation.append((float(objective(data['validation'], ids)), len(ids)))
+        return sum(v*n for v, n in validation)/sum(n for _, n in validation)
     best, best_state, history = float('inf'), None, []
     args.output.mkdir(parents=True)
+    if args.initial:
+        best = validation_score(); best_epoch = 0
+        best_state = {k:v.detach().clone() for k,v in model.state_dict().items()}
+        history.append(dict(epoch=0, train_loss=None, validation_loss=best))
+        print(json.dumps(history[-1]), flush=True)
     epochs = args.epochs or (80 if manifest['source'] == 'sakura' else 24)
     for epoch in range(epochs):
         model.train(); train_losses = []
         order = rng.permutation(len(data['train']['lengths']))
         for offset in range(0, len(order), 256):
             optimizer.zero_grad(); loss = objective(data['train'], order[offset:offset+256])
+            if freeze_rhythm: loss = loss+.0001*model[0].weight[:, previous_width:].square().mean()
             loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 5.); optimizer.step()
             train_losses.append(float(loss.detach()))
-        model.eval(); validation = []
-        with torch.inference_mode():
-            for offset in range(0, len(data['validation']['lengths']), 256):
-                ids = np.arange(offset, min(offset+256, len(data['validation']['lengths'])))
-                validation.append((float(objective(data['validation'], ids)), len(ids)))
-        val = sum(v*n for v, n in validation)/sum(n for _, n in validation)
+        val = validation_score()
         row = dict(epoch=epoch+1, train_loss=float(np.mean(train_losses)), validation_loss=val)
         history.append(row)
         if val < best:
@@ -222,12 +245,21 @@ def fit(args):
         if epoch % 5 == 0 or epoch+1 == epochs:
             print(json.dumps(row), flush=True)
     model.load_state_dict(best_state)
+    if freeze_rhythm:
+        for i, layer in enumerate((model[0], model[2], model[4])):
+            expected = torch.tensor(initial['weights'][i])
+            actual = layer.weight[:, :previous_width] if i == 0 else layer.weight
+            if not torch.equal(actual, expected) or not torch.equal(layer.bias, torch.tensor(initial['biases'][i])):
+                raise ValueError('Frozen rhythm parameters changed')
     value = dict(revision=manifest['revision'], features=feature_names, mean=mean.tolist(), scale=scale.tolist(),
         weights=[model[i].weight.detach().numpy().tolist() for i in (0, 2, 4)],
         biases=[model[i].bias.detach().numpy().tolist() for i in (0, 2, 4)],
         dataset_sha256=sha(args.dataset/'manifest.json'), feature_sha256=manifest['feature_sha256'],
         acoustic_feature_sha256=manifest.get('acoustic_feature_sha256'),
         release_feature_sha256=manifest.get('release_feature_sha256'),
+        stem_feature_sha256=manifest.get('stem_feature_sha256'), evidence_revision=manifest.get('evidence_revision'),
+        parent_dataset_sha256=manifest.get('parent_dataset_sha256'),
+        adaptation_mode='frozen_rhythm_acoustic_extension' if freeze_rhythm else 'all_parameters',
         selected_epoch=best_epoch, enabled_in_application=False)
     (args.output/'model.json').write_text(json.dumps(value), encoding='utf-8')
     # Compare the NumPy scorer's primitive layers with torch before export.
@@ -243,6 +275,8 @@ def fit(args):
         initialization_sha256=sha(args.initial) if args.initial else None,
         script_sha256=sha(__file__), export_max_error=error, history=history,
         files=manifest['files'], enabled_in_application=False)
+    report.update(adaptation_mode=value['adaptation_mode'], initial_epoch_eligible=args.initial is not None,
+                  frozen_parameters_verified=freeze_rhythm)
     (args.output/'report.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
     print(json.dumps({k: v for k, v in report.items() if k != 'history'}), flush=True)
 
@@ -258,6 +292,7 @@ def main():
     training = commands.add_parser('fit'); training.add_argument('--dataset', type=Path, required=True)
     training.add_argument('--output', type=Path, required=True); training.add_argument('--initial', type=Path)
     training.add_argument('--epochs', type=int)
+    training.add_argument('--freeze-rhythm', action='store_true', help='Train only new acoustic columns while preserving the initial rhythmic network')
     args = p.parse_args()
     (prepare if args.command == 'prepare' else fit)(args)
 

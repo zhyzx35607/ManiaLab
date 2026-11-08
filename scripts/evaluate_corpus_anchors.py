@@ -73,7 +73,8 @@ def evaluate(args):
         full = context_type(notes, row['keys'], chart['timing'], ratio)
         lo = max(0, int(full.times.searchsorted(row['start_ms']))-1)
         hi = min(len(full.times)-1, int(full.times.searchsorted(row['end_ms'])))
-        first = max(0, int(full.beats.searchsorted(full.beats[lo]-12))-4)
+        history_beats = 24 if context_type is ReleaseContext else 12
+        first = max(0, int(full.beats.searchsorted(full.beats[lo]-history_beats))-4)
         last = min(len(full.times)-1, int(full.beats.searchsorted(full.beats[hi]+24))+4)
         context = context_type([n for n in notes if full.times[first] <= n.start <= full.times[last]],
             row['keys'], chart['timing'], ratio)
@@ -91,6 +92,7 @@ def evaluate(args):
                 for name, values in [('learned', predicted), ('next_anchor', base)]},
             candidate_coverage=candidate_ceiling(context, chart['notes'], row['start_ms'], row['end_ms']),
             predicted=describe([n for n in predicted if row['start_ms'] <= n.start < row['end_ms']]),
+            context_history_beats=history_beats,
             validation=validate(generated, row['keys']), solver=solved,
             attacks_preserved=Counter(n.start for n in predicted)==Counter(n.start for group in context.notes for n in group))
         results.append(result)

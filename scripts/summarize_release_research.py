@@ -23,6 +23,13 @@ def main():
     ])
     failure = corpus/'release-prepare-v1-aborted.json'
     if failure.exists(): result['aborted_preparation'] = read(failure)
+    inventory = corpus/'acoustic-pair-inventory-v1.json'
+    if inventory.exists():
+        rows = read(inventory)['rows']
+        result['audio_inventory'] = dict(report_sha256=sha(inventory), pairs=len(rows),
+            community_splits=dict(Counter(r['expression_split'] for r in rows)),
+            different_old_splits=sum(r['old_audio_split'] != r['expression_split'] for r in rows),
+            cached_stems=sum(bool(r['cached_stems']) for r in rows), new_training_performed=False)
     path = corpus/'release-dataset-v2/manifest.json'
     if path.exists():
         data = read(path)
@@ -53,16 +60,21 @@ def main():
     if path.exists(): result['training']['community-release-model-v2'] = read(path)
     for planner in ('flow', 'hierarchical'):
         for split in ('validation', 'test'):
-            path = corpus/f'release-{planner}-{split}-v2/report.json'
-            if not path.exists(): continue
-            raw = read(path)
-            rows = raw['rows']
-            def metric(row, name): return row['head_scoped'][name]['complete_holds']['f1']
-            raw['macro_f1'] = {name:sum(metric(row,name) for row in rows)/len(rows)
-                               for name in ('learned', 'next_anchor')}
-            raw['wins_ties_losses'] = dict(Counter('win' if metric(r,'learned') > metric(r,'next_anchor')
-                else 'loss' if metric(r,'learned') < metric(r,'next_anchor') else 'tie' for r in rows))
-            result['community'][planner+'-'+split] = raw
+            for suffix in ('', '-wide'):
+                path = corpus/f'release-{planner}-{split}-v2{suffix}/report.json'
+                if not path.exists(): continue
+                raw = read(path)
+                rows = raw['rows']
+                def metric(row, name): return row['head_scoped'][name]['complete_holds']['f1']
+                raw['macro_f1'] = {name:sum(metric(row,name) for row in rows)/len(rows)
+                                   for name in ('learned', 'next_anchor')}
+                raw['macro_strict_f1'] = {name:sum(row['head_scoped'][name]['strict_holds']['f1'] for row in rows)/len(rows)
+                                          for name in ('learned', 'next_anchor')}
+                raw['long_holds'] = {name:{key:sum(row['head_scoped'][name]['long_holds'][key] for row in rows)
+                    for key in ('reference', 'predicted', 'matched')} for name in ('learned', 'next_anchor')}
+                raw['wins_ties_losses'] = dict(Counter('win' if metric(r,'learned') > metric(r,'next_anchor')
+                    else 'loss' if metric(r,'learned') < metric(r,'next_anchor') else 'tie' for r in rows))
+                result['community'][planner+'-'+split+suffix] = raw
     out = Path('docs/release-planning-research.json')
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf-8')
     names = {'release-evaluation-v1':'候选v1＋原求解（失败）', 'release-flow-v2':'单曲＋平坦流规划',
@@ -93,12 +105,17 @@ def main():
         r=result['dataset']; s=r['splits']
         lines += [f"v2有效{r['charts']}份谱；{s.get('train',0)}份拟合、{s.get('validation',0)}份验证、{s.get('test',0)}份测试。排除原因与数据哈希见机器报告。训练只使用拟合部分，验证选轮次，测试不进入拟合。", '']
     if result['community']:
-        lines += ['|对照|学习平均F1|下一起音对照|改善/相同/退步|', '|---|---:|---:|---:|']
+        lines += ['|对照|学习平均F1|严格10/20ms F1|下一起音对照|改善/相同/退步|≥2s匹配/参考|', '|---|---:|---:|---:|---:|---:|']
         for name,r in result['community'].items():
-            c=r['wins_ties_losses']
-            lines.append(f"|{name}|{r['macro_f1']['learned']:.4f}|{r['macro_f1']['next_anchor']:.4f}|{c.get('win',0)}/{c.get('tie',0)}/{c.get('loss',0)}|")
+            c=r['wins_ties_losses'];long=r['long_holds']['learned']
+            lines.append(f"|{name}|{r['macro_f1']['learned']:.4f}|{r['macro_strict_f1']['learned']:.4f}|{r['macro_f1']['next_anchor']:.4f}|{c.get('win',0)}/{c.get('tie',0)}/{c.get('loss',0)}|{long['matched']}/{long['reference']}|")
     else: lines += ['新社区生成比较尚未完成，不把正在准备或训练的任务算作结果。']
-    lines += ['', '社区任务的输入是人工起音数量与Timing，不是音频采音验收。已有75份音频配对的库存检查发现26份旧划分与本轮歌曲分组不一致，多曲声学训练必须重新统一分组；库存检查本身没有进行音频训练。', '',
+    lines += ['', '`wide`使用24拍前文；原对照只有12拍，短于16拍候选视野，可能遗漏在评分段前开始的占轨。加长前文重新生成并保留旧结果，评分区间、模型和参数均不变。后续多曲声轨比较采用24拍前文。']
+    lines += ['', '社区任务的输入是人工起音数量与Timing，不是音频采音验收。']
+    if 'audio_inventory' in result:
+        r=result['audio_inventory']
+        lines += [f"已有{r['pairs']}份音频配对的库存检查发现{r['different_old_splits']}份旧划分与本轮歌曲分组不一致，多曲声学训练必须重新统一分组；库存检查本身没有进行音频训练。"]
+    lines += ['',
         '新试听页检查了播放、定位、声轨切换和窄屏，并查看谱图；这些界面检查没有代替人耳或演奏验收。来源归属、漏选、长LN以及独立歌曲上的表达仍需继续解决。', '',
         '协议：[独立候选](release-candidate-protocol.md)、[流规划](gesture-flow-protocol.md)、[声学适配](release-acoustic-protocol.md)。完整结果与哈希：[机器报告](release-planning-research.json)。音频、原谱、逐事件输出及权重均留在忽略目录。', '']
     Path('docs/release-planning-research.md').write_text('\n'.join(lines), encoding='utf-8')
