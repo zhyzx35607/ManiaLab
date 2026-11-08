@@ -51,6 +51,8 @@ def add_examples(context, authored, indices, store, weight):
         y, diagnostics = labels(context, i, grouped[i])
         counts.update(diagnostics)
         x = context.features(i)
+        if not np.isfinite(x).all() or not np.isfinite(y).all():
+            raise ValueError('Nonfinite supervised example; refuse dataset preparation')
         store['x'].append(x); store['y'].append(y)
         store['lengths'].append(len(y)); store['weights'].append(weight)
     return dict(counts)
@@ -60,7 +62,9 @@ def prepare(args):
     if args.output.exists():
         raise ValueError('Preserve existing datasets; choose a new output')
     data = defaultdict(lambda: dict(x=[], y=[], lengths=[], weights=[]))
-    records = []; exclusions = []; feature_names = FEATURES; acoustic_identity = None
+    from manialab.release_candidates import ReleaseContext, AcousticReleaseContext
+    plain_context = ReleaseContext if args.independent_releases else AnchorContext
+    records = []; exclusions = []; feature_names = plain_context.feature_names; acoustic_identity = None
     if args.source == 'sakura':
         root = Path('test-data/sakura-benchmark')
         manifest = json.loads((root/'manifest.json').read_text(encoding='utf-8'))
@@ -76,10 +80,11 @@ def prepare(args):
             from manialab.acoustic_anchors import AcousticAnchorContext
             from scripts.anchor_acoustic_inputs import load_evidence
             acoustic, acoustic_identity = load_evidence(root)
-            context = AcousticAnchorContext(evidence['notes'], 10, evidence['timing'], ratio, acoustic)
+            acoustic_context = AcousticReleaseContext if args.independent_releases else AcousticAnchorContext
+            context = acoustic_context(evidence['notes'], 10, evidence['timing'], ratio, acoustic)
             feature_names = context.feature_names
         else:
-            context = AnchorContext(evidence['notes'], 10, evidence['timing'], ratio)
+            context = plain_context(evidence['notes'], 10, evidence['timing'], ratio)
         for split, start, end in [('train', 0, 149367), ('validation', 162340, 188286)]:
             indices = [i for i in range(len(context.times)) if context.contained(i, start, end)]
             truth = [n for n in human if start <= n.start and n.end < end]
@@ -99,7 +104,7 @@ def prepare(args):
             notes = [replace(n, end=n.start, lane=0, voice='mix') for n in chart['notes']]
             ratio = sum(n.hold for n in chart['notes'])/len(notes)
             try:
-                context = AnchorContext(notes, chart['keys'], chart['timing'], ratio)
+                context = plain_context(notes, chart['keys'], chart['timing'], ratio)
             except ValueError as error:
                 # A layout-valid chart can lack usable red lines. Never invent
                 # a 120 BPM clock to make expression training accept it.
@@ -123,10 +128,12 @@ def prepare(args):
         np.savez_compressed(path, x=np.concatenate(group['x']), y=np.concatenate(group['y']),
             lengths=np.asarray(group['lengths']), weights=np.asarray(group['weights']))
         files[split] = dict(sha256=sha(path), rows=len(group['lengths']), options=sum(group['lengths']))
-    manifest = dict(revision=REVISION, features=feature_names, source=args.source, scope=scope,
+    manifest = dict(revision=plain_context.revision, features=feature_names, source=args.source, scope=scope,
         records=records, exclusions=exclusions, files=files, script_sha256=sha(__file__),
         acoustic_identity=acoustic_identity, acoustic_feature_sha256=sha('manialab/acoustic_anchors.py') if args.acoustic else None,
-        feature_sha256=sha('manialab/anchor_gestures.py'), protocol_sha256=sha('docs/anchor-gesture-protocol.md'))
+        release_feature_sha256=sha('manialab/release_candidates.py') if args.independent_releases else None,
+        feature_sha256=sha('manialab/anchor_gestures.py'),
+        protocol_sha256=sha('docs/release-candidate-protocol.md' if args.independent_releases else 'docs/anchor-gesture-protocol.md'))
     (args.output/'manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
     print(json.dumps(files), flush=True)
 
@@ -145,6 +152,8 @@ def fit(args):
     feature_names = manifest['features']
     if manifest.get('acoustic_feature_sha256') and manifest['acoustic_feature_sha256'] != sha('manialab/acoustic_anchors.py'):
         raise ValueError('Acoustic feature implementation changed')
+    if manifest.get('release_feature_sha256') and manifest['release_feature_sha256'] != sha('manialab/release_candidates.py'):
+        raise ValueError('Release feature implementation changed')
     if manifest['source'] == 'sakura' and args.initial is None:
         print('Training explicit same-song-only diagnostic without a community initialization', flush=True)
     data = {}
@@ -158,7 +167,7 @@ def fit(args):
     model = nn.Sequential(nn.Linear(len(feature_names), 64), nn.ReLU(), nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, 1))
     if args.initial:
         initial = json.loads(args.initial.read_text(encoding='utf-8'))
-        if initial['revision'] != REVISION or initial['features'] != feature_names[:len(initial['features'])]:
+        if initial['revision'] != manifest['revision'] or initial['features'] != feature_names[:len(initial['features'])]:
             raise ValueError('Incompatible initialization')
         previous_width = len(initial['features'])
         mean = data['train']['x'].mean(axis=0); scale = np.maximum(.1, data['train']['x'].std(axis=0))
@@ -213,11 +222,12 @@ def fit(args):
         if epoch % 5 == 0 or epoch+1 == epochs:
             print(json.dumps(row), flush=True)
     model.load_state_dict(best_state)
-    value = dict(revision=REVISION, features=feature_names, mean=mean.tolist(), scale=scale.tolist(),
+    value = dict(revision=manifest['revision'], features=feature_names, mean=mean.tolist(), scale=scale.tolist(),
         weights=[model[i].weight.detach().numpy().tolist() for i in (0, 2, 4)],
         biases=[model[i].bias.detach().numpy().tolist() for i in (0, 2, 4)],
         dataset_sha256=sha(args.dataset/'manifest.json'), feature_sha256=manifest['feature_sha256'],
         acoustic_feature_sha256=manifest.get('acoustic_feature_sha256'),
+        release_feature_sha256=manifest.get('release_feature_sha256'),
         selected_epoch=best_epoch, enabled_in_application=False)
     (args.output/'model.json').write_text(json.dumps(value), encoding='utf-8')
     # Compare the NumPy scorer's primitive layers with torch before export.
@@ -244,6 +254,7 @@ def main():
     prep.add_argument('--corpus', type=Path, default=Path('test-data/corpus-expanded/snapshot-verified'))
     prep.add_argument('--output', type=Path, required=True)
     prep.add_argument('--acoustic', action='store_true', help='Add audited model observations and Nova energy, without author tails')
+    prep.add_argument('--independent-releases', action='store_true', help='Allow beat-grid releases without new input attacks')
     training = commands.add_parser('fit'); training.add_argument('--dataset', type=Path, required=True)
     training.add_argument('--output', type=Path, required=True); training.add_argument('--initial', type=Path)
     training.add_argument('--epochs', type=int)

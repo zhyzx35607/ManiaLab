@@ -45,16 +45,19 @@ class AcousticAnchorContext(AnchorContext):
             self.heads[role] = [np.flatnonzero(np.abs(starts-t) <= 60) for t in self.times]
 
     def acoustic_row(self, role, i, j):
+        return self.acoustic_at_time(role, i, float(self.times[j]) if j > i else float(self.times[i]))
+
+    def acoustic_at_time(self, role, i, end):
         data = self.evidence[role]; head = self.heads[role][i]
-        t = float(self.times[i]); end = float(self.times[j]) if j > i else t
+        t = float(self.times[i]); holding = end > t
         beat = self.periods[i]
         def rms(at, window=80):
             lo = max(0, int((at+22.5-window/2)/data['hop_ms']))
             hi = min(len(data['energy']), max(lo+1, int((at+22.5+window/2)/data['hop_ms'])))
             return float(data['energy'][lo:hi].mean()) if hi > lo else 0.
         head_energy = rms(t)
-        before, after = (rms(end-40), rms(end+40)) if j > i else (0., 0.)
-        body = np.mean([rms(at) for at in np.linspace(t, end, 9)]) if j > i else 0.
+        before, after = (rms(end-40), rms(end+40)) if holding else (0., 0.)
+        body = np.mean([rms(at) for at in np.linspace(t, end, 9)]) if holding else 0.
         if not len(head):
             return [0.]*15+[head_energy, before, after, before-after, body]
         observed_ends = np.minimum(data['ends'][head], t+8*beat)
@@ -62,7 +65,7 @@ class AcousticAnchorContext(AnchorContext):
         program = data['programs'][head]
         forced = data['forced'][head] & (data['ends'][head] <= t+8*beat)
         coverage = []; restarts = []
-        if j > i:
+        if holding:
             # Union observed intervals for a starting pitch. Rearticulations
             # remain a separate feature; union coverage is not proof of legato.
             for p in np.unique(data['pitch'][head]):
@@ -77,11 +80,11 @@ class AcousticAnchorContext(AnchorContext):
         return [1., len(np.unique(data['pitch'][head]))/8, np.median(duration)/8, np.max(duration)/8,
             float(forced.mean()), *[float(((program >= low)&(program < high)).mean())
                 for low, high in ((0, 8), (40, 56), (88, 96), (32, 40))],
-            float((data['ends'][head] >= end-30).mean()) if j > i else 0.,
-            float(np.max(np.where(~forced, np.exp(-.5*(tail_error/80)**2), 0.))) if j > i else 0.,
-            float(np.max(np.where(forced, np.exp(-.5*(tail_error/80)**2), 0.))) if j > i else 0.,
+            float((data['ends'][head] >= end-30).mean()) if holding else 0.,
+            float(np.max(np.where(~forced, np.exp(-.5*(tail_error/80)**2), 0.))) if holding else 0.,
+            float(np.max(np.where(forced, np.exp(-.5*(tail_error/80)**2), 0.))) if holding else 0.,
             max(coverage, default=0.), min(16., max(restarts, default=0))/8,
-            min(8., (end-t)/max(100., float(np.max(observed_ends)-t))) if j > i else 0.,
+            min(8., (end-t)/max(100., float(np.max(observed_ends)-t))) if holding else 0.,
             head_energy, before, after, before-after, body]
 
     def features(self, i, options=None):

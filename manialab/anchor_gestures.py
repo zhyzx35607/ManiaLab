@@ -33,6 +33,8 @@ FEATURES = ['tap', 'unresolved', 'keys', 'ln_condition', 'log_duration',
 
 class AnchorContext:
     feature_names = FEATURES
+    revision = REVISION
+    endpoint_source = 'supplied_onset_anchors'
     def __init__(self, notes, keys, timing, ln_condition=.35):
         if not 6 <= keys <= 10 or not math.isfinite(ln_condition) or not 0 <= ln_condition <= 1:
             raise ValueError('Invalid keycount or LN condition')
@@ -81,6 +83,10 @@ class AnchorContext:
         # -1 is a supervised unresolved endpoint, never a fabricated time.
         return np.asarray([i, *future, -1], dtype=np.int64)
 
+    def endpoint_times(self, i, options):
+        options = np.asarray(options)
+        return np.where(options < 0, -1, self.times[np.maximum(options, 0)])
+
     def features(self, i, options=None):
         options = self.options(i) if options is None else np.asarray(options)
         x = np.zeros((len(options), len(FEATURES)), dtype=np.float32)
@@ -120,7 +126,7 @@ def labels(context, i, authored, tolerance=30):
         # as a tap by this deliberately attack-preserving experiment.
         values[0] = 1.
         return values, dict(unrepresented_attack=1)
-    ends = context.times[options[1:-1]]
+    ends = context.endpoint_times(i, options)[1:-1]
     for n in local:
         if not n.hold:
             values[0] += 1
@@ -135,7 +141,7 @@ def labels(context, i, authored, tolerance=30):
 
 
 def probabilities(context, model, ln_bias=0.):
-    if model['revision'] != REVISION or model['features'] != context.feature_names:
+    if model['revision'] != context.revision or model['features'] != context.feature_names:
         raise ValueError('Anchor model feature identity changed')
     result = []
     weights = [np.asarray(w, np.float32) for w in model['weights']]
@@ -175,16 +181,17 @@ def plan(context, predictions, coordination=0., time_limit=60, max_ln_ratio=None
                 not np.isfinite(p).all() or np.any(p < 0) or not np.isclose(p.sum(), 1)):
             raise ValueError('Predictions must refer to the frozen legal candidate list')
         count = int(context.counts[i])
-        for k, end_index in enumerate(options):
+        endpoints = context.endpoint_times(i, options)
+        for k, end_time in enumerate(endpoints):
             for occurrence in range(count):
                 var = len(costs)
                 # Incremental squared count error. Increasing marginals make
                 # selected copies a prefix without extra order constraints.
                 costs.append(2*occurrence+1-2*count*p[k])
-                variables.append((i, int(end_index), occurrence))
+                variables.append((i, int(end_time), occurrence))
                 row_variables[i].append(var)
-                if end_index > i:
-                    release_vars[int(end_index)].append(var)
+                if end_time > context.times[i]:
+                    release_vars[int(end_time)].append(var)
     note_variables = len(costs)
     openings = {}
     if coordination:
@@ -202,10 +209,10 @@ def plan(context, predictions, coordination=0., time_limit=60, max_ln_ratio=None
     if ln_limit is not None:
         # A maximum is not a quota: the planner may use fewer LNs. It chooses
         # which supported gestures survive, without trimming a chosen tail.
-        add(((j, 1) for j, (start, end, _) in enumerate(variables) if end > start), -np.inf, ln_limit)
+        add(((j, 1) for j, (start, end, _) in enumerate(variables) if end > context.times[start]), -np.inf, ln_limit)
     active = defaultdict(list)
     for j, (start, end, _) in enumerate(variables):
-        for at in range(start+1, end):
+        for at in range(start+1, int(np.searchsorted(context.times, end, side='left'))):
             active[at].append(j)
     for at, variables_at in active.items():
         add(((j, 1) for j in variables_at), -np.inf, context.keys-int(context.counts[at]))
@@ -226,7 +233,7 @@ def plan(context, predictions, coordination=0., time_limit=60, max_ln_ratio=None
     for j in np.flatnonzero(chosen[:note_variables]):
         start, end, _ = variables[j]
         unresolved += end == -1
-        ends[start].append(int(context.times[end if end > start else start]))
+        ends[start].append(end if end > context.times[start] else int(context.times[start]))
     output = []
     for i, original in enumerate(context.notes):
         # This association is deterministic bookkeeping, not supervised source
@@ -241,7 +248,7 @@ def plan(context, predictions, coordination=0., time_limit=60, max_ln_ratio=None
     return output, dict(input_objects=int(context.counts.sum()), objects=len(output),
         holds=sum(n.hold for n in output), unresolved=unresolved, optimal=solved.status == 0,
         mip_gap=float(solved.mip_gap), ln_limit=ln_limit, shared_release_objects=sum(v for v in releases.values() if v >= 2),
-        endpoint_source='supplied_onset_anchors', source_assignment='ambiguous_within_simultaneous_group')
+        endpoint_source=context.endpoint_source, source_assignment='ambiguous_within_simultaneous_group')
 
 
 def arrange_gestures(notes, keys, timing, settings=None):

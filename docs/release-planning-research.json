@@ -1,0 +1,2461 @@
+{
+  "date": "2026-11-09",
+  "enabled_in_application": false,
+  "musical_acceptance": false,
+  "sakura": {
+    "release-evaluation-v1": {
+      "report_sha256": "51e36fdb33de084340eb68b4b403542314b035928e6e8da425f9b3822e4cb79a",
+      "identity": {
+        "model_sha256": "79176b25adba3a9ed0458cd63e15ed737ea252b2b825333fe32bb2c0596d9245",
+        "sketch_sha256": "c1b14dfd28eca2604fdd2193fad5ea50895be4ba8b3784ebc0d7430abeb9bdf5",
+        "ln_ceiling": null,
+        "acoustic_identity": null,
+        "layout_mode": "source_identity",
+        "feature_sha256": "11017571dc248a630c305b3bac8735fcdbb946c26fd552637bfec7b1e80b6421",
+        "runner_sha256": "bd67bf764c169ba88c4ac09a9ae92ee2707b00eb16ea46dfde7b7010e8cce02e",
+        "calibration_sha256": "f4259ac95265f263e413fc88165840c8b3873d8bc5fd21e1db1dd8291e52b431",
+        "generated_sha256": "fab5ec39ab77bad18cb350660fb3a05bd204ababa2ac7fac3a13246c11e24b31"
+      },
+      "calibration": {
+        "ln_bias": 0.5,
+        "coordination": 0.25
+      },
+      "planner": {
+        "input_objects": 2291,
+        "objects": 2291,
+        "holds": 5,
+        "unresolved": 973,
+        "optimal": false,
+        "mip_gap": 2.108777033568397,
+        "ln_limit": null,
+        "shared_release_objects": 0,
+        "endpoint_source": "supplied_red_grid_and_onset_anchors",
+        "source_assignment": "ambiguous_within_simultaneous_group"
+      },
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 2291,
+        "ln": 5,
+        "ln_ratio": 0.002,
+        "max_held": 1,
+        "longest_ln_ms": 203,
+        "lane_counts": [
+          218,
+          219,
+          229,
+          240,
+          242,
+          247,
+          239,
+          238,
+          219,
+          200
+        ]
+      },
+      "attacks_preserved": true,
+      "scores": {
+        "whole_song_development": {
+          "complete_holds": {
+            "reference": 961,
+            "predicted": 5,
+            "matched": 2,
+            "precision": 0.4,
+            "recall": 0.002081165452653486,
+            "f1": 0.004140786749482402,
+            "mean_absolute_error_ms": [
+              0.5,
+              1.0
+            ]
+          },
+          "strict_holds": {
+            "reference": 961,
+            "predicted": 5,
+            "matched": 2,
+            "precision": 0.4,
+            "recall": 0.002081165452653486,
+            "f1": 0.004140786749482402,
+            "mean_absolute_error_ms": [
+              0.5,
+              1.0
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 12,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "later_sections": {
+          "complete_holds": {
+            "reference": 355,
+            "predicted": 3,
+            "matched": 1,
+            "precision": 0.3333333333333333,
+            "recall": 0.0028169014084507044,
+            "f1": 0.00558659217877095,
+            "mean_absolute_error_ms": [
+              0.0,
+              1.0
+            ]
+          },
+          "strict_holds": {
+            "reference": 355,
+            "predicted": 3,
+            "matched": 1,
+            "precision": 0.3333333333333333,
+            "recall": 0.0028169014084507044,
+            "f1": 0.00558659217877095,
+            "mean_absolute_error_ms": [
+              0.0,
+              1.0
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 6,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_215853": {
+          "complete_holds": {
+            "reference": 59,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "strict_holds": {
+            "reference": 59,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_241798": {
+          "complete_holds": {
+            "reference": 62,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "strict_holds": {
+            "reference": 62,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        }
+      }
+    },
+    "release-flow-v2": {
+      "report_sha256": "49063dcc5c71ee8643742d855412d455f2438eee901bcad5bbd473939e74c69c",
+      "identity": {
+        "model_sha256": "fd9f69dc0b97f0da1d79ecf5d6adf3bed30f62312510dd1442ca2bd9a037a899",
+        "sketch_sha256": "c1b14dfd28eca2604fdd2193fad5ea50895be4ba8b3784ebc0d7430abeb9bdf5",
+        "ln_ceiling": null,
+        "acoustic_identity": null,
+        "layout_mode": "source_identity",
+        "planner": "flow",
+        "flow_sha256": "85c20be0a630d50cb7072241a5f3cc5d63e0a62a21e199b03d0b179a00d414a4",
+        "feature_sha256": "11017571dc248a630c305b3bac8735fcdbb946c26fd552637bfec7b1e80b6421",
+        "runner_sha256": "c5aa74b69eb81ad8fa320c7f5ce7c197db77dc7822d085fc0ecc0b67f879c50b",
+        "calibration_sha256": "61640debaf2c60d2589cbf6c0221c438d05db9fd192301d04fd9674f6a408875",
+        "generated_sha256": "deff532d31711f81936f3580f4f0f20c8c53ba46d1920617bf2a4ea750cd1e8b"
+      },
+      "calibration": {
+        "ln_bias": 0.5,
+        "coordination": 0.0
+      },
+      "planner": {
+        "input_objects": 2291,
+        "objects": 2291,
+        "holds": 772,
+        "unresolved": 0,
+        "optimal": true,
+        "mip_gap": 0.0,
+        "objective": -3202.7903629792863,
+        "solve_seconds": 1.6427150999661535,
+        "planner": "gesture-flow-v1",
+        "hierarchical": false,
+        "endpoint_weight": 1.0,
+        "expected_holds": 881.917159219696,
+        "expected_unresolved": 0.045560462180058436,
+        "shared_release_objects": 428,
+        "endpoint_source": "supplied_red_grid_and_onset_anchors",
+        "source_assignment": "ambiguous_within_simultaneous_group"
+      },
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 2291,
+        "ln": 772,
+        "ln_ratio": 0.337,
+        "max_held": 5,
+        "longest_ln_ms": 1622,
+        "lane_counts": [
+          227,
+          228,
+          243,
+          254,
+          250,
+          245,
+          240,
+          221,
+          197,
+          186
+        ]
+      },
+      "attacks_preserved": true,
+      "scores": {
+        "whole_song_development": {
+          "complete_holds": {
+            "reference": 961,
+            "predicted": 772,
+            "matched": 453,
+            "precision": 0.5867875647668394,
+            "recall": 0.4713839750260146,
+            "f1": 0.5227928447778419,
+            "mean_absolute_error_ms": [
+              0.49448123620309054,
+              0.4922737306843267
+            ]
+          },
+          "strict_holds": {
+            "reference": 961,
+            "predicted": 772,
+            "matched": 453,
+            "precision": 0.5867875647668394,
+            "recall": 0.4713839750260146,
+            "f1": 0.5227928447778419,
+            "mean_absolute_error_ms": [
+              0.49448123620309054,
+              0.4922737306843267
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 12,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "later_sections": {
+          "complete_holds": {
+            "reference": 355,
+            "predicted": 283,
+            "matched": 134,
+            "precision": 0.4734982332155477,
+            "recall": 0.37746478873239436,
+            "f1": 0.4200626959247649,
+            "mean_absolute_error_ms": [
+              0.4552238805970149,
+              0.47761194029850745
+            ]
+          },
+          "strict_holds": {
+            "reference": 355,
+            "predicted": 283,
+            "matched": 134,
+            "precision": 0.4734982332155477,
+            "recall": 0.37746478873239436,
+            "f1": 0.4200626959247649,
+            "mean_absolute_error_ms": [
+              0.4552238805970149,
+              0.47761194029850745
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 6,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_215853": {
+          "complete_holds": {
+            "reference": 59,
+            "predicted": 47,
+            "matched": 29,
+            "precision": 0.6170212765957447,
+            "recall": 0.4915254237288136,
+            "f1": 0.5471698113207547,
+            "mean_absolute_error_ms": [
+              0.4827586206896552,
+              0.4482758620689655
+            ]
+          },
+          "strict_holds": {
+            "reference": 59,
+            "predicted": 47,
+            "matched": 29,
+            "precision": 0.6170212765957447,
+            "recall": 0.4915254237288136,
+            "f1": 0.5471698113207547,
+            "mean_absolute_error_ms": [
+              0.4827586206896552,
+              0.4482758620689655
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_241798": {
+          "complete_holds": {
+            "reference": 62,
+            "predicted": 42,
+            "matched": 27,
+            "precision": 0.6428571428571429,
+            "recall": 0.43548387096774194,
+            "f1": 0.5192307692307693,
+            "mean_absolute_error_ms": [
+              0.48148148148148145,
+              0.48148148148148145
+            ]
+          },
+          "strict_holds": {
+            "reference": 62,
+            "predicted": 42,
+            "matched": 27,
+            "precision": 0.6428571428571429,
+            "recall": 0.43548387096774194,
+            "f1": 0.5192307692307693,
+            "mean_absolute_error_ms": [
+              0.48148148148148145,
+              0.48148148148148145
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        }
+      }
+    },
+    "release-hierarchical-v2": {
+      "report_sha256": "a721de8755bf7e328851badca4f7a25063b084ba78ed3912cdd369895d42cda1",
+      "identity": {
+        "model_sha256": "fd9f69dc0b97f0da1d79ecf5d6adf3bed30f62312510dd1442ca2bd9a037a899",
+        "sketch_sha256": "c1b14dfd28eca2604fdd2193fad5ea50895be4ba8b3784ebc0d7430abeb9bdf5",
+        "ln_ceiling": null,
+        "acoustic_identity": null,
+        "layout_mode": "source_identity",
+        "planner": "flow-hierarchical",
+        "flow_sha256": "85c20be0a630d50cb7072241a5f3cc5d63e0a62a21e199b03d0b179a00d414a4",
+        "feature_sha256": "11017571dc248a630c305b3bac8735fcdbb946c26fd552637bfec7b1e80b6421",
+        "runner_sha256": "c5aa74b69eb81ad8fa320c7f5ce7c197db77dc7822d085fc0ecc0b67f879c50b",
+        "calibration_sha256": "7ea3fce785f8412e3fcdc1f4d44199b31749dc67a36628aa656226fcd953de5d",
+        "generated_sha256": "2e1171c743dbdaddecded30bedcc0b7fdba0fd37b9f339942152e54620b1ae5d"
+      },
+      "calibration": {
+        "ln_bias": 1.0,
+        "coordination": 0.0
+      },
+      "planner": {
+        "input_objects": 2291,
+        "objects": 2291,
+        "holds": 1057,
+        "unresolved": 0,
+        "optimal": true,
+        "mip_gap": 0.0,
+        "objective": -4445.385606339895,
+        "solve_seconds": 1.6390192999970168,
+        "planner": "gesture-flow-v1",
+        "hierarchical": true,
+        "endpoint_weight": 0.25,
+        "expected_holds": 1111.00327719637,
+        "expected_unresolved": 0.038468571300888176,
+        "shared_release_objects": 742,
+        "endpoint_source": "supplied_red_grid_and_onset_anchors",
+        "source_assignment": "ambiguous_within_simultaneous_group"
+      },
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 2291,
+        "ln": 1057,
+        "ln_ratio": 0.461,
+        "max_held": 6,
+        "longest_ln_ms": 1622,
+        "lane_counts": [
+          213,
+          218,
+          236,
+          234,
+          239,
+          252,
+          242,
+          239,
+          216,
+          202
+        ]
+      },
+      "attacks_preserved": true,
+      "scores": {
+        "whole_song_development": {
+          "complete_holds": {
+            "reference": 961,
+            "predicted": 1057,
+            "matched": 546,
+            "precision": 0.5165562913907285,
+            "recall": 0.5681581685744017,
+            "f1": 0.5411298315163529,
+            "mean_absolute_error_ms": [
+              0.4816849816849817,
+              0.47619047619047616
+            ]
+          },
+          "strict_holds": {
+            "reference": 961,
+            "predicted": 1057,
+            "matched": 546,
+            "precision": 0.5165562913907285,
+            "recall": 0.5681581685744017,
+            "f1": 0.5411298315163529,
+            "mean_absolute_error_ms": [
+              0.4816849816849817,
+              0.47619047619047616
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 12,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "later_sections": {
+          "complete_holds": {
+            "reference": 355,
+            "predicted": 372,
+            "matched": 166,
+            "precision": 0.44623655913978494,
+            "recall": 0.4676056338028169,
+            "f1": 0.45667125171939477,
+            "mean_absolute_error_ms": [
+              0.463855421686747,
+              0.46987951807228917
+            ]
+          },
+          "strict_holds": {
+            "reference": 355,
+            "predicted": 372,
+            "matched": 166,
+            "precision": 0.44623655913978494,
+            "recall": 0.4676056338028169,
+            "f1": 0.45667125171939477,
+            "mean_absolute_error_ms": [
+              0.463855421686747,
+              0.46987951807228917
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 6,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_215853": {
+          "complete_holds": {
+            "reference": 59,
+            "predicted": 61,
+            "matched": 34,
+            "precision": 0.5573770491803278,
+            "recall": 0.576271186440678,
+            "f1": 0.5666666666666667,
+            "mean_absolute_error_ms": [
+              0.5294117647058824,
+              0.4411764705882353
+            ]
+          },
+          "strict_holds": {
+            "reference": 59,
+            "predicted": 61,
+            "matched": 34,
+            "precision": 0.5573770491803278,
+            "recall": 0.576271186440678,
+            "f1": 0.5666666666666667,
+            "mean_absolute_error_ms": [
+              0.5294117647058824,
+              0.4411764705882353
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_241798": {
+          "complete_holds": {
+            "reference": 62,
+            "predicted": 51,
+            "matched": 31,
+            "precision": 0.6078431372549019,
+            "recall": 0.5,
+            "f1": 0.5486725663716814,
+            "mean_absolute_error_ms": [
+              0.5161290322580645,
+              0.5161290322580645
+            ]
+          },
+          "strict_holds": {
+            "reference": 62,
+            "predicted": 51,
+            "matched": 31,
+            "precision": 0.6078431372549019,
+            "recall": 0.5,
+            "f1": 0.5486725663716814,
+            "mean_absolute_error_ms": [
+              0.5161290322580645,
+              0.5161290322580645
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        }
+      },
+      "browser_check": {
+        "ok": true,
+        "method": "scripts/check_mapper_review.cjs",
+        "charts": 3,
+        "sources": 4,
+        "duration_seconds": 12,
+        "playback": true,
+        "seek": true,
+        "source_switch_preserved_clock": true,
+        "mobile_overflow": false,
+        "page_errors": [],
+        "screenshots": {
+          "review-desktop.png": "a3ff5a92d0273613d0fea1834c7e0af6e36221f75deca32b435a5f78fbde0d25",
+          "review-mobile.png": "544561f05249a8e1eca42e8da90bb8d7cb2d801cec1e5fc789c93ef9b7089bd3"
+        },
+        "musical_listening_acceptance": false
+      }
+    },
+    "release-acoustic-single-flow-v2": {
+      "report_sha256": "c724400d140f426f18c33e056f3c04973e099d2d58d4f581d96a52ce96345754",
+      "identity": {
+        "model_sha256": "02823b211633ad999934fa7b707e4bf04eaa79d6e2847d582fe197c4b51b5cb7",
+        "sketch_sha256": "c1b14dfd28eca2604fdd2193fad5ea50895be4ba8b3784ebc0d7430abeb9bdf5",
+        "ln_ceiling": null,
+        "acoustic_identity": {
+          "piano": {
+            "notes_sha256": "40b5eedf3e554e79cfc8316c9763c13ff77abf34083cf99d4a2c2b16cd5b4113",
+            "provenance_sha256": "e921d4c4fc190444c9bb34aea82998990dd5292bc6526e2e810561abc85be3b4",
+            "sources": {
+              "test-data\\sakura-benchmark\\bundled\\piano\\preview.wav": "377d853d326b6e66540f142d48e2928a94249bcc58695f7b531ab5935321750e"
+            }
+          },
+          "other": {
+            "notes_sha256": "3eb8d3ce4d8bf9a66a9cc662596c8b844b5ebe068bfbdadac9a248b71786212c",
+            "provenance_sha256": "230ed02ec04021db613b68c79477d28ff48dbff5e8013d0fdefc5c779ec6779a",
+            "sources": {
+              "test-data\\sakura-benchmark\\bundled\\other\\preview.wav": "f932bd7a2e0787982adc0a31d48c628078288f47fac24f9a8f4d9a654d8c3d46",
+              "test-data\\sakura-benchmark\\bundled\\bass\\preview.wav": "4bbbd7e7110eb19f2fc3b428a294a2fcfb9e215eb88665a45e5dd04226de7794",
+              "test-data\\sakura-benchmark\\bundled\\guitar\\preview.wav": "ed03aa3d30117d055fa4b90418fee13549f03a30d75a2367715435821fda3df7"
+            }
+          }
+        },
+        "layout_mode": "source_identity",
+        "planner": "flow",
+        "flow_sha256": "85c20be0a630d50cb7072241a5f3cc5d63e0a62a21e199b03d0b179a00d414a4",
+        "feature_sha256": "11017571dc248a630c305b3bac8735fcdbb946c26fd552637bfec7b1e80b6421",
+        "runner_sha256": "c5aa74b69eb81ad8fa320c7f5ce7c197db77dc7822d085fc0ecc0b67f879c50b",
+        "calibration_sha256": "4fa3d3de831b0815803ffc87f429ff74f0255e1c5341f254b1bb2fa445072acf",
+        "generated_sha256": "e7756658deab51466ee7e8767e1e0d62785d9af1513d1e970fbc6823f51d14fd"
+      },
+      "calibration": {
+        "ln_bias": 2.0,
+        "coordination": 0.0
+      },
+      "planner": {
+        "input_objects": 2291,
+        "objects": 2291,
+        "holds": 1406,
+        "unresolved": 0,
+        "optimal": true,
+        "mip_gap": 0.0,
+        "objective": -3261.5947098083243,
+        "solve_seconds": 2.644503900082782,
+        "planner": "gesture-flow-v1",
+        "hierarchical": false,
+        "endpoint_weight": 1.0,
+        "expected_holds": 1463.1496133881756,
+        "expected_unresolved": 0.0003448187137688502,
+        "shared_release_objects": 1210,
+        "endpoint_source": "supplied_red_grid_and_onset_anchors",
+        "source_assignment": "ambiguous_within_simultaneous_group"
+      },
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 2291,
+        "ln": 1406,
+        "ln_ratio": 0.614,
+        "max_held": 8,
+        "longest_ln_ms": 3244,
+        "lane_counts": [
+          221,
+          225,
+          242,
+          243,
+          245,
+          234,
+          241,
+          235,
+          210,
+          195
+        ]
+      },
+      "attacks_preserved": true,
+      "scores": {
+        "whole_song_development": {
+          "complete_holds": {
+            "reference": 961,
+            "predicted": 1406,
+            "matched": 634,
+            "precision": 0.45092460881934565,
+            "recall": 0.659729448491155,
+            "f1": 0.5356991972961554,
+            "mean_absolute_error_ms": [
+              0.4889589905362776,
+              0.48580441640378547
+            ]
+          },
+          "strict_holds": {
+            "reference": 961,
+            "predicted": 1406,
+            "matched": 634,
+            "precision": 0.45092460881934565,
+            "recall": 0.659729448491155,
+            "f1": 0.5356991972961554,
+            "mean_absolute_error_ms": [
+              0.4889589905362776,
+              0.48580441640378547
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 12,
+            "predicted": 11,
+            "matched": 5,
+            "precision": 0.45454545454545453,
+            "recall": 0.4166666666666667,
+            "f1": 0.43478260869565216,
+            "mean_absolute_error_ms": [
+              0.6,
+              0.6
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "later_sections": {
+          "complete_holds": {
+            "reference": 355,
+            "predicted": 484,
+            "matched": 175,
+            "precision": 0.3615702479338843,
+            "recall": 0.49295774647887325,
+            "f1": 0.4171632896305125,
+            "mean_absolute_error_ms": [
+              0.4685714285714286,
+              0.4685714285714286
+            ]
+          },
+          "strict_holds": {
+            "reference": 355,
+            "predicted": 484,
+            "matched": 175,
+            "precision": 0.3615702479338843,
+            "recall": 0.49295774647887325,
+            "f1": 0.4171632896305125,
+            "mean_absolute_error_ms": [
+              0.4685714285714286,
+              0.4685714285714286
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 6,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_215853": {
+          "complete_holds": {
+            "reference": 59,
+            "predicted": 80,
+            "matched": 36,
+            "precision": 0.45,
+            "recall": 0.6101694915254238,
+            "f1": 0.5179856115107914,
+            "mean_absolute_error_ms": [
+              0.5277777777777778,
+              0.3611111111111111
+            ]
+          },
+          "strict_holds": {
+            "reference": 59,
+            "predicted": 80,
+            "matched": 36,
+            "precision": 0.45,
+            "recall": 0.6101694915254238,
+            "f1": 0.5179856115107914,
+            "mean_absolute_error_ms": [
+              0.5277777777777778,
+              0.3611111111111111
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_241798": {
+          "complete_holds": {
+            "reference": 62,
+            "predicted": 70,
+            "matched": 33,
+            "precision": 0.4714285714285714,
+            "recall": 0.532258064516129,
+            "f1": 0.5,
+            "mean_absolute_error_ms": [
+              0.5151515151515151,
+              0.5454545454545454
+            ]
+          },
+          "strict_holds": {
+            "reference": 62,
+            "predicted": 70,
+            "matched": 33,
+            "precision": 0.4714285714285714,
+            "recall": 0.532258064516129,
+            "f1": 0.5,
+            "mean_absolute_error_ms": [
+              0.5151515151515151,
+              0.5454545454545454
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        }
+      }
+    },
+    "release-acoustic-single-hierarchical-v2": {
+      "report_sha256": "9679b5ca0601cdcb875d5294527dbdd46eda85ddda649f0359bcb879e738ab5d",
+      "identity": {
+        "model_sha256": "02823b211633ad999934fa7b707e4bf04eaa79d6e2847d582fe197c4b51b5cb7",
+        "sketch_sha256": "c1b14dfd28eca2604fdd2193fad5ea50895be4ba8b3784ebc0d7430abeb9bdf5",
+        "ln_ceiling": null,
+        "acoustic_identity": {
+          "piano": {
+            "notes_sha256": "40b5eedf3e554e79cfc8316c9763c13ff77abf34083cf99d4a2c2b16cd5b4113",
+            "provenance_sha256": "e921d4c4fc190444c9bb34aea82998990dd5292bc6526e2e810561abc85be3b4",
+            "sources": {
+              "test-data\\sakura-benchmark\\bundled\\piano\\preview.wav": "377d853d326b6e66540f142d48e2928a94249bcc58695f7b531ab5935321750e"
+            }
+          },
+          "other": {
+            "notes_sha256": "3eb8d3ce4d8bf9a66a9cc662596c8b844b5ebe068bfbdadac9a248b71786212c",
+            "provenance_sha256": "230ed02ec04021db613b68c79477d28ff48dbff5e8013d0fdefc5c779ec6779a",
+            "sources": {
+              "test-data\\sakura-benchmark\\bundled\\other\\preview.wav": "f932bd7a2e0787982adc0a31d48c628078288f47fac24f9a8f4d9a654d8c3d46",
+              "test-data\\sakura-benchmark\\bundled\\bass\\preview.wav": "4bbbd7e7110eb19f2fc3b428a294a2fcfb9e215eb88665a45e5dd04226de7794",
+              "test-data\\sakura-benchmark\\bundled\\guitar\\preview.wav": "ed03aa3d30117d055fa4b90418fee13549f03a30d75a2367715435821fda3df7"
+            }
+          }
+        },
+        "layout_mode": "source_identity",
+        "planner": "flow-hierarchical",
+        "flow_sha256": "85c20be0a630d50cb7072241a5f3cc5d63e0a62a21e199b03d0b179a00d414a4",
+        "feature_sha256": "11017571dc248a630c305b3bac8735fcdbb946c26fd552637bfec7b1e80b6421",
+        "runner_sha256": "c5aa74b69eb81ad8fa320c7f5ce7c197db77dc7822d085fc0ecc0b67f879c50b",
+        "calibration_sha256": "2c37c496618dd63a85986e65a96390538904630b6008235e1c0b8fb70c36da42",
+        "generated_sha256": "9b43e54a5715f23e5c5c1275b60e3e4ce84b5ea3b3b365b1496624f2ddf75dad"
+      },
+      "calibration": {
+        "ln_bias": 2.0,
+        "coordination": 0.0
+      },
+      "planner": {
+        "input_objects": 2291,
+        "objects": 2291,
+        "holds": 1445,
+        "unresolved": 0,
+        "optimal": true,
+        "mip_gap": 0.0,
+        "objective": -5768.8936723820025,
+        "solve_seconds": 2.567043099901639,
+        "planner": "gesture-flow-v1",
+        "hierarchical": true,
+        "endpoint_weight": 0.25,
+        "expected_holds": 1463.1496133881756,
+        "expected_unresolved": 0.0003448187137688502,
+        "shared_release_objects": 1249,
+        "endpoint_source": "supplied_red_grid_and_onset_anchors",
+        "source_assignment": "ambiguous_within_simultaneous_group"
+      },
+      "validation": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 2291,
+        "ln": 1445,
+        "ln_ratio": 0.631,
+        "max_held": 9,
+        "longest_ln_ms": 3244,
+        "lane_counts": [
+          213,
+          224,
+          241,
+          243,
+          246,
+          240,
+          235,
+          235,
+          208,
+          206
+        ]
+      },
+      "attacks_preserved": true,
+      "scores": {
+        "whole_song_development": {
+          "complete_holds": {
+            "reference": 961,
+            "predicted": 1445,
+            "matched": 636,
+            "precision": 0.4401384083044983,
+            "recall": 0.6618106139438086,
+            "f1": 0.5286783042394015,
+            "mean_absolute_error_ms": [
+              0.48742138364779874,
+              0.4858490566037736
+            ]
+          },
+          "strict_holds": {
+            "reference": 961,
+            "predicted": 1445,
+            "matched": 636,
+            "precision": 0.4401384083044983,
+            "recall": 0.6618106139438086,
+            "f1": 0.5286783042394015,
+            "mean_absolute_error_ms": [
+              0.48742138364779874,
+              0.4858490566037736
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 12,
+            "predicted": 11,
+            "matched": 5,
+            "precision": 0.45454545454545453,
+            "recall": 0.4166666666666667,
+            "f1": 0.43478260869565216,
+            "mean_absolute_error_ms": [
+              0.6,
+              0.6
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "later_sections": {
+          "complete_holds": {
+            "reference": 355,
+            "predicted": 494,
+            "matched": 175,
+            "precision": 0.354251012145749,
+            "recall": 0.49295774647887325,
+            "f1": 0.4122497055359246,
+            "mean_absolute_error_ms": [
+              0.46285714285714286,
+              0.4685714285714286
+            ]
+          },
+          "strict_holds": {
+            "reference": 355,
+            "predicted": 494,
+            "matched": 175,
+            "precision": 0.354251012145749,
+            "recall": 0.49295774647887325,
+            "f1": 0.4122497055359246,
+            "mean_absolute_error_ms": [
+              0.46285714285714286,
+              0.4685714285714286
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 6,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_215853": {
+          "complete_holds": {
+            "reference": 59,
+            "predicted": 82,
+            "matched": 37,
+            "precision": 0.45121951219512196,
+            "recall": 0.6271186440677966,
+            "f1": 0.524822695035461,
+            "mean_absolute_error_ms": [
+              0.5135135135135135,
+              0.3783783783783784
+            ]
+          },
+          "strict_holds": {
+            "reference": 59,
+            "predicted": 82,
+            "matched": 37,
+            "precision": 0.45121951219512196,
+            "recall": 0.6271186440677966,
+            "f1": 0.524822695035461,
+            "mean_absolute_error_ms": [
+              0.5135135135135135,
+              0.3783783783783784
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        },
+        "probe_241798": {
+          "complete_holds": {
+            "reference": 62,
+            "predicted": 71,
+            "matched": 32,
+            "precision": 0.4507042253521127,
+            "recall": 0.5161290322580645,
+            "f1": 0.48120300751879697,
+            "mean_absolute_error_ms": [
+              0.5,
+              0.53125
+            ]
+          },
+          "strict_holds": {
+            "reference": 62,
+            "predicted": 71,
+            "matched": 32,
+            "precision": 0.4507042253521127,
+            "recall": 0.5161290322580645,
+            "f1": 0.48120300751879697,
+            "mean_absolute_error_ms": [
+              0.5,
+              0.53125
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        }
+      }
+    }
+  },
+  "community": {},
+  "training": {
+    "release-model-v2": {
+      "source": "sakura",
+      "scope": "Same-song later sections; detected sources, author Timing and whole-chart LN condition.",
+      "epochs": 80,
+      "selected_epoch": 80,
+      "model_sha256": "fd9f69dc0b97f0da1d79ecf5d6adf3bed30f62312510dd1442ca2bd9a037a899",
+      "dataset_sha256": "ba00fe22fc641236380479e0fbbd5b7c52dd53fc6e0523e78ce7b658776c4f6b",
+      "initialization_sha256": null,
+      "script_sha256": "cfa78ab457c4a68259e6e1c44f9c5bfe8f3e2037da88cc7cdcf0eb39d5028a08",
+      "export_max_error": 1.9073486328125e-06,
+      "history": [
+        {
+          "epoch": 1,
+          "train_loss": 4.189010858535767,
+          "validation_loss": 4.163186550140381
+        },
+        {
+          "epoch": 2,
+          "train_loss": 4.106250286102295,
+          "validation_loss": 4.0780415534973145
+        },
+        {
+          "epoch": 3,
+          "train_loss": 4.032283544540405,
+          "validation_loss": 3.9983503818511963
+        },
+        {
+          "epoch": 4,
+          "train_loss": 3.963870406150818,
+          "validation_loss": 3.9198882579803467
+        },
+        {
+          "epoch": 5,
+          "train_loss": 3.892021656036377,
+          "validation_loss": 3.83540940284729
+        },
+        {
+          "epoch": 6,
+          "train_loss": 3.816651940345764,
+          "validation_loss": 3.743840217590332
+        },
+        {
+          "epoch": 7,
+          "train_loss": 3.7391204833984375,
+          "validation_loss": 3.6463334560394287
+        },
+        {
+          "epoch": 8,
+          "train_loss": 3.6476635932922363,
+          "validation_loss": 3.5405097007751465
+        },
+        {
+          "epoch": 9,
+          "train_loss": 3.561246871948242,
+          "validation_loss": 3.4234683513641357
+        },
+        {
+          "epoch": 10,
+          "train_loss": 3.454367160797119,
+          "validation_loss": 3.2941629886627197
+        },
+        {
+          "epoch": 11,
+          "train_loss": 3.336077928543091,
+          "validation_loss": 3.1512584686279297
+        },
+        {
+          "epoch": 12,
+          "train_loss": 3.2159873247146606,
+          "validation_loss": 2.992535352706909
+        },
+        {
+          "epoch": 13,
+          "train_loss": 3.0735079050064087,
+          "validation_loss": 2.8167340755462646
+        },
+        {
+          "epoch": 14,
+          "train_loss": 2.928418517112732,
+          "validation_loss": 2.626788854598999
+        },
+        {
+          "epoch": 15,
+          "train_loss": 2.750171422958374,
+          "validation_loss": 2.425513505935669
+        },
+        {
+          "epoch": 16,
+          "train_loss": 2.581023931503296,
+          "validation_loss": 2.2155988216400146
+        },
+        {
+          "epoch": 17,
+          "train_loss": 2.3824193477630615,
+          "validation_loss": 2.0006890296936035
+        },
+        {
+          "epoch": 18,
+          "train_loss": 2.1876195669174194,
+          "validation_loss": 1.7895270586013794
+        },
+        {
+          "epoch": 19,
+          "train_loss": 1.9856731295585632,
+          "validation_loss": 1.5938180685043335
+        },
+        {
+          "epoch": 20,
+          "train_loss": 1.8119120001792908,
+          "validation_loss": 1.4250359535217285
+        },
+        {
+          "epoch": 21,
+          "train_loss": 1.6364123225212097,
+          "validation_loss": 1.2934540510177612
+        },
+        {
+          "epoch": 22,
+          "train_loss": 1.5055646896362305,
+          "validation_loss": 1.2031652927398682
+        },
+        {
+          "epoch": 23,
+          "train_loss": 1.337970793247223,
+          "validation_loss": 1.1501587629318237
+        },
+        {
+          "epoch": 24,
+          "train_loss": 1.2952354550361633,
+          "validation_loss": 1.1246027946472168
+        },
+        {
+          "epoch": 25,
+          "train_loss": 1.2019238471984863,
+          "validation_loss": 1.1127703189849854
+        },
+        {
+          "epoch": 26,
+          "train_loss": 1.18001127243042,
+          "validation_loss": 1.1028705835342407
+        },
+        {
+          "epoch": 27,
+          "train_loss": 1.166532039642334,
+          "validation_loss": 1.085029125213623
+        },
+        {
+          "epoch": 28,
+          "train_loss": 1.1494253873825073,
+          "validation_loss": 1.0562546253204346
+        },
+        {
+          "epoch": 29,
+          "train_loss": 1.1267656087875366,
+          "validation_loss": 1.0194497108459473
+        },
+        {
+          "epoch": 30,
+          "train_loss": 1.0612252950668335,
+          "validation_loss": 0.9816708564758301
+        },
+        {
+          "epoch": 31,
+          "train_loss": 0.9982546269893646,
+          "validation_loss": 0.9538915753364563
+        },
+        {
+          "epoch": 32,
+          "train_loss": 1.0100082457065582,
+          "validation_loss": 0.9362395405769348
+        },
+        {
+          "epoch": 33,
+          "train_loss": 0.9535877704620361,
+          "validation_loss": 0.9202497601509094
+        },
+        {
+          "epoch": 34,
+          "train_loss": 0.9191372096538544,
+          "validation_loss": 0.9036122560501099
+        },
+        {
+          "epoch": 35,
+          "train_loss": 0.9211691915988922,
+          "validation_loss": 0.8915073275566101
+        },
+        {
+          "epoch": 36,
+          "train_loss": 0.90530064702034,
+          "validation_loss": 0.8831550478935242
+        },
+        {
+          "epoch": 37,
+          "train_loss": 0.879002720117569,
+          "validation_loss": 0.8736682534217834
+        },
+        {
+          "epoch": 38,
+          "train_loss": 0.8432536721229553,
+          "validation_loss": 0.8601505756378174
+        },
+        {
+          "epoch": 39,
+          "train_loss": 0.8373883068561554,
+          "validation_loss": 0.8449155688285828
+        },
+        {
+          "epoch": 40,
+          "train_loss": 0.8125987648963928,
+          "validation_loss": 0.8309440612792969
+        },
+        {
+          "epoch": 41,
+          "train_loss": 0.8104214072227478,
+          "validation_loss": 0.8195560574531555
+        },
+        {
+          "epoch": 42,
+          "train_loss": 0.7759002149105072,
+          "validation_loss": 0.8101689219474792
+        },
+        {
+          "epoch": 43,
+          "train_loss": 0.7895108759403229,
+          "validation_loss": 0.8038920760154724
+        },
+        {
+          "epoch": 44,
+          "train_loss": 0.7769008278846741,
+          "validation_loss": 0.7996955513954163
+        },
+        {
+          "epoch": 45,
+          "train_loss": 0.7652602791786194,
+          "validation_loss": 0.7963307499885559
+        },
+        {
+          "epoch": 46,
+          "train_loss": 0.747700035572052,
+          "validation_loss": 0.7905961871147156
+        },
+        {
+          "epoch": 47,
+          "train_loss": 0.7464551329612732,
+          "validation_loss": 0.7825616002082825
+        },
+        {
+          "epoch": 48,
+          "train_loss": 0.7415773570537567,
+          "validation_loss": 0.7747114300727844
+        },
+        {
+          "epoch": 49,
+          "train_loss": 0.7429124116897583,
+          "validation_loss": 0.7686111927032471
+        },
+        {
+          "epoch": 50,
+          "train_loss": 0.743060827255249,
+          "validation_loss": 0.7626866698265076
+        },
+        {
+          "epoch": 51,
+          "train_loss": 0.7053414881229401,
+          "validation_loss": 0.757239580154419
+        },
+        {
+          "epoch": 52,
+          "train_loss": 0.6984064280986786,
+          "validation_loss": 0.7536638379096985
+        },
+        {
+          "epoch": 53,
+          "train_loss": 0.7025023996829987,
+          "validation_loss": 0.7515702247619629
+        },
+        {
+          "epoch": 54,
+          "train_loss": 0.721055269241333,
+          "validation_loss": 0.7476829290390015
+        },
+        {
+          "epoch": 55,
+          "train_loss": 0.7045279443264008,
+          "validation_loss": 0.7416293621063232
+        },
+        {
+          "epoch": 56,
+          "train_loss": 0.6947671175003052,
+          "validation_loss": 0.7354537844657898
+        },
+        {
+          "epoch": 57,
+          "train_loss": 0.6814738214015961,
+          "validation_loss": 0.7305766940116882
+        },
+        {
+          "epoch": 58,
+          "train_loss": 0.7086890339851379,
+          "validation_loss": 0.7284626364707947
+        },
+        {
+          "epoch": 59,
+          "train_loss": 0.6746692955493927,
+          "validation_loss": 0.7259218096733093
+        },
+        {
+          "epoch": 60,
+          "train_loss": 0.6859793961048126,
+          "validation_loss": 0.7228766083717346
+        },
+        {
+          "epoch": 61,
+          "train_loss": 0.6743805408477783,
+          "validation_loss": 0.7185563445091248
+        },
+        {
+          "epoch": 62,
+          "train_loss": 0.6687301397323608,
+          "validation_loss": 0.7141737937927246
+        },
+        {
+          "epoch": 63,
+          "train_loss": 0.678817480802536,
+          "validation_loss": 0.7104780077934265
+        },
+        {
+          "epoch": 64,
+          "train_loss": 0.6605572402477264,
+          "validation_loss": 0.70782071352005
+        },
+        {
+          "epoch": 65,
+          "train_loss": 0.6599203646183014,
+          "validation_loss": 0.7067654132843018
+        },
+        {
+          "epoch": 66,
+          "train_loss": 0.6474518775939941,
+          "validation_loss": 0.7042357325553894
+        },
+        {
+          "epoch": 67,
+          "train_loss": 0.6394718289375305,
+          "validation_loss": 0.7027860879898071
+        },
+        {
+          "epoch": 68,
+          "train_loss": 0.650171160697937,
+          "validation_loss": 0.6994400024414062
+        },
+        {
+          "epoch": 69,
+          "train_loss": 0.644241601228714,
+          "validation_loss": 0.6965204477310181
+        },
+        {
+          "epoch": 70,
+          "train_loss": 0.6324848830699921,
+          "validation_loss": 0.6931549906730652
+        },
+        {
+          "epoch": 71,
+          "train_loss": 0.635372519493103,
+          "validation_loss": 0.6933767795562744
+        },
+        {
+          "epoch": 72,
+          "train_loss": 0.6223148107528687,
+          "validation_loss": 0.692804753780365
+        },
+        {
+          "epoch": 73,
+          "train_loss": 0.6415380239486694,
+          "validation_loss": 0.6912420392036438
+        },
+        {
+          "epoch": 74,
+          "train_loss": 0.6108544766902924,
+          "validation_loss": 0.6865739822387695
+        },
+        {
+          "epoch": 75,
+          "train_loss": 0.6079393923282623,
+          "validation_loss": 0.6837321519851685
+        },
+        {
+          "epoch": 76,
+          "train_loss": 0.6199242472648621,
+          "validation_loss": 0.6838692426681519
+        },
+        {
+          "epoch": 77,
+          "train_loss": 0.6070250272750854,
+          "validation_loss": 0.6828612089157104
+        },
+        {
+          "epoch": 78,
+          "train_loss": 0.5971637964248657,
+          "validation_loss": 0.6795932650566101
+        },
+        {
+          "epoch": 79,
+          "train_loss": 0.5946155488491058,
+          "validation_loss": 0.6768159866333008
+        },
+        {
+          "epoch": 80,
+          "train_loss": 0.5974919497966766,
+          "validation_loss": 0.6761199831962585
+        }
+      ],
+      "files": {
+        "train": {
+          "sha256": "78ebb8a3b0798561103fe4a8517909061493328afbcff2957b516af54a9ef297",
+          "rows": 402,
+          "options": 24346
+        },
+        "validation": {
+          "sha256": "745867b8000662d1e1b6d59e0009bf6ca81f4891250a0785a7d1e52cae7f314c",
+          "rows": 19,
+          "options": 1177
+        }
+      },
+      "enabled_in_application": false
+    },
+    "release-acoustic-single-model-v2": {
+      "source": "sakura",
+      "scope": "Same-song later sections; detected sources, author Timing and whole-chart LN condition.",
+      "epochs": 80,
+      "selected_epoch": 37,
+      "model_sha256": "02823b211633ad999934fa7b707e4bf04eaa79d6e2847d582fe197c4b51b5cb7",
+      "dataset_sha256": "cec08ae21f2d2ef0b1b79f81c32ed7709a9dae4c0a4c41a755e28dcfb937511c",
+      "initialization_sha256": "fd9f69dc0b97f0da1d79ecf5d6adf3bed30f62312510dd1442ca2bd9a037a899",
+      "script_sha256": "cfa78ab457c4a68259e6e1c44f9c5bfe8f3e2037da88cc7cdcf0eb39d5028a08",
+      "export_max_error": 1.9073486328125e-06,
+      "history": [
+        {
+          "epoch": 1,
+          "train_loss": 0.612951785326004,
+          "validation_loss": 0.6643022298812866
+        },
+        {
+          "epoch": 2,
+          "train_loss": 0.5971434712409973,
+          "validation_loss": 0.7091510891914368
+        },
+        {
+          "epoch": 3,
+          "train_loss": 0.593134731054306,
+          "validation_loss": 0.6806702613830566
+        },
+        {
+          "epoch": 4,
+          "train_loss": 0.5797041356563568,
+          "validation_loss": 0.654013991355896
+        },
+        {
+          "epoch": 5,
+          "train_loss": 0.5776053369045258,
+          "validation_loss": 0.647555410861969
+        },
+        {
+          "epoch": 6,
+          "train_loss": 0.5625600814819336,
+          "validation_loss": 0.6535531282424927
+        },
+        {
+          "epoch": 7,
+          "train_loss": 0.5695342421531677,
+          "validation_loss": 0.6684607267379761
+        },
+        {
+          "epoch": 8,
+          "train_loss": 0.5591771006584167,
+          "validation_loss": 0.6572595834732056
+        },
+        {
+          "epoch": 9,
+          "train_loss": 0.5445828139781952,
+          "validation_loss": 0.6392119526863098
+        },
+        {
+          "epoch": 10,
+          "train_loss": 0.5456546247005463,
+          "validation_loss": 0.6315212249755859
+        },
+        {
+          "epoch": 11,
+          "train_loss": 0.5297347009181976,
+          "validation_loss": 0.6350885033607483
+        },
+        {
+          "epoch": 12,
+          "train_loss": 0.5346497893333435,
+          "validation_loss": 0.6471368670463562
+        },
+        {
+          "epoch": 13,
+          "train_loss": 0.5315033197402954,
+          "validation_loss": 0.6434292793273926
+        },
+        {
+          "epoch": 14,
+          "train_loss": 0.5269254446029663,
+          "validation_loss": 0.6303836107254028
+        },
+        {
+          "epoch": 15,
+          "train_loss": 0.5167008936405182,
+          "validation_loss": 0.6217616200447083
+        },
+        {
+          "epoch": 16,
+          "train_loss": 0.5269819498062134,
+          "validation_loss": 0.6268973350524902
+        },
+        {
+          "epoch": 17,
+          "train_loss": 0.5029261410236359,
+          "validation_loss": 0.6364575624465942
+        },
+        {
+          "epoch": 18,
+          "train_loss": 0.5062974840402603,
+          "validation_loss": 0.6349754929542542
+        },
+        {
+          "epoch": 19,
+          "train_loss": 0.492919921875,
+          "validation_loss": 0.622623860836029
+        },
+        {
+          "epoch": 20,
+          "train_loss": 0.4977398216724396,
+          "validation_loss": 0.6225681304931641
+        },
+        {
+          "epoch": 21,
+          "train_loss": 0.4932398498058319,
+          "validation_loss": 0.6268495917320251
+        },
+        {
+          "epoch": 22,
+          "train_loss": 0.4902440309524536,
+          "validation_loss": 0.6295878291130066
+        },
+        {
+          "epoch": 23,
+          "train_loss": 0.47851456701755524,
+          "validation_loss": 0.6269682049751282
+        },
+        {
+          "epoch": 24,
+          "train_loss": 0.4796423614025116,
+          "validation_loss": 0.6274664402008057
+        },
+        {
+          "epoch": 25,
+          "train_loss": 0.46567489206790924,
+          "validation_loss": 0.6192883253097534
+        },
+        {
+          "epoch": 26,
+          "train_loss": 0.4617728739976883,
+          "validation_loss": 0.6194441914558411
+        },
+        {
+          "epoch": 27,
+          "train_loss": 0.4723800867795944,
+          "validation_loss": 0.6228489279747009
+        },
+        {
+          "epoch": 28,
+          "train_loss": 0.46608594059944153,
+          "validation_loss": 0.6185939908027649
+        },
+        {
+          "epoch": 29,
+          "train_loss": 0.47476086020469666,
+          "validation_loss": 0.6110236644744873
+        },
+        {
+          "epoch": 30,
+          "train_loss": 0.45948652923107147,
+          "validation_loss": 0.6095787882804871
+        },
+        {
+          "epoch": 31,
+          "train_loss": 0.4454732984304428,
+          "validation_loss": 0.6230976581573486
+        },
+        {
+          "epoch": 32,
+          "train_loss": 0.46078625321388245,
+          "validation_loss": 0.6276322603225708
+        },
+        {
+          "epoch": 33,
+          "train_loss": 0.4402417689561844,
+          "validation_loss": 0.6146724224090576
+        },
+        {
+          "epoch": 34,
+          "train_loss": 0.4383429288864136,
+          "validation_loss": 0.6239355206489563
+        },
+        {
+          "epoch": 35,
+          "train_loss": 0.4475501924753189,
+          "validation_loss": 0.6426673531532288
+        },
+        {
+          "epoch": 36,
+          "train_loss": 0.44981658458709717,
+          "validation_loss": 0.619451105594635
+        },
+        {
+          "epoch": 37,
+          "train_loss": 0.43890824913978577,
+          "validation_loss": 0.6074023246765137
+        },
+        {
+          "epoch": 38,
+          "train_loss": 0.4320763498544693,
+          "validation_loss": 0.6226028800010681
+        },
+        {
+          "epoch": 39,
+          "train_loss": 0.4319990873336792,
+          "validation_loss": 0.6332005858421326
+        },
+        {
+          "epoch": 40,
+          "train_loss": 0.42425139248371124,
+          "validation_loss": 0.6201984286308289
+        },
+        {
+          "epoch": 41,
+          "train_loss": 0.42474932968616486,
+          "validation_loss": 0.6223443746566772
+        },
+        {
+          "epoch": 42,
+          "train_loss": 0.4187668710947037,
+          "validation_loss": 0.6327733993530273
+        },
+        {
+          "epoch": 43,
+          "train_loss": 0.42478178441524506,
+          "validation_loss": 0.63578861951828
+        },
+        {
+          "epoch": 44,
+          "train_loss": 0.4220690131187439,
+          "validation_loss": 0.6265390515327454
+        },
+        {
+          "epoch": 45,
+          "train_loss": 0.41547372937202454,
+          "validation_loss": 0.6344952583312988
+        },
+        {
+          "epoch": 46,
+          "train_loss": 0.4063068926334381,
+          "validation_loss": 0.6364474296569824
+        },
+        {
+          "epoch": 47,
+          "train_loss": 0.41575348377227783,
+          "validation_loss": 0.6344809532165527
+        },
+        {
+          "epoch": 48,
+          "train_loss": 0.4085148423910141,
+          "validation_loss": 0.6471346020698547
+        },
+        {
+          "epoch": 49,
+          "train_loss": 0.4193352609872818,
+          "validation_loss": 0.6546533107757568
+        },
+        {
+          "epoch": 50,
+          "train_loss": 0.4149587005376816,
+          "validation_loss": 0.6420047879219055
+        },
+        {
+          "epoch": 51,
+          "train_loss": 0.4002196937799454,
+          "validation_loss": 0.6506004333496094
+        },
+        {
+          "epoch": 52,
+          "train_loss": 0.395751491189003,
+          "validation_loss": 0.6524044871330261
+        },
+        {
+          "epoch": 53,
+          "train_loss": 0.3959484398365021,
+          "validation_loss": 0.6409516334533691
+        },
+        {
+          "epoch": 54,
+          "train_loss": 0.41100263595581055,
+          "validation_loss": 0.6517574787139893
+        },
+        {
+          "epoch": 55,
+          "train_loss": 0.40192633867263794,
+          "validation_loss": 0.6655917167663574
+        },
+        {
+          "epoch": 56,
+          "train_loss": 0.39681553840637207,
+          "validation_loss": 0.6639502644538879
+        },
+        {
+          "epoch": 57,
+          "train_loss": 0.393769308924675,
+          "validation_loss": 0.669805645942688
+        },
+        {
+          "epoch": 58,
+          "train_loss": 0.4004454165697098,
+          "validation_loss": 0.6620917320251465
+        },
+        {
+          "epoch": 59,
+          "train_loss": 0.385969415307045,
+          "validation_loss": 0.6575292348861694
+        },
+        {
+          "epoch": 60,
+          "train_loss": 0.39940045773983,
+          "validation_loss": 0.6751713156700134
+        },
+        {
+          "epoch": 61,
+          "train_loss": 0.3850788325071335,
+          "validation_loss": 0.672955334186554
+        },
+        {
+          "epoch": 62,
+          "train_loss": 0.3867223858833313,
+          "validation_loss": 0.674838662147522
+        },
+        {
+          "epoch": 63,
+          "train_loss": 0.39409999549388885,
+          "validation_loss": 0.6772920489311218
+        },
+        {
+          "epoch": 64,
+          "train_loss": 0.3844817280769348,
+          "validation_loss": 0.6752344965934753
+        },
+        {
+          "epoch": 65,
+          "train_loss": 0.381157711148262,
+          "validation_loss": 0.6835613250732422
+        },
+        {
+          "epoch": 66,
+          "train_loss": 0.3770632743835449,
+          "validation_loss": 0.6923586130142212
+        },
+        {
+          "epoch": 67,
+          "train_loss": 0.37568001449108124,
+          "validation_loss": 0.6988158226013184
+        },
+        {
+          "epoch": 68,
+          "train_loss": 0.38262316584587097,
+          "validation_loss": 0.6905393004417419
+        },
+        {
+          "epoch": 69,
+          "train_loss": 0.3786596208810806,
+          "validation_loss": 0.6933004856109619
+        },
+        {
+          "epoch": 70,
+          "train_loss": 0.37571603059768677,
+          "validation_loss": 0.7022205591201782
+        },
+        {
+          "epoch": 71,
+          "train_loss": 0.37961065769195557,
+          "validation_loss": 0.7068163752555847
+        },
+        {
+          "epoch": 72,
+          "train_loss": 0.3748827278614044,
+          "validation_loss": 0.7094672322273254
+        },
+        {
+          "epoch": 73,
+          "train_loss": 0.3878651410341263,
+          "validation_loss": 0.7075739502906799
+        },
+        {
+          "epoch": 74,
+          "train_loss": 0.36297251284122467,
+          "validation_loss": 0.7011969685554504
+        },
+        {
+          "epoch": 75,
+          "train_loss": 0.364888533949852,
+          "validation_loss": 0.7153447866439819
+        },
+        {
+          "epoch": 76,
+          "train_loss": 0.37689846754074097,
+          "validation_loss": 0.713697612285614
+        },
+        {
+          "epoch": 77,
+          "train_loss": 0.3727112263441086,
+          "validation_loss": 0.7238178849220276
+        },
+        {
+          "epoch": 78,
+          "train_loss": 0.35984769463539124,
+          "validation_loss": 0.7249143719673157
+        },
+        {
+          "epoch": 79,
+          "train_loss": 0.3630482703447342,
+          "validation_loss": 0.7235209345817566
+        },
+        {
+          "epoch": 80,
+          "train_loss": 0.36671091616153717,
+          "validation_loss": 0.731725811958313
+        }
+      ],
+      "files": {
+        "train": {
+          "sha256": "dd26efbc30da0d828a3aec99ccc6518efc232b7f17773e39bd84859fb76bedf0",
+          "rows": 402,
+          "options": 24346
+        },
+        "validation": {
+          "sha256": "d95f3d2b77980399ea8ceb1475445b551aa2dcc00819656935f62aea3cea1448",
+          "rows": 19,
+          "options": 1177
+        }
+      },
+      "enabled_in_application": false
+    }
+  },
+  "limits": [
+    "Known author Timing and fixed detected attacks/counts in Sakura; this does not test automatic timing or transcription.",
+    "The same-song calibration support contains only 19 onset groups; repeated phrases can correlate across sections.",
+    "Source attribution inside simultaneous groups is still ambiguous.",
+    "Community inputs are authored attacks and counts with tails/columns removed; no paired audio entered this community fit.",
+    "The twenty comparison excerpts are development comparisons already inspected in earlier experiments.",
+    "Optimum objective value and legal occupancy do not certify musical quality."
+  ],
+  "aborted_preparation": {
+    "status": "aborted_due_to_invalid_clock",
+    "date": "2026-11-09",
+    "process_id": 41328,
+    "output": "test-data/corpus-expanded/release-dataset-v1",
+    "reason": "Corpus chart 2571106 contains a 1e-61 ms red-line period. Its cumulative beat clock reaches approximately 1e59, destroying later finite-duration resolution. The running preparation emitted log2(0), so its examples are not eligible for fitting. Preparation was stopped before changing feature implementation.",
+    "next": "Validate clock invertibility and monotonicity, preserve explicit exclusions, rebuild in a new dataset directory."
+  },
+  "dataset": {
+    "manifest_sha256": "d67707548a80aeb03fb3930eefc2b2e3ea08984f2d311ed2dca376a0576e0183",
+    "charts": 7898,
+    "splits": {
+      "train": 6420,
+      "validation": 734,
+      "test": 744
+    },
+    "keys": {
+      "7": 5769,
+      "6": 1057,
+      "8": 251,
+      "9": 236,
+      "10": 585
+    },
+    "exclusions": [
+      {
+        "id": 1073953,
+        "reason": "Red TimingPoints lose sub-millisecond beat-clock precision"
+      },
+      {
+        "id": 1255026,
+        "reason": "Explicit valid red TimingPoints are required"
+      },
+      {
+        "id": 1552703,
+        "reason": "Red TimingPoints lose sub-millisecond beat-clock precision"
+      },
+      {
+        "id": 2571106,
+        "reason": "Red TimingPoints lose sub-millisecond beat-clock precision"
+      }
+    ],
+    "files": {
+      "train": {
+        "sha256": "04e02eb360cff52f725af22d008b282a0d7276d0d4ae2c63b8a2ccaa21b0cdda",
+        "rows": 75968,
+        "options": 4551050
+      },
+      "validation": {
+        "sha256": "4a46135712f3c0e44d820002953264546d509bd1cf578ada05bfe77a0ac0194d",
+        "rows": 8763,
+        "options": 522878
+      },
+      "test": {
+        "sha256": "258cba7890687513b4001b35196e1947c41ec0b902f5f340aa0fbc87f8cf5bb2",
+        "rows": 9371,
+        "options": 559255
+      }
+    }
+  },
+  "same_probability_decoder_comparison": {
+    "model_sha256": "fd9f69dc0b97f0da1d79ecf5d6adf3bed30f62312510dd1442ca2bd9a037a899",
+    "source_sha256": "c1b14dfd28eca2604fdd2193fad5ea50895be4ba8b3784ebc0d7430abeb9bdf5",
+    "ln_bias": 0.5,
+    "flow_sha256": "85c20be0a630d50cb7072241a5f3cc5d63e0a62a21e199b03d0b179a00d414a4",
+    "runner_sha256": "6340d46bfb6a37648559319fc6bc3006fc3ac472704697a8861ecf1ecfaa1c8b",
+    "runs": {
+      "flat": {
+        "planner": {
+          "input_objects": 2291,
+          "objects": 2291,
+          "holds": 772,
+          "unresolved": 0,
+          "optimal": true,
+          "mip_gap": 0.0,
+          "objective": -3202.7903629792863,
+          "solve_seconds": 1.8135762000456452,
+          "planner": "gesture-flow-v1",
+          "hierarchical": false,
+          "endpoint_weight": 1.0,
+          "expected_holds": 881.917159219696,
+          "expected_unresolved": 0.045560462180058436,
+          "shared_release_objects": 428,
+          "endpoint_source": "supplied_red_grid_and_onset_anchors",
+          "source_assignment": "ambiguous_within_simultaneous_group"
+        },
+        "events_sha256": "deff532d31711f81936f3580f4f0f20c8c53ba46d1920617bf2a4ea750cd1e8b",
+        "later": {
+          "complete_holds": {
+            "reference": 355,
+            "predicted": 283,
+            "matched": 134,
+            "precision": 0.4734982332155477,
+            "recall": 0.37746478873239436,
+            "f1": 0.4200626959247649,
+            "mean_absolute_error_ms": [
+              0.4552238805970149,
+              0.47761194029850745
+            ]
+          },
+          "strict_holds": {
+            "reference": 355,
+            "predicted": 283,
+            "matched": 134,
+            "precision": 0.4734982332155477,
+            "recall": 0.37746478873239436,
+            "f1": 0.4200626959247649,
+            "mean_absolute_error_ms": [
+              0.4552238805970149,
+              0.47761194029850745
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 6,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        }
+      },
+      "hierarchical": {
+        "planner": {
+          "input_objects": 2291,
+          "objects": 2291,
+          "holds": 831,
+          "unresolved": 0,
+          "optimal": true,
+          "mip_gap": 0.0,
+          "objective": -4385.929489462039,
+          "solve_seconds": 1.6214698000112548,
+          "planner": "gesture-flow-v1",
+          "hierarchical": true,
+          "endpoint_weight": 0.25,
+          "expected_holds": 881.917159219696,
+          "expected_unresolved": 0.045560462180058436,
+          "shared_release_objects": 474,
+          "endpoint_source": "supplied_red_grid_and_onset_anchors",
+          "source_assignment": "ambiguous_within_simultaneous_group"
+        },
+        "events_sha256": "e4b42b31d426b7987b7252e704ffd278685a23ad963a42eb7af627383be48041",
+        "later": {
+          "complete_holds": {
+            "reference": 355,
+            "predicted": 301,
+            "matched": 145,
+            "precision": 0.48172757475083056,
+            "recall": 0.4084507042253521,
+            "f1": 0.4420731707317073,
+            "mean_absolute_error_ms": [
+              0.45517241379310347,
+              0.45517241379310347
+            ]
+          },
+          "strict_holds": {
+            "reference": 355,
+            "predicted": 301,
+            "matched": 145,
+            "precision": 0.48172757475083056,
+            "recall": 0.4084507042253521,
+            "f1": 0.4420731707317073,
+            "mean_absolute_error_ms": [
+              0.45517241379310347,
+              0.45517241379310347
+            ]
+          },
+          "short_holds": {
+            "reference": 0,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "long_holds": {
+            "reference": 6,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "All holds with heads in the interval remain scored, including tails beyond the interval."
+        }
+      }
+    },
+    "notice": "Same frozen model probabilities; known Timing and detected attacks. Development diagnostic only."
+  }
+}
