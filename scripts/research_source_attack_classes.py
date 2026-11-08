@@ -23,6 +23,19 @@ from manialab.domain import parse_osu
 from scripts.probe_mapper_adapter import event_similarity, sha
 
 CLASSES = ('kick','snare','hi-hat')
+DRUM_PITCH_GROUPS=({35,36},{38,40},{2,37},{22,42,44},{26,46},
+    {51,53,59},{49,52,55,57},{41,43,45,47,48,50,58})
+
+
+def instrument_features(events,times):
+    """Frozen acoustic predictions around an existing attack, no chart inputs."""
+    columns=[]
+    for pitches in DRUM_PITCH_GROUPS:
+        onsets=np.asarray([n['onset']*1000 for n in events if n['is_drum'] and n['pitch'] in pitches])
+        delta=onsets[None,:]-np.asarray(times)[:,None]
+        for lo,hi in ((-50,-10),(-10,30),(30,80)):
+            columns.append(((delta>=lo)&(delta<hi)).any(axis=1).astype(float))
+    return np.asarray(columns).T
 
 
 def drum_event_counts(notes):
@@ -81,8 +94,10 @@ def main():
     cli=argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--root',type=Path,default=Path('test-data/sakura-benchmark'))
     cli.add_argument('--drum-activations',type=Path,help='Optional frozen five-class audio model evidence; no chart conditioning')
+    cli.add_argument('--instrument-probe',type=Path,help='Optional full-song frozen YourMT3 drum probe')
     cli.add_argument('--output',type=Path)
     args=cli.parse_args();root=args.root
+    if args.drum_activations and args.instrument_probe:raise ValueError('Compare one frozen model at a time')
     source=root/'bundled/drums/preview.wav'
     rate,samples=wavfile.read(source);samples=samples.astype(np.float32)/32768
     notes=parse_osu((root/'reference.osu').read_text(encoding='utf-8-sig'))['notes']
@@ -107,6 +122,19 @@ def main():
             local.append(values)
         x=np.c_[x,np.asarray(local)]
         pretrained=dict(activations_sha256=sha(args.drum_activations),features='five-class local max in three relative windows')
+    if args.instrument_probe:
+        folder=args.instrument_probe
+        inference=json.loads((folder/'report.json').read_text())
+        audit=json.loads((folder/'release-audit.json').read_text())
+        identity=inference['identity']
+        if (list(identity['sources'].values())!=[sha(source)] or identity['start_ms']!=0 or
+            abs(identity['seconds']-len(samples)/rate)>.03 or not audit['decoded_notes_equal'] or
+            sha(folder/'notes.json')!=audit['notes_sha256'] or sha(folder/'tokens.npz')!=audit['tokens_sha256']):
+            raise ValueError('Frozen drum transcription identity/clock changed')
+        events=json.loads((folder/'notes.json').read_text())
+        x=np.c_[x,instrument_features(events,times)]
+        pretrained=dict(identity=identity,notes_sha256=audit['notes_sha256'],
+            features='eight fixed GM drum families, binary onset presence in three relative windows')
     chart_times=times-22.5
     train_end,calibration_end=162340,188286
     fit=chart_times<train_end;calibration=(chart_times>=train_end)&(chart_times<calibration_end)

@@ -112,6 +112,56 @@
 
 空谱问题在这个片段中得到改善，但输出仍有一处同轨重叠以及未闭合 LN 警告。原始结果没有事后修轨以掩盖问题，权重不默认启用。这是同曲后段、给定作者草稿和 Timing 的表达诊断，尚不证明实际自动采音或独立歌曲上的质量。需要继续检查跨窗口持条状态和更多片段。
 
+另一个后段 241.798–253.798 秒，首事件加权微调匹配成品起音 47/50 组、放手 22/33 组、完整 LN 15/60 根；完整 LN F1 为 0.2542。原始输出仍有一处同轨重叠和 18 条未闭合 LN 警告。这个片段没有配套原模型基线，不声称它相对原模型改善。
+
+### 事件状态约束：语法检查通过，音乐实验失败
+
+新增显式 `--state-constraints` 实验，按此前**生成的输出**维护持条状态，不把输入草稿的列当作持条状态。约束完整事件、轨道范围、同时间重复按键、覆盖未放开的同轨长条，以及无条头放手；不补尾、不事后换轨，时间和结束点仍由模型预测。上游文件保持固定，功能默认关闭。
+
+第一轮在最后一个窗口遇到没有合法后续 token 的死路，未生成可评分谱面。随后避免选择所有列都不可用的时间点，并用与上游 `_encode` 相同的 10ms 量化转换已有历史，防止解码时的 +5ms 中点补偿让重复事件逃过检查。20 个真实冷启动目标、20372 个 token 均通过语法兼容检查。
+
+然而同样的 215.853–227.853 秒实际生成只有 1 根 LN，完整 LN 匹配为 0，仍有一处拍线吸附后的同轨重叠。起音匹配 47/48 组、放手仅 1/31 组；没有未闭合警告不能算作改善。与未加约束的同一适配器相比，这个实验**失败，拒绝启用**。原始失败日志、代码快照、解码 token 和输出都保留在本地。
+
+## 多乐器采音实验：YourMT3
+
+使用作者的 [CPU Space](https://huggingface.co/spaces/mimbres/YourMT3-cpu) 与 [论文](https://arxiv.org/abs/2407.04822)，源码固定 `bd69fbac7da881df0dfb67d8f4068a3d473df347`，模型 SHA256 为 `ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25`。严格完整加载检查点实际配置，使用作者的 13 通道事件解码和跨段合并。隔离环境不改变应用依赖，所有音频都在本机处理。
+
+输入只有确认过的 Nova 声轨。其他伴奏使用 other、bass、guitar 原幅度相加；鼓和钢琴各自单独输入。模型没有接收作者红线、书签或音符。起音评分统一使用已声明的 22.5ms 制谱提前量、40ms 容差，不对预测吸附拍线。Reference 是作者的采音与层数选择，不是完整 MIDI 真值；多检测到一个音高不等于需要多放一个 note。
+
+最初 215.853–227.853 秒的起音组 F1：其他伴奏 0.5217、鼓 0.9206、钢琴 0.9655。继续运行完整 283.84 秒，结果如下：
+
+|声部|现有应用起音组 F1|YourMT3 起音组 F1|匹配 / 作者起音组|模型提出起音组|
+|---|---:|---:|---:|---:|
+|其他伴奏|0.1976|0.7533|316 / 347|492|
+|鼓|0.5791|0.7803|412 / 562|494|
+|钢琴|0.8815|0.9864|797 / 808|808|
+
+其他伴奏各个有采音的乐段均改善，但主歌里仍有多余事件。鼓的片段成绩不能代替这个更弱的全曲结果；原流程召回 558/562 组但误检多，新模型只匹配 412 组，减少误检的同时也漏掉了原本检出的声音。钢琴是起音证据，不代表音尾或双押层数同样准确。
+
+鼓分类分别报告严格 kick、snare、hi-hat，以及 side-stick、ride、tom 的诊断映射。作者词表把 MIDI 37 标为 Snare X-stick，因此会额外核对它与第 2/3 列的对应，保留原本严格 snare 结果。第 4 列含其他鼓音色，不能把它伪装成纯 hi-hat 真值，也不能按最高评分挑一个映射作为模型表现。
+
+全曲严格类别 F1 分别为 kick 0.8281、snare 0.2152、hi-hat 0.1704。把 side-stick 与 snare 合并后，第 2/3 列对照为 0.7175；将 hi-hat、ride、tom 合并后，第 4 列仍只有 0.3431。它还没有学会用户这张谱的鼓音色与取舍，不能只报告合并起音的 0.7803。
+
+另把冻结的 YourMT3 鼓事件作为局部分类器的附加证据，候选起音、频谱特征、拟合区间和校准区间全部保持原协议。8 个固定 GM 鼓类分别记录三个相对时间窗内是否出现起音，特征不读取作者拍位或书签。后段 kick/snare/第 4 列 F1 为 0.9516/0.9176/0.3037，原频谱分类器为 0.9555/0.9286/0.3814，整体退步，拒绝启用。新增模型证据并不会自动解决作者取舍与物理音色标签的差异。
+
+### 起音改善不等于音尾可靠
+
+保存的 token 经官方解码器重新解码，与原始音符列表逐项完全一致后，再追踪每个音尾的来源。全曲其他伴奏 1905 个模型音符中，1372 个端点有显式 note-off，499 个带强制分段截断记录，202 个与同音高重弹重合，另有 30 个固定 10ms 的鼓事件。这些标记可以重合，不相加当作总数。
+
+强制截断来自分块交界处的持音状态不一致，不能当作乐器自然放音，更不能直接变成 LN 放手。即使有显式 note-off，也只是模型预测，尚不是音尾真值。新增审计保留逐音符来源供后续声部规划使用，不修改原始输出，也不自动连条。
+
+全曲钢琴的 1221 个音高事件也包含 111 个带强制分段截断记录的音尾。Reference 钢琴全部是短键，因此不能用 0.9864 的起音组 F1 来证明这批音尾可用。
+
+另外复用三组此前冻结的对照，不调整模型阈值：
+
+|对照|YourMT3 结果|限制|
+|---|---|---|
+|40 秒已知复音合成音|音高起音 F1 0.6544，起止同时匹配 F1 0.5899；至少 2 秒音正确配对 18 个|起音只召回 71/130，仍有明显漏音|
+|12 秒重复合成和弦|48 个已知音符全部漏检|没有错误长条是空输出造成，不能算音尾成功|
+|另一段真实钢琴，谱面 5317787 前 40 秒|起音组匹配 114/117，F1 0.9194|现有深度路径为 0.9306；短键参考不能评价音尾|
+
+决定：保留为独立乐器证据研究，不全局替换现有采音。需要继续解决不同音色的漏检、分块音尾和乐句层数选择；不能因为《樱花草》某个声部改善就宣称完成通用采音。
+
 ## 本地重现
 
 所有原声轨、原谱、逐音符标签、权重、试听音频都位于忽略目录 `test-data/sakura-benchmark`，不随公开仓库分发。以下命令需要已核验的本地材料与可选 Mapper 环境：
@@ -125,6 +175,16 @@ test-data\mapperatorinator\venv\Scripts\python.exe scripts/train_mapper_audio.py
 .venv\Scripts\python.exe scripts/probe_mapper_sources.py --dataset <数据目录> --adapter <实验目录>/adapter --output <对照目录>
 test-data\mapperatorinator\venv\Scripts\python.exe scripts/check_mapper_sketch_context.py
 .venv\Scripts\python.exe scripts/summarize_sakura_research.py
+```
+
+YourMT3 研究环境位于 `test-data/yourmt3/venv`，源码和权重出处保存在 `test-data/yourmt3/model/source.json`。在现有隔离音频依赖之上使用 `transformers==4.41.2`、`pytorch-lightning==2.4.0`、`torchmetrics==1.4.1`、`wandb==0.18.7`、`mir_eval==0.8.2`、`mido==1.3.3`、`deprecated==1.2.18`、`rotary-embedding-torch==0.6.5`、`scikit-learn==1.5.2`、`setuptools==75.6.0`。它不属于发布安装包。
+
+```powershell
+test-data\yourmt3\venv\Scripts\python.exe scripts/research_instrument_transcription.py --audio <同步单声道PCM声轨，可多个> --start-ms 0 --seconds <时长> --context-seconds 0 --output <新的私有实验目录>
+.venv\Scripts\python.exe scripts/evaluate_instrument_transcription.py --runs <樱花草实验目录名，可多个> --output test-data/sakura-benchmark/instrument-transcription-comparison.json
+test-data\yourmt3\venv\Scripts\python.exe scripts/audit_instrument_releases.py --runs <已完成的实验目录，可多个>
+.venv\Scripts\python.exe scripts/evaluate_instrument_controls.py
+.venv\Scripts\python.exe scripts/research_source_attack_classes.py --instrument-probe test-data/sakura-benchmark/drums-yourmt3-full --output <新的私有分类实验目录>
 ```
 
 下一步仍是修复实际声部漏音、层叠取舍和成品 LN 表达；还需要独立歌曲、6–9K 与全曲验证。当前实验证据不足以支持“完成版”或“超越 Mapperatorinator”的结论。

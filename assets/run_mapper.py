@@ -39,4 +39,9 @@ if __name__=='__main__':
             raise ValueError('Unsupported experimental sketch codec')
         sys.argv.remove(codec_flags[0])
         install_runtime()
+    state_flags=[arg for arg in sys.argv[1:] if arg.startswith('--mania-event-state=')]
+    if state_flags:
+        from mania_event_constraints import CODEC,install_runtime
+        if state_flags!=['--mania-event-state='+CODEC]:raise ValueError('Unsupported event-state constraint')
+        sys.argv.remove(state_flags[0]);install_runtime()
     runpy.run_path(str(script),run_name='__main__')

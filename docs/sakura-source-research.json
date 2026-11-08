@@ -1,5 +1,5 @@
 {
-  "revision": 3,
+  "revision": 4,
   "status": "development_not_accepted",
   "date": "2026-11-08",
   "reference": {
@@ -11803,6 +11803,192 @@
         "generation_outcome": "events_generated",
         "incomplete_hold_warnings": 9
       }
+    },
+    "expression-prefix-241798-12": {
+      "adapter": {
+        "identity": {
+          "task": "arrangement_from_author_sketch_not_blind_audio",
+          "audio": "371fc2f4b5af001035caef4d57661040e82a90e147b6458534762b412a450dec",
+          "sketch_codec": "map-delimited-sketch-v1",
+          "codec_sha256": "6077ca3360846dc84b1e3bd5b017b3930d0571db85e14e710e590b7499c3fe83",
+          "sketch": "ff7c9685abd95e7ef87c41f9c7611e64086cc139dde4c251524b5c62d507fd87",
+          "start_ms": 241798,
+          "seconds": 12,
+          "keys": 10,
+          "ln_ratio": 0.34248039914469,
+          "difficulty": 4.56727,
+          "seed": 42,
+          "conditioning": {
+            "add_mapper_token": false,
+            "add_year_token": false,
+            "add_descriptors": false,
+            "add_song_position_token": false
+          },
+          "adapter": "73cfb13c6542a78859101ccd9eea5b01a6d9b375181c89c3673be1901379b03c",
+          "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+          "model_revision": "74f22583400d259bf424819e11027c17933efe54"
+        },
+        "raw_sha256": "b370a085017768b0ee9bf8db33e9b95f292f07b583145beaed7a16b625c8db06",
+        "comparison": {
+          "onset_groups": {
+            "reference": 50,
+            "predicted": 55,
+            "matched": 47,
+            "precision": 0.8545454545454545,
+            "recall": 0.94,
+            "f1": 0.8952380952380953,
+            "mean_absolute_error_ms": [
+              0.0
+            ]
+          },
+          "release_groups": {
+            "reference": 33,
+            "predicted": 36,
+            "matched": 22,
+            "precision": 0.6111111111111112,
+            "recall": 0.6666666666666666,
+            "f1": 0.6376811594202898,
+            "mean_absolute_error_ms": [
+              0.0
+            ]
+          },
+          "complete_hold_spans": {
+            "reference": 60,
+            "predicted": 58,
+            "matched": 15,
+            "precision": 0.25862068965517243,
+            "recall": 0.25,
+            "f1": 0.2542372881355932,
+            "mean_absolute_error_ms": [
+              0.0,
+              0.0
+            ]
+          },
+          "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+        },
+        "validation": {
+          "valid": false,
+          "issues": [
+            "247474ms：第 5 轨重叠"
+          ],
+          "issue_count": 1,
+          "notes": 158,
+          "ln": 58,
+          "ln_ratio": 0.367,
+          "max_held": 5,
+          "longest_ln_ms": 1217,
+          "lane_counts": [
+            18,
+            18,
+            20,
+            13,
+            17,
+            19,
+            13,
+            11,
+            18,
+            11
+          ]
+        },
+        "elapsed_seconds": 497.18700000003446,
+        "generation_outcome": "events_generated",
+        "incomplete_hold_warnings": 20
+      }
+    },
+    "expression-constrained-v2-215853-12": {
+      "adapter": {
+        "identity": {
+          "task": "arrangement_from_author_sketch_not_blind_audio",
+          "audio": "371fc2f4b5af001035caef4d57661040e82a90e147b6458534762b412a450dec",
+          "sketch_codec": "map-delimited-sketch-v1",
+          "codec_sha256": "6077ca3360846dc84b1e3bd5b017b3930d0571db85e14e710e590b7499c3fe83",
+          "sketch": "ff7c9685abd95e7ef87c41f9c7611e64086cc139dde4c251524b5c62d507fd87",
+          "start_ms": 215853,
+          "seconds": 12,
+          "keys": 10,
+          "ln_ratio": 0.34248039914469,
+          "difficulty": 4.56727,
+          "seed": 42,
+          "conditioning": {
+            "add_mapper_token": false,
+            "add_year_token": false,
+            "add_descriptors": false,
+            "add_song_position_token": false
+          },
+          "adapter": "73cfb13c6542a78859101ccd9eea5b01a6d9b375181c89c3673be1901379b03c",
+          "source_commit": "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa",
+          "model_revision": "74f22583400d259bf424819e11027c17933efe54",
+          "state_constraints": {
+            "codec": "mania-event-state-v1",
+            "source_sha256": "b468b397cbcfb5a60cd823a4c898d397bc4fd112af104cf43c8d1efd5142fb35"
+          }
+        },
+        "raw_sha256": "1c06b493b8194b7641e5dafaf6e9aa905853a0b65d7be3d4717a64cccf8b3070",
+        "comparison": {
+          "onset_groups": {
+            "reference": 48,
+            "predicted": 54,
+            "matched": 47,
+            "precision": 0.8703703703703703,
+            "recall": 0.9791666666666666,
+            "f1": 0.9215686274509803,
+            "mean_absolute_error_ms": [
+              0.0
+            ]
+          },
+          "release_groups": {
+            "reference": 31,
+            "predicted": 1,
+            "matched": 1,
+            "precision": 1.0,
+            "recall": 0.03225806451612903,
+            "f1": 0.0625,
+            "mean_absolute_error_ms": [
+              0.0
+            ]
+          },
+          "complete_hold_spans": {
+            "reference": 57,
+            "predicted": 0,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_absolute_error_ms": [
+              null,
+              null
+            ]
+          },
+          "notice": "Similarity to one human interpretation, not instrument transcription accuracy or playability."
+        },
+        "validation": {
+          "valid": false,
+          "issues": [
+            "218285ms：第 10 轨重叠"
+          ],
+          "issue_count": 1,
+          "notes": 167,
+          "ln": 1,
+          "ln_ratio": 0.006,
+          "max_held": 1,
+          "longest_ln_ms": 2028,
+          "lane_counts": [
+            20,
+            10,
+            22,
+            15,
+            18,
+            18,
+            17,
+            15,
+            12,
+            20
+          ]
+        },
+        "elapsed_seconds": 554.6879999999655,
+        "generation_outcome": "events_generated",
+        "incomplete_hold_warnings": 0
+      }
     }
   },
   "cold_start_aborted": {
@@ -12154,6 +12340,3548 @@
     "enabled_in_application": false,
     "notice": "Same-song development, not unseen evaluation. Timing is not taken from the structure model. Native NATTEN equivalence and generalization remain to be checked."
   },
+  "instrument_transcription_comparison": {
+    "reference_sha256": "a25e9048747e169568808be790051aed6e6470142ea6a8bf27378d631a2526b3",
+    "rows": [
+      {
+        "run": "other-yourmt3-215853-12",
+        "role": "other",
+        "identity": {
+          "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+          "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+          "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+          "sources": {
+            "test-data\\sakura-benchmark\\bundled\\other\\preview.wav": "f932bd7a2e0787982adc0a31d48c628078288f47fac24f9a8f4d9a654d8c3d46",
+            "test-data\\sakura-benchmark\\bundled\\bass\\preview.wav": "4bbbd7e7110eb19f2fc3b428a294a2fcfb9e215eb88665a45e5dd04226de7794",
+            "test-data\\sakura-benchmark\\bundled\\guitar\\preview.wav": "ed03aa3d30117d055fa4b90418fee13549f03a30d75a2367715435821fda3df7"
+          },
+          "start_ms": 215853,
+          "seconds": 12,
+          "context_seconds": 2.1,
+          "task": "mc13_full_plus_256",
+          "decoder_channels": 13,
+          "strict_weights": true
+        },
+        "decoding_errors": {
+          "Err/onset not found": 56.0,
+          "Err/merging segment tie": 42,
+          "Err/Note off without note on": 4.0
+        },
+        "predicted_program_counts": {
+          "40": 8,
+          "26": 37,
+          "48": 115,
+          "drums": 27,
+          "88": 23,
+          "33": 3,
+          "32": 2,
+          "41": 6,
+          "42": 6,
+          "16": 5
+        },
+        "elapsed_seconds": 115.0,
+        "comparisons": {
+          "0.0": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 15,
+                "predicted": 44,
+                "matched": 12,
+                "precision": 0.2727272727272727,
+                "recall": 0.8,
+                "f1": 0.4067796610169492,
+                "mean_absolute_error_ms": [
+                  19.666666666666668
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 36,
+                "predicted": 206,
+                "matched": 29,
+                "precision": 0.1407766990291262,
+                "recall": 0.8055555555555556,
+                "f1": 0.2396694214876033,
+                "mean_absolute_error_ms": [
+                  16.517241379310345
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 15,
+                "predicted": 32,
+                "matched": 12,
+                "precision": 0.375,
+                "recall": 0.8,
+                "f1": 0.5106382978723404,
+                "mean_absolute_error_ms": [
+                  20.833333333333332
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 36,
+                "predicted": 179,
+                "matched": 28,
+                "precision": 0.1564245810055866,
+                "recall": 0.7777777777777778,
+                "f1": 0.26046511627906976,
+                "mean_absolute_error_ms": [
+                  17.428571428571427
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 15,
+                "predicted": 112,
+                "matched": 10,
+                "precision": 0.08928571428571429,
+                "recall": 0.6666666666666666,
+                "f1": 0.15748031496062992,
+                "mean_absolute_error_ms": [
+                  16.7
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 36,
+                "predicted": 187,
+                "matched": 20,
+                "precision": 0.10695187165775401,
+                "recall": 0.5555555555555556,
+                "f1": 0.17937219730941703,
+                "mean_absolute_error_ms": [
+                  20.2
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "diagnostic_families": {
+              "guitar": {
+                "reference": 15,
+                "predicted": 15,
+                "matched": 6,
+                "precision": 0.4,
+                "recall": 0.4,
+                "f1": 0.4,
+                "mean_absolute_error_ms": [
+                  16.666666666666668
+                ]
+              },
+              "bass": {
+                "reference": 15,
+                "predicted": 5,
+                "matched": 1,
+                "precision": 0.2,
+                "recall": 0.06666666666666667,
+                "f1": 0.1,
+                "mean_absolute_error_ms": [
+                  23.0
+                ]
+              },
+              "strings": {
+                "reference": 15,
+                "predicted": 18,
+                "matched": 10,
+                "precision": 0.5555555555555556,
+                "recall": 0.6666666666666666,
+                "f1": 0.6060606060606061,
+                "mean_absolute_error_ms": [
+                  18.8
+                ]
+              },
+              "synth": {
+                "reference": 15,
+                "predicted": 8,
+                "matched": 2,
+                "precision": 0.25,
+                "recall": 0.13333333333333333,
+                "f1": 0.17391304347826086,
+                "mean_absolute_error_ms": [
+                  15.5
+                ]
+              }
+            }
+          },
+          "22.5": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 15,
+                "predicted": 43,
+                "matched": 13,
+                "precision": 0.3023255813953488,
+                "recall": 0.8666666666666667,
+                "f1": 0.4482758620689655,
+                "mean_absolute_error_ms": [
+                  10.961538461538462
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 36,
+                "predicted": 201,
+                "matched": 30,
+                "precision": 0.14925373134328357,
+                "recall": 0.8333333333333334,
+                "f1": 0.25316455696202533,
+                "mean_absolute_error_ms": [
+                  7.133333333333334
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 15,
+                "predicted": 31,
+                "matched": 12,
+                "precision": 0.3870967741935484,
+                "recall": 0.8,
+                "f1": 0.5217391304347826,
+                "mean_absolute_error_ms": [
+                  9.083333333333334
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 36,
+                "predicted": 175,
+                "matched": 28,
+                "precision": 0.16,
+                "recall": 0.7777777777777778,
+                "f1": 0.26540284360189575,
+                "mean_absolute_error_ms": [
+                  7.142857142857143
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 15,
+                "predicted": 112,
+                "matched": 13,
+                "precision": 0.11607142857142858,
+                "recall": 0.8666666666666667,
+                "f1": 0.2047244094488189,
+                "mean_absolute_error_ms": [
+                  20.153846153846153
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 36,
+                "predicted": 187,
+                "matched": 24,
+                "precision": 0.12834224598930483,
+                "recall": 0.6666666666666666,
+                "f1": 0.21524663677130046,
+                "mean_absolute_error_ms": [
+                  19.875
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "diagnostic_families": {
+              "guitar": {
+                "reference": 15,
+                "predicted": 14,
+                "matched": 6,
+                "precision": 0.42857142857142855,
+                "recall": 0.4,
+                "f1": 0.41379310344827586,
+                "mean_absolute_error_ms": [
+                  11.833333333333334
+                ]
+              },
+              "bass": {
+                "reference": 15,
+                "predicted": 5,
+                "matched": 2,
+                "precision": 0.4,
+                "recall": 0.13333333333333333,
+                "f1": 0.2,
+                "mean_absolute_error_ms": [
+                  16.0
+                ]
+              },
+              "strings": {
+                "reference": 15,
+                "predicted": 17,
+                "matched": 10,
+                "precision": 0.5882352941176471,
+                "recall": 0.6666666666666666,
+                "f1": 0.625,
+                "mean_absolute_error_ms": [
+                  9.2
+                ]
+              },
+              "synth": {
+                "reference": 15,
+                "predicted": 8,
+                "matched": 4,
+                "precision": 0.5,
+                "recall": 0.26666666666666666,
+                "f1": 0.34782608695652173,
+                "mean_absolute_error_ms": [
+                  15.0
+                ]
+              }
+            }
+          }
+        },
+        "segments": [
+          {
+            "start_ms": 215853,
+            "end_ms": 227853,
+            "source_compatible": {
+              "reference": 15,
+              "predicted": 31,
+              "matched": 12,
+              "precision": 0.3870967741935484,
+              "recall": 0.8,
+              "f1": 0.5217391304347826,
+              "mean_absolute_error_ms": [
+                9.083333333333334
+              ]
+            },
+            "application": {
+              "reference": 15,
+              "predicted": 112,
+              "matched": 13,
+              "precision": 0.11607142857142858,
+              "recall": 0.8666666666666667,
+              "f1": 0.2047244094488189,
+              "mean_absolute_error_ms": [
+                20.153846153846153
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "run": "drums-yourmt3-215853-12",
+        "role": "drums",
+        "identity": {
+          "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+          "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+          "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+          "sources": {
+            "test-data\\sakura-benchmark\\bundled\\drums\\preview.wav": "2f51943ddc584f78638fcdf4b38acd253ec4229fa83b8a531d3946833372a8cd"
+          },
+          "start_ms": 215853,
+          "seconds": 12,
+          "context_seconds": 2.1,
+          "task": "mc13_full_plus_256",
+          "decoder_channels": 13,
+          "strict_weights": true
+        },
+        "decoding_errors": {
+          "Err/onset not found": 1.0
+        },
+        "predicted_program_counts": {
+          "drums": 63
+        },
+        "elapsed_seconds": 34.453000000095926,
+        "comparisons": {
+          "0.0": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 32,
+                "predicted": 31,
+                "matched": 29,
+                "precision": 0.9354838709677419,
+                "recall": 0.90625,
+                "f1": 0.9206349206349206,
+                "mean_absolute_error_ms": [
+                  22.689655172413794
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 60,
+                "predicted": 49,
+                "matched": 42,
+                "precision": 0.8571428571428571,
+                "recall": 0.7,
+                "f1": 0.7706422018348624,
+                "mean_absolute_error_ms": [
+                  22.404761904761905
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 32,
+                "predicted": 31,
+                "matched": 29,
+                "precision": 0.9354838709677419,
+                "recall": 0.90625,
+                "f1": 0.9206349206349206,
+                "mean_absolute_error_ms": [
+                  22.689655172413794
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 60,
+                "predicted": 49,
+                "matched": 42,
+                "precision": 0.8571428571428571,
+                "recall": 0.7,
+                "f1": 0.7706422018348624,
+                "mean_absolute_error_ms": [
+                  22.404761904761905
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 32,
+                "predicted": 61,
+                "matched": 32,
+                "precision": 0.5245901639344263,
+                "recall": 1.0,
+                "f1": 0.6881720430107527,
+                "mean_absolute_error_ms": [
+                  27.25
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 60,
+                "predicted": 61,
+                "matched": 32,
+                "precision": 0.5245901639344263,
+                "recall": 0.5333333333333333,
+                "f1": 0.5289256198347108,
+                "mean_absolute_error_ms": [
+                  27.25
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "drum_classes": {
+              "kick": {
+                "reference": 17,
+                "predicted": 19,
+                "matched": 17,
+                "precision": 0.8947368421052632,
+                "recall": 1.0,
+                "f1": 0.9444444444444444,
+                "mean_absolute_error_ms": [
+                  22.058823529411764
+                ]
+              },
+              "snare": {
+                "reference": 8,
+                "predicted": 1,
+                "matched": 1,
+                "precision": 1.0,
+                "recall": 0.125,
+                "f1": 0.2222222222222222,
+                "mean_absolute_error_ms": [
+                  20.0
+                ]
+              },
+              "hi_hat": {
+                "reference": 28,
+                "predicted": 11,
+                "matched": 11,
+                "precision": 1.0,
+                "recall": 0.39285714285714285,
+                "f1": 0.5641025641025641,
+                "mean_absolute_error_ms": [
+                  18.454545454545453
+                ]
+              }
+            },
+            "diagnostic_drum_mappings": {
+              "side_stick_only": {
+                "reference": 8,
+                "predicted": 4,
+                "matched": 4,
+                "precision": 1.0,
+                "recall": 0.5,
+                "f1": 0.6666666666666666,
+                "mean_absolute_error_ms": [
+                  32.25
+                ]
+              },
+              "snare_and_side_stick": {
+                "reference": 8,
+                "predicted": 5,
+                "matched": 5,
+                "precision": 1.0,
+                "recall": 0.625,
+                "f1": 0.7692307692307693,
+                "mean_absolute_error_ms": [
+                  29.8
+                ]
+              },
+              "ride_only": {
+                "reference": 28,
+                "predicted": 11,
+                "matched": 9,
+                "precision": 0.8181818181818182,
+                "recall": 0.32142857142857145,
+                "f1": 0.46153846153846156,
+                "mean_absolute_error_ms": [
+                  24.88888888888889
+                ]
+              },
+              "tom_only": {
+                "reference": 28,
+                "predicted": 2,
+                "matched": 1,
+                "precision": 0.5,
+                "recall": 0.03571428571428571,
+                "f1": 0.06666666666666667,
+                "mean_absolute_error_ms": [
+                  14.0
+                ]
+              },
+              "hi_hat_ride_tom": {
+                "reference": 28,
+                "predicted": 24,
+                "matched": 20,
+                "precision": 0.8333333333333334,
+                "recall": 0.7142857142857143,
+                "f1": 0.7692307692307693,
+                "mean_absolute_error_ms": [
+                  20.85
+                ]
+              }
+            }
+          },
+          "22.5": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 32,
+                "predicted": 31,
+                "matched": 29,
+                "precision": 0.9354838709677419,
+                "recall": 0.90625,
+                "f1": 0.9206349206349206,
+                "mean_absolute_error_ms": [
+                  5.362068965517241
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 60,
+                "predicted": 49,
+                "matched": 42,
+                "precision": 0.8571428571428571,
+                "recall": 0.7,
+                "f1": 0.7706422018348624,
+                "mean_absolute_error_ms": [
+                  6.119047619047619
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 32,
+                "predicted": 31,
+                "matched": 29,
+                "precision": 0.9354838709677419,
+                "recall": 0.90625,
+                "f1": 0.9206349206349206,
+                "mean_absolute_error_ms": [
+                  5.362068965517241
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 60,
+                "predicted": 49,
+                "matched": 42,
+                "precision": 0.8571428571428571,
+                "recall": 0.7,
+                "f1": 0.7706422018348624,
+                "mean_absolute_error_ms": [
+                  6.119047619047619
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 32,
+                "predicted": 61,
+                "matched": 32,
+                "precision": 0.5245901639344263,
+                "recall": 1.0,
+                "f1": 0.6881720430107527,
+                "mean_absolute_error_ms": [
+                  6.84375
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 60,
+                "predicted": 61,
+                "matched": 32,
+                "precision": 0.5245901639344263,
+                "recall": 0.5333333333333333,
+                "f1": 0.5289256198347108,
+                "mean_absolute_error_ms": [
+                  6.84375
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "drum_classes": {
+              "kick": {
+                "reference": 17,
+                "predicted": 19,
+                "matched": 17,
+                "precision": 0.8947368421052632,
+                "recall": 1.0,
+                "f1": 0.9444444444444444,
+                "mean_absolute_error_ms": [
+                  4.617647058823529
+                ]
+              },
+              "snare": {
+                "reference": 8,
+                "predicted": 1,
+                "matched": 1,
+                "precision": 1.0,
+                "recall": 0.125,
+                "f1": 0.2222222222222222,
+                "mean_absolute_error_ms": [
+                  2.5
+                ]
+              },
+              "hi_hat": {
+                "reference": 28,
+                "predicted": 11,
+                "matched": 11,
+                "precision": 1.0,
+                "recall": 0.39285714285714285,
+                "f1": 0.5641025641025641,
+                "mean_absolute_error_ms": [
+                  9.136363636363637
+                ]
+              }
+            },
+            "diagnostic_drum_mappings": {
+              "side_stick_only": {
+                "reference": 8,
+                "predicted": 4,
+                "matched": 4,
+                "precision": 1.0,
+                "recall": 0.5,
+                "f1": 0.6666666666666666,
+                "mean_absolute_error_ms": [
+                  9.75
+                ]
+              },
+              "snare_and_side_stick": {
+                "reference": 8,
+                "predicted": 5,
+                "matched": 5,
+                "precision": 1.0,
+                "recall": 0.625,
+                "f1": 0.7692307692307693,
+                "mean_absolute_error_ms": [
+                  8.3
+                ]
+              },
+              "ride_only": {
+                "reference": 28,
+                "predicted": 11,
+                "matched": 9,
+                "precision": 0.8181818181818182,
+                "recall": 0.32142857142857145,
+                "f1": 0.46153846153846156,
+                "mean_absolute_error_ms": [
+                  4.055555555555555
+                ]
+              },
+              "tom_only": {
+                "reference": 28,
+                "predicted": 2,
+                "matched": 1,
+                "precision": 0.5,
+                "recall": 0.03571428571428571,
+                "f1": 0.06666666666666667,
+                "mean_absolute_error_ms": [
+                  8.5
+                ]
+              },
+              "hi_hat_ride_tom": {
+                "reference": 28,
+                "predicted": 24,
+                "matched": 20,
+                "precision": 0.8333333333333334,
+                "recall": 0.7142857142857143,
+                "f1": 0.7692307692307693,
+                "mean_absolute_error_ms": [
+                  6.85
+                ]
+              }
+            }
+          }
+        },
+        "segments": [
+          {
+            "start_ms": 215853,
+            "end_ms": 227853,
+            "source_compatible": {
+              "reference": 32,
+              "predicted": 31,
+              "matched": 29,
+              "precision": 0.9354838709677419,
+              "recall": 0.90625,
+              "f1": 0.9206349206349206,
+              "mean_absolute_error_ms": [
+                5.362068965517241
+              ]
+            },
+            "application": {
+              "reference": 32,
+              "predicted": 61,
+              "matched": 32,
+              "precision": 0.5245901639344263,
+              "recall": 1.0,
+              "f1": 0.6881720430107527,
+              "mean_absolute_error_ms": [
+                6.84375
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "run": "piano-yourmt3-215853-12",
+        "role": "piano",
+        "identity": {
+          "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+          "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+          "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+          "sources": {
+            "test-data\\sakura-benchmark\\bundled\\piano\\preview.wav": "377d853d326b6e66540f142d48e2928a94249bcc58695f7b531ab5935321750e"
+          },
+          "start_ms": 215853,
+          "seconds": 12,
+          "context_seconds": 2.1,
+          "task": "mc13_full_plus_256",
+          "decoder_channels": 13,
+          "strict_weights": true
+        },
+        "decoding_errors": {
+          "Err/onset not found": 6.0,
+          "Err/merging segment tie": 5
+        },
+        "predicted_program_counts": {
+          "0": 92
+        },
+        "elapsed_seconds": 135.01600000006147,
+        "comparisons": {
+          "0.0": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 45,
+                "predicted": 43,
+                "matched": 40,
+                "precision": 0.9302325581395349,
+                "recall": 0.8888888888888888,
+                "f1": 0.9090909090909091,
+                "mean_absolute_error_ms": [
+                  25.975
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 53,
+                "predicted": 77,
+                "matched": 45,
+                "precision": 0.5844155844155844,
+                "recall": 0.8490566037735849,
+                "f1": 0.6923076923076923,
+                "mean_absolute_error_ms": [
+                  25.755555555555556
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 45,
+                "predicted": 43,
+                "matched": 40,
+                "precision": 0.9302325581395349,
+                "recall": 0.8888888888888888,
+                "f1": 0.9090909090909091,
+                "mean_absolute_error_ms": [
+                  25.975
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 53,
+                "predicted": 77,
+                "matched": 45,
+                "precision": 0.5844155844155844,
+                "recall": 0.8490566037735849,
+                "f1": 0.6923076923076923,
+                "mean_absolute_error_ms": [
+                  25.755555555555556
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 45,
+                "predicted": 49,
+                "matched": 22,
+                "precision": 0.4489795918367347,
+                "recall": 0.4888888888888889,
+                "f1": 0.46808510638297873,
+                "mean_absolute_error_ms": [
+                  31.886363636363637
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 53,
+                "predicted": 135,
+                "matched": 27,
+                "precision": 0.2,
+                "recall": 0.5094339622641509,
+                "f1": 0.2872340425531915,
+                "mean_absolute_error_ms": [
+                  32.148148148148145
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "diagnostic_families": {
+              "piano": {
+                "reference": 45,
+                "predicted": 43,
+                "matched": 40,
+                "precision": 0.9302325581395349,
+                "recall": 0.8888888888888888,
+                "f1": 0.9090909090909091,
+                "mean_absolute_error_ms": [
+                  25.975
+                ]
+              }
+            }
+          },
+          "22.5": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 45,
+                "predicted": 42,
+                "matched": 42,
+                "precision": 1.0,
+                "recall": 0.9333333333333333,
+                "f1": 0.9655172413793104,
+                "mean_absolute_error_ms": [
+                  8.833333333333334
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 53,
+                "predicted": 74,
+                "matched": 48,
+                "precision": 0.6486486486486487,
+                "recall": 0.9056603773584906,
+                "f1": 0.7559055118110236,
+                "mean_absolute_error_ms": [
+                  8.75
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 45,
+                "predicted": 42,
+                "matched": 42,
+                "precision": 1.0,
+                "recall": 0.9333333333333333,
+                "f1": 0.9655172413793104,
+                "mean_absolute_error_ms": [
+                  8.833333333333334
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 53,
+                "predicted": 74,
+                "matched": 48,
+                "precision": 0.6486486486486487,
+                "recall": 0.9056603773584906,
+                "f1": 0.7559055118110236,
+                "mean_absolute_error_ms": [
+                  8.75
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 45,
+                "predicted": 50,
+                "matched": 43,
+                "precision": 0.86,
+                "recall": 0.9555555555555556,
+                "f1": 0.9052631578947369,
+                "mean_absolute_error_ms": [
+                  18.976744186046513
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 53,
+                "predicted": 138,
+                "matched": 51,
+                "precision": 0.3695652173913043,
+                "recall": 0.9622641509433962,
+                "f1": 0.5340314136125655,
+                "mean_absolute_error_ms": [
+                  18.970588235294116
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "diagnostic_families": {
+              "piano": {
+                "reference": 45,
+                "predicted": 42,
+                "matched": 42,
+                "precision": 1.0,
+                "recall": 0.9333333333333333,
+                "f1": 0.9655172413793104,
+                "mean_absolute_error_ms": [
+                  8.833333333333334
+                ]
+              }
+            }
+          }
+        },
+        "segments": [
+          {
+            "start_ms": 215853,
+            "end_ms": 227853,
+            "source_compatible": {
+              "reference": 45,
+              "predicted": 42,
+              "matched": 42,
+              "precision": 1.0,
+              "recall": 0.9333333333333333,
+              "f1": 0.9655172413793104,
+              "mean_absolute_error_ms": [
+                8.833333333333334
+              ]
+            },
+            "application": {
+              "reference": 45,
+              "predicted": 50,
+              "matched": 43,
+              "precision": 0.86,
+              "recall": 0.9555555555555556,
+              "f1": 0.9052631578947369,
+              "mean_absolute_error_ms": [
+                18.976744186046513
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "run": "other-yourmt3-full",
+        "role": "other",
+        "identity": {
+          "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+          "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+          "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+          "sources": {
+            "test-data\\sakura-benchmark\\bundled\\other\\preview.wav": "f932bd7a2e0787982adc0a31d48c628078288f47fac24f9a8f4d9a654d8c3d46",
+            "test-data\\sakura-benchmark\\bundled\\bass\\preview.wav": "4bbbd7e7110eb19f2fc3b428a294a2fcfb9e215eb88665a45e5dd04226de7794",
+            "test-data\\sakura-benchmark\\bundled\\guitar\\preview.wav": "ed03aa3d30117d055fa4b90418fee13549f03a30d75a2367715435821fda3df7"
+          },
+          "start_ms": 0,
+          "seconds": 283.84,
+          "context_seconds": 0.0,
+          "task": "mc13_full_plus_256",
+          "decoder_channels": 13,
+          "strict_weights": true
+        },
+        "decoding_errors": {
+          "Err/onset not found": 551.0,
+          "Err/merging segment tie": 564,
+          "Err/Note off without note on": 1.0
+        },
+        "predicted_program_counts": {
+          "48": 601,
+          "2": 80,
+          "42": 142,
+          "16": 76,
+          "88": 223,
+          "100": 3,
+          "40": 142,
+          "41": 93,
+          "33": 71,
+          "46": 13,
+          "32": 30,
+          "80": 16,
+          "26": 288,
+          "0": 91,
+          "60": 2,
+          "drums": 30,
+          "43": 2,
+          "8": 2
+        },
+        "elapsed_seconds": 774.0470000000205,
+        "comparisons": {
+          "0.0": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 347,
+                "predicted": 508,
+                "matched": 308,
+                "precision": 0.6062992125984252,
+                "recall": 0.8876080691642652,
+                "f1": 0.7204678362573099,
+                "mean_absolute_error_ms": [
+                  16.308441558441558
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 577,
+                "predicted": 1905,
+                "matched": 500,
+                "precision": 0.26246719160104987,
+                "recall": 0.8665511265164645,
+                "f1": 0.40290088638195004,
+                "mean_absolute_error_ms": [
+                  14.366
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 347,
+                "predicted": 492,
+                "matched": 307,
+                "precision": 0.6239837398373984,
+                "recall": 0.8847262247838616,
+                "f1": 0.7318235995232419,
+                "mean_absolute_error_ms": [
+                  16.381107491856678
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 577,
+                "predicted": 1872,
+                "matched": 498,
+                "precision": 0.266025641025641,
+                "recall": 0.8630849220103987,
+                "f1": 0.40669661086157616,
+                "mean_absolute_error_ms": [
+                  14.514056224899598
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 347,
+                "predicted": 2609,
+                "matched": 266,
+                "precision": 0.10195477194327328,
+                "recall": 0.7665706051873199,
+                "f1": 0.17997293640054127,
+                "mean_absolute_error_ms": [
+                  21.127819548872182
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 577,
+                "predicted": 4444,
+                "matched": 368,
+                "precision": 0.08280828082808281,
+                "recall": 0.6377816291161178,
+                "f1": 0.146584345747859,
+                "mean_absolute_error_ms": [
+                  20.20923913043478
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "diagnostic_families": {
+              "piano": {
+                "reference": 347,
+                "predicted": 83,
+                "matched": 74,
+                "precision": 0.891566265060241,
+                "recall": 0.2132564841498559,
+                "f1": 0.34418604651162793,
+                "mean_absolute_error_ms": [
+                  16.89189189189189
+                ]
+              },
+              "organ": {
+                "reference": 347,
+                "predicted": 31,
+                "matched": 24,
+                "precision": 0.7741935483870968,
+                "recall": 0.069164265129683,
+                "f1": 0.12698412698412698,
+                "mean_absolute_error_ms": [
+                  20.958333333333332
+                ]
+              },
+              "guitar": {
+                "reference": 347,
+                "predicted": 150,
+                "matched": 69,
+                "precision": 0.46,
+                "recall": 0.1988472622478386,
+                "f1": 0.2776659959758551,
+                "mean_absolute_error_ms": [
+                  16.0
+                ]
+              },
+              "bass": {
+                "reference": 347,
+                "predicted": 101,
+                "matched": 49,
+                "precision": 0.48514851485148514,
+                "recall": 0.14121037463976946,
+                "f1": 0.21875,
+                "mean_absolute_error_ms": [
+                  20.79591836734694
+                ]
+              },
+              "strings": {
+                "reference": 347,
+                "predicted": 260,
+                "matched": 243,
+                "precision": 0.9346153846153846,
+                "recall": 0.7002881844380403,
+                "f1": 0.800658978583196,
+                "mean_absolute_error_ms": [
+                  15.572016460905349
+                ]
+              },
+              "brass": {
+                "reference": 347,
+                "predicted": 2,
+                "matched": 2,
+                "precision": 1.0,
+                "recall": 0.005763688760806916,
+                "f1": 0.011461318051575931,
+                "mean_absolute_error_ms": [
+                  20.0
+                ]
+              },
+              "synth": {
+                "reference": 347,
+                "predicted": 116,
+                "matched": 69,
+                "precision": 0.5948275862068966,
+                "recall": 0.1988472622478386,
+                "f1": 0.2980561555075594,
+                "mean_absolute_error_ms": [
+                  16.536231884057973
+                ]
+              },
+              "vocals": {
+                "reference": 347,
+                "predicted": 3,
+                "matched": 3,
+                "precision": 1.0,
+                "recall": 0.008645533141210375,
+                "f1": 0.017142857142857144,
+                "mean_absolute_error_ms": [
+                  14.666666666666666
+                ]
+              }
+            }
+          },
+          "22.5": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 347,
+                "predicted": 508,
+                "matched": 316,
+                "precision": 0.6220472440944882,
+                "recall": 0.9106628242074928,
+                "f1": 0.7391812865497076,
+                "mean_absolute_error_ms": [
+                  9.579113924050633
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 577,
+                "predicted": 1905,
+                "matched": 509,
+                "precision": 0.2671916010498688,
+                "recall": 0.8821490467937608,
+                "f1": 0.4101531023368251,
+                "mean_absolute_error_ms": [
+                  8.405697445972494
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 347,
+                "predicted": 492,
+                "matched": 316,
+                "precision": 0.6422764227642277,
+                "recall": 0.9106628242074928,
+                "f1": 0.7532777115613826,
+                "mean_absolute_error_ms": [
+                  9.651898734177216
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 577,
+                "predicted": 1872,
+                "matched": 507,
+                "precision": 0.2708333333333333,
+                "recall": 0.878682842287695,
+                "f1": 0.4140465496120866,
+                "mean_absolute_error_ms": [
+                  8.363905325443787
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 347,
+                "predicted": 2609,
+                "matched": 292,
+                "precision": 0.11192027596780375,
+                "recall": 0.8414985590778098,
+                "f1": 0.1975642760487145,
+                "mean_absolute_error_ms": [
+                  14.368150684931507
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 577,
+                "predicted": 4444,
+                "matched": 428,
+                "precision": 0.0963096309630963,
+                "recall": 0.7417677642980935,
+                "f1": 0.17048396733718382,
+                "mean_absolute_error_ms": [
+                  14.827102803738319
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "diagnostic_families": {
+              "piano": {
+                "reference": 347,
+                "predicted": 83,
+                "matched": 74,
+                "precision": 0.891566265060241,
+                "recall": 0.2132564841498559,
+                "f1": 0.34418604651162793,
+                "mean_absolute_error_ms": [
+                  6.878378378378378
+                ]
+              },
+              "organ": {
+                "reference": 347,
+                "predicted": 31,
+                "matched": 26,
+                "precision": 0.8387096774193549,
+                "recall": 0.07492795389048991,
+                "f1": 0.13756613756613756,
+                "mean_absolute_error_ms": [
+                  6.423076923076923
+                ]
+              },
+              "guitar": {
+                "reference": 347,
+                "predicted": 150,
+                "matched": 69,
+                "precision": 0.46,
+                "recall": 0.1988472622478386,
+                "f1": 0.2776659959758551,
+                "mean_absolute_error_ms": [
+                  8.644927536231885
+                ]
+              },
+              "bass": {
+                "reference": 347,
+                "predicted": 101,
+                "matched": 51,
+                "precision": 0.504950495049505,
+                "recall": 0.14697406340057637,
+                "f1": 0.22767857142857142,
+                "mean_absolute_error_ms": [
+                  6.6568627450980395
+                ]
+              },
+              "strings": {
+                "reference": 347,
+                "predicted": 260,
+                "matched": 252,
+                "precision": 0.9692307692307692,
+                "recall": 0.7262247838616714,
+                "f1": 0.8303130148270181,
+                "mean_absolute_error_ms": [
+                  11.13888888888889
+                ]
+              },
+              "brass": {
+                "reference": 347,
+                "predicted": 2,
+                "matched": 2,
+                "precision": 1.0,
+                "recall": 0.005763688760806916,
+                "f1": 0.011461318051575931,
+                "mean_absolute_error_ms": [
+                  4.0
+                ]
+              },
+              "synth": {
+                "reference": 347,
+                "predicted": 116,
+                "matched": 72,
+                "precision": 0.6206896551724138,
+                "recall": 0.207492795389049,
+                "f1": 0.31101511879049676,
+                "mean_absolute_error_ms": [
+                  8.75
+                ]
+              },
+              "vocals": {
+                "reference": 347,
+                "predicted": 3,
+                "matched": 3,
+                "precision": 1.0,
+                "recall": 0.008645533141210375,
+                "f1": 0.017142857142857144,
+                "mean_absolute_error_ms": [
+                  7.833333333333333
+                ]
+              }
+            }
+          }
+        },
+        "segments": [
+          {
+            "start_ms": 0,
+            "end_ms": 6664,
+            "source_compatible": {
+              "reference": 0,
+              "predicted": 1,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null
+              ]
+            },
+            "application": {
+              "reference": 0,
+              "predicted": 24,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null
+              ]
+            }
+          },
+          {
+            "start_ms": 6664,
+            "end_ms": 32610,
+            "source_compatible": {
+              "reference": 40,
+              "predicted": 40,
+              "matched": 39,
+              "precision": 0.975,
+              "recall": 0.975,
+              "f1": 0.975,
+              "mean_absolute_error_ms": [
+                7.987179487179487
+              ]
+            },
+            "application": {
+              "reference": 40,
+              "predicted": 179,
+              "matched": 40,
+              "precision": 0.22346368715083798,
+              "recall": 1.0,
+              "f1": 0.365296803652968,
+              "mean_absolute_error_ms": [
+                3.425
+              ]
+            }
+          },
+          {
+            "start_ms": 32610,
+            "end_ms": 58556,
+            "source_compatible": {
+              "reference": 16,
+              "predicted": 22,
+              "matched": 11,
+              "precision": 0.5,
+              "recall": 0.6875,
+              "f1": 0.5789473684210527,
+              "mean_absolute_error_ms": [
+                6.318181818181818
+              ]
+            },
+            "application": {
+              "reference": 16,
+              "predicted": 205,
+              "matched": 13,
+              "precision": 0.06341463414634146,
+              "recall": 0.8125,
+              "f1": 0.11764705882352941,
+              "mean_absolute_error_ms": [
+                21.423076923076923
+              ]
+            }
+          },
+          {
+            "start_ms": 58556,
+            "end_ms": 71529,
+            "source_compatible": {
+              "reference": 4,
+              "predicted": 16,
+              "matched": 4,
+              "precision": 0.25,
+              "recall": 1.0,
+              "f1": 0.4,
+              "mean_absolute_error_ms": [
+                9.25
+              ]
+            },
+            "application": {
+              "reference": 4,
+              "predicted": 160,
+              "matched": 4,
+              "precision": 0.025,
+              "recall": 1.0,
+              "f1": 0.04878048780487805,
+              "mean_absolute_error_ms": [
+                21.125
+              ]
+            }
+          },
+          {
+            "start_ms": 71529,
+            "end_ms": 97475,
+            "source_compatible": {
+              "reference": 30,
+              "predicted": 59,
+              "matched": 21,
+              "precision": 0.3559322033898305,
+              "recall": 0.7,
+              "f1": 0.47191011235955055,
+              "mean_absolute_error_ms": [
+                10.547619047619047
+              ]
+            },
+            "application": {
+              "reference": 30,
+              "predicted": 227,
+              "matched": 23,
+              "precision": 0.1013215859030837,
+              "recall": 0.7666666666666667,
+              "f1": 0.17898832684824903,
+              "mean_absolute_error_ms": [
+                14.673913043478262
+              ]
+            }
+          },
+          {
+            "start_ms": 97475,
+            "end_ms": 123421,
+            "source_compatible": {
+              "reference": 40,
+              "predicted": 40,
+              "matched": 39,
+              "precision": 0.975,
+              "recall": 0.975,
+              "f1": 0.975,
+              "mean_absolute_error_ms": [
+                10.08974358974359
+              ]
+            },
+            "application": {
+              "reference": 40,
+              "predicted": 216,
+              "matched": 39,
+              "precision": 0.18055555555555555,
+              "recall": 0.975,
+              "f1": 0.3046875,
+              "mean_absolute_error_ms": [
+                10.371794871794872
+              ]
+            }
+          },
+          {
+            "start_ms": 123421,
+            "end_ms": 149367,
+            "source_compatible": {
+              "reference": 32,
+              "predicted": 37,
+              "matched": 25,
+              "precision": 0.6756756756756757,
+              "recall": 0.78125,
+              "f1": 0.7246376811594203,
+              "mean_absolute_error_ms": [
+                7.14
+              ]
+            },
+            "application": {
+              "reference": 32,
+              "predicted": 231,
+              "matched": 22,
+              "precision": 0.09523809523809523,
+              "recall": 0.6875,
+              "f1": 0.16730038022813687,
+              "mean_absolute_error_ms": [
+                14.318181818181818
+              ]
+            }
+          },
+          {
+            "start_ms": 149367,
+            "end_ms": 162340,
+            "source_compatible": {
+              "reference": 10,
+              "predicted": 16,
+              "matched": 4,
+              "precision": 0.25,
+              "recall": 0.4,
+              "f1": 0.3076923076923077,
+              "mean_absolute_error_ms": [
+                5.5
+              ]
+            },
+            "application": {
+              "reference": 10,
+              "predicted": 158,
+              "matched": 10,
+              "precision": 0.06329113924050633,
+              "recall": 1.0,
+              "f1": 0.11904761904761904,
+              "mean_absolute_error_ms": [
+                12.2
+              ]
+            }
+          },
+          {
+            "start_ms": 162340,
+            "end_ms": 188286,
+            "source_compatible": {
+              "reference": 35,
+              "predicted": 62,
+              "matched": 35,
+              "precision": 0.5645161290322581,
+              "recall": 1.0,
+              "f1": 0.7216494845360825,
+              "mean_absolute_error_ms": [
+                11.557142857142857
+              ]
+            },
+            "application": {
+              "reference": 35,
+              "predicted": 277,
+              "matched": 25,
+              "precision": 0.09025270758122744,
+              "recall": 0.7142857142857143,
+              "f1": 0.16025641025641027,
+              "mean_absolute_error_ms": [
+                19.74
+              ]
+            }
+          },
+          {
+            "start_ms": 188286,
+            "end_ms": 215853,
+            "source_compatible": {
+              "reference": 51,
+              "predicted": 54,
+              "matched": 50,
+              "precision": 0.9259259259259259,
+              "recall": 0.9803921568627451,
+              "f1": 0.9523809523809523,
+              "mean_absolute_error_ms": [
+                10.28
+              ]
+            },
+            "application": {
+              "reference": 51,
+              "predicted": 292,
+              "matched": 46,
+              "precision": 0.15753424657534246,
+              "recall": 0.9019607843137255,
+              "f1": 0.26822157434402333,
+              "mean_absolute_error_ms": [
+                15.065217391304348
+              ]
+            }
+          },
+          {
+            "start_ms": 215853,
+            "end_ms": 241798,
+            "source_compatible": {
+              "reference": 35,
+              "predicted": 68,
+              "matched": 33,
+              "precision": 0.4852941176470588,
+              "recall": 0.9428571428571428,
+              "f1": 0.6407766990291263,
+              "mean_absolute_error_ms": [
+                11.227272727272727
+              ]
+            },
+            "application": {
+              "reference": 35,
+              "predicted": 248,
+              "matched": 25,
+              "precision": 0.10080645161290322,
+              "recall": 0.7142857142857143,
+              "f1": 0.17667844522968199,
+              "mean_absolute_error_ms": [
+                20.36
+              ]
+            }
+          },
+          {
+            "start_ms": 241798,
+            "end_ms": 267744,
+            "source_compatible": {
+              "reference": 33,
+              "predicted": 59,
+              "matched": 29,
+              "precision": 0.4915254237288136,
+              "recall": 0.8787878787878788,
+              "f1": 0.6304347826086957,
+              "mean_absolute_error_ms": [
+                10.086206896551724
+              ]
+            },
+            "application": {
+              "reference": 33,
+              "predicted": 244,
+              "matched": 26,
+              "precision": 0.10655737704918032,
+              "recall": 0.7878787878787878,
+              "f1": 0.18772563176895307,
+              "mean_absolute_error_ms": [
+                19.23076923076923
+              ]
+            }
+          },
+          {
+            "start_ms": 267744,
+            "end_ms": 283840.0,
+            "source_compatible": {
+              "reference": 21,
+              "predicted": 22,
+              "matched": 21,
+              "precision": 0.9545454545454546,
+              "recall": 1.0,
+              "f1": 0.9767441860465116,
+              "mean_absolute_error_ms": [
+                8.023809523809524
+              ]
+            },
+            "application": {
+              "reference": 21,
+              "predicted": 149,
+              "matched": 18,
+              "precision": 0.12080536912751678,
+              "recall": 0.8571428571428571,
+              "f1": 0.21176470588235294,
+              "mean_absolute_error_ms": [
+                18.694444444444443
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "run": "drums-yourmt3-full",
+        "role": "drums",
+        "identity": {
+          "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+          "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+          "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+          "sources": {
+            "test-data\\sakura-benchmark\\bundled\\drums\\preview.wav": "2f51943ddc584f78638fcdf4b38acd253ec4229fa83b8a531d3946833372a8cd"
+          },
+          "start_ms": 0,
+          "seconds": 283.84,
+          "context_seconds": 0.0,
+          "task": "mc13_full_plus_256",
+          "decoder_channels": 13,
+          "strict_weights": true
+        },
+        "decoding_errors": {
+          "Err/onset not found": 27.0,
+          "Err/merging segment tie": 7
+        },
+        "predicted_program_counts": {
+          "drums": 748,
+          "100": 8,
+          "52": 3
+        },
+        "elapsed_seconds": 627.6720000000205,
+        "comparisons": {
+          "0.0": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 562,
+                "predicted": 500,
+                "matched": 413,
+                "precision": 0.826,
+                "recall": 0.7348754448398577,
+                "f1": 0.7777777777777778,
+                "mean_absolute_error_ms": [
+                  21.82324455205811
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 725,
+                "predicted": 759,
+                "matched": 496,
+                "precision": 0.6534914361001317,
+                "recall": 0.6841379310344827,
+                "f1": 0.6684636118598383,
+                "mean_absolute_error_ms": [
+                  20.683467741935484
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 562,
+                "predicted": 494,
+                "matched": 410,
+                "precision": 0.8299595141700404,
+                "recall": 0.7295373665480427,
+                "f1": 0.7765151515151515,
+                "mean_absolute_error_ms": [
+                  21.970731707317075
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 725,
+                "predicted": 748,
+                "matched": 492,
+                "precision": 0.6577540106951871,
+                "recall": 0.6786206896551724,
+                "f1": 0.6680244399185336,
+                "mean_absolute_error_ms": [
+                  20.83739837398374
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 562,
+                "predicted": 1365,
+                "matched": 540,
+                "precision": 0.3956043956043956,
+                "recall": 0.9608540925266904,
+                "f1": 0.5604566683964712,
+                "mean_absolute_error_ms": [
+                  24.903703703703705
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 725,
+                "predicted": 1365,
+                "matched": 543,
+                "precision": 0.3978021978021978,
+                "recall": 0.7489655172413793,
+                "f1": 0.5196172248803828,
+                "mean_absolute_error_ms": [
+                  24.953959484346225
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "drum_classes": {
+              "kick": {
+                "reference": 360,
+                "predicted": 280,
+                "matched": 261,
+                "precision": 0.9321428571428572,
+                "recall": 0.725,
+                "f1": 0.815625,
+                "mean_absolute_error_ms": [
+                  24.95402298850575
+                ]
+              },
+              "snare": {
+                "reference": 140,
+                "predicted": 18,
+                "matched": 17,
+                "precision": 0.9444444444444444,
+                "recall": 0.12142857142857143,
+                "f1": 0.21518987341772153,
+                "mean_absolute_error_ms": [
+                  21.705882352941178
+                ]
+              },
+              "hi_hat": {
+                "reference": 132,
+                "predicted": 267,
+                "matched": 34,
+                "precision": 0.12734082397003746,
+                "recall": 0.25757575757575757,
+                "f1": 0.17042606516290726,
+                "mean_absolute_error_ms": [
+                  15.647058823529411
+                ]
+              }
+            },
+            "diagnostic_drum_mappings": {
+              "side_stick_only": {
+                "reference": 140,
+                "predicted": 65,
+                "matched": 63,
+                "precision": 0.9692307692307692,
+                "recall": 0.45,
+                "f1": 0.6146341463414634,
+                "mean_absolute_error_ms": [
+                  22.857142857142858
+                ]
+              },
+              "snare_and_side_stick": {
+                "reference": 140,
+                "predicted": 83,
+                "matched": 80,
+                "precision": 0.963855421686747,
+                "recall": 0.5714285714285714,
+                "f1": 0.7174887892376681,
+                "mean_absolute_error_ms": [
+                  22.6125
+                ]
+              },
+              "ride_only": {
+                "reference": 132,
+                "predicted": 73,
+                "matched": 41,
+                "precision": 0.5616438356164384,
+                "recall": 0.3106060606060606,
+                "f1": 0.4,
+                "mean_absolute_error_ms": [
+                  21.878048780487806
+                ]
+              },
+              "tom_only": {
+                "reference": 132,
+                "predicted": 42,
+                "matched": 14,
+                "precision": 0.3333333333333333,
+                "recall": 0.10606060606060606,
+                "f1": 0.16091954022988506,
+                "mean_absolute_error_ms": [
+                  22.571428571428573
+                ]
+              },
+              "hi_hat_ride_tom": {
+                "reference": 132,
+                "predicted": 381,
+                "matched": 86,
+                "precision": 0.22572178477690288,
+                "recall": 0.6515151515151515,
+                "f1": 0.33528265107212474,
+                "mean_absolute_error_ms": [
+                  19.27906976744186
+                ]
+              }
+            }
+          },
+          "22.5": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 562,
+                "predicted": 500,
+                "matched": 415,
+                "precision": 0.83,
+                "recall": 0.7384341637010676,
+                "f1": 0.7815442561205274,
+                "mean_absolute_error_ms": [
+                  5.519277108433735
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 725,
+                "predicted": 759,
+                "matched": 499,
+                "precision": 0.6574440052700923,
+                "recall": 0.6882758620689655,
+                "f1": 0.6725067385444744,
+                "mean_absolute_error_ms": [
+                  5.323647294589178
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 562,
+                "predicted": 494,
+                "matched": 412,
+                "precision": 0.8340080971659919,
+                "recall": 0.7330960854092526,
+                "f1": 0.7803030303030303,
+                "mean_absolute_error_ms": [
+                  5.45873786407767
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 725,
+                "predicted": 748,
+                "matched": 495,
+                "precision": 0.6617647058823529,
+                "recall": 0.6827586206896552,
+                "f1": 0.6720977596741344,
+                "mean_absolute_error_ms": [
+                  5.259595959595959
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 562,
+                "predicted": 1365,
+                "matched": 558,
+                "precision": 0.4087912087912088,
+                "recall": 0.9928825622775801,
+                "f1": 0.5791385573430202,
+                "mean_absolute_error_ms": [
+                  6.546594982078853
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 725,
+                "predicted": 1365,
+                "matched": 561,
+                "precision": 0.41098901098901097,
+                "recall": 0.7737931034482759,
+                "f1": 0.5368421052631579,
+                "mean_absolute_error_ms": [
+                  6.697860962566845
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "drum_classes": {
+              "kick": {
+                "reference": 360,
+                "predicted": 280,
+                "matched": 265,
+                "precision": 0.9464285714285714,
+                "recall": 0.7361111111111112,
+                "f1": 0.828125,
+                "mean_absolute_error_ms": [
+                  5.3
+                ]
+              },
+              "snare": {
+                "reference": 140,
+                "predicted": 18,
+                "matched": 17,
+                "precision": 0.9444444444444444,
+                "recall": 0.12142857142857143,
+                "f1": 0.21518987341772153,
+                "mean_absolute_error_ms": [
+                  5.5588235294117645
+                ]
+              },
+              "hi_hat": {
+                "reference": 132,
+                "predicted": 267,
+                "matched": 34,
+                "precision": 0.12734082397003746,
+                "recall": 0.25757575757575757,
+                "f1": 0.17042606516290726,
+                "mean_absolute_error_ms": [
+                  8.617647058823529
+                ]
+              }
+            },
+            "diagnostic_drum_mappings": {
+              "side_stick_only": {
+                "reference": 140,
+                "predicted": 65,
+                "matched": 63,
+                "precision": 0.9692307692307692,
+                "recall": 0.45,
+                "f1": 0.6146341463414634,
+                "mean_absolute_error_ms": [
+                  5.531746031746032
+                ]
+              },
+              "snare_and_side_stick": {
+                "reference": 140,
+                "predicted": 83,
+                "matched": 80,
+                "precision": 0.963855421686747,
+                "recall": 0.5714285714285714,
+                "f1": 0.7174887892376681,
+                "mean_absolute_error_ms": [
+                  5.5375
+                ]
+              },
+              "ride_only": {
+                "reference": 132,
+                "predicted": 73,
+                "matched": 43,
+                "precision": 0.589041095890411,
+                "recall": 0.32575757575757575,
+                "f1": 0.4195121951219512,
+                "mean_absolute_error_ms": [
+                  6.430232558139535
+                ]
+              },
+              "tom_only": {
+                "reference": 132,
+                "predicted": 42,
+                "matched": 14,
+                "precision": 0.3333333333333333,
+                "recall": 0.10606060606060606,
+                "f1": 0.16091954022988506,
+                "mean_absolute_error_ms": [
+                  5.428571428571429
+                ]
+              },
+              "hi_hat_ride_tom": {
+                "reference": 132,
+                "predicted": 381,
+                "matched": 88,
+                "precision": 0.23097112860892388,
+                "recall": 0.6666666666666666,
+                "f1": 0.34307992202729043,
+                "mean_absolute_error_ms": [
+                  7.1022727272727275
+                ]
+              }
+            }
+          }
+        },
+        "segments": [
+          {
+            "start_ms": 0,
+            "end_ms": 6664,
+            "source_compatible": {
+              "reference": 7,
+              "predicted": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null
+              ]
+            },
+            "application": {
+              "reference": 7,
+              "predicted": 9,
+              "matched": 6,
+              "precision": 0.6666666666666666,
+              "recall": 0.8571428571428571,
+              "f1": 0.75,
+              "mean_absolute_error_ms": [
+                28.5
+              ]
+            }
+          },
+          {
+            "start_ms": 6664,
+            "end_ms": 32610,
+            "source_compatible": {
+              "reference": 32,
+              "predicted": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null
+              ]
+            },
+            "application": {
+              "reference": 32,
+              "predicted": 143,
+              "matched": 31,
+              "precision": 0.21678321678321677,
+              "recall": 0.96875,
+              "f1": 0.35428571428571426,
+              "mean_absolute_error_ms": [
+                10.435483870967742
+              ]
+            }
+          },
+          {
+            "start_ms": 32610,
+            "end_ms": 58556,
+            "source_compatible": {
+              "reference": 42,
+              "predicted": 59,
+              "matched": 39,
+              "precision": 0.6610169491525424,
+              "recall": 0.9285714285714286,
+              "f1": 0.7722772277227723,
+              "mean_absolute_error_ms": [
+                6.32051282051282
+              ]
+            },
+            "application": {
+              "reference": 42,
+              "predicted": 63,
+              "matched": 42,
+              "precision": 0.6666666666666666,
+              "recall": 1.0,
+              "f1": 0.8,
+              "mean_absolute_error_ms": [
+                3.5
+              ]
+            }
+          },
+          {
+            "start_ms": 58556,
+            "end_ms": 71529,
+            "source_compatible": {
+              "reference": 23,
+              "predicted": 20,
+              "matched": 18,
+              "precision": 0.9,
+              "recall": 0.782608695652174,
+              "f1": 0.8372093023255814,
+              "mean_absolute_error_ms": [
+                5.388888888888889
+              ]
+            },
+            "application": {
+              "reference": 23,
+              "predicted": 43,
+              "matched": 22,
+              "precision": 0.5116279069767442,
+              "recall": 0.9565217391304348,
+              "f1": 0.6666666666666666,
+              "mean_absolute_error_ms": [
+                3.590909090909091
+              ]
+            }
+          },
+          {
+            "start_ms": 71529,
+            "end_ms": 97475,
+            "source_compatible": {
+              "reference": 46,
+              "predicted": 67,
+              "matched": 45,
+              "precision": 0.6716417910447762,
+              "recall": 0.9782608695652174,
+              "f1": 0.7964601769911505,
+              "mean_absolute_error_ms": [
+                4.588888888888889
+              ]
+            },
+            "application": {
+              "reference": 46,
+              "predicted": 123,
+              "matched": 46,
+              "precision": 0.37398373983739835,
+              "recall": 1.0,
+              "f1": 0.5443786982248521,
+              "mean_absolute_error_ms": [
+                3.5217391304347827
+              ]
+            }
+          },
+          {
+            "start_ms": 97475,
+            "end_ms": 123421,
+            "source_compatible": {
+              "reference": 45,
+              "predicted": 44,
+              "matched": 29,
+              "precision": 0.6590909090909091,
+              "recall": 0.6444444444444445,
+              "f1": 0.651685393258427,
+              "mean_absolute_error_ms": [
+                6.051724137931035
+              ]
+            },
+            "application": {
+              "reference": 45,
+              "predicted": 163,
+              "matched": 44,
+              "precision": 0.26993865030674846,
+              "recall": 0.9777777777777777,
+              "f1": 0.4230769230769231,
+              "mean_absolute_error_ms": [
+                4.409090909090909
+              ]
+            }
+          },
+          {
+            "start_ms": 123421,
+            "end_ms": 149367,
+            "source_compatible": {
+              "reference": 78,
+              "predicted": 50,
+              "matched": 45,
+              "precision": 0.9,
+              "recall": 0.5769230769230769,
+              "f1": 0.703125,
+              "mean_absolute_error_ms": [
+                5.2555555555555555
+              ]
+            },
+            "application": {
+              "reference": 78,
+              "predicted": 121,
+              "matched": 77,
+              "precision": 0.6363636363636364,
+              "recall": 0.9871794871794872,
+              "f1": 0.7738693467336684,
+              "mean_absolute_error_ms": [
+                6.5519480519480515
+              ]
+            }
+          },
+          {
+            "start_ms": 149367,
+            "end_ms": 162340,
+            "source_compatible": {
+              "reference": 28,
+              "predicted": 28,
+              "matched": 25,
+              "precision": 0.8928571428571429,
+              "recall": 0.8928571428571429,
+              "f1": 0.8928571428571429,
+              "mean_absolute_error_ms": [
+                3.26
+              ]
+            },
+            "application": {
+              "reference": 28,
+              "predicted": 63,
+              "matched": 28,
+              "precision": 0.4444444444444444,
+              "recall": 1.0,
+              "f1": 0.6153846153846154,
+              "mean_absolute_error_ms": [
+                4.321428571428571
+              ]
+            }
+          },
+          {
+            "start_ms": 162340,
+            "end_ms": 188286,
+            "source_compatible": {
+              "reference": 68,
+              "predicted": 73,
+              "matched": 67,
+              "precision": 0.9178082191780822,
+              "recall": 0.9852941176470589,
+              "f1": 0.950354609929078,
+              "mean_absolute_error_ms": [
+                6.2164179104477615
+              ]
+            },
+            "application": {
+              "reference": 68,
+              "predicted": 116,
+              "matched": 68,
+              "precision": 0.5862068965517241,
+              "recall": 1.0,
+              "f1": 0.7391304347826086,
+              "mean_absolute_error_ms": [
+                6.220588235294118
+              ]
+            }
+          },
+          {
+            "start_ms": 188286,
+            "end_ms": 215853,
+            "source_compatible": {
+              "reference": 37,
+              "predicted": 26,
+              "matched": 19,
+              "precision": 0.7307692307692307,
+              "recall": 0.5135135135135135,
+              "f1": 0.6031746031746031,
+              "mean_absolute_error_ms": [
+                7.447368421052632
+              ]
+            },
+            "application": {
+              "reference": 37,
+              "predicted": 173,
+              "matched": 37,
+              "precision": 0.2138728323699422,
+              "recall": 1.0,
+              "f1": 0.3523809523809524,
+              "mean_absolute_error_ms": [
+                10.554054054054054
+              ]
+            }
+          },
+          {
+            "start_ms": 215853,
+            "end_ms": 241798,
+            "source_compatible": {
+              "reference": 74,
+              "predicted": 72,
+              "matched": 70,
+              "precision": 0.9722222222222222,
+              "recall": 0.9459459459459459,
+              "f1": 0.958904109589041,
+              "mean_absolute_error_ms": [
+                4.9714285714285715
+              ]
+            },
+            "application": {
+              "reference": 74,
+              "predicted": 139,
+              "matched": 74,
+              "precision": 0.5323741007194245,
+              "recall": 1.0,
+              "f1": 0.6948356807511737,
+              "mean_absolute_error_ms": [
+                7.648648648648648
+              ]
+            }
+          },
+          {
+            "start_ms": 241798,
+            "end_ms": 267744,
+            "source_compatible": {
+              "reference": 60,
+              "predicted": 44,
+              "matched": 41,
+              "precision": 0.9318181818181818,
+              "recall": 0.6833333333333333,
+              "f1": 0.7884615384615384,
+              "mean_absolute_error_ms": [
+                5.402439024390244
+              ]
+            },
+            "application": {
+              "reference": 60,
+              "predicted": 119,
+              "matched": 59,
+              "precision": 0.4957983193277311,
+              "recall": 0.9833333333333333,
+              "f1": 0.659217877094972,
+              "mean_absolute_error_ms": [
+                6.279661016949152
+              ]
+            }
+          },
+          {
+            "start_ms": 267744,
+            "end_ms": 283840.0,
+            "source_compatible": {
+              "reference": 22,
+              "predicted": 14,
+              "matched": 13,
+              "precision": 0.9285714285714286,
+              "recall": 0.5909090909090909,
+              "f1": 0.7222222222222222,
+              "mean_absolute_error_ms": [
+                7.115384615384615
+              ]
+            },
+            "application": {
+              "reference": 22,
+              "predicted": 90,
+              "matched": 22,
+              "precision": 0.24444444444444444,
+              "recall": 1.0,
+              "f1": 0.39285714285714285,
+              "mean_absolute_error_ms": [
+                9.545454545454545
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "run": "piano-yourmt3-full",
+        "role": "piano",
+        "identity": {
+          "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+          "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+          "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+          "sources": {
+            "test-data\\sakura-benchmark\\bundled\\piano\\preview.wav": "377d853d326b6e66540f142d48e2928a94249bcc58695f7b531ab5935321750e"
+          },
+          "start_ms": 0,
+          "seconds": 283.84,
+          "context_seconds": 0.0,
+          "task": "mc13_full_plus_256",
+          "decoder_channels": 13,
+          "strict_weights": true
+        },
+        "decoding_errors": {
+          "Err/onset not found": 97.0,
+          "Err/merging segment tie": 118
+        },
+        "predicted_program_counts": {
+          "0": 1220,
+          "16": 1
+        },
+        "elapsed_seconds": 498.5779999999795,
+        "comparisons": {
+          "0.0": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 808,
+                "predicted": 808,
+                "matched": 732,
+                "precision": 0.905940594059406,
+                "recall": 0.905940594059406,
+                "f1": 0.905940594059406,
+                "mean_absolute_error_ms": [
+                  24.346994535519126
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 1038,
+                "predicted": 1221,
+                "matched": 888,
+                "precision": 0.7272727272727273,
+                "recall": 0.8554913294797688,
+                "f1": 0.7861885790172642,
+                "mean_absolute_error_ms": [
+                  23.710585585585587
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 808,
+                "predicted": 808,
+                "matched": 732,
+                "precision": 0.905940594059406,
+                "recall": 0.905940594059406,
+                "f1": 0.905940594059406,
+                "mean_absolute_error_ms": [
+                  24.346994535519126
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 1038,
+                "predicted": 1221,
+                "matched": 888,
+                "precision": 0.7272727272727273,
+                "recall": 0.8554913294797688,
+                "f1": 0.7861885790172642,
+                "mean_absolute_error_ms": [
+                  23.710585585585587
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 808,
+                "predicted": 880,
+                "matched": 425,
+                "precision": 0.48295454545454547,
+                "recall": 0.525990099009901,
+                "f1": 0.5035545023696683,
+                "mean_absolute_error_ms": [
+                  30.210588235294118
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 1038,
+                "predicted": 2203,
+                "matched": 551,
+                "precision": 0.25011348161597824,
+                "recall": 0.5308285163776493,
+                "f1": 0.3400185128046899,
+                "mean_absolute_error_ms": [
+                  30.08529945553539
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "diagnostic_families": {
+              "piano": {
+                "reference": 808,
+                "predicted": 808,
+                "matched": 732,
+                "precision": 0.905940594059406,
+                "recall": 0.905940594059406,
+                "f1": 0.905940594059406,
+                "mean_absolute_error_ms": [
+                  24.360655737704917
+                ]
+              },
+              "organ": {
+                "reference": 808,
+                "predicted": 1,
+                "matched": 1,
+                "precision": 1.0,
+                "recall": 0.0012376237623762376,
+                "f1": 0.002472187886279357,
+                "mean_absolute_error_ms": [
+                  13.0
+                ]
+              }
+            }
+          },
+          "22.5": {
+            "all_model_events": {
+              "onset_groups": {
+                "reference": 808,
+                "predicted": 808,
+                "matched": 797,
+                "precision": 0.9863861386138614,
+                "recall": 0.9863861386138614,
+                "f1": 0.9863861386138614,
+                "mean_absolute_error_ms": [
+                  8.714554579673777
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 1038,
+                "predicted": 1221,
+                "matched": 964,
+                "precision": 0.7895167895167895,
+                "recall": 0.928709055876686,
+                "f1": 0.8534749889331562,
+                "mean_absolute_error_ms": [
+                  8.729253112033195
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "source_compatible_events": {
+              "onset_groups": {
+                "reference": 808,
+                "predicted": 808,
+                "matched": 797,
+                "precision": 0.9863861386138614,
+                "recall": 0.9863861386138614,
+                "f1": 0.9863861386138614,
+                "mean_absolute_error_ms": [
+                  8.714554579673777
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 1038,
+                "predicted": 1221,
+                "matched": 964,
+                "precision": 0.7895167895167895,
+                "recall": 0.928709055876686,
+                "f1": 0.8534749889331562,
+                "mean_absolute_error_ms": [
+                  8.729253112033195
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "application_detector": {
+              "onset_groups": {
+                "reference": 808,
+                "predicted": 880,
+                "matched": 744,
+                "precision": 0.8454545454545455,
+                "recall": 0.9207920792079208,
+                "f1": 0.8815165876777251,
+                "mean_absolute_error_ms": [
+                  17.241263440860216
+                ]
+              },
+              "note_multiplicity": {
+                "reference": 1038,
+                "predicted": 2203,
+                "matched": 930,
+                "precision": 0.4221516114389469,
+                "recall": 0.8959537572254336,
+                "f1": 0.5738969453872261,
+                "mean_absolute_error_ms": [
+                  16.60967741935484
+                ]
+              },
+              "duration_notice": "Reference taps have no acoustic release labels; pitch-count matches are not equivalent to authored layer multiplicity."
+            },
+            "diagnostic_families": {
+              "piano": {
+                "reference": 808,
+                "predicted": 808,
+                "matched": 797,
+                "precision": 0.9863861386138614,
+                "recall": 0.9863861386138614,
+                "f1": 0.9863861386138614,
+                "mean_absolute_error_ms": [
+                  8.703262233375156
+                ]
+              },
+              "organ": {
+                "reference": 808,
+                "predicted": 1,
+                "matched": 1,
+                "precision": 1.0,
+                "recall": 0.0012376237623762376,
+                "f1": 0.002472187886279357,
+                "mean_absolute_error_ms": [
+                  9.5
+                ]
+              }
+            }
+          }
+        },
+        "segments": [
+          {
+            "start_ms": 0,
+            "end_ms": 6664,
+            "source_compatible": {
+              "reference": 0,
+              "predicted": 1,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null
+              ]
+            },
+            "application": {
+              "reference": 0,
+              "predicted": 0,
+              "matched": 0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "mean_absolute_error_ms": [
+                null
+              ]
+            }
+          },
+          {
+            "start_ms": 6664,
+            "end_ms": 32610,
+            "source_compatible": {
+              "reference": 58,
+              "predicted": 57,
+              "matched": 57,
+              "precision": 1.0,
+              "recall": 0.9827586206896551,
+              "f1": 0.991304347826087,
+              "mean_absolute_error_ms": [
+                7.535087719298246
+              ]
+            },
+            "application": {
+              "reference": 58,
+              "predicted": 61,
+              "matched": 56,
+              "precision": 0.9180327868852459,
+              "recall": 0.9655172413793104,
+              "f1": 0.9411764705882353,
+              "mean_absolute_error_ms": [
+                17.339285714285715
+              ]
+            }
+          },
+          {
+            "start_ms": 32610,
+            "end_ms": 58556,
+            "source_compatible": {
+              "reference": 62,
+              "predicted": 62,
+              "matched": 62,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "mean_absolute_error_ms": [
+                8.387096774193548
+              ]
+            },
+            "application": {
+              "reference": 62,
+              "predicted": 68,
+              "matched": 55,
+              "precision": 0.8088235294117647,
+              "recall": 0.8870967741935484,
+              "f1": 0.8461538461538461,
+              "mean_absolute_error_ms": [
+                19.754545454545454
+              ]
+            }
+          },
+          {
+            "start_ms": 58556,
+            "end_ms": 71529,
+            "source_compatible": {
+              "reference": 57,
+              "predicted": 59,
+              "matched": 57,
+              "precision": 0.9661016949152542,
+              "recall": 1.0,
+              "f1": 0.9827586206896551,
+              "mean_absolute_error_ms": [
+                7.5701754385964914
+              ]
+            },
+            "application": {
+              "reference": 57,
+              "predicted": 65,
+              "matched": 53,
+              "precision": 0.8153846153846154,
+              "recall": 0.9298245614035088,
+              "f1": 0.8688524590163934,
+              "mean_absolute_error_ms": [
+                16.537735849056602
+              ]
+            }
+          },
+          {
+            "start_ms": 71529,
+            "end_ms": 97475,
+            "source_compatible": {
+              "reference": 97,
+              "predicted": 98,
+              "matched": 96,
+              "precision": 0.9795918367346939,
+              "recall": 0.9896907216494846,
+              "f1": 0.9846153846153847,
+              "mean_absolute_error_ms": [
+                7.354166666666667
+              ]
+            },
+            "application": {
+              "reference": 97,
+              "predicted": 103,
+              "matched": 91,
+              "precision": 0.883495145631068,
+              "recall": 0.9381443298969072,
+              "f1": 0.91,
+              "mean_absolute_error_ms": [
+                14.631868131868131
+              ]
+            }
+          },
+          {
+            "start_ms": 97475,
+            "end_ms": 123421,
+            "source_compatible": {
+              "reference": 59,
+              "predicted": 56,
+              "matched": 54,
+              "precision": 0.9642857142857143,
+              "recall": 0.9152542372881356,
+              "f1": 0.9391304347826087,
+              "mean_absolute_error_ms": [
+                6.833333333333333
+              ]
+            },
+            "application": {
+              "reference": 59,
+              "predicted": 68,
+              "matched": 53,
+              "precision": 0.7794117647058824,
+              "recall": 0.8983050847457628,
+              "f1": 0.8346456692913385,
+              "mean_absolute_error_ms": [
+                14.669811320754716
+              ]
+            }
+          },
+          {
+            "start_ms": 123421,
+            "end_ms": 149367,
+            "source_compatible": {
+              "reference": 62,
+              "predicted": 61,
+              "matched": 61,
+              "precision": 1.0,
+              "recall": 0.9838709677419355,
+              "f1": 0.991869918699187,
+              "mean_absolute_error_ms": [
+                9.598360655737705
+              ]
+            },
+            "application": {
+              "reference": 62,
+              "predicted": 66,
+              "matched": 54,
+              "precision": 0.8181818181818182,
+              "recall": 0.8709677419354839,
+              "f1": 0.84375,
+              "mean_absolute_error_ms": [
+                22.314814814814813
+              ]
+            }
+          },
+          {
+            "start_ms": 149367,
+            "end_ms": 162340,
+            "source_compatible": {
+              "reference": 57,
+              "predicted": 58,
+              "matched": 57,
+              "precision": 0.9827586206896551,
+              "recall": 1.0,
+              "f1": 0.991304347826087,
+              "mean_absolute_error_ms": [
+                9.324561403508772
+              ]
+            },
+            "application": {
+              "reference": 57,
+              "predicted": 61,
+              "matched": 50,
+              "precision": 0.819672131147541,
+              "recall": 0.8771929824561403,
+              "f1": 0.847457627118644,
+              "mean_absolute_error_ms": [
+                18.42
+              ]
+            }
+          },
+          {
+            "start_ms": 162340,
+            "end_ms": 188286,
+            "source_compatible": {
+              "reference": 97,
+              "predicted": 94,
+              "matched": 93,
+              "precision": 0.9893617021276596,
+              "recall": 0.9587628865979382,
+              "f1": 0.9738219895287958,
+              "mean_absolute_error_ms": [
+                8.424731182795698
+              ]
+            },
+            "application": {
+              "reference": 97,
+              "predicted": 104,
+              "matched": 91,
+              "precision": 0.875,
+              "recall": 0.9381443298969072,
+              "f1": 0.9054726368159204,
+              "mean_absolute_error_ms": [
+                13.994505494505495
+              ]
+            }
+          },
+          {
+            "start_ms": 188286,
+            "end_ms": 215853,
+            "source_compatible": {
+              "reference": 59,
+              "predicted": 59,
+              "matched": 58,
+              "precision": 0.9830508474576272,
+              "recall": 0.9830508474576272,
+              "f1": 0.9830508474576272,
+              "mean_absolute_error_ms": [
+                10.224137931034482
+              ]
+            },
+            "application": {
+              "reference": 59,
+              "predicted": 66,
+              "matched": 51,
+              "precision": 0.7727272727272727,
+              "recall": 0.864406779661017,
+              "f1": 0.816,
+              "mean_absolute_error_ms": [
+                22.362745098039216
+              ]
+            }
+          },
+          {
+            "start_ms": 215853,
+            "end_ms": 241798,
+            "source_compatible": {
+              "reference": 96,
+              "predicted": 99,
+              "matched": 95,
+              "precision": 0.9595959595959596,
+              "recall": 0.9895833333333334,
+              "f1": 0.9743589743589743,
+              "mean_absolute_error_ms": [
+                10.078947368421053
+              ]
+            },
+            "application": {
+              "reference": 96,
+              "predicted": 103,
+              "matched": 88,
+              "precision": 0.8543689320388349,
+              "recall": 0.9166666666666666,
+              "f1": 0.8844221105527639,
+              "mean_absolute_error_ms": [
+                17.982954545454547
+              ]
+            }
+          },
+          {
+            "start_ms": 241798,
+            "end_ms": 267744,
+            "source_compatible": {
+              "reference": 74,
+              "predicted": 76,
+              "matched": 74,
+              "precision": 0.9736842105263158,
+              "recall": 1.0,
+              "f1": 0.9866666666666667,
+              "mean_absolute_error_ms": [
+                10.95945945945946
+              ]
+            },
+            "application": {
+              "reference": 74,
+              "predicted": 81,
+              "matched": 70,
+              "precision": 0.8641975308641975,
+              "recall": 0.9459459459459459,
+              "f1": 0.9032258064516129,
+              "mean_absolute_error_ms": [
+                17.228571428571428
+              ]
+            }
+          },
+          {
+            "start_ms": 267744,
+            "end_ms": 283840.0,
+            "source_compatible": {
+              "reference": 30,
+              "predicted": 29,
+              "matched": 29,
+              "precision": 1.0,
+              "recall": 0.9666666666666667,
+              "f1": 0.9830508474576272,
+              "mean_absolute_error_ms": [
+                7.4655172413793105
+              ]
+            },
+            "application": {
+              "reference": 30,
+              "predicted": 34,
+              "matched": 30,
+              "precision": 0.8823529411764706,
+              "recall": 1.0,
+              "f1": 0.9375,
+              "mean_absolute_error_ms": [
+                13.933333333333334
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "enabled_in_application": false,
+    "limits": [
+      "Reference labels are authored attack/layer choices, not exhaustive MIDI truth.",
+      "Source-compatible excludes drums/vocals from accompaniment and non-drums from drums based on supplied source roles, not scored thresholds.",
+      "Family breakdowns are diagnostic; the highest-scoring family is not selected as output.",
+      "Column 4 also contains tom/other exceptions; hi-hat label comparison is incomplete.",
+      "Snare/side-stick and hi-hat/ride/tom diagnostics are all reported; no mapping is selected by score.",
+      "Author section boundaries are used only to summarize frozen predictions, never as model inputs.",
+      "Fixed 22.5ms chart lead is predeclared, not fit to this song. No grid snapping.",
+      "Single development song; instrument names and acoustic releases have no complete ground truth."
+    ]
+  },
+  "drum_instrument_selection": {
+    "source_audio_sha256": "2f51943ddc584f78638fcdf4b38acd253ec4229fa83b8a531d3946833372a8cd",
+    "reference_sha256": "a25e9048747e169568808be790051aed6e6470142ea6a8bf27378d631a2526b3",
+    "frozen_audio_evidence": {
+      "identity": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+        "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+        "sources": {
+          "test-data\\sakura-benchmark\\bundled\\drums\\preview.wav": "2f51943ddc584f78638fcdf4b38acd253ec4229fa83b8a531d3946833372a8cd"
+        },
+        "start_ms": 0,
+        "seconds": 283.84,
+        "context_seconds": 0.0,
+        "task": "mc13_full_plus_256",
+        "decoder_channels": 13,
+        "strict_weights": true
+      },
+      "notes_sha256": "a264661585b48483fa0f4a3586976c61d37e3426b6867d569fcada0598f10d5f",
+      "features": "eight fixed GM drum families, binary onset presence in three relative windows"
+    },
+    "train_end_ms": 162340,
+    "calibration_end_ms": 188286,
+    "fit": [
+      {
+        "kind": "kick",
+        "fit_positive": 189,
+        "fit_candidates": 729,
+        "threshold": 0.9
+      },
+      {
+        "kind": "snare",
+        "fit_positive": 79,
+        "fit_candidates": 740,
+        "threshold": 0.9
+      },
+      {
+        "kind": "hi-hat",
+        "fit_positive": 40,
+        "fit_candidates": 740,
+        "threshold": 0.1
+      }
+    ],
+    "raw_drum_objects": 725,
+    "physical_reference_events": 632,
+    "snare_double_groups": 93,
+    "segments": {
+      "fit": {
+        "kick": {
+          "reference": 191,
+          "predicted": 183,
+          "matched": 175,
+          "precision": 0.9562841530054644,
+          "recall": 0.9162303664921466,
+          "f1": 0.9358288770053476,
+          "mean_absolute_error_ms": [
+            5.66
+          ]
+        },
+        "snare": {
+          "reference": 79,
+          "predicted": 72,
+          "matched": 71,
+          "precision": 0.9861111111111112,
+          "recall": 0.8987341772151899,
+          "f1": 0.9403973509933775,
+          "mean_absolute_error_ms": [
+            2.288732394366197
+          ]
+        },
+        "hi-hat": {
+          "reference": 41,
+          "predicted": 220,
+          "matched": 40,
+          "precision": 0.18181818181818182,
+          "recall": 0.975609756097561,
+          "f1": 0.3065134099616858,
+          "mean_absolute_error_ms": [
+            8.6
+          ]
+        }
+      },
+      "calibration": {
+        "kick": {
+          "reference": 42,
+          "predicted": 42,
+          "matched": 42,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_absolute_error_ms": [
+            5.738095238095238
+          ]
+        },
+        "snare": {
+          "reference": 16,
+          "predicted": 16,
+          "matched": 16,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "mean_absolute_error_ms": [
+            7.3125
+          ]
+        },
+        "hi-hat": {
+          "reference": 16,
+          "predicted": 30,
+          "matched": 6,
+          "precision": 0.2,
+          "recall": 0.375,
+          "f1": 0.2608695652173913,
+          "mean_absolute_error_ms": [
+            4.166666666666667
+          ]
+        }
+      },
+      "later_sections": {
+        "kick": {
+          "reference": 127,
+          "predicted": 121,
+          "matched": 118,
+          "precision": 0.9752066115702479,
+          "recall": 0.9291338582677166,
+          "f1": 0.9516129032258065,
+          "mean_absolute_error_ms": [
+            8.042372881355933
+          ]
+        },
+        "snare": {
+          "reference": 45,
+          "predicted": 40,
+          "matched": 39,
+          "precision": 0.975,
+          "recall": 0.8666666666666667,
+          "f1": 0.9176470588235294,
+          "mean_absolute_error_ms": [
+            5.141025641025641
+          ]
+        },
+        "hi-hat": {
+          "reference": 75,
+          "predicted": 116,
+          "matched": 29,
+          "precision": 0.25,
+          "recall": 0.38666666666666666,
+          "f1": 0.3036649214659686,
+          "mean_absolute_error_ms": [
+            6.5
+          ]
+        }
+      }
+    },
+    "enabled_in_application": false,
+    "notice": "Same-song development only. Repeated musical material may overlap. Learned authored source attack selection, not exhaustive drum transcription. Occasional tom/other labels remain uncertain."
+  },
+  "instrument_transcription_controls": {
+    "rows": {
+      "controlled-mix": {
+        "identity": {
+          "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+          "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+          "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+          "sources": {
+            "D:\\project\\ManiaLab\\test-data\\synthetic-mix\\controlled-mix.wav": "72d9214b2e9651ac07d5c7a11696beb63c99c4ec5c6ad09871cbd41c90d59a7f"
+          },
+          "start_ms": 0,
+          "seconds": 40.0,
+          "context_seconds": 0.0,
+          "task": "mc13_full_plus_256",
+          "decoder_channels": 13,
+          "strict_weights": true
+        },
+        "decoding_errors": {
+          "Err/onset not found": 12.0,
+          "Err/merging segment tie": 13
+        },
+        "programs": {
+          "2": 70,
+          "drums": 133,
+          "32": 13,
+          "33": 4
+        },
+        "previous": {
+          "basic": {
+            "pitched_onsets": {
+              "predicted": 243,
+              "reference": 130,
+              "matched": 97,
+              "precision": 0.3992,
+              "recall": 0.7462,
+              "f1": 0.5201
+            },
+            "pitched_intervals": {
+              "predicted": 243,
+              "reference": 130,
+              "matched": 67,
+              "precision": 0.2757,
+              "recall": 0.5154,
+              "f1": 0.3592
+            },
+            "matched_over_2s": 1
+          },
+          "deep": {
+            "pitched_onsets": {
+              "predicted": 270,
+              "reference": 130,
+              "matched": 121,
+              "precision": 0.4481,
+              "recall": 0.9308,
+              "f1": 0.605
+            },
+            "pitched_intervals": {
+              "predicted": 270,
+              "reference": 130,
+              "matched": 69,
+              "precision": 0.2556,
+              "recall": 0.5308,
+              "f1": 0.345
+            },
+            "matched_over_2s": 1
+          },
+          "piano_model": {
+            "pitched_onsets": {
+              "predicted": 66,
+              "reference": 130,
+              "matched": 56,
+              "precision": 0.8485,
+              "recall": 0.4308,
+              "f1": 0.5714
+            },
+            "pitched_intervals": {
+              "predicted": 66,
+              "reference": 130,
+              "matched": 49,
+              "precision": 0.7424,
+              "recall": 0.3769,
+              "f1": 0.5
+            },
+            "matched_over_2s": 11
+          }
+        },
+        "yourmt3": {
+          "pitched_onsets": {
+            "predicted": 87,
+            "reference": 130,
+            "matched": 71,
+            "precision": 0.8161,
+            "recall": 0.5462,
+            "f1": 0.6544
+          },
+          "pitched_intervals": {
+            "predicted": 87,
+            "reference": 130,
+            "matched": 64,
+            "precision": 0.7356,
+            "recall": 0.4923,
+            "f1": 0.5899
+          },
+          "matched_over_2s": 18
+        }
+      },
+      "repeated-chords": {
+        "identity": {
+          "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+          "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+          "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+          "sources": {
+            "D:\\project\\ManiaLab\\test-data\\continuity-rearticulation\\repeated.wav": "3e8653577ec526076fe1162b756707f561518bf5c75ee255baa71f36d8aaac70"
+          },
+          "start_ms": 0,
+          "seconds": 12.0,
+          "context_seconds": 0.0,
+          "task": "mc13_full_plus_256",
+          "decoder_channels": 13,
+          "strict_weights": true
+        },
+        "decoding_errors": {},
+        "programs": {},
+        "previous": {
+          "basic": {
+            "pitched_onsets": {
+              "predicted": 41,
+              "reference": 48,
+              "matched": 38,
+              "precision": 0.9268,
+              "recall": 0.7917,
+              "f1": 0.8539
+            },
+            "pitched_intervals": {
+              "predicted": 41,
+              "reference": 48,
+              "matched": 34,
+              "precision": 0.8293,
+              "recall": 0.7083,
+              "f1": 0.764
+            },
+            "false_long_on_true_pitches": 4
+          },
+          "piano_model": {
+            "pitched_onsets": {
+              "predicted": 86,
+              "reference": 48,
+              "matched": 32,
+              "precision": 0.3721,
+              "recall": 0.6667,
+              "f1": 0.4776
+            },
+            "pitched_intervals": {
+              "predicted": 86,
+              "reference": 48,
+              "matched": 24,
+              "precision": 0.2791,
+              "recall": 0.5,
+              "f1": 0.3582
+            },
+            "false_long_on_true_pitches": 6
+          }
+        },
+        "yourmt3": {
+          "pitched_onsets": {
+            "predicted": 0,
+            "reference": 48,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "pitched_intervals": {
+            "predicted": 0,
+            "reference": 48,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          },
+          "false_long_on_true_pitches": 0
+        }
+      },
+      "river-flows-piano": {
+        "identity": {
+          "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+          "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+          "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+          "sources": {
+            "D:\\project\\ManiaLab\\test-data\\audio-extension2-10k\\5317787\\basic\\preview.wav": "30e6d11345911f0e36fc138da4eee39df45dca9029bf700c1b7410fc4f69b92f"
+          },
+          "start_ms": 0,
+          "seconds": 40.0,
+          "context_seconds": 0.0,
+          "task": "mc13_full_plus_256",
+          "decoder_channels": 13,
+          "strict_weights": true
+        },
+        "decoding_errors": {
+          "Err/onset not found": 15.0,
+          "Err/merging segment tie": 43
+        },
+        "programs": {
+          "0": 164
+        },
+        "previous": {
+          "basic": {
+            "onset_rows": {
+              "predicted": 200,
+              "reference": 117,
+              "matched": 114,
+              "precision": 0.57,
+              "recall": 0.9744,
+              "f1": 0.7192,
+              "tolerance_ms": 40
+            },
+            "ln": {
+              "endpoints": {
+                "predicted": 298,
+                "reference": 0,
+                "matched": 0,
+                "precision": 0.0,
+                "recall": null,
+                "f1": 0.0
+              },
+              "overlap": {
+                "predicted": 298,
+                "reference": 0,
+                "matched": 0,
+                "precision": 0.0,
+                "recall": null,
+                "f1": 0.0
+              }
+            },
+            "candidates": 389
+          },
+          "deep": {
+            "onset_rows": {
+              "predicted": 128,
+              "reference": 117,
+              "matched": 114,
+              "precision": 0.8906,
+              "recall": 0.9744,
+              "f1": 0.9306,
+              "tolerance_ms": 40
+            },
+            "ln": {
+              "endpoints": {
+                "predicted": 290,
+                "reference": 0,
+                "matched": 0,
+                "precision": 0.0,
+                "recall": null,
+                "f1": 0.0
+              },
+              "overlap": {
+                "predicted": 290,
+                "reference": 0,
+                "matched": 0,
+                "precision": 0.0,
+                "recall": null,
+                "f1": 0.0
+              }
+            },
+            "candidates": 311
+          },
+          "piano_model": {
+            "onset_rows": {
+              "predicted": 162,
+              "reference": 117,
+              "matched": 117,
+              "precision": 0.7222,
+              "recall": 1.0,
+              "f1": 0.8387,
+              "tolerance_ms": 40
+            },
+            "ln": {
+              "endpoints": {
+                "predicted": 169,
+                "reference": 0,
+                "matched": 0,
+                "precision": 0.0,
+                "recall": null,
+                "f1": 0.0
+              },
+              "overlap": {
+                "predicted": 169,
+                "reference": 0,
+                "matched": 0,
+                "precision": 0.0,
+                "recall": null,
+                "f1": 0.0
+              }
+            },
+            "candidates": 169
+          }
+        },
+        "yourmt3": {
+          "onset_rows": {
+            "predicted": 131,
+            "reference": 117,
+            "matched": 114,
+            "precision": 0.8702,
+            "recall": 0.9744,
+            "f1": 0.9194,
+            "tolerance_ms": 40
+          },
+          "candidates": 164,
+          "notice": "Tap-only chart: acoustic offsets cannot be evaluated."
+        }
+      }
+    },
+    "enabled_in_application": false,
+    "limits": [
+      "Frozen controls previously used for piano research, no YourMT3 threshold fitting.",
+      "Synthetic harmonic tones are not natural-instrument recordings.",
+      "All non-drum programs retained; no best-scoring family selection.",
+      "Natural-piano chart labels authored attack choices, not complete MIDI truth."
+    ]
+  },
+  "instrument_release_audits": {
+    "other-yourmt3-full": {
+      "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+      "tokens_sha256": "6e929b31df3c30ee0fbcf6c8a14063694a3ff6e87e4a9f5c8d66538723a4a883",
+      "notes_sha256": "3eb8d3ce4d8bf9a66a9cc662596c8b844b5ebe068bfbdadac9a248b71786212c",
+      "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+      "decoded_notes_equal": true,
+      "notes": 1905,
+      "endpoint_counts": {
+        "explicit_model_note_off": 1372,
+        "forced_segment_boundary": 499,
+        "same_pitch_reattack": 202,
+        "drum_fixed_10ms": 30
+      },
+      "limits": [
+        "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+        "Flags can overlap; ambiguous endpoints remain ambiguous.",
+        "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+      ]
+    },
+    "drums-yourmt3-full": {
+      "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+      "tokens_sha256": "3e028bcf263e5ae695ee01eec49092040db03f6ad56057f1edcd5b26c494b69e",
+      "notes_sha256": "a264661585b48483fa0f4a3586976c61d37e3426b6867d569fcada0598f10d5f",
+      "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+      "decoded_notes_equal": true,
+      "notes": 759,
+      "endpoint_counts": {
+        "drum_fixed_10ms": 748,
+        "explicit_model_note_off": 7,
+        "same_pitch_reattack": 3,
+        "forced_segment_boundary": 4
+      },
+      "limits": [
+        "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+        "Flags can overlap; ambiguous endpoints remain ambiguous.",
+        "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+      ]
+    },
+    "piano-yourmt3-full": {
+      "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+      "tokens_sha256": "8dae8c54a4af99ec3ee16c8339271334109b88fa14e78ab749ca6538346ec4d8",
+      "notes_sha256": "40b5eedf3e554e79cfc8316c9763c13ff77abf34083cf99d4a2c2b16cd5b4113",
+      "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+      "decoded_notes_equal": true,
+      "notes": 1221,
+      "endpoint_counts": {
+        "explicit_model_note_off": 1109,
+        "forced_segment_boundary": 111,
+        "same_pitch_reattack": 356
+      },
+      "limits": [
+        "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+        "Flags can overlap; ambiguous endpoints remain ambiguous.",
+        "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+      ]
+    },
+    "piano-yourmt3-215853-12": {
+      "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+      "tokens_sha256": "d317c9b57f6b8b1987f64e3478a2b48a2f4358cafaf7bb8ae57b627ebd6a6098",
+      "notes_sha256": "c5f4c4ef70ff5ab0ca4854abf6bbe068dcd335ea9ffd1eb619a317fb3a092917",
+      "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+      "decoded_notes_equal": true,
+      "notes": 92,
+      "endpoint_counts": {
+        "explicit_model_note_off": 82,
+        "same_pitch_reattack": 41,
+        "forced_segment_boundary": 5,
+        "unresolved_or_postprocessed": 5
+      },
+      "limits": [
+        "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+        "Flags can overlap; ambiguous endpoints remain ambiguous.",
+        "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+      ]
+    },
+    "drums-yourmt3-215853-12": {
+      "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+      "tokens_sha256": "0748aa68bd946fb0711ebcb04739ba1bd2e7466b15b3b44dd5669b3077643141",
+      "notes_sha256": "1b4d7c49d2bbe9e80a5a52bb4b31c4d4889f56317711b66ab4ce32fe9fb23dcc",
+      "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+      "decoded_notes_equal": true,
+      "notes": 63,
+      "endpoint_counts": {
+        "drum_fixed_10ms": 63
+      },
+      "limits": [
+        "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+        "Flags can overlap; ambiguous endpoints remain ambiguous.",
+        "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+      ]
+    }
+  },
+  "event_constraint_aborted": {
+    "status": "generation_failed",
+    "reason": "No finite legal mania event continuation in final decoder window",
+    "source_sha256": "b88dba4f80fa42cdcbf22b18ae3767c215ea8aa7244e897ee24f9734ed93381c",
+    "raw_chart_created": false,
+    "accepted": false
+  },
+  "event_grammar_check": {
+    "passed": true,
+    "windows": 20,
+    "tokens": 20372,
+    "notice": "Authored event grammar compatibility only, not constrained free-generation quality."
+  },
   "timing_grid_fix": {
     "summary": {
       "songs": 68,
@@ -12231,7 +15959,7 @@
   },
   "decoder_trace_diagnosis": {
     "observed": "Previous expression adapter starts with a partial group, then a time at 12360ms, beyond 9825.6ms lookahead cutoff.",
-    "hypothesis": "Cold-start supervision alone failed. First-event weighting restored generation in the later-section probe, but overlaps and unclosed holds remain; not accepted.",
+    "hypothesis": "Cold-start supervision alone failed. First-event weighting restored generation but overlaps and unclosed holds remain. Event-state constraints collapsed LN generation and still left a snapped overlap; rejected.",
     "private_token_traces_retained": true
   },
   "invalid_expression_attempt": {

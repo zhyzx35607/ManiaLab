@@ -99,7 +99,7 @@ def test_arrangement_context_is_explicit_and_never_returned_as_prediction(tmp_pa
     def run(argv,*args):
         seen.extend(argv)
         (output/'prediction.osu').write_text(original,encoding='utf-8')
-        return 'ManiaLab sketch context active: 20 events; map-delimited-sketch-v1'
+        return 'ManiaLab sketch context active: 20 events; map-delimited-sketch-v1\nManiaLab research event constraints active: mania-event-state-v1'
     monkeypatch.setattr(engine,'run',run)
     result=engine.generate(tmp_path/'input.wav',output,parameters({'keys':10}),lambda *a:None,lambda:False,
         arrangement_reference=reference,sketch_codec='map-delimited-sketch-v1')
@@ -108,6 +108,12 @@ def test_arrangement_context_is_explicit_and_never_returned_as_prediction(tmp_pa
     content=(output/'arrangement-context.osu').read_text(encoding='utf-8')
     assert [(n.start,n.end,n.lane) for n in parse_osu(content)['notes']]==[(1000,1000,4),(1500,2500,6)]
     assert 'Bookmarks: 1000,5000' not in content and 'private mapper' not in content
+    assert '--mania-event-state=mania-event-state-v1' not in seen
+    engine.generate(tmp_path/'input.wav',output,parameters({'keys':10}),lambda *a:None,lambda:False,
+        arrangement_reference=reference,sketch_codec='map-delimited-sketch-v1',state_constraints=True)
+    assert '--mania-event-state=mania-event-state-v1' in seen
+    with pytest.raises(ValueError,match='实验事件约束'):
+        engine.generate('',output,parameters(),lambda *a:None,lambda:False,state_constraints=True)
     with pytest.raises(ValueError,match='不原生支持'):
         engine.generate('',output,parameters(),lambda *a:None,lambda:False,arrangement_reference=reference)
     monkeypatch.setattr(engine,'run',lambda *a:'')

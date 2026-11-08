@@ -141,7 +141,9 @@ class MapperEngine:
 
     def generate(self, audio, output, settings, progress, cancelled, seconds=30, tempo=None, start_ms=0,
                  timing_reference=None, lora_path=None, difficulty=5.0, conditioning=None,
-                 arrangement_reference=None, sketch_codec=None):
+                 arrangement_reference=None, sketch_codec=None, state_constraints=False):
+        if type(state_constraints) is not bool or (state_constraints and arrangement_reference is None):
+            raise ValueError('实验事件约束需要明确的草稿编排任务')
         if type(start_ms) is not int or start_ms < 0:
             raise ValueError('原模型片段起点必须是非负整数毫秒')
         if not isinstance(seconds, (int, float)) or isinstance(seconds, bool) or not 0 <= seconds <= 1200:
@@ -201,6 +203,7 @@ class MapperEngine:
             argv += ['--mania-sketch-context='+sketch_codec,
                      'train.data.context_types=[{in:["${context_type:timing}","${context_type:gd}"],out:["${context_type:map}"]}]',
                      'train.data.context_weights=[1]']
+        if state_constraints:argv += ['--mania-event-state=mania-event-state-v1']
         if seconds:
             argv += [f"end_time={start_ms+int(seconds*1000)}"]
         if start_ms:
@@ -246,6 +249,8 @@ class MapperEngine:
                             output/'inference.log')
         if arrangement_reference is not None and 'ManiaLab sketch context active:' not in log_text:
             raise ValueError('无法验证草稿已经进入模型，拒绝将此次结果视为编排输出')
+        if state_constraints and 'ManiaLab research event constraints active: mania-event-state-v1' not in log_text:
+            raise ValueError('无法验证实验事件约束已经启用')
         self.last_warnings = [line.strip() for line in log_text.splitlines() if "Warning:" in line][:30]
         files = sorted((p for p in output.rglob('*.osu') if p.name not in ('timing-context.osu','arrangement-context.osu')),
                        key=lambda p: p.stat().st_mtime, reverse=True)

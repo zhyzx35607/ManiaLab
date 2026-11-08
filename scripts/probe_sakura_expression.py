@@ -25,6 +25,7 @@ def main():
     cli.add_argument('--sketch',type=Path,help='Explicit input sketch; its hash is recorded separately from the finished target')
     cli.add_argument('--conditioning',type=Path,help='Identical prefix flags for a baseline/adapter comparison')
     cli.add_argument('--output',type=Path)
+    cli.add_argument('--state-constraints',action='store_true',help='Experimental event grammar; no default change')
     cli.add_argument('--existing-raw',type=Path,help='Recover a completed raw output whose scoring failed; never regenerate it')
     args=cli.parse_args();root=args.root
     output=args.output or root/f'expression-{args.start_ms}-{args.seconds}'
@@ -50,6 +51,8 @@ def main():
         adapter=sha(args.adapter/'adapter_model.safetensors') if args.adapter else None,
         source_commit=engine.status()['source_commit'],model_revision=engine.status()['model_revision'])
     result_path=output/'result.json'
+    if args.state_constraints:
+        identity['state_constraints']=dict(codec='mania-event-state-v1',source_sha256=sha(Path('assets/mania_event_constraints.py')))
     if result_path.exists():
         result=json.loads(result_path.read_text(encoding='utf-8'))
         if result['identity']!=identity or sha(output/result['raw_file'])!=result['raw_sha256']:
@@ -66,11 +69,14 @@ def main():
             log=(output/'inference.log').read_text(encoding='utf-8')
             if 'ManiaLab sketch context active:' not in log or str(path.resolve()) not in log:
                 raise ValueError('Run log does not confirm the generated raw chart and active sketch')
+            if args.state_constraints and 'ManiaLab research event constraints active: mania-event-state-v1' not in log:
+                raise ValueError('Recovered run does not confirm active event constraints')
             engine.last_warnings=[s.strip() for s in log.splitlines() if 'Warning:' in s][:30]
         else:
             path=engine.generate(audio,output,parameters(dict(keys=10,ln_ratio=ratio,seed=42)),progress,lambda:False,
                 start_ms=start,seconds=args.seconds,arrangement_reference=sketch_path,
                 sketch_codec='map-delimited-sketch-v1',
+                state_constraints=args.state_constraints,
                 lora_path=args.adapter,difficulty=4.56727,conditioning=conditions)
         content=path.read_text(encoding='utf-8-sig')
         objects=[s for s in sections(content).get('HitObjects',[]) if s.strip() and not s.startswith('//')]
