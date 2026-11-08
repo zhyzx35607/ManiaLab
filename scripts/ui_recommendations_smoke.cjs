@@ -1,0 +1,44 @@
+const {chromium}=require('../test-data/ui/node_modules/playwright');
+const path=require('path');
+const fs=require('fs');
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
+ const page=await browser.newPage({viewport:{width:1512,height:1000}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ const base=process.env.MANIALAB_URL||'http://127.0.0.1:5431';
+ const waitJob=()=>page.waitForFunction(()=>!document.querySelector('#generate').disabled,{},{timeout:120000});
+ try{
+  await page.goto(base);await page.locator('#files').setInputFiles(path.resolve('tests/artifacts/synthetic.wav'));
+  await page.waitForFunction(()=>document.querySelector('#projectTitle').textContent==='synthetic');
+  await page.locator('#analysisEngine').selectOption('basic');await page.locator('#analyze').click();await waitJob();
+  await page.waitForFunction(()=>document.querySelectorAll('[data-recommendation]').length===3);
+  await page.locator('#bpm').fill('120');await page.locator('#bpm').dispatchEvent('change');
+  await page.locator('#offset').fill('93');await page.locator('#timingConfirmed').check();
+  await page.waitForFunction(()=>recommendationResult?.bpm===120);
+  await page.locator('[data-recommendation=melody]').click();await waitJob();
+  if(await page.locator('#offset').inputValue()!=='93'||!await page.locator('#timingConfirmed').isChecked())throw Error('recommendation changed confirmed timing');
+  let s=await page.evaluate(()=>state);
+  if(s.plan?.choice!=='melody'||s.plan?.keys!==10)throw Error('local proposal not persisted');
+  const pid=s.id,analysis=JSON.stringify(s.analysis);
+  await page.locator('#generate').click();await waitJob();
+  let v=await page.evaluate(()=>variant());
+  if(!v||!v.notes.length||v.report.grid.off_grid)throw Error('proposal cannot generate valid on-grid chart');
+  const exportResult=await page.request.get(base+`/api/projects/${pid}/export/osu`);
+  if(exportResult.status()!==200)throw Error('proposal export failed');
+  await page.reload();await page.locator('#recent').selectOption(pid);
+  await page.waitForFunction(()=>state?.plan?.choice==='melody');
+  if(JSON.stringify(await page.evaluate(()=>state.analysis))!==analysis)throw Error('recommendation changed raw detection');
+  await page.locator('[data-key="8"]').click();
+  await page.waitForFunction(()=>recommendationResult?.keys===8);
+  if(!await page.locator('#recommendationPanel').evaluate(e=>e.open))await page.locator('#recommendationPanel>summary').click();
+  await page.locator('[data-recommendation=hybrid]').click();await waitJob();
+  if(await page.evaluate(()=>state.plan.keys)!==8)throw Error('keycount update not applied');
+  if(!await page.locator('#recommendationPanel').evaluate(e=>e.open))await page.locator('#recommendationPanel>summary').click();
+  await page.screenshot({path:'tests/artifacts/recommendations-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
+  const result={passed:!errors.length&&!overflow,choices:3,keys:[10,8],notes:v.notes.length,offGrid:v.report.grid.off_grid,errors,overflow};
+  fs.writeFileSync('tests/artifacts/recommendations-ui.json',JSON.stringify(result,null,2));console.log(result);
+  if(!result.passed)throw Error('recommendation UI failed');
+ }finally{await browser.close()}
+})().catch(e=>{console.error(e);process.exit(1)});

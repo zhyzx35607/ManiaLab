@@ -110,6 +110,9 @@ def run(executable, work):
         bundled_prior=hashlib.sha256((executable.parent/'_internal/assets/pattern-prior.json').read_bytes()).hexdigest()
         assert bundled_prior==expected_prior, 'Packaged layout model differs from the source release'
         checks.append(dict(check='bundled_model',sha256=bundled_prior))
+        expected_profiles=hashlib.sha256((ROOT/'assets/arrangement-profiles.json').read_bytes()).hexdigest()
+        assert hashlib.sha256((executable.parent/'_internal/assets/arrangement-profiles.json').read_bytes()).hexdigest()==expected_profiles
+        checks.append(dict(check='bundled_arrangement_profiles',sha256=expected_profiles))
         start();status=request('/api/status')
         assert status['version']==__version__ and status['separator']['available'],status
         checks.append(dict(check='startup',version=status['version'],separator=status['separator'],prior=status['pattern_prior']))
@@ -133,9 +136,26 @@ def run(executable, work):
             assert set(archive.namelist())=={'ManiaLab.osu',source.name},archive.namelist()
         audio=request(base+'/audition',dict(mode='chart',start_ms=0,duration_ms=12000));assert audio[:4]==b'RIFF'
         window=request(base+'/waveform?start_ms=900&duration_ms=500');assert window['sample_rate']==22050
+        evidence=json.dumps(request(base)['analysis'],sort_keys=True)
+        proposals=request(base+'/recommendations',dict(settings={'keys':10},bpm=120))
+        assert len(proposals['options'])==3 and proposals['reference']['available']
+        for option in proposals['options']:
+            chosen=request(base+'/apply-recommendation',dict(settings={'keys':10},bpm=120,choice=option['id'],
+                evidence_signature=proposals['evidence_signature'],context_signature=proposals['context_signature']))
+            payload=dict(mode='audio',bpm=120,offset=-22,division=4,audio_shift_ms=22.5,timing_confirmed=True,settings=chosen['settings'])
+            job=wait(request(base+'/generate',payload));assert job['status']=='done',job
+            parsed=parse_osu(request(base+'/export/osu').decode('utf-8'))
+            assert validate(parsed['notes'],10)['valid']
+            assert grid_report(parsed['notes'],dict(bpm=120,offset=-22,division=4))['off_grid']==0
+            assert json.dumps(request(base)['analysis'],sort_keys=True)==evidence
+            checks.append(dict(check='local_recommendation',choice=option['id'],notes=len(parsed['notes']),evidence_preserved=True))
+        stale=wait(request(base+'/generate',payload|dict(bpm=240)))
+        assert stale['status']=='error' and 'BPM' in stale['message'],stale
+        checks.append(dict(check='stale_recommendation_rejected',reason='BPM changed'))
         state=request(base);saved_notes=state['variants'][state['active']]['notes']
         stop();start();restored=request(base)
         assert restored['variants'][restored['active']]['notes']==saved_notes
+        assert restored['plan']['choice']=='layers'
         checks.append(dict(check='restart',preserved=True,unicode_audio=source.name))
         # Both packaged separators must run with no Python or model downloads.
         assert status['separator']['profiles']['six']['available'],status['separator']

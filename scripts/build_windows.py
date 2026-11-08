@@ -16,10 +16,11 @@ os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
 def source_snapshot():
     files=[ROOT/'launcher.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
-           *sorted(p for p in (ROOT/'static').rglob('*') if p.is_file())]
+           *sorted(p for p in (ROOT/'static').rglob('*') if p.is_file()),
+           ROOT/'assets/pattern-prior.json',ROOT/'assets/arrangement-profiles.json']
     return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
 build_sources=source_snapshot()
-required=['basic-pitch.onnx','pattern-prior.json','deep/ManiaLabAudio/ManiaLabAudio.exe','deep/htdemucs_6s.th',
+required=['basic-pitch.onnx','pattern-prior.json','arrangement-profiles.json','deep/ManiaLabAudio/ManiaLabAudio.exe','deep/htdemucs_6s.th',
           'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json']
 for relative in required:
     if not (ROOT/'assets'/relative).is_file():raise SystemExit(f'Missing release component: assets/{relative}')

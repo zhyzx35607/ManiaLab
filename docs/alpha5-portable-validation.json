@@ -1,0 +1,161 @@
+{
+  "date": "2026-11-08",
+  "version": "0.1.0-alpha.5",
+  "offline_checks": [
+    {
+      "check": "release_manifest",
+      "source_files": 33,
+      "executable_sha256": "fb42a9a23d1e732cd75c38cd473eadf3506a058d05567ebc419107b15cf37603"
+    },
+    {
+      "check": "bundled_model",
+      "sha256": "a7b60de4c9d8d4d86c9c16cc4b79001607fc6c069bfb6a752f743de1847fb12c"
+    },
+    {
+      "check": "bundled_arrangement_profiles",
+      "sha256": "f5ec85ffdd85afc6712577e263f8540a795631d9c513b74d05e13fc84160c29c"
+    },
+    {
+      "check": "startup",
+      "version": "0.1.0-alpha.5",
+      "separator": {
+        "available": true,
+        "beat_model": true,
+        "cpu": true,
+        "model": "四声部 · Hybrid Demucs",
+        "profile": "four",
+        "profiles": {
+          "four": {
+            "available": true,
+            "label": "四声部 · Hybrid Demucs"
+          },
+          "six": {
+            "available": true,
+            "label": "六声部 · HTDemucs"
+          }
+        },
+        "voices": [
+          "drums",
+          "bass",
+          "vocals",
+          "other"
+        ]
+      },
+      "prior": {
+        "available": true,
+        "keys": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "purpose": "固定起止时间下的轨道偏好；不预测音频或 LN 长度",
+        "revision": 2
+      }
+    },
+    {
+      "check": "deep_analysis",
+      "seconds": 84.26,
+      "candidates": 5,
+      "engine": "四声部 · Hybrid Demucs + source-verified Basic Pitch + vocal phrases + Beat This meter"
+    },
+    {
+      "check": "generate_export",
+      "keys": 6,
+      "notes": 5,
+      "ln": 3,
+      "off_grid": 0
+    },
+    {
+      "check": "generate_export",
+      "keys": 7,
+      "notes": 5,
+      "ln": 3,
+      "off_grid": 0
+    },
+    {
+      "check": "generate_export",
+      "keys": 8,
+      "notes": 5,
+      "ln": 3,
+      "off_grid": 0
+    },
+    {
+      "check": "generate_export",
+      "keys": 9,
+      "notes": 5,
+      "ln": 3,
+      "off_grid": 0
+    },
+    {
+      "check": "generate_export",
+      "keys": 10,
+      "notes": 5,
+      "ln": 3,
+      "off_grid": 0
+    },
+    {
+      "check": "local_recommendation",
+      "choice": "melody",
+      "notes": 5,
+      "evidence_preserved": true
+    },
+    {
+      "check": "local_recommendation",
+      "choice": "hybrid",
+      "notes": 5,
+      "evidence_preserved": true
+    },
+    {
+      "check": "local_recommendation",
+      "choice": "layers",
+      "notes": 5,
+      "evidence_preserved": true
+    },
+    {
+      "check": "stale_recommendation_rejected",
+      "reason": "BPM changed"
+    },
+    {
+      "check": "restart",
+      "preserved": true,
+      "unicode_audio": "音频测试.wav"
+    },
+    {
+      "check": "six_stem_analysis_export",
+      "seconds": 94.99,
+      "voices": [
+        "drums",
+        "bass",
+        "vocals",
+        "other",
+        "guitar",
+        "piano"
+      ],
+      "notes": 4,
+      "off_grid": 0
+    },
+    {
+      "check": "cancel_and_failure",
+      "cancelled": "cancelled",
+      "bad_audio": "error",
+      "service_alive": true
+    }
+  ],
+  "browser": {
+    "passed": true,
+    "choices": 3,
+    "keys": [
+      10,
+      8
+    ],
+    "notes": 5,
+    "offGrid": 0,
+    "errors": [],
+    "overflow": false
+  },
+  "worker_stopped_on_parent_exit": true,
+  "environment": "Windows 10 x64; i5-9600K; 32GB RAM; development PATH removed; outbound HTTP/HTTPS proxies blocked; separate Unicode data directory",
+  "limitations": "Synthetic accuracy and integration only. Not a music listening score, player blind test, or validation on another computer."
+}

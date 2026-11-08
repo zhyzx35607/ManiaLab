@@ -1,0 +1,45 @@
+{
+  "selection_sha256": "0be3f34cb4bef5036cc8413af398effee431bc85c0d6fe688118943c65fc42ba",
+  "rows": [
+    {
+      "beatmap_id": 4201381,
+      "sha256": "7b2841745b7409afd79c13039c6b02b68abdf5e9cb408d259d4d112c32c784a7",
+      "keys": 7,
+      "group": "chinese_ln_development",
+      "ln_ratio": 0.5711,
+      "occupancy": 0.292
+    },
+    {
+      "beatmap_id": 4438589,
+      "sha256": "6c2d11b039cd980c4708a849e7b3ab9e57a1852a3852510e81edd97cefba42a1",
+      "keys": 7,
+      "group": "chinese_ln_development",
+      "ln_ratio": 0.7689,
+      "occupancy": 0.1211
+    },
+    {
+      "beatmap_id": 4035790,
+      "sha256": "31672760f044cc3e6e902bdf0fc0dbf628d8d44f19b61f33aaca4e757fd276db",
+      "keys": 7,
+      "group": "chinese_ln_development",
+      "ln_ratio": 0.5074,
+      "occupancy": 0.242
+    },
+    {
+      "beatmap_id": 2473984,
+      "sha256": "5ce52b98203ea80e313b0b59c1e1d67f237df7507adca9dbb7a34cdc2c2cb975",
+      "keys": 7,
+      "group": "chinese_ln_development",
+      "ln_ratio": 0.657,
+      "occupancy": 0.4638
+    },
+    {
+      "beatmap_id": 5848413,
+      "sha256": "3680041f69dd5254978bba67eac968c8d1f6decf967289543ea1d685796cfcc3",
+      "keys": 10,
+      "group": "user_style_only",
+      "ln_ratio": 0.7855,
+      "occupancy": 0.3356
+    }
+  ]
+}

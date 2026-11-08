@@ -239,6 +239,8 @@ def create_app(resources, data_root):
                 state["analysis"] = analyze(current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx", prefs, progress, cancelled)
             state["settings"] = prefs
             state["audio_shift_ms"] = requested_shift(payload, state)
+            if state.get('plan',{}).get('source')=='local-audio-recommendation':
+                state.pop('plan',None)
             # Keep old variants selectable, but never mask a fresh timing result
             # with the previously selected candidate's BPM / Offset.
             if state["mode"] == "audio":
@@ -296,6 +298,8 @@ def create_app(resources, data_root):
         def operation(state, progress, cancelled):
             started = time.perf_counter()
             tempo = requested_tempo(payload, state)
+            from .recommendations import adjusted_segments, validate_plan, plan_evidence
+            segment_preferences=adjusted_segments(state.get('plan',{}),prefs)
             progress(15, "选择音乐物件 / 保留原始物件")
             if mode == "remap":
                 if not state["input_notes"]:
@@ -307,15 +311,18 @@ def create_app(resources, data_root):
             else:
                 if not state.get("analysis"):
                     raise ValueError("请先完成音频分析")
+                validate_plan(state.get('plan',{}),state['analysis'],prefs['keys'],tempo['bpm'])
                 if state["analysis"].get("revision", 1) < 3:
                     raise ValueError("该项目使用旧版采音结果，请先点击「分析音频」更新拍线和 LN 候选；音高缓存会自动复用")
-                evidence, phrase_report = apply_phrase_evidence([note_from(n) for n in state["analysis"]["candidates"]],
-                    [note_from(n) for n in state["analysis"].get("phrase_candidates", [])], prefs["phrase_ln"], state.get("plan", {}).get("segments", []))
+                detected, phrases, weak_omitted = plan_evidence(state['analysis'],state.get('plan',{}))
+                evidence, phrase_report = apply_phrase_evidence([note_from(n) for n in detected],
+                    [note_from(n) for n in phrases], prefs["phrase_ln"], segment_preferences)
                 candidates, alignment = align_candidates(chart_clock_notes(evidence, tempo["audio_shift_ms"]),
                     tempo, enabled=payload.get("snap", True) is True, confirmed=payload.get("timing_confirmed", False) is True)
                 progress(25, "比较全曲采音取舍，求解 LN 比例与未来占轨约束")
-                selected, selection = select_notes(candidates, prefs, state.get("plan", {}).get("segments", []))
+                selected, selection = select_notes(candidates, prefs, segment_preferences)
                 selection["phrases"] = phrase_report
+                selection['recommendation_weak_candidates_omitted']=weak_omitted
                 selection["alignment"] = alignment
                 selection["message"] += (f" 量化起点 {alignment['moved']} 个、LN 尾端 {alignment['tails_moved']} 个；"
                     f"{alignment['large_attack_shifts']} 个候选起音移动超过 30ms，本谱保留 {selection.get('selected_large_attack_shifts', 0)} 个。" + alignment["reason"])
@@ -341,7 +348,7 @@ def create_app(resources, data_root):
             progress(45, "分配轨道并检查 LN 占轨")
             original_timing = state.get("input_timing", []) if mode == "remap" else []
             output = assign_lanes(selected, prefs, locked, beat_ms=60000 / tempo["bpm"], progress=progress, cancelled=cancelled,
-                                  segment_preferences=state.get("plan", {}).get("segments", []), timing_points=original_timing)
+                                  segment_preferences=segment_preferences, timing_points=original_timing)
             progress(90, "校验谱面并保存候选")
             report = validate(output, prefs["keys"])
             if mode == "audio":
@@ -430,6 +437,40 @@ def create_app(resources, data_root):
             busy(pid)
             state = projects.load(pid)
             state.pop("plan", None)
+            projects.save(state)
+        return jsonify(state)
+
+    @app.post('/api/projects/<pid>/recommendations')
+    def local_recommendations(pid):
+        from .recommendations import recommend
+        payload=request.get_json() or {}
+        with mutex:
+            state=projects.load(pid)
+            prefs=parameters(state['settings'] | payload.get('settings',{}))
+            result=recommend(state.get('analysis'),prefs,resources,payload.get('bpm'))
+        return jsonify(result)
+
+    @app.post('/api/projects/<pid>/apply-recommendation')
+    def apply_recommendation(pid):
+        from .recommendations import recommend
+        payload=request.get_json() or {}
+        with mutex:
+            busy(pid)
+            state=projects.load(pid)
+            prefs=parameters(state['settings'] | payload.get('settings',{}))
+            result=recommend(state.get('analysis'),prefs,resources,payload.get('bpm'))
+            if payload.get('evidence_signature')!=result['evidence_signature']:
+                raise ValueError('音频分析已经改变，请刷新建议后再选择')
+            if payload.get('context_signature')!=result['context_signature']:
+                raise ValueError('建议的键数、BPM 或参考统计已经改变，请刷新建议后再选择')
+            option=next((o for o in result['options'] if o['id']==payload.get('choice')),None)
+            if option is None:
+                raise ValueError('请选择已有的编排建议')
+            state['settings']=parameters(prefs | option['preferences'])
+            state['plan']={k:option[k] for k in ('preferences','segments','explanation')}
+            state['plan'].update(source='local-audio-recommendation',choice=option['id'],
+                evidence_signature=result['evidence_signature'],reference=result['reference'],
+                section_reasons=option['section_reasons'],keys=result['keys'],bpm=result['bpm'])
             projects.save(state)
         return jsonify(state)
 

@@ -1,0 +1,1493 @@
+{
+  "existing": {
+    "protocol": "Compare two learned priors on fixed full-chart development rhythms.\n\nAcceptance: unchanged non-lane fields, zero conflicts, and no per-key aggregate\nincrease in tight represses or fast same-column repeats beyond max(5, 5%).\nAll regressions are reported. These known charts are not a player blind test.\n",
+    "models": {
+      "baseline": "0245b1cce5a08dc1650b911eea6c26905e2cb423fcb6bb89bf8320ac0c1e1a10",
+      "candidate": "a7b60de4c9d8d4d86c9c16cc4b79001607fc6c069bfb6a752f743de1847fb12c"
+    },
+    "source_sha256": {
+      "manialab/arrange.py": "83f282eacb9f2593a29ca8f2b29abc09d28300a64e3274be27f5e5975ff679ac",
+      "manialab/layout.py": "e3500bb76491b958a515f50951f638b49362dbc37cb030d3a75bc8fe5efa900e",
+      "manialab/pattern_prior.py": "9539f070069a443ed0c0b0236f91805b40219324b98821b4a253a4f3272f997a",
+      "manialab/ln_patterns.py": "6447fd72e1f19423aa280dec56f954096e0fe2aec1ea7150a6d46792cf2c915e",
+      "manialab/domain.py": "83f96425423eca2da5e0b7af1488a186b998b935e7b01e0c35cef3a7b74d8c8d",
+      "manialab/timing.py": "774cedae3a773463af95bc033e9657b110d667a07d03d6cd7d7958f0c5c949ba"
+    },
+    "rows": [
+      {
+        "id": 1778864,
+        "keys": 6,
+        "sha256": "1735286772de41eef4358a6c8e4cf0a2b734aed079c80cd06873d8b853e932c3",
+        "results": {
+          "baseline": {
+            "seconds": 6.58,
+            "preserved": true,
+            "layout": {
+              "cost": 397.476,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 4.422
+            },
+            "counts": {
+              "release_rows": 145,
+              "releases": 177,
+              "release_only_rows": 38,
+              "near_release_press_hands": 7,
+              "release_press_hands": 39,
+              "hybrid_taps": 58,
+              "same_hand_hybrid_taps": 6
+            }
+          },
+          "candidate": {
+            "seconds": 5.95,
+            "preserved": true,
+            "layout": {
+              "cost": 401.987,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 4.561
+            },
+            "counts": {
+              "release_rows": 145,
+              "releases": 177,
+              "release_only_rows": 38,
+              "near_release_press_hands": 7,
+              "release_press_hands": 34,
+              "hybrid_taps": 58,
+              "same_hand_hybrid_taps": 6,
+              "split_release_hands": 1
+            }
+          }
+        }
+      },
+      {
+        "id": 2702491,
+        "keys": 6,
+        "sha256": "3d3295ebd804ee4f4d281665eca4a3c4867b8335f269f8788eca94dcd77b26dc",
+        "results": {
+          "baseline": {
+            "seconds": 5.56,
+            "preserved": true,
+            "layout": {
+              "cost": 721.795,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 5.826
+            },
+            "counts": {
+              "release_rows": 269,
+              "releases": 362,
+              "release_press_hands": 215,
+              "release_only_rows": 19,
+              "split_release_hands": 11,
+              "hybrid_taps": 297,
+              "same_hand_hybrid_taps": 70
+            }
+          },
+          "candidate": {
+            "seconds": 6.04,
+            "preserved": true,
+            "layout": {
+              "cost": 720.976,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 6.007
+            },
+            "counts": {
+              "release_rows": 269,
+              "releases": 362,
+              "release_press_hands": 212,
+              "release_only_rows": 19,
+              "split_release_hands": 11,
+              "hybrid_taps": 297,
+              "same_hand_hybrid_taps": 69
+            }
+          }
+        }
+      },
+      {
+        "id": 3090158,
+        "keys": 7,
+        "sha256": "00be69c6316defcbae87fe8c541ccab221e3c672184cde5a08d867887f63d1ca",
+        "results": {
+          "baseline": {
+            "seconds": 16.31,
+            "preserved": true,
+            "layout": {
+              "cost": 5903.54,
+              "short_jacks": 0,
+              "release_repeats": 2,
+              "peak_hand_pressure": 10.78
+            },
+            "counts": {
+              "release_rows": 615,
+              "releases": 925,
+              "release_press_hands": 670,
+              "hybrid_taps": 422,
+              "same_hand_hybrid_taps": 193,
+              "split_release_hands": 95,
+              "release_only_rows": 29,
+              "near_release_press_hands": 49,
+              "inverse_heads": 1,
+              "tight_repress_heads": 2,
+              "reverse_shield_heads": 1
+            }
+          },
+          "candidate": {
+            "seconds": 20.11,
+            "preserved": true,
+            "layout": {
+              "cost": 5904.594,
+              "short_jacks": 0,
+              "release_repeats": 2,
+              "peak_hand_pressure": 10.78
+            },
+            "counts": {
+              "release_rows": 615,
+              "releases": 925,
+              "release_press_hands": 671,
+              "hybrid_taps": 422,
+              "same_hand_hybrid_taps": 189,
+              "split_release_hands": 94,
+              "near_release_press_hands": 44,
+              "release_only_rows": 29,
+              "inverse_heads": 1,
+              "tight_repress_heads": 2,
+              "reverse_shield_heads": 1
+            }
+          }
+        }
+      },
+      {
+        "id": 5256879,
+        "keys": 7,
+        "sha256": "013204a73ad4e8c28fd873f72abcfcf5e73f5145e995dcfcf62647238629268a",
+        "results": {
+          "baseline": {
+            "seconds": 28.69,
+            "preserved": true,
+            "layout": {
+              "cost": 13364.106,
+              "short_jacks": 2,
+              "release_repeats": 0,
+              "peak_hand_pressure": 14.0
+            },
+            "counts": {
+              "release_rows": 1258,
+              "releases": 2400,
+              "release_press_hands": 1582,
+              "near_release_press_hands": 604,
+              "release_only_rows": 36,
+              "inverse_heads": 1022,
+              "reverse_shield_heads": 235,
+              "split_release_hands": 633,
+              "hybrid_taps": 774,
+              "same_hand_hybrid_taps": 537
+            }
+          },
+          "candidate": {
+            "seconds": 26.48,
+            "preserved": true,
+            "layout": {
+              "cost": 13366.504,
+              "short_jacks": 2,
+              "release_repeats": 0,
+              "peak_hand_pressure": 13.999
+            },
+            "counts": {
+              "release_rows": 1258,
+              "releases": 2400,
+              "release_press_hands": 1580,
+              "near_release_press_hands": 596,
+              "release_only_rows": 36,
+              "inverse_heads": 1023,
+              "reverse_shield_heads": 232,
+              "split_release_hands": 634,
+              "hybrid_taps": 774,
+              "same_hand_hybrid_taps": 535
+            }
+          }
+        }
+      },
+      {
+        "id": 810941,
+        "keys": 8,
+        "sha256": "03217c7eadf37dbe31a6d40c3321253327bde41b3b41afe77e4f9a6776d537d0",
+        "results": {
+          "baseline": {
+            "seconds": 8.09,
+            "preserved": true,
+            "layout": {
+              "cost": 3765.388,
+              "short_jacks": 47,
+              "release_repeats": 0,
+              "peak_hand_pressure": 13.14
+            },
+            "counts": {
+              "hybrid_taps": 151,
+              "same_hand_hybrid_taps": 43,
+              "release_rows": 130,
+              "releases": 191,
+              "release_press_hands": 98,
+              "split_release_hands": 35,
+              "inverse_heads": 15,
+              "near_release_press_hands": 25,
+              "release_only_rows": 14,
+              "shield_heads": 1,
+              "reverse_shield_heads": 2
+            }
+          },
+          "candidate": {
+            "seconds": 15.0,
+            "preserved": true,
+            "layout": {
+              "cost": 3771.999,
+              "short_jacks": 47,
+              "release_repeats": 0,
+              "peak_hand_pressure": 13.14
+            },
+            "counts": {
+              "hybrid_taps": 151,
+              "same_hand_hybrid_taps": 44,
+              "release_rows": 130,
+              "releases": 191,
+              "release_press_hands": 95,
+              "near_release_press_hands": 22,
+              "split_release_hands": 33,
+              "release_only_rows": 14,
+              "reverse_shield_heads": 4,
+              "shield_heads": 1,
+              "inverse_heads": 3
+            }
+          }
+        }
+      },
+      {
+        "id": 521141,
+        "keys": 8,
+        "sha256": "046764cf0b43d09386c24b19658a2d090225de7491e8325062515efc05fbf520",
+        "results": {
+          "baseline": {
+            "seconds": 6.08,
+            "preserved": true,
+            "layout": {
+              "cost": 625.926,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 4.573
+            },
+            "counts": {
+              "release_rows": 40,
+              "releases": 64,
+              "release_press_hands": 17,
+              "hybrid_taps": 34,
+              "release_only_rows": 21,
+              "near_release_press_hands": 1,
+              "same_hand_hybrid_taps": 3
+            }
+          },
+          "candidate": {
+            "seconds": 10.72,
+            "preserved": true,
+            "layout": {
+              "cost": 620.034,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 4.568
+            },
+            "counts": {
+              "release_rows": 40,
+              "releases": 64,
+              "release_press_hands": 16,
+              "hybrid_taps": 34,
+              "release_only_rows": 21,
+              "near_release_press_hands": 1,
+              "same_hand_hybrid_taps": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 5683422,
+        "keys": 9,
+        "sha256": "0a2d6c17cfccf8111fc60af5850589dd284917615dadd912b8e6fe6d275f62e2",
+        "results": {
+          "baseline": {
+            "seconds": 9.49,
+            "preserved": true,
+            "layout": {
+              "cost": 3965.527,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 7.993
+            },
+            "counts": {
+              "release_rows": 536,
+              "releases": 737,
+              "release_press_hands": 644,
+              "hybrid_taps": 768,
+              "same_hand_hybrid_taps": 455,
+              "split_release_hands": 58,
+              "release_only_rows": 28,
+              "near_release_press_hands": 50,
+              "inverse_heads": 45,
+              "reverse_shield_heads": 2
+            }
+          },
+          "candidate": {
+            "seconds": 24.92,
+            "preserved": true,
+            "layout": {
+              "cost": 3963.54,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 8.0
+            },
+            "counts": {
+              "release_rows": 536,
+              "releases": 737,
+              "release_press_hands": 633,
+              "hybrid_taps": 768,
+              "same_hand_hybrid_taps": 449,
+              "split_release_hands": 62,
+              "release_only_rows": 28,
+              "near_release_press_hands": 49,
+              "inverse_heads": 9
+            }
+          }
+        }
+      },
+      {
+        "id": 5487536,
+        "keys": 9,
+        "sha256": "269cc89dc076f1d818a31dbdfce589d9164c1a501b6a53503282bbe8381730e8",
+        "results": {
+          "baseline": {
+            "seconds": 3.61,
+            "preserved": true,
+            "layout": {
+              "cost": 311.535,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 3.988
+            },
+            "counts": {
+              "release_rows": 218,
+              "releases": 226,
+              "hybrid_taps": 63,
+              "release_only_rows": 30,
+              "release_press_hands": 80,
+              "same_hand_hybrid_taps": 15
+            }
+          },
+          "candidate": {
+            "seconds": 5.93,
+            "preserved": true,
+            "layout": {
+              "cost": 308.37,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 4.246
+            },
+            "counts": {
+              "release_rows": 218,
+              "releases": 226,
+              "hybrid_taps": 63,
+              "release_only_rows": 30,
+              "release_press_hands": 76,
+              "same_hand_hybrid_taps": 8
+            }
+          }
+        }
+      },
+      {
+        "id": 5359205,
+        "keys": 10,
+        "sha256": "079b8226de767a53de0b040f4f8380b862461002ba8f16d6ee32893d1127a5cc",
+        "results": {
+          "baseline": {
+            "seconds": 11.47,
+            "preserved": true,
+            "layout": {
+              "cost": 410.837,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 3.422
+            },
+            "counts": {
+              "hybrid_taps": 12,
+              "release_rows": 119,
+              "releases": 125,
+              "release_press_hands": 17,
+              "release_only_rows": 1
+            }
+          },
+          "candidate": {
+            "seconds": 12.74,
+            "preserved": true,
+            "layout": {
+              "cost": 410.239,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 3.417
+            },
+            "counts": {
+              "hybrid_taps": 12,
+              "release_rows": 119,
+              "releases": 125,
+              "release_press_hands": 14,
+              "release_only_rows": 1
+            }
+          }
+        }
+      },
+      {
+        "id": 823116,
+        "keys": 10,
+        "sha256": "102eb42f26f570d97d59545d59eed49c1b493dd5bb7c022f66c14ca71cd8ae73",
+        "results": {
+          "baseline": {
+            "seconds": 37.79,
+            "preserved": true,
+            "layout": {
+              "cost": 11632.852,
+              "short_jacks": 126,
+              "release_repeats": 0,
+              "peak_hand_pressure": 13.516
+            },
+            "counts": {
+              "hybrid_taps": 121,
+              "release_rows": 28,
+              "releases": 80,
+              "release_only_rows": 24,
+              "reverse_shield_heads": 15,
+              "near_release_press_hands": 41,
+              "same_hand_hybrid_taps": 68,
+              "inverse_heads": 16
+            }
+          },
+          "candidate": {
+            "seconds": 32.41,
+            "preserved": true,
+            "layout": {
+              "cost": 11622.358,
+              "short_jacks": 121,
+              "release_repeats": 0,
+              "peak_hand_pressure": 13.516
+            },
+            "counts": {
+              "near_release_press_hands": 40,
+              "hybrid_taps": 121,
+              "same_hand_hybrid_taps": 66,
+              "release_rows": 28,
+              "releases": 80,
+              "release_only_rows": 24,
+              "reverse_shield_heads": 18,
+              "inverse_heads": 16
+            }
+          }
+        }
+      },
+      {
+        "id": 2426692,
+        "keys": 10,
+        "sha256": "10d6c0e2d5b4e8c7121d8d2a46383c30589935e6efebd4b4ee7dcff7adc8c7c0",
+        "results": {
+          "baseline": {
+            "seconds": 8.77,
+            "preserved": true,
+            "layout": {
+              "cost": 1999.525,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 9.91
+            },
+            "counts": {
+              "near_release_press_hands": 345,
+              "release_rows": 146,
+              "releases": 438,
+              "release_only_rows": 137,
+              "reverse_shield_heads": 21,
+              "release_press_hands": 17,
+              "inverse_heads": 47,
+              "split_release_hands": 14,
+              "hybrid_taps": 49,
+              "same_hand_hybrid_taps": 1
+            }
+          },
+          "candidate": {
+            "seconds": 7.66,
+            "preserved": true,
+            "layout": {
+              "cost": 2000.359,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 9.919
+            },
+            "counts": {
+              "near_release_press_hands": 349,
+              "release_rows": 146,
+              "releases": 438,
+              "release_only_rows": 137,
+              "reverse_shield_heads": 19,
+              "release_press_hands": 14,
+              "inverse_heads": 37,
+              "split_release_hands": 14,
+              "hybrid_taps": 49,
+              "same_hand_hybrid_taps": 3
+            }
+          }
+        }
+      },
+      {
+        "id": 4995929,
+        "keys": 10,
+        "sha256": "175f073da4b4bd52cbced6ad78bd6c0b8be3ad8868dd38589e8d5749236face7",
+        "results": {
+          "baseline": {
+            "seconds": 22.61,
+            "preserved": true,
+            "layout": {
+              "cost": 11055.173,
+              "short_jacks": 26,
+              "release_repeats": 0,
+              "peak_hand_pressure": 21.45
+            },
+            "counts": {
+              "release_rows": 130,
+              "releases": 191,
+              "release_only_rows": 86,
+              "hybrid_taps": 72,
+              "release_press_hands": 31,
+              "split_release_hands": 16,
+              "reverse_shield_heads": 7,
+              "same_hand_hybrid_taps": 3,
+              "near_release_press_hands": 5
+            }
+          },
+          "candidate": {
+            "seconds": 23.9,
+            "preserved": true,
+            "layout": {
+              "cost": 11057.808,
+              "short_jacks": 26,
+              "release_repeats": 0,
+              "peak_hand_pressure": 21.448
+            },
+            "counts": {
+              "release_rows": 130,
+              "releases": 191,
+              "release_only_rows": 86,
+              "hybrid_taps": 72,
+              "release_press_hands": 29,
+              "split_release_hands": 17,
+              "inverse_heads": 1,
+              "reverse_shield_heads": 6,
+              "near_release_press_hands": 5,
+              "same_hand_hybrid_taps": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 2759268,
+        "keys": 10,
+        "sha256": "1f82bbb84079ae64c220103adbb059c1c3d3037825ddafe896adf807c84476d0",
+        "results": {
+          "baseline": {
+            "seconds": 21.85,
+            "preserved": true,
+            "layout": {
+              "cost": 10984.03,
+              "short_jacks": 345,
+              "release_repeats": 0,
+              "peak_hand_pressure": 16.164
+            },
+            "counts": {
+              "release_rows": 45,
+              "releases": 71,
+              "hybrid_taps": 27,
+              "release_press_hands": 23,
+              "reverse_shield_heads": 1,
+              "release_only_rows": 5,
+              "same_hand_hybrid_taps": 4,
+              "near_release_press_hands": 4,
+              "shield_heads": 2
+            }
+          },
+          "candidate": {
+            "seconds": 22.6,
+            "preserved": true,
+            "layout": {
+              "cost": 10982.271,
+              "short_jacks": 344,
+              "release_repeats": 0,
+              "peak_hand_pressure": 16.339
+            },
+            "counts": {
+              "release_rows": 45,
+              "releases": 71,
+              "hybrid_taps": 27,
+              "release_press_hands": 27,
+              "reverse_shield_heads": 3,
+              "release_only_rows": 5,
+              "same_hand_hybrid_taps": 5,
+              "near_release_press_hands": 6,
+              "shield_heads": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 3778199,
+        "keys": 10,
+        "sha256": "20d481a8d5c7bc2b102509924273e5af9c55b3dcdfedf9ba0a456696ab3f092c",
+        "results": {
+          "baseline": {
+            "seconds": 5.38,
+            "preserved": true,
+            "layout": {
+              "cost": 617.891,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 6.69
+            },
+            "counts": {
+              "release_rows": 93,
+              "releases": 99,
+              "release_only_rows": 11,
+              "hybrid_taps": 85,
+              "release_press_hands": 35,
+              "same_hand_hybrid_taps": 7
+            }
+          },
+          "candidate": {
+            "seconds": 4.78,
+            "preserved": true,
+            "layout": {
+              "cost": 616.617,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 6.692
+            },
+            "counts": {
+              "release_rows": 93,
+              "releases": 99,
+              "release_only_rows": 11,
+              "hybrid_taps": 85,
+              "release_press_hands": 37,
+              "same_hand_hybrid_taps": 7
+            }
+          }
+        }
+      }
+    ],
+    "totals": {
+      "6": {
+        "baseline": {
+          "short_jacks": 0,
+          "tight_repress": 0
+        },
+        "candidate": {
+          "short_jacks": 0,
+          "tight_repress": 0
+        },
+        "passed": true
+      },
+      "7": {
+        "baseline": {
+          "short_jacks": 2,
+          "tight_repress": 2
+        },
+        "candidate": {
+          "short_jacks": 2,
+          "tight_repress": 2
+        },
+        "passed": true
+      },
+      "8": {
+        "baseline": {
+          "short_jacks": 47,
+          "tight_repress": 0
+        },
+        "candidate": {
+          "short_jacks": 47,
+          "tight_repress": 0
+        },
+        "passed": true
+      },
+      "9": {
+        "baseline": {
+          "short_jacks": 0,
+          "tight_repress": 0
+        },
+        "candidate": {
+          "short_jacks": 0,
+          "tight_repress": 0
+        },
+        "passed": true
+      },
+      "10": {
+        "baseline": {
+          "short_jacks": 497,
+          "tight_repress": 0
+        },
+        "candidate": {
+          "short_jacks": 491,
+          "tight_repress": 0
+        },
+        "passed": true
+      }
+    },
+    "passed": true
+  },
+  "ln": {
+    "protocol": "Compare two learned priors on fixed full-chart development rhythms.\n\nAcceptance: unchanged non-lane fields, zero conflicts, and no per-key aggregate\nincrease in tight represses or fast same-column repeats beyond max(5, 5%).\nAll regressions are reported. These known charts are not a player blind test.\n",
+    "models": {
+      "baseline": "0245b1cce5a08dc1650b911eea6c26905e2cb423fcb6bb89bf8320ac0c1e1a10",
+      "candidate": "a7b60de4c9d8d4d86c9c16cc4b79001607fc6c069bfb6a752f743de1847fb12c"
+    },
+    "source_sha256": {
+      "manialab/arrange.py": "83f282eacb9f2593a29ca8f2b29abc09d28300a64e3274be27f5e5975ff679ac",
+      "manialab/layout.py": "e3500bb76491b958a515f50951f638b49362dbc37cb030d3a75bc8fe5efa900e",
+      "manialab/pattern_prior.py": "9539f070069a443ed0c0b0236f91805b40219324b98821b4a253a4f3272f997a",
+      "manialab/ln_patterns.py": "6447fd72e1f19423aa280dec56f954096e0fe2aec1ea7150a6d46792cf2c915e",
+      "manialab/domain.py": "83f96425423eca2da5e0b7af1488a186b998b935e7b01e0c35cef3a7b74d8c8d",
+      "manialab/timing.py": "774cedae3a773463af95bc033e9657b110d667a07d03d6cd7d7958f0c5c949ba"
+    },
+    "rows": [
+      {
+        "id": 4676076,
+        "keys": 10,
+        "sha256": "6b72fe94ada66fb0ee9dfabde2c9b3bc62689555fe893194ab3fd3abbe5d3af3",
+        "results": {
+          "baseline": {
+            "seconds": 1.31,
+            "preserved": true,
+            "layout": {
+              "cost": 100.345,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 3.897
+            },
+            "counts": {
+              "release_rows": 100,
+              "releases": 122,
+              "release_press_hands": 100,
+              "split_release_hands": 14,
+              "hybrid_taps": 24,
+              "same_hand_hybrid_taps": 3
+            }
+          },
+          "candidate": {
+            "seconds": 1.43,
+            "preserved": true,
+            "layout": {
+              "cost": 100.946,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 3.897
+            },
+            "counts": {
+              "release_rows": 100,
+              "releases": 122,
+              "release_press_hands": 99,
+              "split_release_hands": 12,
+              "hybrid_taps": 24,
+              "same_hand_hybrid_taps": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 3798534,
+        "keys": 10,
+        "sha256": "989d206a08505953f6a018353fb2b67d7458ba35fb2084f3967540bbc009be70",
+        "results": {
+          "baseline": {
+            "seconds": 3.77,
+            "preserved": true,
+            "layout": {
+              "cost": 153.507,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 3.007
+            },
+            "counts": {
+              "release_rows": 249,
+              "releases": 303,
+              "release_press_hands": 178,
+              "hybrid_taps": 127,
+              "release_only_rows": 28
+            }
+          },
+          "candidate": {
+            "seconds": 3.38,
+            "preserved": true,
+            "layout": {
+              "cost": 158.578,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 2.976
+            },
+            "counts": {
+              "release_rows": 249,
+              "releases": 303,
+              "release_press_hands": 173,
+              "hybrid_taps": 127,
+              "release_only_rows": 28
+            }
+          }
+        }
+      },
+      {
+        "id": 3598058,
+        "keys": 10,
+        "sha256": "32fe99eddb6b3ab40f4828a738b2444eadd9bbc41c3f35e12825417f390e414c",
+        "results": {
+          "baseline": {
+            "seconds": 4.73,
+            "preserved": true,
+            "layout": {
+              "cost": 562.865,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 5.019
+            },
+            "counts": {
+              "release_rows": 228,
+              "releases": 282,
+              "release_press_hands": 216,
+              "hybrid_taps": 262,
+              "same_hand_hybrid_taps": 42,
+              "release_only_rows": 8,
+              "split_release_hands": 9
+            }
+          },
+          "candidate": {
+            "seconds": 4.54,
+            "preserved": true,
+            "layout": {
+              "cost": 561.396,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 5.028
+            },
+            "counts": {
+              "release_rows": 228,
+              "releases": 282,
+              "release_press_hands": 221,
+              "hybrid_taps": 262,
+              "same_hand_hybrid_taps": 41,
+              "release_only_rows": 8,
+              "split_release_hands": 7
+            }
+          }
+        }
+      },
+      {
+        "id": 4606985,
+        "keys": 10,
+        "sha256": "0d5fa69f8152c7454a88e9038c0a831828e68f2521fd5a0f4a2c304a98a922cd",
+        "results": {
+          "baseline": {
+            "seconds": 1.21,
+            "preserved": true,
+            "layout": {
+              "cost": 47.122,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 3.19
+            },
+            "counts": {
+              "release_rows": 93,
+              "releases": 95,
+              "release_press_hands": 47,
+              "release_only_rows": 1
+            }
+          },
+          "candidate": {
+            "seconds": 1.59,
+            "preserved": true,
+            "layout": {
+              "cost": 49.213,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 3.054
+            },
+            "counts": {
+              "release_rows": 93,
+              "releases": 95,
+              "release_press_hands": 47,
+              "release_only_rows": 1
+            }
+          }
+        }
+      },
+      {
+        "id": 4554329,
+        "keys": 10,
+        "sha256": "f33533602a1c6f1e9cb8e809ddc73e64c0eb0ea6a047f1fbea7d415316c1fe01",
+        "results": {
+          "baseline": {
+            "seconds": 4.67,
+            "preserved": true,
+            "layout": {
+              "cost": 549.502,
+              "short_jacks": 1,
+              "release_repeats": 0,
+              "peak_hand_pressure": 6.694
+            },
+            "counts": {
+              "release_rows": 118,
+              "releases": 242,
+              "release_press_hands": 90,
+              "hybrid_taps": 110,
+              "split_release_hands": 37,
+              "same_hand_hybrid_taps": 66,
+              "near_release_press_hands": 33,
+              "release_only_rows": 22,
+              "reverse_shield_heads": 2,
+              "inverse_heads": 1,
+              "shield_heads": 1
+            }
+          },
+          "candidate": {
+            "seconds": 4.07,
+            "preserved": true,
+            "layout": {
+              "cost": 549.533,
+              "short_jacks": 1,
+              "release_repeats": 0,
+              "peak_hand_pressure": 6.714
+            },
+            "counts": {
+              "release_rows": 118,
+              "releases": 242,
+              "release_press_hands": 91,
+              "hybrid_taps": 110,
+              "split_release_hands": 39,
+              "same_hand_hybrid_taps": 63,
+              "near_release_press_hands": 31,
+              "release_only_rows": 22,
+              "reverse_shield_heads": 3,
+              "inverse_heads": 2,
+              "shield_heads": 1
+            }
+          }
+        }
+      },
+      {
+        "id": 3227280,
+        "keys": 10,
+        "sha256": "b8cb11bff7c6c1045476dadccfdaf71345212f5a4f6fb54f9f9e60db6ad28cb0",
+        "results": {
+          "baseline": {
+            "seconds": 6.37,
+            "preserved": true,
+            "layout": {
+              "cost": 1171.65,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 9.995
+            },
+            "counts": {
+              "release_rows": 328,
+              "releases": 393,
+              "release_press_hands": 302,
+              "hybrid_taps": 233,
+              "same_hand_hybrid_taps": 59,
+              "near_release_press_hands": 20,
+              "split_release_hands": 14,
+              "release_only_rows": 18,
+              "reverse_shield_heads": 5
+            }
+          },
+          "candidate": {
+            "seconds": 10.45,
+            "preserved": true,
+            "layout": {
+              "cost": 1168.965,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 9.995
+            },
+            "counts": {
+              "release_rows": 328,
+              "releases": 393,
+              "release_press_hands": 308,
+              "hybrid_taps": 233,
+              "same_hand_hybrid_taps": 57,
+              "near_release_press_hands": 20,
+              "split_release_hands": 15,
+              "release_only_rows": 18,
+              "reverse_shield_heads": 5
+            }
+          }
+        }
+      },
+      {
+        "id": 4554306,
+        "keys": 10,
+        "sha256": "99be629df9aa259d98d0a4f7b60fb99b2d918c71d9794fe27bf7ccb962493bb9",
+        "results": {
+          "baseline": {
+            "seconds": 15.08,
+            "preserved": true,
+            "layout": {
+              "cost": 3122.21,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 12.183
+            },
+            "counts": {
+              "hybrid_taps": 320,
+              "release_rows": 512,
+              "releases": 801,
+              "release_press_hands": 362,
+              "release_only_rows": 184,
+              "near_release_press_hands": 17,
+              "split_release_hands": 208,
+              "same_hand_hybrid_taps": 143,
+              "reverse_shield_heads": 63,
+              "inverse_heads": 88
+            }
+          },
+          "candidate": {
+            "seconds": 13.97,
+            "preserved": true,
+            "layout": {
+              "cost": 3120.741,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 12.35
+            },
+            "counts": {
+              "hybrid_taps": 320,
+              "release_rows": 512,
+              "releases": 801,
+              "release_press_hands": 365,
+              "release_only_rows": 184,
+              "reverse_shield_heads": 66,
+              "near_release_press_hands": 16,
+              "split_release_hands": 209,
+              "same_hand_hybrid_taps": 137,
+              "inverse_heads": 88
+            }
+          }
+        }
+      },
+      {
+        "id": 5035576,
+        "keys": 10,
+        "sha256": "06591c04961f3839cc4a434f6334871db9b50fed839cb9b434ff62d9c6cfa805",
+        "results": {
+          "baseline": {
+            "seconds": 9.42,
+            "preserved": true,
+            "layout": {
+              "cost": 1242.712,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 8.15
+            },
+            "counts": {
+              "release_rows": 536,
+              "releases": 900,
+              "release_only_rows": 333,
+              "split_release_hands": 296,
+              "near_release_press_hands": 304,
+              "release_press_hands": 157,
+              "inverse_heads": 38
+            }
+          },
+          "candidate": {
+            "seconds": 9.68,
+            "preserved": true,
+            "layout": {
+              "cost": 1241.802,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 8.169
+            },
+            "counts": {
+              "release_rows": 536,
+              "releases": 900,
+              "release_only_rows": 333,
+              "split_release_hands": 307,
+              "near_release_press_hands": 304,
+              "release_press_hands": 168,
+              "inverse_heads": 34
+            }
+          }
+        }
+      },
+      {
+        "id": 3903638,
+        "keys": 10,
+        "sha256": "ceebe033a7f506bdf961c9dc29a32be63c8e3018c41354dbf460052e9a519a74",
+        "results": {
+          "baseline": {
+            "seconds": 10.61,
+            "preserved": true,
+            "layout": {
+              "cost": 2009.203,
+              "short_jacks": 12,
+              "release_repeats": 0,
+              "peak_hand_pressure": 8.887
+            },
+            "counts": {
+              "release_rows": 425,
+              "releases": 582,
+              "split_release_hands": 197,
+              "release_press_hands": 367,
+              "hybrid_taps": 512,
+              "same_hand_hybrid_taps": 264,
+              "release_only_rows": 33,
+              "shield_heads": 12,
+              "reverse_shield_heads": 7,
+              "inverse_heads": 5,
+              "near_release_press_hands": 1
+            }
+          },
+          "candidate": {
+            "seconds": 9.81,
+            "preserved": true,
+            "layout": {
+              "cost": 1998.768,
+              "short_jacks": 12,
+              "release_repeats": 0,
+              "peak_hand_pressure": 10.135
+            },
+            "counts": {
+              "release_rows": 425,
+              "releases": 582,
+              "split_release_hands": 190,
+              "release_press_hands": 370,
+              "hybrid_taps": 512,
+              "same_hand_hybrid_taps": 248,
+              "release_only_rows": 33,
+              "shield_heads": 12,
+              "reverse_shield_heads": 3,
+              "inverse_heads": 5,
+              "near_release_press_hands": 1
+            }
+          }
+        }
+      },
+      {
+        "id": 3686229,
+        "keys": 10,
+        "sha256": "25851f038bcc632d351b2830d8228f02a29a354474ca6d3fd725660fc509b6cf",
+        "results": {
+          "baseline": {
+            "seconds": 19.53,
+            "preserved": true,
+            "layout": {
+              "cost": 2345.115,
+              "short_jacks": 2,
+              "release_repeats": 0,
+              "peak_hand_pressure": 8.535
+            },
+            "counts": {
+              "release_rows": 538,
+              "releases": 789,
+              "release_press_hands": 477,
+              "hybrid_taps": 518,
+              "same_hand_hybrid_taps": 217,
+              "split_release_hands": 223,
+              "reverse_shield_heads": 2,
+              "release_only_rows": 3
+            }
+          },
+          "candidate": {
+            "seconds": 19.49,
+            "preserved": true,
+            "layout": {
+              "cost": 2339.188,
+              "short_jacks": 2,
+              "release_repeats": 0,
+              "peak_hand_pressure": 8.471
+            },
+            "counts": {
+              "release_rows": 538,
+              "releases": 789,
+              "release_press_hands": 463,
+              "hybrid_taps": 518,
+              "same_hand_hybrid_taps": 202,
+              "split_release_hands": 230,
+              "release_only_rows": 3
+            }
+          }
+        }
+      },
+      {
+        "id": 3798533,
+        "keys": 10,
+        "sha256": "336fd3f56f44201cbb4cfe49d3cd6d23cb89f81117a6facb30dab704962b3264",
+        "results": {
+          "baseline": {
+            "seconds": 7.09,
+            "preserved": true,
+            "layout": {
+              "cost": 760.155,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 4.431
+            },
+            "counts": {
+              "hybrid_taps": 202,
+              "same_hand_hybrid_taps": 58,
+              "release_rows": 266,
+              "releases": 521,
+              "release_press_hands": 255,
+              "split_release_hands": 138,
+              "release_only_rows": 41
+            }
+          },
+          "candidate": {
+            "seconds": 7.46,
+            "preserved": true,
+            "layout": {
+              "cost": 766.663,
+              "short_jacks": 0,
+              "release_repeats": 0,
+              "peak_hand_pressure": 4.489
+            },
+            "counts": {
+              "hybrid_taps": 202,
+              "same_hand_hybrid_taps": 64,
+              "release_rows": 266,
+              "releases": 521,
+              "release_press_hands": 263,
+              "split_release_hands": 153,
+              "release_only_rows": 41
+            }
+          }
+        }
+      },
+      {
+        "id": 3951248,
+        "keys": 10,
+        "sha256": "d810bfcbe641295a2d559f10cad4f6dfb1f61a9e4b1d443fc3b698042a25c4e3",
+        "results": {
+          "baseline": {
+            "seconds": 12.58,
+            "preserved": true,
+            "layout": {
+              "cost": 3952.36,
+              "short_jacks": 13,
+              "release_repeats": 381,
+              "peak_hand_pressure": 21.471
+            },
+            "counts": {
+              "hybrid_taps": 127,
+              "same_hand_hybrid_taps": 48,
+              "release_rows": 354,
+              "releases": 811,
+              "release_press_hands": 270,
+              "release_only_rows": 137,
+              "near_release_press_hands": 75,
+              "split_release_hands": 281,
+              "inverse_heads": 387,
+              "tight_repress_heads": 381,
+              "reverse_shield_heads": 7
+            }
+          },
+          "candidate": {
+            "seconds": 14.11,
+            "preserved": true,
+            "layout": {
+              "cost": 3948.519,
+              "short_jacks": 13,
+              "release_repeats": 381,
+              "peak_hand_pressure": 21.471
+            },
+            "counts": {
+              "hybrid_taps": 127,
+              "same_hand_hybrid_taps": 48,
+              "release_rows": 354,
+              "releases": 811,
+              "release_press_hands": 269,
+              "release_only_rows": 137,
+              "near_release_press_hands": 74,
+              "split_release_hands": 283,
+              "reverse_shield_heads": 7,
+              "tight_repress_heads": 381,
+              "inverse_heads": 387
+            }
+          }
+        }
+      },
+      {
+        "id": 3952142,
+        "keys": 10,
+        "sha256": "d01a98e0720650136137d42fbb1c0c70368e4808568b896fd85fbca8d4f6e3ed",
+        "results": {
+          "baseline": {
+            "seconds": 16.5,
+            "preserved": true,
+            "layout": {
+              "cost": 4142.9,
+              "short_jacks": 11,
+              "release_repeats": 0,
+              "peak_hand_pressure": 13.281
+            },
+            "counts": {
+              "release_rows": 503,
+              "releases": 1032,
+              "release_only_rows": 35,
+              "reverse_shield_heads": 49,
+              "release_press_hands": 624,
+              "hybrid_taps": 151,
+              "same_hand_hybrid_taps": 96,
+              "split_release_hands": 629,
+              "near_release_press_hands": 607,
+              "inverse_heads": 538,
+              "shield_heads": 1
+            }
+          },
+          "candidate": {
+            "seconds": 16.49,
+            "preserved": true,
+            "layout": {
+              "cost": 4148.51,
+              "short_jacks": 11,
+              "release_repeats": 0,
+              "peak_hand_pressure": 14.187
+            },
+            "counts": {
+              "release_rows": 503,
+              "releases": 1032,
+              "release_only_rows": 35,
+              "reverse_shield_heads": 47,
+              "release_press_hands": 624,
+              "hybrid_taps": 151,
+              "same_hand_hybrid_taps": 92,
+              "split_release_hands": 628,
+              "near_release_press_hands": 609,
+              "inverse_heads": 543,
+              "shield_heads": 1
+            }
+          }
+        }
+      },
+      {
+        "id": 3607806,
+        "keys": 10,
+        "sha256": "0b753d90ae008d2da54419de372a744cdea6ad33b96d81fd24efb25b50dbd0cc",
+        "results": {
+          "baseline": {
+            "seconds": 38.89,
+            "preserved": true,
+            "layout": {
+              "cost": 25250.917,
+              "short_jacks": 435,
+              "release_repeats": 826,
+              "peak_hand_pressure": 21.94
+            },
+            "counts": {
+              "release_rows": 1377,
+              "releases": 3483,
+              "release_press_hands": 555,
+              "hybrid_taps": 262,
+              "same_hand_hybrid_taps": 192,
+              "near_release_press_hands": 1699,
+              "inverse_heads": 1504,
+              "split_release_hands": 1261,
+              "reverse_shield_heads": 140,
+              "release_only_rows": 675,
+              "shield_heads": 23,
+              "tight_repress_heads": 826
+            }
+          },
+          "candidate": {
+            "seconds": 34.59,
+            "preserved": true,
+            "layout": {
+              "cost": 25250.505,
+              "short_jacks": 434,
+              "release_repeats": 826,
+              "peak_hand_pressure": 22.03
+            },
+            "counts": {
+              "release_rows": 1377,
+              "releases": 3483,
+              "release_press_hands": 550,
+              "hybrid_taps": 262,
+              "same_hand_hybrid_taps": 185,
+              "near_release_press_hands": 1675,
+              "inverse_heads": 1502,
+              "split_release_hands": 1273,
+              "reverse_shield_heads": 133,
+              "release_only_rows": 675,
+              "shield_heads": 23,
+              "tight_repress_heads": 826
+            }
+          }
+        }
+      },
+      {
+        "id": 3462633,
+        "keys": 10,
+        "sha256": "82c47b77a8c077ed8497235b4a96ca0840592756780135cb9c0104b13b562c70",
+        "results": {
+          "baseline": {
+            "seconds": 26.73,
+            "preserved": true,
+            "layout": {
+              "cost": 8429.348,
+              "short_jacks": 0,
+              "release_repeats": 2,
+              "peak_hand_pressure": 16.581
+            },
+            "counts": {
+              "release_rows": 1263,
+              "releases": 3176,
+              "release_press_hands": 748,
+              "near_release_press_hands": 498,
+              "release_only_rows": 652,
+              "split_release_hands": 804,
+              "inverse_heads": 465,
+              "tight_repress_heads": 2
+            }
+          },
+          "candidate": {
+            "seconds": 28.6,
+            "preserved": true,
+            "layout": {
+              "cost": 8452.928,
+              "short_jacks": 2,
+              "release_repeats": 4,
+              "peak_hand_pressure": 16.587
+            },
+            "counts": {
+              "release_rows": 1263,
+              "releases": 3176,
+              "release_press_hands": 738,
+              "near_release_press_hands": 513,
+              "release_only_rows": 652,
+              "split_release_hands": 803,
+              "inverse_heads": 462,
+              "tight_repress_heads": 4
+            }
+          }
+        }
+      }
+    ],
+    "totals": {
+      "10": {
+        "baseline": {
+          "short_jacks": 474,
+          "tight_repress": 1209
+        },
+        "candidate": {
+          "short_jacks": 475,
+          "tight_repress": 1211
+        },
+        "passed": true
+      }
+    },
+    "passed": true
+  }
+}

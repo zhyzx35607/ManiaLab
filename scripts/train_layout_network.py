@@ -18,8 +18,8 @@ import time
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import numpy as np
-from manialab.domain import parse_osu
-from manialab.layout import chord_choices
+from manialab.domain import parse_osu,validate
+from manialab.layout import release_choices
 from manialab.pattern_prior import NETWORK_FEATURES,network_features,mirror_features,score_network
 from scripts.train_pattern_prior import split_for
 
@@ -28,8 +28,12 @@ def records_and_groups(root):
     records=[json.loads(line) for p in sorted(root.glob('manifest-*.jsonl')) for line in p.read_text(encoding='utf-8').splitlines() if line]
     selected,seen,excluded=[],set(),Counter()
     for r in records:
-        if not r.get('eligible') or r['sha256'] in seen:
-            continue
+        if r.get('approved') not in (1,2,4):
+            excluded['status_not_ranked_loved']+=1;continue
+        if not r.get('eligible'):
+            excluded['ineligible']+=1;continue
+        if r['sha256'] in seen:
+            excluded['duplicate_bytes']+=1;continue
         seen.add(r['sha256'])
         raw=(root/'maps'/f"{r['beatmap_id']}.osu").read_bytes()
         if hashlib.sha256(raw).hexdigest()!=r['sha256']:
@@ -53,6 +57,8 @@ def records_and_groups(root):
         song='song:'+r['song_key']
         if int(r.get('beatmapset_id',0))>0:union(song,'set:'+str(r['beatmapset_id']))
         if r.get('audio_hash'):union(song,'audio:'+r['audio_hash'])
+        for alias in r.get('related_song_keys',[]):union(song,'song:'+alias)
+        for alias in r.get('related_audio_hashes',[]):union(song,'audio:'+alias)
     return [r|dict(group=find('song:'+r['song_key'])) for r in selected],dict(excluded)
 
 
@@ -64,7 +70,19 @@ def samples(parsed,seed,limit=250):
         p=line.split(',')
         if len(p)>=7 and p[6]=='1' and float(p[1])>0:beats.append((float(p[0]),float(p[1])))
     beats.sort();rng=np.random.default_rng(seed)
-    take=set(rng.choice(len(rows),min(limit,len(rows)),replace=False))
+    # Give LN interactions and plain attacks equal sampling opportunities when
+    # both exist. Scan the entire chart before sampling; no opening-only cap.
+    context=[];scan_ends=np.full(keys,-100000.);scan_last=scan_ends.copy()
+    for start,row in sorted(rows.items()):
+        context.append(any(n.hold for n in row) or bool(np.any(scan_ends>start)) or
+            bool(np.any((scan_ends>scan_last)&(start-scan_ends>=0)&(start-scan_ends<150))))
+        for n in row:scan_ends[n.lane],scan_last[n.lane]=n.end,start
+    context=np.asarray(context);take=set()
+    for group,budget in zip((np.flatnonzero(context),np.flatnonzero(~context)),((limit+1)//2,limit//2)):
+        take.update(rng.choice(group,min(budget,len(group)),replace=False).tolist())
+    remaining=np.array(sorted(set(range(len(rows)))-take))
+    if len(take)<min(limit,len(rows)):
+        take.update(rng.choice(remaining,min(limit,len(rows))-len(take),replace=False).tolist())
     ends,last,history=np.full(keys,-100000.),np.full(keys,-100000.),[]
     index_beat=0;positive=[];negative=[]
     for index,(start,row) in enumerate(sorted(rows.items())):
@@ -74,14 +92,17 @@ def samples(parsed,seed,limit=250):
         if not 180<=beat<=1500:beat=500
         actual=np.array([n.lane for n in row])
         if index in take and len(row)<keys and len(set(actual))==len(row):
-            choices=chord_choices(keys,len(row))
+            duration=np.array([n.end-n.start for n in row])
+            choices=release_choices(keys,duration)
             choices=choices[~((ends[choices]>start)|(last[choices]==start)).any(axis=1)]
             choices=choices[np.any(choices!=actual[None],axis=1)]
             if len(choices):
                 alternatives=choices[rng.choice(len(choices),min(4,len(choices)),replace=False)]
-                duration=np.array([n.end-n.start for n in row])
                 good=network_features(actual[None],keys,start,ends,last,history,duration,beat)[0]
                 bad=network_features(alternatives,keys,start,ends,last,history,duration,beat)
+                # Swapping equal-duration notes can yield the same observable
+                # state. Such a tie is not a meaningful negative preference.
+                bad=np.unique(bad[~np.all(bad==good,axis=1)],axis=0)
                 positive.extend([good]*len(bad));negative.extend(bad)
         for n in row:ends[n.lane],last[n.lane]=n.end,start
         history=(*history[-1:],(start,sum(1<<n.lane for n in row),len(row)))
@@ -89,25 +110,34 @@ def samples(parsed,seed,limit=250):
     return np.asarray(positive,np.float16).reshape(shape),np.asarray(negative,np.float16).reshape(shape)
 
 
+def ln_context(a):
+    lanes=a[:,:90].reshape(-1,10,9)
+    return np.any(((lanes[:,:,1]>0)|(lanes[:,:,5]>0)|(lanes[:,:,4]<.75))&(lanes[:,:,8]>0),axis=1)
+
+
 def prepare(root,cache):
     selected,excluded=records_and_groups(root);cache.mkdir(parents=True,exist_ok=True)
-    arrays=defaultdict(lambda:[[],[]]);count=Counter();manifest=[]
+    arrays=defaultdict(lambda:[[],[]]);manifest=[]
+    chart_counts=Counter((r['keys'],r['group']) for r in selected)
     for index,r in enumerate(selected):
         key,group=r['keys'],r['group'];split=split_for(group)
-        remaining=5000-count[(key,group)]
-        if remaining<=0:continue
-        path=cache/(r['sha256']+'-network-v1.npz')
+        # Share each song's budget across difficulties; do not skip later maps
+        # just because an earlier difficulty consumed all 5,000 pairs.
+        budget=max(1,5000//chart_counts[(key,group)])
+        path=cache/(r['sha256']+'-'+str(r['beatmap_id'])+'-network-ln-v2.npz')
         if path.exists():
             with np.load(path,allow_pickle=False) as data:a,b=data['positive'],data['negative']
         else:
             parsed=parse_osu((root/'maps'/f"{r['beatmap_id']}.osu").read_text(encoding='utf-8-sig'))
+            if not validate(parsed['notes'],key)['valid']:
+                raise ValueError('Invalid chart in training snapshot')
             a,b=samples(parsed,int(r['beatmap_id']))
             np.savez_compressed(path,positive=a,negative=b)
-        a,b=a[:remaining],b[:remaining]
+        pick=np.random.default_rng(int(r['beatmap_id'])).choice(len(a),min(budget,len(a)),replace=False)
+        a,b=a[pick],b[pick]
         if not len(a):continue
-        count[(key,group)]+=len(a)
         arrays[(key,split)][0].append(a);arrays[(key,split)][1].append(b)
-        manifest.append(dict(id=r['beatmap_id'],sha256=r['sha256'],keys=key,group=group,split=split,pairs=len(a)))
+        manifest.append(dict(id=r['beatmap_id'],sha256=r['sha256'],keys=key,group=group,split=split,pairs=len(a),ln_pairs=int(ln_context(a).sum()),ln_class=r.get('ln_class')))
         if index%100==0:print(json.dumps(dict(prepared=index,eligible=len(selected))),flush=True)
     data={k:tuple(np.concatenate(v) for v in pair) for k,pair in arrays.items()}
     return data,manifest,excluded
@@ -128,8 +158,12 @@ def evaluate(model,data,split):
                     return (model(torch.from_numpy(z))+model(torch.from_numpy(mirror_features(z,key))))/2
                 margins.extend((score(x)-score(y))[:,0].numpy())
             margin=np.asarray(margins)
-            result[str(key)]=dict(pairs=len(margin),accuracy=round(float((margin>0).mean()+.5*(margin==0).mean()),4),
-                                 loss=round(float(np.logaddexp(0,-margin).mean()),4))
+            def metrics(mask):
+                selected=margin[mask]
+                return dict(pairs=len(selected),accuracy=round(float((selected>0).mean()+.5*(selected==0).mean()),4),
+                    loss=round(float(np.logaddexp(0,-selected).mean()),4)) if len(selected) else dict(pairs=0)
+            context=ln_context(a)
+            result[str(key)]=dict(**metrics(np.ones(len(margin),dtype=bool)),ln=metrics(context),taps=metrics(~context))
     return result
 
 
@@ -140,6 +174,10 @@ def train(args):
     data,manifest,excluded=prepare(args.folder,args.cache)
     train_keys=[k for k in range(6,11) if (k,'train') in data]
     if not train_keys:raise ValueError('No training examples')
+    pools={}
+    for key in train_keys:
+        context=ln_context(data[(key,'train')][0])
+        pools[key]=[p for p in (np.flatnonzero(context),np.flatnonzero(~context)) if len(p)]
     model=torch.nn.Sequential(torch.nn.Linear(len(NETWORK_FEATURES),64),torch.nn.ReLU(),
                               torch.nn.Linear(64,32),torch.nn.ReLU(),torch.nn.Linear(32,1))
     optimizer=torch.optim.AdamW(model.parameters(),lr=.001,weight_decay=.002)
@@ -148,7 +186,8 @@ def train(args):
         model.train();losses=[]
         for step in range(args.steps):
             key=train_keys[step%len(train_keys)];a,b=data[(key,'train')]
-            indices=rng.integers(0,len(a),size=args.batch)
+            available=pools[key]
+            indices=np.concatenate([rng.choice(pool,args.batch//len(available),replace=True) for pool in available])
             x,y=a[indices].astype(np.float32),b[indices].astype(np.float32)
             mirror=rng.random(len(x))<.5
             x[mirror]=mirror_features(x[mirror],key);y[mirror]=mirror_features(y[mirror],key)
@@ -156,7 +195,7 @@ def train(args):
             optimizer.zero_grad();loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),5);optimizer.step()
             losses.append(float(loss.detach()))
         validation=evaluate(model,data,'validation')
-        mean_loss=float(np.mean([m['loss'] for m in validation.values()])) if validation else float('inf')
+        mean_loss=float(np.mean([np.mean([m[k]['loss'] for k in ('ln','taps') if m[k]['pairs']]) for m in validation.values()])) if validation else float('inf')
         if mean_loss<best_loss:
             best_loss,best,best_epoch=mean_loss,copy.deepcopy(model.state_dict()),epoch+1
         item=dict(epoch=epoch+1,train_loss=round(float(np.mean(losses)),4),validation=validation,seconds=round(time.perf_counter()-started,1))
@@ -168,9 +207,10 @@ def train(args):
     for key in range(6,11):
         splits={s:dict(maps=sum(r['keys']==key and r['split']==s for r in manifest),
             groups=len({r['group'] for r in manifest if r['keys']==key and r['split']==s}),
+            ln_groups=len({r['group'] for r in manifest if r['keys']==key and r['split']==s and r['ln_pairs']>=20}),
             pairs=sum(r['pairs'] for r in manifest if r['keys']==key and r['split']==s)) for s in ('train','validation','test')}
         validation=metrics['validation'].get(str(key),{})
-        enabled=splits['train']['groups']>=8 and splits['validation']['groups']>=3 and validation.get('accuracy',0)>=.60
+        enabled=splits['train']['groups']>=8 and splits['validation']['groups']>=3 and splits['validation']['ln_groups']>=3 and validation.get('accuracy',0)>=.60 and validation.get('ln',{}).get('accuracy',0)>=.60
         models[str(key)]=dict(enabled=enabled)
         statistics[str(key)]=dict(enabled=enabled,splits=splits,metrics={s:metrics[s].get(str(key)) for s in metrics})
     layers=[dict(weight=np.round(m.weight.detach().numpy(),7).tolist(),bias=np.round(m.bias.detach().numpy(),7).tolist())
@@ -186,7 +226,7 @@ def train(args):
     args.output.write_text(json.dumps(payload,separators=(',',':')),encoding='utf-8')
     args.report.write_text(json.dumps(dict(models=statistics,manifest=manifest,excluded=excluded,epochs=history,best_epoch=best_epoch,
         training_manifest_sha256=fingerprint,export_max_error=error,seed=20261107,
-        method='101-feature 64/32 MLP; pairwise softplus; key-balanced batches; mirror augmentation; song/audio/set grouped split'),indent=2),encoding='utf-8')
+        method='101-feature 64/32 MLP; pairwise softplus; key and LN-context balanced batches; release permutations; all difficulties share song budgets; mirror augmentation; song/audio/set grouped split; cache ln-v2'),indent=2),encoding='utf-8')
     print(json.dumps(dict(best_epoch=best_epoch,models=statistics,export_max_error=error)),flush=True)
 
 

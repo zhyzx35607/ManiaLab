@@ -1,0 +1,1022 @@
+{
+  "source_records": 10855,
+  "unique_ids": 8126,
+  "included": 7907,
+  "keycounts": {
+    "7": 5777,
+    "6": 1058,
+    "8": 251,
+    "9": 236,
+    "10": 585
+  },
+  "reference_roles": {
+    "expression_and_layout": 7902,
+    "layout_only": 5
+  },
+  "key_ln_classes": {
+    "6": {
+      "tap_majority": 591,
+      "hybrid": 388,
+      "ln_majority": 79
+    },
+    "7": {
+      "tap_majority": 3479,
+      "hybrid": 1882,
+      "ln_majority": 416
+    },
+    "8": {
+      "tap_majority": 221,
+      "hybrid": 28,
+      "ln_majority": 2
+    },
+    "9": {
+      "tap_majority": 163,
+      "hybrid": 58,
+      "ln_majority": 15
+    },
+    "10": {
+      "tap_majority": 463,
+      "hybrid": 108,
+      "ln_majority": 14
+    }
+  },
+  "exclusions": {
+    "scratch_8k": 60,
+    "ineligible_or_not_ranked_loved": 129,
+    "duplicate_layout": 3,
+    "official_difficulty_status_excluded": 17,
+    "official_checksum_mismatch": 10
+  },
+  "excluded": [
+    {
+      "id": 334202,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 361739,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 382381,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 542688,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 639213,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 647970,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 648016,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 690255,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 692391,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 698619,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 728319,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 758229,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 766440,
+      "reason": "duplicate_layout:766439"
+    },
+    {
+      "id": 803398,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 856050,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 856051,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 856052,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 1008888,
+      "reason": "duplicate_layout:1008887"
+    },
+    {
+      "id": 1035081,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1138981,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1138990,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1237077,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1336842,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1567624,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1591020,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1689762,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1746083,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 1753050,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 1766064,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1766123,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1766709,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1766719,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 1879178,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 2077858,
+      "reason": "duplicate_layout:2077857"
+    },
+    {
+      "id": 2165494,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 2281223,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2309774,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 2322252,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2335772,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 2426696,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2600391,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 2600392,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 2600393,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 2735104,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2735105,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2735117,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2735118,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2735119,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2735120,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2735121,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2735122,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2735123,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2735133,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2735134,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2735135,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2735136,
+      "reason": "official_checksum_mismatch"
+    },
+    {
+      "id": 2759238,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 2940516,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 2950141,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2950145,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2950217,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2950229,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2950246,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2975388,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 2981114,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 3011688,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3015428,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3144028,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3165700,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3165701,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3165702,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3204125,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 3269853,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 3269867,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 3347765,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 3347769,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3360541,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 3440424,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3565290,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 3578837,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3631492,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3631654,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3665758,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3673030,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3756603,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3756604,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3856470,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3865315,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3865316,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3865319,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3865320,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3870320,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 3926667,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3926668,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3926669,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3926670,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3926671,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3926672,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3969699,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3972856,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 3980774,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3992501,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3995603,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 3996472,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 4029720,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4033347,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4036845,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4065664,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4082614,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4087029,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4087031,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4111543,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4111788,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4111790,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4112465,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4127120,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4145298,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4163909,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4212673,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4233984,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4233985,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4233989,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4233993,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4286176,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4286180,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4286184,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4286188,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4297186,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4310246,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4312782,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4345606,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4373049,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4376990,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4478047,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4478048,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4478049,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4482865,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4484577,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4485796,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4490745,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4490749,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4492102,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4492678,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4492690,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4495895,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4533310,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4534759,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4534814,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4555828,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4555829,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4607713,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4607714,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4657715,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4658680,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4664765,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4686483,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4686487,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4686877,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 4708185,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4708186,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4709513,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4709514,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4807571,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4807572,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4811484,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4811944,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4857100,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4876088,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4922563,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4928843,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4952911,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982031,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982032,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982033,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982040,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982041,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982042,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982043,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982044,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982045,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982046,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982047,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982048,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982049,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982050,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4982051,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 4993901,
+      "reason": "official_difficulty_status_excluded"
+    },
+    {
+      "id": 5093419,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5127951,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5127952,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5127954,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5127955,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5127983,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5138486,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5141705,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5181357,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5184416,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5185382,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5185407,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5214465,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5231333,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5231334,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5231335,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5231336,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5318369,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5349011,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5384523,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5443308,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5448328,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5448331,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5509111,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5572802,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5614415,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5614416,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5626190,
+      "reason": "scratch_8k"
+    },
+    {
+      "id": 5676641,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5676643,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5679354,
+      "reason": "ineligible_or_not_ranked_loved"
+    },
+    {
+      "id": 5762205,
+      "reason": "scratch_8k"
+    }
+  ],
+  "manifest_sha256": "d6c6040432dc3c876c637ed37576472a611aa7791a92cdb45299e011eec48d95",
+  "date": "2026-11-08",
+  "discovery": {
+    "query": {
+      "cmd": "beatmaplist",
+      "type": "search",
+      "keyword": "",
+      "mode": 8,
+      "class": 5,
+      "cs": [
+        6,
+        10
+      ],
+      "limit": 100
+    },
+    "complete": true,
+    "started": 1794116076.2899063,
+    "pages": 23,
+    "sets": 2268,
+    "last_cursor": 52972,
+    "terminal": "short final page with zero endid",
+    "finished": 1794116076.334938
+  },
+  "acquisition": {
+    "complete": false,
+    "inventory_complete": true,
+    "sets_done": 2275,
+    "supplement_sets": [
+      393179,
+      1105209,
+      1331811,
+      1572720,
+      1716337,
+      2204252,
+      2328927
+    ],
+    "charts": 8110,
+    "eligible": 7965,
+    "keys": {
+      "6": 1088,
+      "7": 5830,
+      "8": 323,
+      "9": 254,
+      "10": 615
+    },
+    "failures": [
+      {
+        "set_id": 658681,
+        "error": "Loved difficulty status not verified; excluded"
+      },
+      {
+        "set_id": 73883,
+        "beatmap_id": 210180,
+        "error": "481ms 存在不支持的物件类型 2"
+      },
+      {
+        "set_id": 73883,
+        "beatmap_id": 214145,
+        "error": "1835ms 存在不支持的物件类型 2"
+      },
+      {
+        "set_id": 73883,
+        "beatmap_id": 215152,
+        "error": "2029ms 存在不支持的物件类型 2"
+      },
+      {
+        "set_id": 73883,
+        "beatmap_id": 215267,
+        "error": "2029ms 存在不支持的物件类型 2"
+      },
+      {
+        "set_id": 73883,
+        "beatmap_id": 216407,
+        "error": "2029ms 存在不支持的物件类型 2"
+      },
+      {
+        "set_id": 71255,
+        "beatmap_id": 204360,
+        "error": "142700ms 存在不支持的物件类型 2"
+      }
+    ],
+    "notice": "Coverage of this public mirror query only; no claim to include deleted, unavailable or unindexed charts."
+  },
+  "status_counts": {
+    "1": 5951,
+    "4": 1956
+  },
+  "status_scopes": {
+    "mirror_beatmapset": 4327,
+    "beatmap": 3580
+  },
+  "calibration_charts": 7902,
+  "calibration_sha256": "60553b93297cb0be7bf0a744796b23765a415b2a4c4514970390491d853a5d0f",
+  "notice": "Coverage of one exhausted mirror query plus seven known missing Loved sets. No claim to contain every osu! chart. Raw charts/audio are not redistributed."
+}
