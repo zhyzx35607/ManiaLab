@@ -129,9 +129,11 @@ def run(executable, work):
             job=wait(request(base+'/generate',payload));assert job['status']=='done',job
             text=request(base+'/export/osu').decode('utf-8');parsed=parse_osu(text)
             report=validate(parsed['notes'],keys)
-            assert report['valid'] and report['notes']==5 and report['ln']==3,report
+            # Every isolated source event is sustained. The section policy
+            # must preserve all five; a global 55% quota used to turn two taps.
+            assert report['valid'] and report['notes']==5 and report['ln']==5,report
             grid=grid_report(parsed['notes'],dict(bpm=120,offset=-22,division=4));assert grid['off_grid']==0,grid
-            checks.append(dict(check='generate_export',keys=keys,notes=5,ln=3,off_grid=0))
+            checks.append(dict(check='generate_export',keys=keys,notes=5,ln=5,off_grid=0))
         with zipfile.ZipFile(io.BytesIO(request(base+'/export/osz'))) as archive:
             assert set(archive.namelist())=={'ManiaLab.osu',source.name},archive.namelist()
         audio=request(base+'/audition',dict(mode='chart',start_ms=0,duration_ms=12000));assert audio[:4]==b'RIFF'

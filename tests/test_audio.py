@@ -88,3 +88,23 @@ def test_short_cross_source_leakage_is_not_an_extra_instrument():
     assert {r['reason'] for r in rejected}=={'weak_duplicate_attack','release_edge_bleed'}
     result,_=reject_source_bleed(notes,stems,[Note(2900,2900)])
     assert 'tail' in {n.id for n in result}
+
+
+def test_steady_bass_retrigger_can_be_removed_without_smoothing_a_real_rest():
+    from manialab.articulation import steady_bass_onsets
+    from manialab.audio import pitched_notes
+    times=np.arange(300)*256/SR
+    frames=np.zeros((300,88));onsets=np.zeros_like(frames)
+    frames[40:180,12]=.7;onsets[40,12]=.8;onsets[100,12]=.5
+    t=np.arange(SR*4)/SR;frequency=440*2**((33-69)/12)
+    wave=.2*np.sin(2*np.pi*frequency*t)
+    original=onsets.copy()
+    suppressed=steady_bass_onsets(frames,onsets,times,wave)
+    assert len(suppressed)==1 and suppressed[0]['time_ms']==round(times[100]*1000)
+    notes=pitched_notes(frames,onsets,times,4,suppressed=suppressed)
+    assert len(notes)==1 and notes[0].end>2000
+    assert np.array_equal(onsets,original)
+    # Even a short true rest around the same suspected reattack prevents
+    # suppression; the test leaves model activation constant intentionally.
+    at=times[100];wave[(t>=at-.015)&(t<at)]=0
+    assert steady_bass_onsets(frames,onsets,times,wave)==[]

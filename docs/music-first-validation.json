@@ -1,0 +1,4353 @@
+{
+  "date": "2026-11-08",
+  "status": "development test build; not music-quality acceptance; research weights disabled",
+  "articulation": {
+    "isolated": {
+      "bass": {
+        "suppressed": 33,
+        "baseline": {
+          "attacks": {
+            "predicted": 98,
+            "reference": 64,
+            "matched": 57,
+            "precision": 0.5816,
+            "recall": 0.8906,
+            "f1": 0.7037
+          },
+          "intervals": {
+            "predicted": 98,
+            "reference": 64,
+            "matched": 31,
+            "precision": 0.3163,
+            "recall": 0.4844,
+            "f1": 0.3827
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 67,
+            "reference": 64,
+            "matched": 57,
+            "precision": 0.8507,
+            "recall": 0.8906,
+            "f1": 0.8702
+          },
+          "intervals": {
+            "predicted": 67,
+            "reference": 64,
+            "matched": 57,
+            "precision": 0.8507,
+            "recall": 0.8906,
+            "f1": 0.8702
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      "lead": {
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 43,
+            "reference": 42,
+            "matched": 42,
+            "precision": 0.9767,
+            "recall": 1.0,
+            "f1": 0.9882
+          },
+          "intervals": {
+            "predicted": 43,
+            "reference": 42,
+            "matched": 42,
+            "precision": 0.9767,
+            "recall": 1.0,
+            "f1": 0.9882
+          },
+          "long_notes_over_800ms": 9
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 43,
+            "reference": 42,
+            "matched": 42,
+            "precision": 0.9767,
+            "recall": 1.0,
+            "f1": 0.9882
+          },
+          "intervals": {
+            "predicted": 43,
+            "reference": 42,
+            "matched": 42,
+            "precision": 0.9767,
+            "recall": 1.0,
+            "f1": 0.9882
+          },
+          "long_notes_over_800ms": 9
+        }
+      },
+      "pad": {
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 30,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8,
+            "recall": 1.0,
+            "f1": 0.8889
+          },
+          "intervals": {
+            "predicted": 30,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8,
+            "recall": 1.0,
+            "f1": 0.8889
+          },
+          "long_notes_over_800ms": 24
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 30,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8,
+            "recall": 1.0,
+            "f1": 0.8889
+          },
+          "intervals": {
+            "predicted": 30,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8,
+            "recall": 1.0,
+            "f1": 0.8889
+          },
+          "long_notes_over_800ms": 24
+        }
+      }
+    },
+    "repeated": [
+      {
+        "pitch": 28,
+        "gap_ms": 10,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 10,
+            "reference": 24,
+            "matched": 2,
+            "precision": 0.2,
+            "recall": 0.0833,
+            "f1": 0.1176
+          },
+          "intervals": {
+            "predicted": 10,
+            "reference": 24,
+            "matched": 1,
+            "precision": 0.1,
+            "recall": 0.0417,
+            "f1": 0.0588
+          },
+          "long_notes_over_800ms": 1
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 10,
+            "reference": 24,
+            "matched": 2,
+            "precision": 0.2,
+            "recall": 0.0833,
+            "f1": 0.1176
+          },
+          "intervals": {
+            "predicted": 10,
+            "reference": 24,
+            "matched": 1,
+            "precision": 0.1,
+            "recall": 0.0417,
+            "f1": 0.0588
+          },
+          "long_notes_over_800ms": 1
+        }
+      },
+      {
+        "pitch": 28,
+        "gap_ms": 10,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 13,
+            "reference": 24,
+            "matched": 5,
+            "precision": 0.3846,
+            "recall": 0.2083,
+            "f1": 0.2703
+          },
+          "intervals": {
+            "predicted": 13,
+            "reference": 24,
+            "matched": 3,
+            "precision": 0.2308,
+            "recall": 0.125,
+            "f1": 0.1622
+          },
+          "long_notes_over_800ms": 1
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 13,
+            "reference": 24,
+            "matched": 5,
+            "precision": 0.3846,
+            "recall": 0.2083,
+            "f1": 0.2703
+          },
+          "intervals": {
+            "predicted": 13,
+            "reference": 24,
+            "matched": 3,
+            "precision": 0.2308,
+            "recall": 0.125,
+            "f1": 0.1622
+          },
+          "long_notes_over_800ms": 1
+        }
+      },
+      {
+        "pitch": 28,
+        "gap_ms": 30,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 13,
+            "reference": 24,
+            "matched": 9,
+            "precision": 0.6923,
+            "recall": 0.375,
+            "f1": 0.4865
+          },
+          "intervals": {
+            "predicted": 13,
+            "reference": 24,
+            "matched": 6,
+            "precision": 0.4615,
+            "recall": 0.25,
+            "f1": 0.3243
+          },
+          "long_notes_over_800ms": 1
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 13,
+            "reference": 24,
+            "matched": 9,
+            "precision": 0.6923,
+            "recall": 0.375,
+            "f1": 0.4865
+          },
+          "intervals": {
+            "predicted": 13,
+            "reference": 24,
+            "matched": 6,
+            "precision": 0.4615,
+            "recall": 0.25,
+            "f1": 0.3243
+          },
+          "long_notes_over_800ms": 1
+        }
+      },
+      {
+        "pitch": 28,
+        "gap_ms": 30,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 8,
+            "reference": 24,
+            "matched": 5,
+            "precision": 0.625,
+            "recall": 0.2083,
+            "f1": 0.3125
+          },
+          "intervals": {
+            "predicted": 8,
+            "reference": 24,
+            "matched": 4,
+            "precision": 0.5,
+            "recall": 0.1667,
+            "f1": 0.25
+          },
+          "long_notes_over_800ms": 1
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 8,
+            "reference": 24,
+            "matched": 5,
+            "precision": 0.625,
+            "recall": 0.2083,
+            "f1": 0.3125
+          },
+          "intervals": {
+            "predicted": 8,
+            "reference": 24,
+            "matched": 4,
+            "precision": 0.5,
+            "recall": 0.1667,
+            "f1": 0.25
+          },
+          "long_notes_over_800ms": 1
+        }
+      },
+      {
+        "pitch": 28,
+        "gap_ms": 80,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 15,
+            "precision": 0.5769,
+            "recall": 0.625,
+            "f1": 0.6
+          },
+          "intervals": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 12,
+            "precision": 0.4615,
+            "recall": 0.5,
+            "f1": 0.48
+          },
+          "long_notes_over_800ms": 1
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 15,
+            "precision": 0.5769,
+            "recall": 0.625,
+            "f1": 0.6
+          },
+          "intervals": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 12,
+            "precision": 0.4615,
+            "recall": 0.5,
+            "f1": 0.48
+          },
+          "long_notes_over_800ms": 1
+        }
+      },
+      {
+        "pitch": 28,
+        "gap_ms": 80,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 20,
+            "reference": 24,
+            "matched": 12,
+            "precision": 0.6,
+            "recall": 0.5,
+            "f1": 0.5455
+          },
+          "intervals": {
+            "predicted": 20,
+            "reference": 24,
+            "matched": 11,
+            "precision": 0.55,
+            "recall": 0.4583,
+            "f1": 0.5
+          },
+          "long_notes_over_800ms": 1
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 20,
+            "reference": 24,
+            "matched": 12,
+            "precision": 0.6,
+            "recall": 0.5,
+            "f1": 0.5455
+          },
+          "intervals": {
+            "predicted": 20,
+            "reference": 24,
+            "matched": 11,
+            "precision": 0.55,
+            "recall": 0.4583,
+            "f1": 0.5
+          },
+          "long_notes_over_800ms": 1
+        }
+      },
+      {
+        "pitch": 36,
+        "gap_ms": 10,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 23,
+            "reference": 24,
+            "matched": 8,
+            "precision": 0.3478,
+            "recall": 0.3333,
+            "f1": 0.3404
+          },
+          "intervals": {
+            "predicted": 23,
+            "reference": 24,
+            "matched": 7,
+            "precision": 0.3043,
+            "recall": 0.2917,
+            "f1": 0.2979
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 23,
+            "reference": 24,
+            "matched": 8,
+            "precision": 0.3478,
+            "recall": 0.3333,
+            "f1": 0.3404
+          },
+          "intervals": {
+            "predicted": 23,
+            "reference": 24,
+            "matched": 7,
+            "precision": 0.3043,
+            "recall": 0.2917,
+            "f1": 0.2979
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 36,
+        "gap_ms": 10,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 23,
+            "reference": 24,
+            "matched": 7,
+            "precision": 0.3043,
+            "recall": 0.2917,
+            "f1": 0.2979
+          },
+          "intervals": {
+            "predicted": 23,
+            "reference": 24,
+            "matched": 4,
+            "precision": 0.1739,
+            "recall": 0.1667,
+            "f1": 0.1702
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 23,
+            "reference": 24,
+            "matched": 7,
+            "precision": 0.3043,
+            "recall": 0.2917,
+            "f1": 0.2979
+          },
+          "intervals": {
+            "predicted": 23,
+            "reference": 24,
+            "matched": 4,
+            "precision": 0.1739,
+            "recall": 0.1667,
+            "f1": 0.1702
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 36,
+        "gap_ms": 30,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 16,
+            "reference": 24,
+            "matched": 16,
+            "precision": 1.0,
+            "recall": 0.6667,
+            "f1": 0.8
+          },
+          "intervals": {
+            "predicted": 16,
+            "reference": 24,
+            "matched": 16,
+            "precision": 1.0,
+            "recall": 0.6667,
+            "f1": 0.8
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 16,
+            "reference": 24,
+            "matched": 16,
+            "precision": 1.0,
+            "recall": 0.6667,
+            "f1": 0.8
+          },
+          "intervals": {
+            "predicted": 16,
+            "reference": 24,
+            "matched": 16,
+            "precision": 1.0,
+            "recall": 0.6667,
+            "f1": 0.8
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 36,
+        "gap_ms": 30,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 24,
+            "reference": 24,
+            "matched": 15,
+            "precision": 0.625,
+            "recall": 0.625,
+            "f1": 0.625
+          },
+          "intervals": {
+            "predicted": 24,
+            "reference": 24,
+            "matched": 13,
+            "precision": 0.5417,
+            "recall": 0.5417,
+            "f1": 0.5417
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 24,
+            "reference": 24,
+            "matched": 15,
+            "precision": 0.625,
+            "recall": 0.625,
+            "f1": 0.625
+          },
+          "intervals": {
+            "predicted": 24,
+            "reference": 24,
+            "matched": 13,
+            "precision": 0.5417,
+            "recall": 0.5417,
+            "f1": 0.5417
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 36,
+        "gap_ms": 80,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 20,
+            "reference": 24,
+            "matched": 18,
+            "precision": 0.9,
+            "recall": 0.75,
+            "f1": 0.8182
+          },
+          "intervals": {
+            "predicted": 20,
+            "reference": 24,
+            "matched": 18,
+            "precision": 0.9,
+            "recall": 0.75,
+            "f1": 0.8182
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 20,
+            "reference": 24,
+            "matched": 18,
+            "precision": 0.9,
+            "recall": 0.75,
+            "f1": 0.8182
+          },
+          "intervals": {
+            "predicted": 20,
+            "reference": 24,
+            "matched": 18,
+            "precision": 0.9,
+            "recall": 0.75,
+            "f1": 0.8182
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 36,
+        "gap_ms": 80,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 30,
+            "reference": 24,
+            "matched": 15,
+            "precision": 0.5,
+            "recall": 0.625,
+            "f1": 0.5556
+          },
+          "intervals": {
+            "predicted": 30,
+            "reference": 24,
+            "matched": 15,
+            "precision": 0.5,
+            "recall": 0.625,
+            "f1": 0.5556
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 30,
+            "reference": 24,
+            "matched": 15,
+            "precision": 0.5,
+            "recall": 0.625,
+            "f1": 0.5556
+          },
+          "intervals": {
+            "predicted": 30,
+            "reference": 24,
+            "matched": 15,
+            "precision": 0.5,
+            "recall": 0.625,
+            "f1": 0.5556
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 44,
+        "gap_ms": 10,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 25,
+            "reference": 24,
+            "matched": 21,
+            "precision": 0.84,
+            "recall": 0.875,
+            "f1": 0.8571
+          },
+          "intervals": {
+            "predicted": 25,
+            "reference": 24,
+            "matched": 21,
+            "precision": 0.84,
+            "recall": 0.875,
+            "f1": 0.8571
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 25,
+            "reference": 24,
+            "matched": 21,
+            "precision": 0.84,
+            "recall": 0.875,
+            "f1": 0.8571
+          },
+          "intervals": {
+            "predicted": 25,
+            "reference": 24,
+            "matched": 21,
+            "precision": 0.84,
+            "recall": 0.875,
+            "f1": 0.8571
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 44,
+        "gap_ms": 10,
+        "distractor": true,
+        "suppressed": 6,
+        "baseline": {
+          "attacks": {
+            "predicted": 31,
+            "reference": 24,
+            "matched": 17,
+            "precision": 0.5484,
+            "recall": 0.7083,
+            "f1": 0.6182
+          },
+          "intervals": {
+            "predicted": 31,
+            "reference": 24,
+            "matched": 16,
+            "precision": 0.5161,
+            "recall": 0.6667,
+            "f1": 0.5818
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 17,
+            "precision": 0.6538,
+            "recall": 0.7083,
+            "f1": 0.68
+          },
+          "intervals": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 16,
+            "precision": 0.6154,
+            "recall": 0.6667,
+            "f1": 0.64
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 44,
+        "gap_ms": 30,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 19,
+            "precision": 0.7308,
+            "recall": 0.7917,
+            "f1": 0.76
+          },
+          "intervals": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 19,
+            "precision": 0.7308,
+            "recall": 0.7917,
+            "f1": 0.76
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 19,
+            "precision": 0.7308,
+            "recall": 0.7917,
+            "f1": 0.76
+          },
+          "intervals": {
+            "predicted": 26,
+            "reference": 24,
+            "matched": 19,
+            "precision": 0.7308,
+            "recall": 0.7917,
+            "f1": 0.76
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 44,
+        "gap_ms": 30,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 16,
+            "precision": 0.5926,
+            "recall": 0.6667,
+            "f1": 0.6275
+          },
+          "intervals": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 16,
+            "precision": 0.5926,
+            "recall": 0.6667,
+            "f1": 0.6275
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 16,
+            "precision": 0.5926,
+            "recall": 0.6667,
+            "f1": 0.6275
+          },
+          "intervals": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 16,
+            "precision": 0.5926,
+            "recall": 0.6667,
+            "f1": 0.6275
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 44,
+        "gap_ms": 80,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 24,
+            "reference": 24,
+            "matched": 23,
+            "precision": 0.9583,
+            "recall": 0.9583,
+            "f1": 0.9583
+          },
+          "intervals": {
+            "predicted": 24,
+            "reference": 24,
+            "matched": 23,
+            "precision": 0.9583,
+            "recall": 0.9583,
+            "f1": 0.9583
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 24,
+            "reference": 24,
+            "matched": 23,
+            "precision": 0.9583,
+            "recall": 0.9583,
+            "f1": 0.9583
+          },
+          "intervals": {
+            "predicted": 24,
+            "reference": 24,
+            "matched": 23,
+            "precision": 0.9583,
+            "recall": 0.9583,
+            "f1": 0.9583
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 44,
+        "gap_ms": 80,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 48,
+            "reference": 24,
+            "matched": 17,
+            "precision": 0.3542,
+            "recall": 0.7083,
+            "f1": 0.4722
+          },
+          "intervals": {
+            "predicted": 48,
+            "reference": 24,
+            "matched": 16,
+            "precision": 0.3333,
+            "recall": 0.6667,
+            "f1": 0.4444
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 48,
+            "reference": 24,
+            "matched": 17,
+            "precision": 0.3542,
+            "recall": 0.7083,
+            "f1": 0.4722
+          },
+          "intervals": {
+            "predicted": 48,
+            "reference": 24,
+            "matched": 16,
+            "precision": 0.3333,
+            "recall": 0.6667,
+            "f1": 0.4444
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 48,
+        "gap_ms": 10,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8889,
+            "recall": 1.0,
+            "f1": 0.9412
+          },
+          "intervals": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8889,
+            "recall": 1.0,
+            "f1": 0.9412
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8889,
+            "recall": 1.0,
+            "f1": 0.9412
+          },
+          "intervals": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8889,
+            "recall": 1.0,
+            "f1": 0.9412
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 48,
+        "gap_ms": 10,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 36,
+            "reference": 24,
+            "matched": 23,
+            "precision": 0.6389,
+            "recall": 0.9583,
+            "f1": 0.7667
+          },
+          "intervals": {
+            "predicted": 36,
+            "reference": 24,
+            "matched": 23,
+            "precision": 0.6389,
+            "recall": 0.9583,
+            "f1": 0.7667
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 36,
+            "reference": 24,
+            "matched": 23,
+            "precision": 0.6389,
+            "recall": 0.9583,
+            "f1": 0.7667
+          },
+          "intervals": {
+            "predicted": 36,
+            "reference": 24,
+            "matched": 23,
+            "precision": 0.6389,
+            "recall": 0.9583,
+            "f1": 0.7667
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 48,
+        "gap_ms": 30,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 32,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.75,
+            "recall": 1.0,
+            "f1": 0.8571
+          },
+          "intervals": {
+            "predicted": 32,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.75,
+            "recall": 1.0,
+            "f1": 0.8571
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 32,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.75,
+            "recall": 1.0,
+            "f1": 0.8571
+          },
+          "intervals": {
+            "predicted": 32,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.75,
+            "recall": 1.0,
+            "f1": 0.8571
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 48,
+        "gap_ms": 30,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 43,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.5581,
+            "recall": 1.0,
+            "f1": 0.7164
+          },
+          "intervals": {
+            "predicted": 43,
+            "reference": 24,
+            "matched": 19,
+            "precision": 0.4419,
+            "recall": 0.7917,
+            "f1": 0.5672
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 43,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.5581,
+            "recall": 1.0,
+            "f1": 0.7164
+          },
+          "intervals": {
+            "predicted": 43,
+            "reference": 24,
+            "matched": 19,
+            "precision": 0.4419,
+            "recall": 0.7917,
+            "f1": 0.5672
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 48,
+        "gap_ms": 80,
+        "distractor": false,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8889,
+            "recall": 1.0,
+            "f1": 0.9412
+          },
+          "intervals": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 22,
+            "precision": 0.8148,
+            "recall": 0.9167,
+            "f1": 0.8627
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.8889,
+            "recall": 1.0,
+            "f1": 0.9412
+          },
+          "intervals": {
+            "predicted": 27,
+            "reference": 24,
+            "matched": 22,
+            "precision": 0.8148,
+            "recall": 0.9167,
+            "f1": 0.8627
+          },
+          "long_notes_over_800ms": 0
+        }
+      },
+      {
+        "pitch": 48,
+        "gap_ms": 80,
+        "distractor": true,
+        "suppressed": 0,
+        "baseline": {
+          "attacks": {
+            "predicted": 60,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.4,
+            "recall": 1.0,
+            "f1": 0.5714
+          },
+          "intervals": {
+            "predicted": 60,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.4,
+            "recall": 1.0,
+            "f1": 0.5714
+          },
+          "long_notes_over_800ms": 0
+        },
+        "probe": {
+          "attacks": {
+            "predicted": 60,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.4,
+            "recall": 1.0,
+            "f1": 0.5714
+          },
+          "intervals": {
+            "predicted": 60,
+            "reference": 24,
+            "matched": 24,
+            "precision": 0.4,
+            "recall": 1.0,
+            "f1": 0.5714
+          },
+          "long_notes_over_800ms": 0
+        }
+      }
+    ],
+    "enabled_in_application": "Separated bass only; low-register conservative guard",
+    "regressions": []
+  },
+  "training_initial_62": {
+    "revision": 1,
+    "enabled_in_application": false,
+    "purpose": "Learn authored onset/sustain preferences from paired audio and maps.\n\nWeak labels mean 'matches this author's chart', not 'is a real instrument note'.\nNo model from this experiment is enabled by default. All LN ratios are used.\n",
+    "counts": {
+      "songs": 62,
+      "charts": 62,
+      "train_charts": 46,
+      "test_charts": 16,
+      "candidates": 259698,
+      "ln_bands": {
+        "hybrid": 26,
+        "tap": 35,
+        "ln": 1
+      }
+    },
+    "heads": {
+      "authored_onset": {
+        "converged": true,
+        "iterations": 14,
+        "heldout_songs": [
+          {
+            "beatmap_id": "2426683",
+            "candidates": 4948,
+            "positives": 2349,
+            "model_auc": 0.85451,
+            "baseline_auc": 0.56657,
+            "no_phase_auc": 0.57993,
+            "brier": 0.1773378039818984
+          },
+          {
+            "beatmap_id": "2950142",
+            "candidates": 178,
+            "positives": 142,
+            "model_auc": 0.95716,
+            "baseline_auc": 0.69464,
+            "no_phase_auc": 0.70618,
+            "brier": 0.0833239790081041
+          },
+          {
+            "beatmap_id": "3630228",
+            "candidates": 6194,
+            "positives": 1507,
+            "model_auc": 0.90959,
+            "baseline_auc": 0.60475,
+            "no_phase_auc": 0.6354,
+            "brier": 0.23600203849582393
+          },
+          {
+            "beatmap_id": "4966781",
+            "candidates": 1395,
+            "positives": 571,
+            "model_auc": 0.78739,
+            "baseline_auc": 0.50751,
+            "no_phase_auc": 0.58084,
+            "brier": 0.29564592574583043
+          },
+          {
+            "beatmap_id": "5661702",
+            "candidates": 4189,
+            "positives": 2197,
+            "model_auc": 0.84525,
+            "baseline_auc": 0.61142,
+            "no_phase_auc": 0.62033,
+            "brier": 0.15654161121643612
+          },
+          {
+            "beatmap_id": "1505225",
+            "candidates": 3746,
+            "positives": 2406,
+            "model_auc": 0.91228,
+            "baseline_auc": 0.64951,
+            "no_phase_auc": 0.65691,
+            "brier": 0.11797224838517506
+          },
+          {
+            "beatmap_id": "319884",
+            "candidates": 3265,
+            "positives": 1124,
+            "model_auc": 0.92164,
+            "baseline_auc": 0.56843,
+            "no_phase_auc": 0.61973,
+            "brier": 0.130275397648055
+          },
+          {
+            "beatmap_id": "2488937",
+            "candidates": 3399,
+            "positives": 2367,
+            "model_auc": 0.82792,
+            "baseline_auc": 0.56841,
+            "no_phase_auc": 0.58153,
+            "brier": 0.17598223092989626
+          },
+          {
+            "beatmap_id": "4635410",
+            "candidates": 2350,
+            "positives": 826,
+            "model_auc": 0.90128,
+            "baseline_auc": 0.62193,
+            "no_phase_auc": 0.61986,
+            "brier": 0.22983070115666462
+          },
+          {
+            "beatmap_id": "4890664",
+            "candidates": 5953,
+            "positives": 4180,
+            "model_auc": 0.68172,
+            "baseline_auc": 0.53601,
+            "no_phase_auc": 0.53055,
+            "brier": 0.23378385885403882
+          },
+          {
+            "beatmap_id": "4984293",
+            "candidates": 6261,
+            "positives": 4624,
+            "model_auc": 0.8132,
+            "baseline_auc": 0.59363,
+            "no_phase_auc": 0.5693,
+            "brier": 0.19394435491525086
+          },
+          {
+            "beatmap_id": "5008549",
+            "candidates": 2255,
+            "positives": 732,
+            "model_auc": 0.90303,
+            "baseline_auc": 0.72858,
+            "no_phase_auc": 0.67002,
+            "brier": 0.14288662264694493
+          },
+          {
+            "beatmap_id": "5060312",
+            "candidates": 4064,
+            "positives": 3159,
+            "model_auc": 0.67605,
+            "baseline_auc": 0.54291,
+            "no_phase_auc": 0.59103,
+            "brier": 0.2599084289116063
+          },
+          {
+            "beatmap_id": "5324688",
+            "candidates": 2297,
+            "positives": 747,
+            "model_auc": 0.84405,
+            "baseline_auc": 0.64604,
+            "no_phase_auc": 0.61277,
+            "brier": 0.21448038451511395
+          },
+          {
+            "beatmap_id": "1740489",
+            "candidates": 4271,
+            "positives": 3044,
+            "model_auc": 0.8282,
+            "baseline_auc": 0.58743,
+            "no_phase_auc": 0.66219,
+            "brier": 0.18659849422829775
+          },
+          {
+            "beatmap_id": "4540611",
+            "candidates": 9918,
+            "positives": 4919,
+            "model_auc": 0.80788,
+            "baseline_auc": 0.56975,
+            "no_phase_auc": 0.62978,
+            "brier": 0.1814244782923288
+          }
+        ],
+        "macro_auc": 0.84195,
+        "macro_no_phase_auc": 0.61665,
+        "macro_baseline_auc": 0.59984
+      },
+      "authored_sustain": {
+        "converged": true,
+        "iterations": 13,
+        "heldout_songs": [
+          {
+            "beatmap_id": "2426683",
+            "candidates": 4948,
+            "positives": 134,
+            "model_auc": 0.84814,
+            "baseline_auc": 0.77336,
+            "no_phase_auc": 0.72257,
+            "brier": 0.025268094577905714
+          },
+          {
+            "beatmap_id": "2950142",
+            "candidates": 178,
+            "positives": 29,
+            "model_auc": 0.91553,
+            "baseline_auc": 0.89655,
+            "no_phase_auc": 0.89539,
+            "brier": 0.12858757850787267
+          },
+          {
+            "beatmap_id": "3630228",
+            "candidates": 6194,
+            "positives": 12,
+            "model_auc": 0.96634,
+            "baseline_auc": 0.98314,
+            "no_phase_auc": 0.96018,
+            "brier": 0.0033163437062492807
+          },
+          {
+            "beatmap_id": "4966781",
+            "candidates": 1395,
+            "positives": 10,
+            "model_auc": 0.95769,
+            "baseline_auc": 0.94726,
+            "no_phase_auc": 0.95083,
+            "brier": 0.010147284112200628
+          },
+          {
+            "beatmap_id": "5661702",
+            "candidates": 4189,
+            "positives": 3,
+            "model_auc": 0.92348,
+            "baseline_auc": 0.98949,
+            "no_phase_auc": 0.87323,
+            "brier": 0.0017172247499086736
+          },
+          {
+            "beatmap_id": "1505225",
+            "candidates": 3746,
+            "positives": 403,
+            "model_auc": 0.82879,
+            "baseline_auc": 0.78837,
+            "no_phase_auc": 0.72671,
+            "brier": 0.09728966904059479
+          },
+          {
+            "beatmap_id": "319884",
+            "candidates": 3265,
+            "positives": 0,
+            "model_auc": null,
+            "baseline_auc": null,
+            "no_phase_auc": null,
+            "brier": 0.0018830470143439387
+          },
+          {
+            "beatmap_id": "2488937",
+            "candidates": 3399,
+            "positives": 3,
+            "model_auc": 0.94739,
+            "baseline_auc": 0.97801,
+            "no_phase_auc": 0.97762,
+            "brier": 0.0016527824627786108
+          },
+          {
+            "beatmap_id": "4635410",
+            "candidates": 2350,
+            "positives": 2,
+            "model_auc": 0.90396,
+            "baseline_auc": 0.96816,
+            "no_phase_auc": 0.94549,
+            "brier": 0.003001899559677012
+          },
+          {
+            "beatmap_id": "4890664",
+            "candidates": 5953,
+            "positives": 0,
+            "model_auc": null,
+            "baseline_auc": null,
+            "no_phase_auc": null,
+            "brier": 0.0012435841475441063
+          },
+          {
+            "beatmap_id": "4984293",
+            "candidates": 6261,
+            "positives": 29,
+            "model_auc": 0.8603,
+            "baseline_auc": 0.90788,
+            "no_phase_auc": 0.88904,
+            "brier": 0.0050477157345936285
+          },
+          {
+            "beatmap_id": "5008549",
+            "candidates": 2255,
+            "positives": 0,
+            "model_auc": null,
+            "baseline_auc": null,
+            "no_phase_auc": null,
+            "brier": 0.0003864354893997191
+          },
+          {
+            "beatmap_id": "5060312",
+            "candidates": 4064,
+            "positives": 0,
+            "model_auc": null,
+            "baseline_auc": null,
+            "no_phase_auc": null,
+            "brier": 0.0010567302752124894
+          },
+          {
+            "beatmap_id": "5324688",
+            "candidates": 2297,
+            "positives": 19,
+            "model_auc": 0.83841,
+            "baseline_auc": 0.96391,
+            "no_phase_auc": 0.83339,
+            "brier": 0.008620507641548356
+          },
+          {
+            "beatmap_id": "1740489",
+            "candidates": 4271,
+            "positives": 84,
+            "model_auc": 0.59479,
+            "baseline_auc": 0.5217,
+            "no_phase_auc": 0.57749,
+            "brier": 0.021135695075719465
+          },
+          {
+            "beatmap_id": "4540611",
+            "candidates": 9918,
+            "positives": 253,
+            "model_auc": 0.7337,
+            "baseline_auc": 0.75323,
+            "no_phase_auc": 0.64439,
+            "brier": 0.024555767543986858
+          }
+        ],
+        "macro_auc": 0.85988,
+        "macro_no_phase_auc": 0.83303,
+        "macro_baseline_auc": 0.87259
+      }
+    },
+    "manifest": [
+      {
+        "song": "variousartists:flowpart1",
+        "audio_sha256": "d2d704ebd28d6c091e48e41c31bebfcc7a1c41c2472eb1a22f19488695e5a3b5",
+        "map_sha256": "43f66361a5a5ea7260c6f251d73e238ad7306f3f84afa87242aaa21d9dfddacb",
+        "snapshot_sha256": "2a133c3087fe992c13be92f99653f3b521d3bb648970dcce0ea25d6e3823f0dd",
+        "newline_equivalent": true,
+        "beatmap_id": "2426683",
+        "keys": 10,
+        "ln_ratio": 0.17440660474716202,
+        "status": "loved",
+        "split": "test",
+        "candidates": 4948,
+        "group": "f191ebcd1ef6359acf98ddff64deae51dcfb491e9fdd7a30e4dca526796c92ae"
+      },
+      {
+        "song": "variousartists:frjmoljnokparta",
+        "audio_sha256": "18c271770a7cc88e716d4662d206e6efd44e749423646b6004aedb3be2d70442",
+        "map_sha256": "bf819c0967236c7132f7a01943c0a9253988d8b2ad956920f07304394b744b0b",
+        "snapshot_sha256": "835a7fe22c2cef39d871542b4745ef1f0dd882b301a349587c3bf5f3d0f4c923",
+        "newline_equivalent": true,
+        "beatmap_id": "2759255",
+        "keys": 10,
+        "ln_ratio": 0.21035058430717862,
+        "status": "loved",
+        "split": "train",
+        "candidates": 3181,
+        "group": "8c7030ed86d4d317765f6f57db8899f145e1084b0fe805f89bb5ccbeffdc995d"
+      },
+      {
+        "song": "tatatat:melodyofpromise",
+        "audio_sha256": "e1f2ba87a6796a55dbec582abec7403c97250c6ec0934f1682f8a61ce4b7b855",
+        "map_sha256": "2ba05796f56072866baeca4fe4d683ccda8bba36672c68d1d2af20a7e6e185ec",
+        "snapshot_sha256": "bbf6134756dac5e989b45d3be520681c2db75603ccdf5063cf2d1e33e78032f6",
+        "newline_equivalent": true,
+        "beatmap_id": "2950142",
+        "keys": 10,
+        "ln_ratio": 0.30864197530864196,
+        "status": 1,
+        "split": "test",
+        "candidates": 178,
+        "group": "9a0e0d9701d5df7b4cf1bf52672575766aa832ada1c2aa94e5ca7446942455b5"
+      },
+      {
+        "song": "mono:peacefulpiece",
+        "audio_sha256": "7fdd8390af2ccf1255fcaf2814f1c38b077afc58541e6162de6b58c79e2ccdb1",
+        "map_sha256": "2d44bc2e01264a5f3f9249951fce653a65c5f02e9916babf05db0707f65f0f37",
+        "snapshot_sha256": "3395a90fc35fba83948c3db9ebe973d8d846a3fa7d2de7a86956808403eff18c",
+        "newline_equivalent": true,
+        "beatmap_id": "3113732",
+        "keys": 10,
+        "ln_ratio": 0.19318181818181818,
+        "status": 1,
+        "split": "train",
+        "candidates": 5931,
+        "group": "6c82e72acf9f5cc10191ec597ca70104fef4255652010806315b23f923e32833"
+      },
+      {
+        "song": "seifuumeigetsu:yukinohana",
+        "audio_sha256": "d7594a033bdbedeaf5e02484e916c0e32a9b02a9df7d65f1f4280746ea9ce646",
+        "map_sha256": "f45ab280163e756bafd27d158b847fa5a5bf29118920c3f28c395abc6bb7abcc",
+        "snapshot_sha256": "359ec750db091d1a40cf7446c8baf841d674b0f74bf76c20c82ca6aad0bd3015",
+        "newline_equivalent": true,
+        "beatmap_id": "3472306",
+        "keys": 10,
+        "ln_ratio": 0.20384615384615384,
+        "status": 1,
+        "split": "train",
+        "candidates": 1560,
+        "group": "4350a0bdbef6aa4ae22c66e427dda2aad3e417f5a2d14476629d0def474a9cf3"
+      },
+      {
+        "song": "tobyfox:darknessfalls",
+        "audio_sha256": "284f0c17e2c9feea1fa48c2ecefeee25db389c78b0a93283283809554b1660c7",
+        "map_sha256": "22913d1ff0e891fafaba66e5469ccef4790e859691fb5b704e13fa885f61732e",
+        "snapshot_sha256": "4f860c56441e0b84363a140d8caa18559ed63a406082c140de0d96f047b1ef25",
+        "newline_equivalent": true,
+        "beatmap_id": "3578838",
+        "keys": 10,
+        "ln_ratio": 0.3916083916083916,
+        "status": 1,
+        "split": "train",
+        "candidates": 645,
+        "group": "c9947a9703970a072f9ef09b7418b93f81754f3b5b6abb77fc4206adf484d566"
+      },
+      {
+        "song": "lenaraine:spiritofhospitality",
+        "audio_sha256": "670a5a6fb2c1ee6b7590d11caa1e0bd8f5c5090b9d08f6d0887a3d8f291ae697",
+        "map_sha256": "857b60fb30f7a1708e94f2bd13b51fb73f678e35a0205c99343309f712d70f67",
+        "snapshot_sha256": "5c1c7c17b70bfc9ca7829761f0600c508a57e381bc73d192faa9a6ab87a8ad97",
+        "newline_equivalent": true,
+        "beatmap_id": "3619067",
+        "keys": 10,
+        "ln_ratio": 0.32242990654205606,
+        "status": 1,
+        "split": "train",
+        "candidates": 1683,
+        "group": "867b5fd6bcac9a9ef4df6e62532132ad7e00f6a14d69b694e084a8be825800ac"
+      },
+      {
+        "song": "hoshimiyatotokijibato:lowbitfantasy",
+        "audio_sha256": "9a69acbfe46940938629c9ad5c46d8620c9623e81843194ceea7ab4a72f350d2",
+        "map_sha256": "34fc80f1fcd66e28c778576e439665af8bdcd3c74619e12efcafb1938a16ab80",
+        "snapshot_sha256": "20f4e76ce236f9a38e188904c955dade1ee9c12741544a1253aebc4c4532aa0d",
+        "newline_equivalent": true,
+        "beatmap_id": "3630228",
+        "keys": 10,
+        "ln_ratio": 0.24817518248175183,
+        "status": 1,
+        "split": "test",
+        "candidates": 6194,
+        "group": "e33cee10abb7a1ee1e228bb924009f12a73f083980be077c8e240389d4448f9c"
+      },
+      {
+        "song": "dunderpatrullen:interludefantasyfriendshipforever",
+        "audio_sha256": "1a6e7ee4e2d7947150899968cfeb65a5fa377493bc83f6e6d25f56f77cb70903",
+        "map_sha256": "642698747631f466e97df7d19e1e0737cc3ccbc586f70bd512df1853a4c300dd",
+        "snapshot_sha256": "493960a0bcae7b94e97dd3b00201893f82c66a0dd96c24ad7f6c0395b0ef703a",
+        "newline_equivalent": true,
+        "beatmap_id": "3895553",
+        "keys": 10,
+        "ln_ratio": 0.4158415841584158,
+        "status": 1,
+        "split": "train",
+        "candidates": 455,
+        "group": "dfd401c1b7a09fcc3a401eaa9199ec04e52911f4179e895ccc2c44dd4f02272d"
+      },
+      {
+        "song": "feryquitous:dstorv",
+        "audio_sha256": "357ce8330363e33b3d472657981ffe12275ed4038aa1b7ebd7593c6477410c5e",
+        "map_sha256": "3e0aaf0337d1670a98a99d5a8d5a6671751c1189484f47e44d413a1799266262",
+        "snapshot_sha256": "00f1bacdfd84e3b61e2b433ffc84bd7bfc634b1a17c8bd8db4e3290166581a59",
+        "newline_equivalent": true,
+        "beatmap_id": "4185029",
+        "keys": 10,
+        "ln_ratio": 0.15568862275449102,
+        "status": 1,
+        "split": "train",
+        "candidates": 4395,
+        "group": "39aaf7005cde8ac4607a8ade437877c283abcbe6d36821554d655f2f685078b8"
+      },
+      {
+        "song": "garoad:transitioni",
+        "audio_sha256": "a7855121d5a256d84424ae984c0720bff66ff51c4ed11453caf7b63b05e7b08c",
+        "map_sha256": "bb1e45fa02cc6e76dd848f8694fbf54ccdbe2276c5a56a37bc4aa12090cf35a4",
+        "snapshot_sha256": "e08c839f273c3bc50be260204f0f5294c4b24df7cca3af1ec5039c5041bff988",
+        "newline_equivalent": true,
+        "beatmap_id": "4348413",
+        "keys": 10,
+        "ln_ratio": 0.16417910447761194,
+        "status": 1,
+        "split": "train",
+        "candidates": 411,
+        "group": "f14e114bf0484e9f39517427116e977e06cf63542da979b6110b235e30691aab"
+      },
+      {
+        "song": "nie:summerwithlittleroottown",
+        "audio_sha256": "9fe302bd66d6d29115b9e70686e30ab777c6f4be5b844310533604c7e9944225",
+        "map_sha256": "dcccfc0273bb55f1d2d891aee1d307e8d9afc15e2f92bb3a6f5a12087fa92a80",
+        "snapshot_sha256": "7bde3eebcda3da3a2fc0a5d8b79f3ddbea49b8f575430b8340ef541c79914545",
+        "newline_equivalent": true,
+        "beatmap_id": "4380978",
+        "keys": 10,
+        "ln_ratio": 0.37209302325581395,
+        "status": 1,
+        "split": "train",
+        "candidates": 1286,
+        "group": "1815df60d16ee2097e8f4c89e0e0a0f827adc4f469b825ae3564e97448565ac9"
+      },
+      {
+        "song": "aethoro:snowy",
+        "audio_sha256": "b1b5dd5b25bbcc95e5a6a55ef7c52a0d9a29781ef10bbf186915686c3a79a52b",
+        "map_sha256": "5fe63b7c09b21c05d2593f23ea1c0930482a5ec05529f7ddd6a8224ae0e9f862",
+        "snapshot_sha256": "b1543e067ad1b42410fd47b1a67eeb13d98a3bbf859a8797b5d209a68116e86e",
+        "newline_equivalent": true,
+        "beatmap_id": "4452867",
+        "keys": 10,
+        "ln_ratio": 0.35824977210574294,
+        "status": 1,
+        "split": "train",
+        "candidates": 3270,
+        "group": "8adab0294a95dd124f39fc9ed37fb2ceb19dd758cbd4eb87ae7288bf7ae7c115"
+      },
+      {
+        "song": "rejection:whitecanvasfeataitsukinakuruosuedit",
+        "audio_sha256": "696bb1e18b0acd1450f1eeed88ceb57d324117fdeee40916a62fd10029c23218",
+        "map_sha256": "e205403674fb17fae6e1967d79db94e1770c83b115d4bc91ac0ab474b9d8ccec",
+        "snapshot_sha256": "d83ad45140b070f4dc83567c2a5630f40007552ae79b20ecf764646b5fba7b3a",
+        "newline_equivalent": true,
+        "beatmap_id": "4949158",
+        "keys": 10,
+        "ln_ratio": 0.15822291504286828,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 4622,
+        "group": "74bd9f0d78f55000a94c30df5e678aebd1ac548e3d5a8a50b0b3048fac62f46a"
+      },
+      {
+        "song": "mitsukiyo:nijuuyojinonengan",
+        "audio_sha256": "cda82c56ae7dd24e2cfa35ee310debe7f2030891b0aa8bc87d6017288778bd83",
+        "map_sha256": "121aa1b89119f19a27af4e87228f2deb1abe71fc9e77b23acf2bbcedade418f3",
+        "snapshot_sha256": "7f715b7d596ba8a6f3dc8f4e442da7a5bb84edbedfafceb7cdf5d264d87e5a11",
+        "newline_equivalent": true,
+        "beatmap_id": "4966781",
+        "keys": 10,
+        "ln_ratio": 0.15822784810126583,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 1395,
+        "group": "e5d234b552bbad9073f6abeeef43d75f283dab32e20200ee44c59e2caeca38af"
+      },
+      {
+        "song": "stationearth:coldgreeneyesfeatroosdenayercutver",
+        "audio_sha256": "b2014ba430c611e871e09f5073350a784e3a277d9a29527a9a78740ee93a254c",
+        "map_sha256": "2ec9daa13a647c6e2687984b0ddeed08c3975e2e2f4cf0076afc1a7024db6d24",
+        "snapshot_sha256": "f63fd59d66ef986e59eeebce6271d1c675abfa1710e241b381bdc40642cbcfa6",
+        "newline_equivalent": true,
+        "beatmap_id": "5163045",
+        "keys": 10,
+        "ln_ratio": 0.16358595194085027,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 2854,
+        "group": "a4e278ef26ac998ad51785896fb9fd1bbcc42250346211bdad06043a11af32eb"
+      },
+      {
+        "song": "myukke:antisafetyzone",
+        "audio_sha256": "7e0e22f925033e170cd7fdd8acc64d42136655baf85a920ab43277028b79fd02",
+        "map_sha256": "bed7d75c1b8de4811cf8b417ed75c3b2f87e7d6fbbdfc5acbc98f8c16d0c7cfe",
+        "snapshot_sha256": "8f617ff473ab66d1307d7efe5aa74ddb8fef18a0bb6c383168aa2c554c7d7f1f",
+        "newline_equivalent": true,
+        "beatmap_id": "5661702",
+        "keys": 10,
+        "ln_ratio": 0.18031088082901556,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 4189,
+        "group": "8df6156a7a56f2629d2c7cc4acb44383d335df88c4aac456f6e367851344fde1"
+      },
+      {
+        "song": "wiklund:joyoflivingcutver",
+        "audio_sha256": "ed85aef47b789c8a88550819f1bc2cc20a5ba2adf4e969529a60ca5cc5ffb35d",
+        "map_sha256": "81666e39566b1d3afe63bccd5cd3aa710ec4a82a743d22a9b8e145d39150b9e7",
+        "snapshot_sha256": "81666e39566b1d3afe63bccd5cd3aa710ec4a82a743d22a9b8e145d39150b9e7",
+        "newline_equivalent": false,
+        "beatmap_id": "4473089",
+        "keys": 10,
+        "ln_ratio": 0.16802973977695168,
+        "status": 1,
+        "split": "train",
+        "candidates": 3443,
+        "group": "f380034f486bf9e4d34b241979e94941e73cc2230cad1eb049dbb09c7ca4878c"
+      },
+      {
+        "song": "ushirokarahaiyoritaig:koiwachaosnoshimobenaritvsize",
+        "audio_sha256": "0409306c39692e4ec757a8244418ce4c76f82dbf9f0ff4daa132b17b59b0fb29",
+        "map_sha256": "2d476246455385a4feaf6333387f18913ccf2f3048d23873f9b988daa7bb27a6",
+        "snapshot_sha256": "2d476246455385a4feaf6333387f18913ccf2f3048d23873f9b988daa7bb27a6",
+        "newline_equivalent": false,
+        "beatmap_id": "273799",
+        "keys": 7,
+        "ln_ratio": 0.13230429988974643,
+        "status": 1,
+        "split": "train",
+        "candidates": 3434,
+        "group": "23212a4862ced1fe3d4c1228a534a0a931e960ae1bffca880cfc5d3f54d7d34b"
+      },
+      {
+        "song": "pendulum:theislandmaxnrgremix",
+        "audio_sha256": "75f379733bcfde6fc01ad703196c631b128f4d7ceadf5a0a96e650c834c958ae",
+        "map_sha256": "d6e308a86ed7835fb3d25aa20058cb2b1990684a587a290aa90664685e0b72df",
+        "snapshot_sha256": "d6e308a86ed7835fb3d25aa20058cb2b1990684a587a290aa90664685e0b72df",
+        "newline_equivalent": false,
+        "beatmap_id": "298810",
+        "keys": 6,
+        "ln_ratio": 0.1290566037735849,
+        "status": 1,
+        "split": "train",
+        "candidates": 9518,
+        "group": "1b0d6eaa90ca912d9b4fa3ec74f6a3e9f423a13e49c9a9d53c3a52dccaedc1bb"
+      },
+      {
+        "song": "variousartists:10kindopackfavourites",
+        "audio_sha256": "9cd895f09d3bf4a68a1a68adeeaa78574eec8b301090fa311205c2b038567fd6",
+        "map_sha256": "0dc0f636a411b380846137c44164df626a4040c673b307e694cc650162bc3903",
+        "snapshot_sha256": "0dc0f636a411b380846137c44164df626a4040c673b307e694cc650162bc3903",
+        "newline_equivalent": false,
+        "beatmap_id": "4995927",
+        "keys": 10,
+        "ln_ratio": 0.2436472346786248,
+        "status": "loved",
+        "split": "train",
+        "candidates": 6111,
+        "group": "fe9b0276cf6e98a422cfa67c240880c5d13cf5058b2b55d8ae0e03085a19768f"
+      },
+      {
+        "song": "noaiy:bachongreturntrue",
+        "audio_sha256": "48f5c99953e3b53066165a3b27f244a87a359ab9cd389dc11e62d5c05a643665",
+        "map_sha256": "83ddb115f90a7be82ca0c7dac36103f1516ae262fad5eb0dfa5a67052cf81927",
+        "snapshot_sha256": "83ddb115f90a7be82ca0c7dac36103f1516ae262fad5eb0dfa5a67052cf81927",
+        "newline_equivalent": false,
+        "beatmap_id": "3897925",
+        "keys": 10,
+        "ln_ratio": 0.21266133988936695,
+        "status": 1,
+        "split": "train",
+        "candidates": 4530,
+        "group": "56a897e8b983533f94eb4b1f32d4d8712cfa55f0b86ff66fa73553b45edbe0bd"
+      },
+      {
+        "song": "camelliafeatkagekihagakusei:lowermostrevoltjeremiadlongver",
+        "audio_sha256": "0df73e859bf3542859d098ad3e7bed01e8eeb45a141a685016e66aae2096d8ac",
+        "map_sha256": "4675e5491f8bf450f2c5657b7610305dfc218fc28077a6f5b4f76305ff82213f",
+        "snapshot_sha256": "4675e5491f8bf450f2c5657b7610305dfc218fc28077a6f5b4f76305ff82213f",
+        "newline_equivalent": false,
+        "beatmap_id": "2926818",
+        "keys": 10,
+        "ln_ratio": 0.1808438475105142,
+        "status": "loved",
+        "split": "train",
+        "candidates": 9043,
+        "group": "054e02bfefaa1e142a61c00a71081a963d35cd7875594bd79a3f8446081397a3"
+      },
+      {
+        "song": "variousartists:las10ksupermug",
+        "audio_sha256": "d975ebbb1a9f198598f0e0e2c81cf3de7e1975cb06339f4a4d505649bff5f418",
+        "map_sha256": "ceeb6925ed7d3b137b7d777d3b86f90c90259dd81eae1857a3a8d853adb4d22e",
+        "snapshot_sha256": "ceeb6925ed7d3b137b7d777d3b86f90c90259dd81eae1857a3a8d853adb4d22e",
+        "newline_equivalent": false,
+        "beatmap_id": "1505225",
+        "keys": 10,
+        "ln_ratio": 0.12405176260597947,
+        "status": "loved",
+        "split": "test",
+        "candidates": 3746,
+        "group": "6ecb07f8499c6633b8a6b1495902b37a57fb61a1326c4e1b44499260e2a9ded1"
+      },
+      {
+        "song": "ryo:shuffleheaven",
+        "audio_sha256": "cc9fc7e81eda9ffc80a48b253bd194c2803f6204422a26af193ea76f2c2357d4",
+        "map_sha256": "d5d09265cc5472746d2a8494bcdda142d9b849d0cdd2ec01abd51065c459e94e",
+        "snapshot_sha256": "d5d09265cc5472746d2a8494bcdda142d9b849d0cdd2ec01abd51065c459e94e",
+        "newline_equivalent": false,
+        "beatmap_id": "319884",
+        "keys": 7,
+        "ln_ratio": 0.12609457092819615,
+        "status": 1,
+        "split": "test",
+        "candidates": 3265,
+        "group": "d33b868ec87a3cd9f2b184f9a43bd36e6dcb70bf2b5fb84345fa1363d44ad649"
+      },
+      {
+        "song": "mitsukiyo:nijuujinohotarunomori",
+        "audio_sha256": "9f6e10acb78414d1749e0ae82bc566c63157816217b52fa9421eb8f7c44b9338",
+        "map_sha256": "ab0765a867bc8f4fbdea229f9fc84aa280e2dd8b006b24e640c8a45508310df7",
+        "snapshot_sha256": "ab0765a867bc8f4fbdea229f9fc84aa280e2dd8b006b24e640c8a45508310df7",
+        "newline_equivalent": false,
+        "beatmap_id": "4973962",
+        "keys": 10,
+        "ln_ratio": 0.3518987341772152,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 848,
+        "group": "ce7170100eb2a52051824c365e021aa2c47d5191c5d49eed4ef94e5798412734"
+      },
+      {
+        "song": "variousartists:lasanime10kpack",
+        "audio_sha256": "e500abe3c7fa8645d336f9c8ebaf2c95c966e63a9a0052b7cea97884b62ae103",
+        "map_sha256": "f7828c370d81635b4960eea817c60a4fae4816fd28c015fc340436f1814c5485",
+        "snapshot_sha256": "56aa9da33362e76cf7462c0991bd2d6b93e7276474719c3e54e48b491a20c84f",
+        "newline_equivalent": true,
+        "beatmap_id": "1577245",
+        "keys": 10,
+        "ln_ratio": 0.10771581359816654,
+        "status": "loved",
+        "split": "train",
+        "candidates": 3190,
+        "group": "0a87118e725f6a2195f4cf9c77c232246d10f74704cd7c6fa8a4994c4939538d"
+      },
+      {
+        "song": "camelliaasreverseofriot:completenessunderincompleteness",
+        "audio_sha256": "2013185be2bf734d331af72eedb98ebf4a736df6e77f7d4210feaec64d861d0d",
+        "map_sha256": "1b896f0ab0637bd73997374feee87c93fab660326cde6baf52c05561bd5c2409",
+        "snapshot_sha256": "9f67b7548eae9d06e3c228e6bdff650fe03ac440d2dcaf90d3a735e8a2c41be2",
+        "newline_equivalent": true,
+        "beatmap_id": "2419420",
+        "keys": 10,
+        "ln_ratio": 0.029723991507430998,
+        "status": 1,
+        "split": "train",
+        "candidates": 3040,
+        "group": "f8f9e8e40edbc34d4a4fb8a897987260016ac0989c7701c5cec3e8c849533b42"
+      },
+      {
+        "song": "blackyoohvssiromaru:blackorwhite",
+        "audio_sha256": "eaf6cce7260ea6ee11c258db6463138eba4a7ac3ccbf65700f15e9a7a9e9bfb1",
+        "map_sha256": "7ccba494529be880c4422e38563b0bedde397f0209302277a0aeb55415094eba",
+        "snapshot_sha256": "ebc8e2b7594e10ec38d0ad728735f852f15b63ebbcf4a1ca961fc038b9d630b8",
+        "newline_equivalent": true,
+        "beatmap_id": "2488937",
+        "keys": 10,
+        "ln_ratio": 0.030545454545454546,
+        "status": 1,
+        "split": "test",
+        "candidates": 3399,
+        "group": "addd047f0b06a4c96639cc3d32090acd45665a483e4030621a2a00f4870ee621"
+      },
+      {
+        "song": "dot96:millennialroopremix",
+        "audio_sha256": "7cba28b0a9a6083909a3e438abf1b2463992b46d4442349b2e14b135f071d7ff",
+        "map_sha256": "7cc2906f81b6157601c63dcb4b44df7bf840a3a9b19f0c72b570a694df024dee",
+        "snapshot_sha256": "0cc89e8ce5b6964eabbb60f3b8b274e19b0c227ed25ffb3ffca9e45c0230ac47",
+        "newline_equivalent": true,
+        "beatmap_id": "2599562",
+        "keys": 10,
+        "ln_ratio": 0.023583111449220234,
+        "status": 1,
+        "split": "train",
+        "candidates": 7093,
+        "group": "aed9b97f0ae40b2eecf049b1aadf800eff1c04e0cc0cff8435cc519848c26953"
+      },
+      {
+        "song": "taishi:distantrelatives",
+        "audio_sha256": "70d01a4285cfb5a1ef91048bdd6d32fc29afe07b64e2e25c5cd09e51fed71287",
+        "map_sha256": "6549f55f6ed92329fc3a95257a6030feacbc712de58f77e6a28b5676fb34cfa9",
+        "snapshot_sha256": "0f956e6ccf217e5d426b5e4a27a67dfc9d3011b1640ccd3c3cfe0e6bad47862c",
+        "newline_equivalent": true,
+        "beatmap_id": "3474858",
+        "keys": 10,
+        "ln_ratio": 0.12254220456802384,
+        "status": 1,
+        "split": "train",
+        "candidates": 10033,
+        "group": "e66e29124592b8a5d08ce4911d25f0eab30256ead1c7d34f82bfb017e4c755df"
+      },
+      {
+        "song": "brz1128suimag:retribution",
+        "audio_sha256": "4986b4b3fe1b68ac16db8ab00050d44f7d87e7203d24e61f7c58c026cd5d1f3d",
+        "map_sha256": "d0f8e6125b2cdd4502136135a3268d86c65033922a7cc1988f7c01f51895bea7",
+        "snapshot_sha256": "156ccd0d54558c7e33a703aa15c10de6cd9296bd6019a0a5c9499f45e11a63fe",
+        "newline_equivalent": true,
+        "beatmap_id": "3943165",
+        "keys": 10,
+        "ln_ratio": 0.06764091858037578,
+        "status": 1,
+        "split": "train",
+        "candidates": 4079,
+        "group": "f55c1a3161162ce27e57802b4a5e77f34470c0f0b595e1129363b609c32ce5d0"
+      },
+      {
+        "song": "variousartists:mktr10k2sbmscollection",
+        "audio_sha256": "ea3ca0da3beef6120bfa5a1aa137837e13cd5648d9164ca8e18e22f7ccdb3c12",
+        "map_sha256": "3ccc0afb6ec8fa2ee4ba0b6101ada04c34983f36f6c83ea6fe0266a8848716dc",
+        "snapshot_sha256": "d6606df6a5130b21d36216b6b77e8b97d44718c77723b37ca8f6ae19ef9c022b",
+        "newline_equivalent": true,
+        "beatmap_id": "3953596",
+        "keys": 10,
+        "ln_ratio": 0.03382663847780127,
+        "status": "loved",
+        "split": "train",
+        "candidates": 3595,
+        "group": "e4ec6766568fa1029a6495c25f5789ddf5713df764c3e1e4d700d5a6f4023e02"
+      },
+      {
+        "song": "colorfulsoundsport:cherrydoll",
+        "audio_sha256": "a9b7bbf15db2015c6eb50667a8f69024fae24795c4d4f617d85bbb00631a0477",
+        "map_sha256": "99f6d2074a4630bc8e48e310c570e2195fbb17bde4de7efd0eec856abaec2477",
+        "snapshot_sha256": "bb878730f4c9ba1333940af9599dcc438cdde91c66a7c6585be317b287bf3233",
+        "newline_equivalent": true,
+        "beatmap_id": "4053464",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": 1,
+        "split": "train",
+        "candidates": 3428,
+        "group": "01c8ed1049513cb4615e983a5318bc3687ee6dc5f1597e863fc257119a25e501"
+      },
+      {
+        "song": "aonefeatrute:spidersblood",
+        "audio_sha256": "d43e9bc7c7aa59d678dbc1340382c67b0a7133a23a3422c78cdea7a25e60e6fd",
+        "map_sha256": "0998afb0393bc6e3a70f639bd007aa4280085a0c1dc87ca10de2ed0da951956c",
+        "snapshot_sha256": "08994d5b82b7866a3b7528b71e079b51696ff86f10e18bc44c2404234f0c4064",
+        "newline_equivalent": true,
+        "beatmap_id": "4252009",
+        "keys": 10,
+        "ln_ratio": 0.025535258298958946,
+        "status": 1,
+        "split": "train",
+        "candidates": 8970,
+        "group": "adc9d2b582dee3aad4c70979c38ae071ff6151379473dbcc91588e2814dfcdb4"
+      },
+      {
+        "song": "jacknifexqlank:movementnightcoremix",
+        "audio_sha256": "da54b5c77125f8eca9b8d9cb9dbbd15df17347306a0df45928d4b7f483a78fb4",
+        "map_sha256": "7f034c779cc8a7b896959a651035fca99ba6ae846d247e6b0720c49e83b5f874",
+        "snapshot_sha256": "41f8ee7d78c7069ab17033aa6382dffdd36041e362da349df4c87ef9114a29e0",
+        "newline_equivalent": true,
+        "beatmap_id": "4486256",
+        "keys": 10,
+        "ln_ratio": 0.04333868378812199,
+        "status": 1,
+        "split": "train",
+        "candidates": 2264,
+        "group": "6baba1798a3eb50b51008dc0f47289415d2618c436a0b4783797bb2a79e2f61e"
+      },
+      {
+        "song": "okkafeatdianagarnet:rubyslippersmirage",
+        "audio_sha256": "f7c47e159167cadc5be79934ce706acce2aa73b2d259fdde222768ac3250a501",
+        "map_sha256": "a160560e0d4eb299a48dde5bf9b74eb36b5e6264172f608a9fd270fd811102ad",
+        "snapshot_sha256": "c06b02c58d5b9e2fdb70a2d1d491046de33105c8c590b48d6a23c01f8664556b",
+        "newline_equivalent": true,
+        "beatmap_id": "4635410",
+        "keys": 10,
+        "ln_ratio": 0.07364341085271318,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 2350,
+        "group": "e3ff772473cd3986206e6b223d00f135f68338a4a2cfa0da87ccccf76efe76c0"
+      },
+      {
+        "song": "fvrwvrd:speedcoresonata",
+        "audio_sha256": "197982b82dd31a25afdd8814083af04979e06c62cd28841a64667dc07d25b75c",
+        "map_sha256": "d18b5a3d40760c82b062b901a5c7a8aa3ced0003a9d23acbc2e27847f25a7df2",
+        "snapshot_sha256": "b4d614d9138560aa962501eb32d8c34843a73f90c6aba0b67715ab227b71b3ac",
+        "newline_equivalent": true,
+        "beatmap_id": "4890664",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 5953,
+        "group": "bcab5d6c29d20439994bb69ffb8cb5470d0f30e85a7e7ef07d46763db86268f6"
+      },
+      {
+        "song": "orgt:destiny",
+        "audio_sha256": "9f248a156b5bb8937f1bc51131a82cd9ed2c87729af16e16eb988d54318be7ae",
+        "map_sha256": "b393cd102e4d1e8408a1ff392dcd0d3cc9cd88a46138f94bf96f786b469ef0a4",
+        "snapshot_sha256": "0a565e13f5f24b81756e8cbe1c397eaacd549a0567c2104bfda08e0ad545ce72",
+        "newline_equivalent": true,
+        "beatmap_id": "4964602",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 4359,
+        "group": "26eaac8db06c712b3ccb235c52370b2a5fe71cbe3e0485a6267d9193c617b360"
+      },
+      {
+        "song": "helblinde:areyvateilscurse",
+        "audio_sha256": "703d26208023567713c35325adcf48b59d58b406c690c93e0b1ec5f1bad2d5e0",
+        "map_sha256": "d2dde2f26f5f17990be2659edc14a21cbe2d23947bb927a859e9b7bf5cdf2e11",
+        "snapshot_sha256": "fd724f4bc2c84f6ddac111c6bd1c9b8edfb154ff1501aaeab2f84c58aee685d3",
+        "newline_equivalent": true,
+        "beatmap_id": "4984293",
+        "keys": 10,
+        "ln_ratio": 0.01395988989382619,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 6261,
+        "group": "71cf5fcce874d52c391146eaaac07d25380498ba7bfbb9e4fe189503d8fe4694"
+      },
+      {
+        "song": "makina:pluton",
+        "audio_sha256": "c1c9fd173c2cb83859c834ae0aeb288b04198a6ca173f59560f80f7cd40c1b1f",
+        "map_sha256": "4ad953a01149a3e834d923d326eeeb039ee24ed98ce7e9a7692c6dfd41c31dd3",
+        "snapshot_sha256": "9db11457195da315a1fb57b766521a62330024554788de78a1868702c14f2c26",
+        "newline_equivalent": true,
+        "beatmap_id": "5008549",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 2255,
+        "group": "bd2276469f10acbd961e5f982889c593e62be2fa501f4f6be3f460b3f2df93f2"
+      },
+      {
+        "song": "gram:nibelungen",
+        "audio_sha256": "d9d61461dc66d753496d5c80bd5e4b1add48ee87465eb6561e08a58d6fcad810",
+        "map_sha256": "8581fa7dd0157ade4ec3020e1b93bfcdd6a9ba6e74bbe8a85cd72152a8ecf71f",
+        "snapshot_sha256": "5822c934013ce62bf914bcf4bd1b136c0f18fe6a77fadf39a08b0418235b3811",
+        "newline_equivalent": true,
+        "beatmap_id": "5060312",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 4064,
+        "group": "b48155f6980737d228ca05109d3874f4a4cea061fdef6e1f601e2eb70064d457"
+      },
+      {
+        "song": "xi:akasha",
+        "audio_sha256": "64f19dc01982b0db11d496df44c05836bcb35a0538aa6fb7121b927be883c074",
+        "map_sha256": "e30a945e5ae67809a5429e715a044e0b7d305adff3eb1bd4662621c1ceccf19b",
+        "snapshot_sha256": "2669e77b29d82ab90f2a70e7e90f74dadc5cce02d9365ecf957a79668b3c22e2",
+        "newline_equivalent": true,
+        "beatmap_id": "5154697",
+        "keys": 10,
+        "ln_ratio": 0.010746711135816194,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 8582,
+        "group": "2b694efac85bd26d2f85547e390ec4b5ebfbd54295f21177af6b6cd467df24c1"
+      },
+      {
+        "song": "yukihondafeatnanahira:pokedance",
+        "audio_sha256": "c19761ec103a100173d4d971a5524ad520b16d21d83eb36d7f52637496e6925f",
+        "map_sha256": "6d4dc6da7e63d89f1264b814789fb92ba37dfa008447a96d6d777da3be02b934",
+        "snapshot_sha256": "d1159b0f1cbfddf9e71217543bc96322f23896e7aaf5d16f51b7b1d85c1335e6",
+        "newline_equivalent": true,
+        "beatmap_id": "5189083",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 2307,
+        "group": "d35a88ecf0520858a1f12c3a23818a8bdcde87a0cae36e76c9703901d6a97345"
+      },
+      {
+        "song": "yiruma:riverflowsinyoulorenzodelucacover",
+        "audio_sha256": "7f16d6c19200ed85f4ff9cc9abe06f175566051b99b9c476d7c9188dea79a5b8",
+        "map_sha256": "785a77d524f791eca9d40c16c490cd9bdb0bcfd10594bd6e9d00e61c3f51990c",
+        "snapshot_sha256": "f5b83b32e2921072582e7e6db9511065cf8d3542ff792f1abf2aac35a2733d73",
+        "newline_equivalent": true,
+        "beatmap_id": "5317787",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 1379,
+        "group": "fc8799ce2980773493628a094f6383b5bf3996de575d7b4b47f23943f4fd1608"
+      },
+      {
+        "song": "israeldelgado:craiova",
+        "audio_sha256": "580b4f8abde0e8610f531e281892124db959b23b9e195857266fc7d5f7e6725d",
+        "map_sha256": "9f1479a269bf3e45e095862b4d50f22b02060641b4b39ba2a7d4d86b17d124c8",
+        "snapshot_sha256": "62bfc6b2d7d2d244716369a4d826068cd618c698d9554645b133ce761d630510",
+        "newline_equivalent": true,
+        "beatmap_id": "5324688",
+        "keys": 10,
+        "ln_ratio": 0.1482758620689655,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 2297,
+        "group": "408b40c196556b80c6f46277fb3776884babb90dcebc0c8bfdf1533ce84ada2b"
+      },
+      {
+        "song": "katagiri:kyuukou",
+        "audio_sha256": "97a7e04a41966c59bc0da89537cd33664121f8f84d7e318634221877280be272",
+        "map_sha256": "c1566dfe186bac5d2a04c53177cdf7980e4414e947b13091b920e52f8d424b7b",
+        "snapshot_sha256": "265e6d85fd7a25577407e8737798c0f417416f24b417e11f4cd2cfffe0a74fae",
+        "newline_equivalent": true,
+        "beatmap_id": "5359181",
+        "keys": 10,
+        "ln_ratio": 0.04950765864332604,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 6420,
+        "group": "f60ae3acce2ea23cc7520909398ad6a3cdb15d3f41078f0cd5f805e279fab63f"
+      },
+      {
+        "song": "aone:sidebyside",
+        "audio_sha256": "0b96719e939ab2c10ad3298c55da2f884cadaf311bb7816122d1f4ba7adf7638",
+        "map_sha256": "b76424d1829a6bb8db59ca5b14920cfb9d7dc6baebd4d4782da0865c3a40042d",
+        "snapshot_sha256": "e6cdee55404bdce8227f563f582e3d75c27e49f6360d615906922c70dc36b15b",
+        "newline_equivalent": true,
+        "beatmap_id": "5487297",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 8453,
+        "group": "e19bcbacfef6fd6e22c10056db625fb7b6fd4dea0188de06872df258129fd137"
+      },
+      {
+        "song": "xifeatrisayuzuki:kyokasuigetsu",
+        "audio_sha256": "f899534be02b363c45a2be119886228c02b910e00d085867c7e213f8278e09e4",
+        "map_sha256": "b40913bb7d30e561acc3f0c28660781644ea5daf11f6d77420e4aeb8bb9078e4",
+        "snapshot_sha256": "1c791fa3727329ac99727c53a6a9eff578dcb1e7772b80b011a05c5b4932fe60",
+        "newline_equivalent": true,
+        "beatmap_id": "5535105",
+        "keys": 10,
+        "ln_ratio": 0.0037753657385559227,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 3885,
+        "group": "866ba4f6cf8920a7f5c4a4bcd9ae2c4c80aeeaa056ee38c7332f815dccbd0521"
+      },
+      {
+        "song": "winddrums:goddessblessyou",
+        "audio_sha256": "a14c40289c82fd9ff3e1a62bae226fbc7e8237b0e024d396b5076f9f3168ad88",
+        "map_sha256": "4d2f3d1b3dd9f7ff4ba981e6e0bc5592a499a4783a0d69b01142a42b36d97fa0",
+        "snapshot_sha256": "4d2f3d1b3dd9f7ff4ba981e6e0bc5592a499a4783a0d69b01142a42b36d97fa0",
+        "newline_equivalent": false,
+        "beatmap_id": "1740489",
+        "keys": 6,
+        "ln_ratio": 0.056155507559395246,
+        "status": 1,
+        "split": "test",
+        "candidates": 4271,
+        "group": "bf85c45d00f0aa5b1bdceecdd76b791169b887bea39e58ce4063ce9a2f6b697f"
+      },
+      {
+        "song": "claris:clicktvsize",
+        "audio_sha256": "6b527c2a87f7242766362a0572b29a05c0e2bddab6ed6c8b1c6bd86fe3f6c9fd",
+        "map_sha256": "47417a3d8fb075537ee3f282ccf42d127b1718bce446249b7290a11e00d8b126",
+        "snapshot_sha256": "47417a3d8fb075537ee3f282ccf42d127b1718bce446249b7290a11e00d8b126",
+        "newline_equivalent": false,
+        "beatmap_id": "4007091",
+        "keys": 6,
+        "ln_ratio": 0.1732283464566929,
+        "status": 1,
+        "split": "train",
+        "candidates": 3164,
+        "group": "7c18f99d6621c630e5d0fe3b027d46924876ffd8e24567437c766a55796bc9bc"
+      },
+      {
+        "song": "cidergirl:cinderellatvsize",
+        "audio_sha256": "2f331bfc4f88e4c2ea134d7cecd25c308ed6413446476b18ec142fdf035f1bc1",
+        "map_sha256": "327a12a883a713effdc58df31853375919361933b9950c551f76726983fc5bc1",
+        "snapshot_sha256": "327a12a883a713effdc58df31853375919361933b9950c551f76726983fc5bc1",
+        "newline_equivalent": false,
+        "beatmap_id": "3441405",
+        "keys": 6,
+        "ln_ratio": 0.5682302771855011,
+        "status": 1,
+        "split": "train",
+        "candidates": 3155,
+        "group": "99078a5cc7ad4af0a63b54e55ab56c8c9426cb43e4634d9fd063b1770f45caa3"
+      },
+      {
+        "song": "mili:rubberhuman",
+        "audio_sha256": "4955d5cd1d7417cef59b41efe4bd9487b1f017c598ddbc89a13b446ccfff396b",
+        "map_sha256": "c0398b9739f60a31a73db8b33c042aced73f6a7392e91a5590d204e5ebbb1dc7",
+        "snapshot_sha256": "c0398b9739f60a31a73db8b33c042aced73f6a7392e91a5590d204e5ebbb1dc7",
+        "newline_equivalent": false,
+        "beatmap_id": "5219674",
+        "keys": 9,
+        "ln_ratio": 0.07918968692449356,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 3730,
+        "group": "afa5e8117909e0557c6c48bd4d5e96e5b583aae402388ea58d80317e34af3ba7"
+      },
+      {
+        "song": "yak_won:core",
+        "audio_sha256": "299689c186ff173b604765d4dcb48ae5b42ebb1bcc767c0806a577d0087431b0",
+        "map_sha256": "5a52b77ae0f220bd51eae9adae0f1cb8614480b37e0090de3689a6782436ab34",
+        "snapshot_sha256": "5a52b77ae0f220bd51eae9adae0f1cb8614480b37e0090de3689a6782436ab34",
+        "newline_equivalent": false,
+        "beatmap_id": "3945798",
+        "keys": 10,
+        "ln_ratio": 0.07301587301587302,
+        "status": 1,
+        "split": "train",
+        "candidates": 4265,
+        "group": "91fca976f396df5243ac2afa5df64fc299d7f9f8acbbc537e6b9b008a7e222a4"
+      },
+      {
+        "song": "rabpit:saika",
+        "audio_sha256": "e2c7803422b624d583103a442f6aed5428a440f431dcb156cb0352296a92fbcd",
+        "map_sha256": "2b986f13555052ec2d35123a86dcec5982cf7fee7051e727494220f23a95d5fd",
+        "snapshot_sha256": "2b986f13555052ec2d35123a86dcec5982cf7fee7051e727494220f23a95d5fd",
+        "newline_equivalent": false,
+        "beatmap_id": "437109",
+        "keys": 7,
+        "ln_ratio": 0.1681654676258993,
+        "status": 1,
+        "split": "train",
+        "candidates": 3174,
+        "group": "f9e28c2ffc5b34ecea69d1731369b853b8057e641659b43808bb5bd9211748c3"
+      },
+      {
+        "song": "warak:reanimate",
+        "audio_sha256": "0f47f43c0078af94c92500b96a5df1e33154735d3666ad335af991ce07c80eab",
+        "map_sha256": "0e56a85bab7e7ee03128d21f6bf333aae89717987268cc973b1d1f7a5a7f76d8",
+        "snapshot_sha256": "0e56a85bab7e7ee03128d21f6bf333aae89717987268cc973b1d1f7a5a7f76d8",
+        "newline_equivalent": false,
+        "beatmap_id": "587625",
+        "keys": 8,
+        "ln_ratio": 0.18773373223635004,
+        "status": 1,
+        "split": "train",
+        "candidates": 3882,
+        "group": "e0262c4d0e3239bceb850c2fe2e4546fa02cb913ffcb0b3fcc6de03fc9e0b00f"
+      },
+      {
+        "song": "7:byebyetvsize",
+        "audio_sha256": "5a8b0fcb47e0b4a79a4134111edc2bfd2833aca38e16408b2bae5b12ed906d97",
+        "map_sha256": "cbe8c3494493ddf1e5756bb88526ff3dd2f658da38914a2bc5e294c5e6318194",
+        "snapshot_sha256": "cbe8c3494493ddf1e5756bb88526ff3dd2f658da38914a2bc5e294c5e6318194",
+        "newline_equivalent": false,
+        "beatmap_id": "418216",
+        "keys": 7,
+        "ln_ratio": 0.10662824207492795,
+        "status": 1,
+        "split": "train",
+        "candidates": 3054,
+        "group": "0af942abf97f4503adb6cdfd6eee032f4517db8e688c37b728e9b8a7edec60e3"
+      },
+      {
+        "song": "leaf:aleph0extendedver",
+        "audio_sha256": "8a7f37dd288f2cdc5cd8c1ee4b08e1eee64b5251ca70820d0405d9df01eebf62",
+        "map_sha256": "3a0dc564230ab23a6fb9f9fef31da60556965d41a81b115b5066ab07ca0d0ef1",
+        "snapshot_sha256": "3a0dc564230ab23a6fb9f9fef31da60556965d41a81b115b5066ab07ca0d0ef1",
+        "newline_equivalent": false,
+        "beatmap_id": "4540611",
+        "keys": 10,
+        "ln_ratio": 0.13035674220327576,
+        "status": 1,
+        "split": "test",
+        "candidates": 9918,
+        "group": "ed2d16c4151fe0373e842c6b6167e29a27d7f1910f13b80cf2162ec4e59f4641"
+      },
+      {
+        "song": "shibayanfeat3l:monochromeinthenightcytokineremix",
+        "audio_sha256": "471da30238c35fac04941c8524ae47ca874f03c0cc63f4b153d1fd61de0c7063",
+        "map_sha256": "9e05f9db156c46459d1ed401e05b48a8f5474e8ca8bef974fcb1bcaeff8b4455",
+        "snapshot_sha256": "9e05f9db156c46459d1ed401e05b48a8f5474e8ca8bef974fcb1bcaeff8b4455",
+        "newline_equivalent": false,
+        "beatmap_id": "4157803",
+        "keys": 9,
+        "ln_ratio": 0.05664488017429194,
+        "status": 1,
+        "split": "train",
+        "candidates": 10839,
+        "group": "59c2c528b6eda368aedbfc081955c33e0e522880bebffde2462f8fdaf669a203"
+      },
+      {
+        "song": "dannybaranowsky:cryptofthenecrodancerzone13",
+        "audio_sha256": "fbb38dd5ef64a99a1c06c03c7eeac261677ee3af4f52ef6f420ff38d79a05358",
+        "map_sha256": "1d99dee5720e0265ed1f87158614c1dbaf2a63685f4e3d68797b59013b3a1dbe",
+        "snapshot_sha256": "1d99dee5720e0265ed1f87158614c1dbaf2a63685f4e3d68797b59013b3a1dbe",
+        "newline_equivalent": false,
+        "beatmap_id": "733545",
+        "keys": 10,
+        "ln_ratio": 0.07571801566579635,
+        "status": "loved",
+        "split": "train",
+        "candidates": 2587,
+        "group": "66bbf02f937bf1d0e32745ae8b608c69fab1f16df082212867a1cae8e50327af"
+      },
+      {
+        "song": "soundsouler:diminitive",
+        "audio_sha256": "4a711d83e38c867f603cae95a1f267193767cf8c7b9c87cb5a93fe62d11fe471",
+        "map_sha256": "9fb3074c87db8cd962862d938cb9b8487a8707a5b329f9dc139419f41000c1f2",
+        "snapshot_sha256": "9fb3074c87db8cd962862d938cb9b8487a8707a5b329f9dc139419f41000c1f2",
+        "newline_equivalent": false,
+        "beatmap_id": "4591888",
+        "keys": 10,
+        "ln_ratio": 0.07623318385650224,
+        "status": 1,
+        "split": "train",
+        "candidates": 3258,
+        "group": "2a9d0684ec1411fd938e0650fe2ad0baf96f6581cdfca9d083b6948636ad9dc7"
+      },
+      {
+        "song": "chimametai:nakayoshimarunakayoshikiraramagicbootlegremix",
+        "audio_sha256": "dfaf217faca9122ef2a1c3620396d86934a6308ab4fd969ee828d89c875170dd",
+        "map_sha256": "ba47a8c3c66140d86d2481aca8052348db9b3c1acf8338d8b96251e21f05cfa9",
+        "snapshot_sha256": "ba47a8c3c66140d86d2481aca8052348db9b3c1acf8338d8b96251e21f05cfa9",
+        "newline_equivalent": false,
+        "beatmap_id": "4775395",
+        "keys": 7,
+        "ln_ratio": 0.21382289416846653,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 5610,
+        "group": "9dd9023d9871c81ce757a59f09b3fdad06bf0661137c6dab1c44eee3d0cf434c"
+      }
+    ],
+    "skipped": [
+      {
+        "reason": "not_in_verified_expression_snapshot"
+      },
+      {
+        "reason": "not_in_verified_expression_snapshot"
+      },
+      {
+        "reason": "not_in_verified_expression_snapshot"
+      },
+      {
+        "reason": "not_in_verified_expression_snapshot"
+      },
+      {
+        "reason": "not_in_verified_expression_snapshot"
+      }
+    ],
+    "limitations": [
+      "Human chart choices are weak labels; no instrument attribution truth.",
+      "40ms onset / 80ms tail matching can label multiple simultaneous voices positive.",
+      "Existing audio development material; grouped holdout is not an untouched product benchmark.",
+      "This is a small arrangement preference model, not new source-separation or note-transcription weights."
+    ]
+  },
+  "expression_youdiantian": {
+    "input_sha256": "d353bbd508cb61e03f38d4df4cfba15c3de8ab2220ffc6887fb26f8b76136808",
+    "keys": 10,
+    "boundaries": [
+      0,
+      7829,
+      18686,
+      26686,
+      59257,
+      109543,
+      124400,
+      164400,
+      172971,
+      200400,
+      222686,
+      235201
+    ],
+    "baseline": {
+      "bass": {
+        "objects": 125,
+        "holds": 86,
+        "sustained_candidates_turned_into_taps": 1
+      },
+      "drums": {
+        "objects": 161,
+        "holds": 0,
+        "sustained_candidates_turned_into_taps": 0
+      },
+      "guitar": {
+        "objects": 361,
+        "holds": 190,
+        "sustained_candidates_turned_into_taps": 7
+      },
+      "other": {
+        "objects": 178,
+        "holds": 74,
+        "sustained_candidates_turned_into_taps": 8
+      },
+      "piano": {
+        "objects": 173,
+        "holds": 82,
+        "sustained_candidates_turned_into_taps": 3
+      },
+      "vocals": {
+        "objects": 432,
+        "holds": 126,
+        "sustained_candidates_turned_into_taps": 5
+      }
+    },
+    "planned": {
+      "bass": {
+        "objects": 69,
+        "holds": 0,
+        "sustained_candidates_turned_into_taps": 38
+      },
+      "drums": {
+        "objects": 86,
+        "holds": 0,
+        "sustained_candidates_turned_into_taps": 0
+      },
+      "guitar": {
+        "objects": 129,
+        "holds": 0,
+        "sustained_candidates_turned_into_taps": 66
+      },
+      "other": {
+        "objects": 58,
+        "holds": 14,
+        "sustained_candidates_turned_into_taps": 28
+      },
+      "piano": {
+        "objects": 101,
+        "holds": 31,
+        "sustained_candidates_turned_into_taps": 24
+      },
+      "vocals": {
+        "objects": 786,
+        "holds": 131,
+        "sustained_candidates_turned_into_taps": 0
+      }
+    },
+    "selection": {
+      "selected": 1229,
+      "candidates": 6703,
+      "omitted": 5474,
+      "attack_selection": "source_groups",
+      "attack_optimal": true,
+      "expression_revision": 1,
+      "actual_ln_ratio": 0.1432,
+      "selected_voices": {
+        "piano": 101,
+        "vocals": 786,
+        "bass": 69,
+        "drums": 86,
+        "guitar": 129,
+        "other": 58
+      },
+      "omission_reasons": {
+        "group_capacity_or_density": 4275,
+        "weak_detection": 1070,
+        "duplicate_pitch": 129
+      },
+      "selected_large_attack_shifts": 101,
+      "message": "按段落声部策略保留 1229 个物件、176 个 LN；不以全曲比例截断音尾。可查看各音的保留和省略原因。"
+    },
+    "alignment": {
+      "enabled": true,
+      "moved": 5494,
+      "tails_moved": 237,
+      "max_shift_ms": 36,
+      "large_attack_shifts": 623,
+      "collapsed_holds": 0,
+      "warning_threshold_ms": 30,
+      "reason": "短键与 LN 起止均已量化；超过 30ms 的起音移动需回听检查，落线不代表采音正确"
+    },
+    "validation": {
+      "valid": true,
+      "issues": [],
+      "issue_count": 0,
+      "notes": 1229,
+      "ln": 176,
+      "ln_ratio": 0.143,
+      "max_held": 5,
+      "longest_ln_ms": 1857,
+      "lane_counts": [
+        52,
+        71,
+        110,
+        148,
+        160,
+        146,
+        180,
+        158,
+        125,
+        79
+      ]
+    },
+    "grid": {
+      "endpoints": 1405,
+      "off_grid": 0,
+      "max_error_ms": 0.4286,
+      "tolerance_ms": 0.501
+    },
+    "boundary_method": "acoustic-change",
+    "notice": "Source consistency diagnostic. This is not transcription truth or a player quality score."
+  },
+  "expression_user_jiuwanzi": {
+    "input_sha256": "d1c0c0075212068607e80655ed4a92d55a28a9db697600fc445374596657e5ac",
+    "keys": 10,
+    "boundaries": [
+      0,
+      24000,
+      31846,
+      66462,
+      99692,
+      114462,
+      140308,
+      169846,
+      189231,
+      205846,
+      222923,
+      232060
+    ],
+    "baseline": {
+      "bass": {
+        "objects": 103,
+        "holds": 61,
+        "sustained_candidates_turned_into_taps": 2
+      },
+      "drums": {
+        "objects": 117,
+        "holds": 0,
+        "sustained_candidates_turned_into_taps": 0
+      },
+      "other": {
+        "objects": 692,
+        "holds": 312,
+        "sustained_candidates_turned_into_taps": 48
+      },
+      "vocals": {
+        "objects": 353,
+        "holds": 87,
+        "sustained_candidates_turned_into_taps": 37
+      }
+    },
+    "planned": {
+      "bass": {
+        "objects": 47,
+        "holds": 10,
+        "sustained_candidates_turned_into_taps": 17
+      },
+      "drums": {
+        "objects": 23,
+        "holds": 0,
+        "sustained_candidates_turned_into_taps": 0
+      },
+      "other": {
+        "objects": 359,
+        "holds": 34,
+        "sustained_candidates_turned_into_taps": 127
+      },
+      "vocals": {
+        "objects": 677,
+        "holds": 146,
+        "sustained_candidates_turned_into_taps": 0
+      }
+    },
+    "selection": {
+      "selected": 1106,
+      "candidates": 4052,
+      "omitted": 2946,
+      "attack_selection": "source_groups",
+      "attack_optimal": true,
+      "expression_revision": 1,
+      "actual_ln_ratio": 0.1718,
+      "selected_voices": {
+        "other": 359,
+        "vocals": 677,
+        "bass": 47,
+        "drums": 23
+      },
+      "omission_reasons": {
+        "group_capacity_or_density": 2270,
+        "weak_detection": 467,
+        "voice_not_selected": 39,
+        "duplicate_pitch": 170
+      },
+      "selected_large_attack_shifts": 361,
+      "message": "按段落声部策略保留 1106 个物件、190 个 LN；不以全曲比例截断音尾。可查看各音的保留和省略原因。"
+    },
+    "alignment": {
+      "enabled": true,
+      "moved": 3467,
+      "tails_moved": 233,
+      "max_shift_ms": 58,
+      "large_attack_shifts": 1001,
+      "collapsed_holds": 0,
+      "warning_threshold_ms": 30,
+      "reason": "短键与 LN 起止均已量化；超过 30ms 的起音移动需回听检查，落线不代表采音正确"
+    },
+    "validation": {
+      "valid": true,
+      "issues": [],
+      "issue_count": 0,
+      "notes": 1106,
+      "ln": 190,
+      "ln_ratio": 0.172,
+      "max_held": 4,
+      "longest_ln_ms": 3692,
+      "lane_counts": [
+        53,
+        55,
+        101,
+        120,
+        145,
+        135,
+        154,
+        150,
+        110,
+        83
+      ]
+    },
+    "grid": {
+      "endpoints": 1296,
+      "off_grid": 0,
+      "max_error_ms": 0.4615,
+      "tolerance_ms": 0.501
+    },
+    "boundary_method": "acoustic-change",
+    "notice": "Source consistency diagnostic. This is not transcription truth or a player quality score.",
+    "reference_marks": {
+      "bookmarks": [
+        22137,
+        36906,
+        51676,
+        66445,
+        81214,
+        95983,
+        110752,
+        114445,
+        129214,
+        143983,
+        158752,
+        173522,
+        177214,
+        191983,
+        206752,
+        210445
+      ],
+      "green_lines": [
+        {
+          "time_ms": 66445,
+          "beat_length": -100.0,
+          "volume": 10,
+          "kiai": true
+        },
+        {
+          "time_ms": 95983,
+          "beat_length": -100.0,
+          "volume": 10,
+          "kiai": false
+        },
+        {
+          "time_ms": 143983,
+          "beat_length": -100.0,
+          "volume": 10,
+          "kiai": true
+        },
+        {
+          "time_ms": 173522,
+          "beat_length": -100.0,
+          "volume": 10,
+          "kiai": false
+        },
+        {
+          "time_ms": 191983,
+          "beat_length": -100.0,
+          "volume": 10,
+          "kiai": true
+        },
+        {
+          "time_ms": 206752,
+          "beat_length": -100.0,
+          "volume": 10,
+          "kiai": false
+        }
+      ]
+    }
+  },
+  "browser": {
+    "notes": 1232,
+    "ln": 113,
+    "decisions": 6809,
+    "grid": 0,
+    "invalid": false,
+    "sections": 6,
+    "errors": [],
+    "overflow": false,
+    "passed": true
+  },
+  "training_final_72": {
+    "revision": 2,
+    "enabled_in_application": false,
+    "purpose": "Learn authored onset/sustain preferences from paired audio and maps.\n\nWeak labels mean 'matches this author's chart', not 'is a real instrument note'.\nNo model from this experiment is enabled by default. All LN ratios are used.\n",
+    "protocol": {
+      "split": "song identity and exact audio SHA256 union, fixed seed 75/25",
+      "training_weight": "equal song groups, equal charts within each song",
+      "evaluation": "macro average over held-out charts with both labels present",
+      "sustain_candidates": "source=pitch and duration >= 100ms",
+      "onset_tolerance_ms": 40,
+      "tail_tolerance_ms": 80
+    },
+    "counts": {
+      "songs": 71,
+      "charts": 72,
+      "train_charts": 53,
+      "test_charts": 19,
+      "candidates": 272237,
+      "ln_bands": {
+        "hybrid": 31,
+        "tap": 35,
+        "ln": 6
+      }
+    },
+    "heads": {
+      "authored_onset": {
+        "converged": true,
+        "iterations": 13,
+        "training_candidates": 198941,
+        "heldout_songs": [
+          {
+            "beatmap_id": "2426683",
+            "candidates": 4948,
+            "positives": 2349,
+            "model_auc": 0.85143,
+            "baseline_auc": 0.56657,
+            "no_phase_auc": 0.5799,
+            "brier": 0.175199873846522
+          },
+          {
+            "beatmap_id": "2950142",
+            "candidates": 178,
+            "positives": 142,
+            "model_auc": 0.95677,
+            "baseline_auc": 0.69464,
+            "no_phase_auc": 0.70853,
+            "brier": 0.09158025609000005
+          },
+          {
+            "beatmap_id": "3630228",
+            "candidates": 6194,
+            "positives": 1507,
+            "model_auc": 0.91579,
+            "baseline_auc": 0.60475,
+            "no_phase_auc": 0.63871,
+            "brier": 0.22630692450563755
+          },
+          {
+            "beatmap_id": "4949158",
+            "candidates": 4622,
+            "positives": 2521,
+            "model_auc": 0.87732,
+            "baseline_auc": 0.58877,
+            "no_phase_auc": 0.64605,
+            "brier": 0.1414921768172901
+          },
+          {
+            "beatmap_id": "4966781",
+            "candidates": 1395,
+            "positives": 571,
+            "model_auc": 0.80183,
+            "baseline_auc": 0.50751,
+            "no_phase_auc": 0.58103,
+            "brier": 0.31066797709329635
+          },
+          {
+            "beatmap_id": "5661702",
+            "candidates": 4189,
+            "positives": 2197,
+            "model_auc": 0.84644,
+            "baseline_auc": 0.61142,
+            "no_phase_auc": 0.61913,
+            "brier": 0.15718300551224543
+          },
+          {
+            "beatmap_id": "1505225",
+            "candidates": 3746,
+            "positives": 2406,
+            "model_auc": 0.90969,
+            "baseline_auc": 0.64951,
+            "no_phase_auc": 0.65264,
+            "brier": 0.12179558040072871
+          },
+          {
+            "beatmap_id": "319884",
+            "candidates": 3265,
+            "positives": 1124,
+            "model_auc": 0.921,
+            "baseline_auc": 0.56843,
+            "no_phase_auc": 0.61621,
+            "brier": 0.13195830603635186
+          },
+          {
+            "beatmap_id": "2426686",
+            "candidates": 733,
+            "positives": 187,
+            "model_auc": 0.86875,
+            "baseline_auc": 0.51168,
+            "no_phase_auc": 0.50314,
+            "brier": 0.23146308716449338
+          },
+          {
+            "beatmap_id": "2488937",
+            "candidates": 3399,
+            "positives": 2367,
+            "model_auc": 0.82598,
+            "baseline_auc": 0.56841,
+            "no_phase_auc": 0.58043,
+            "brier": 0.1793614425506343
+          },
+          {
+            "beatmap_id": "4635410",
+            "candidates": 2350,
+            "positives": 826,
+            "model_auc": 0.91028,
+            "baseline_auc": 0.62193,
+            "no_phase_auc": 0.62005,
+            "brier": 0.22380715881696872
+          },
+          {
+            "beatmap_id": "4890664",
+            "candidates": 5953,
+            "positives": 4180,
+            "model_auc": 0.68603,
+            "baseline_auc": 0.53601,
+            "no_phase_auc": 0.53313,
+            "brier": 0.2334691136542321
+          },
+          {
+            "beatmap_id": "4984293",
+            "candidates": 6261,
+            "positives": 4624,
+            "model_auc": 0.81431,
+            "baseline_auc": 0.59363,
+            "no_phase_auc": 0.56098,
+            "brier": 0.18918549532165846
+          },
+          {
+            "beatmap_id": "5008549",
+            "candidates": 2255,
+            "positives": 732,
+            "model_auc": 0.90255,
+            "baseline_auc": 0.72858,
+            "no_phase_auc": 0.67246,
+            "brier": 0.14808287559973968
+          },
+          {
+            "beatmap_id": "5060312",
+            "candidates": 4064,
+            "positives": 3159,
+            "model_auc": 0.67165,
+            "baseline_auc": 0.54291,
+            "no_phase_auc": 0.58944,
+            "brier": 0.2557056375861863
+          },
+          {
+            "beatmap_id": "5324688",
+            "candidates": 2297,
+            "positives": 747,
+            "model_auc": 0.8469,
+            "baseline_auc": 0.64604,
+            "no_phase_auc": 0.61102,
+            "brier": 0.21404987566470093
+          },
+          {
+            "beatmap_id": "1740489",
+            "candidates": 4271,
+            "positives": 3044,
+            "model_auc": 0.82573,
+            "baseline_auc": 0.58743,
+            "no_phase_auc": 0.66324,
+            "brier": 0.1919281077725721
+          },
+          {
+            "beatmap_id": "4540611",
+            "candidates": 9918,
+            "positives": 4919,
+            "model_auc": 0.8066,
+            "baseline_auc": 0.56975,
+            "no_phase_auc": 0.62955,
+            "brier": 0.1816350602824103
+          },
+          {
+            "beatmap_id": "4591888",
+            "candidates": 3258,
+            "positives": 834,
+            "model_auc": 0.96009,
+            "baseline_auc": 0.64932,
+            "no_phase_auc": 0.72415,
+            "brier": 0.1457012422963769
+          }
+        ],
+        "macro_auc": 0.85259,
+        "macro_no_phase_auc": 0.61736,
+        "macro_baseline_auc": 0.59723
+      },
+      "authored_sustain": {
+        "converged": true,
+        "iterations": 18,
+        "training_candidates": 89455,
+        "heldout_songs": [
+          {
+            "beatmap_id": "2426683",
+            "candidates": 2702,
+            "positives": 119,
+            "model_auc": 0.77631,
+            "baseline_auc": 0.66561,
+            "no_phase_auc": 0.59744,
+            "brier": 0.040786814946901714
+          },
+          {
+            "beatmap_id": "2950142",
+            "candidates": 145,
+            "positives": 29,
+            "model_auc": 0.89715,
+            "baseline_auc": 0.86712,
+            "no_phase_auc": 0.87604,
+            "brier": 0.15385320993358317
+          },
+          {
+            "beatmap_id": "3630228",
+            "candidates": 2514,
+            "positives": 12,
+            "model_auc": 0.86484,
+            "baseline_auc": 0.95833,
+            "no_phase_auc": 0.81961,
+            "brier": 0.008116606239075473
+          },
+          {
+            "beatmap_id": "4949158",
+            "candidates": 2223,
+            "positives": 287,
+            "model_auc": 0.84512,
+            "baseline_auc": 0.65429,
+            "no_phase_auc": 0.71254,
+            "brier": 0.11110541595161313
+          },
+          {
+            "beatmap_id": "4966781",
+            "candidates": 1107,
+            "positives": 10,
+            "model_auc": 0.8268,
+            "baseline_auc": 0.93341,
+            "no_phase_auc": 0.87356,
+            "brier": 0.015352011714611221
+          },
+          {
+            "beatmap_id": "5661702",
+            "candidates": 1451,
+            "positives": 3,
+            "model_auc": 0.67242,
+            "baseline_auc": 0.96961,
+            "no_phase_auc": 0.42265,
+            "brier": 0.004760197629567564
+          },
+          {
+            "beatmap_id": "1505225",
+            "candidates": 1264,
+            "positives": 302,
+            "model_auc": 0.60801,
+            "baseline_auc": 0.45861,
+            "no_phase_auc": 0.32244,
+            "brier": 0.20946254952975482
+          },
+          {
+            "beatmap_id": "319884",
+            "candidates": 1082,
+            "positives": 0,
+            "model_auc": null,
+            "baseline_auc": null,
+            "no_phase_auc": null,
+            "brier": 0.005973923116615119
+          },
+          {
+            "beatmap_id": "2426686",
+            "candidates": 412,
+            "positives": 8,
+            "model_auc": 0.79146,
+            "baseline_auc": 0.57735,
+            "no_phase_auc": 0.56869,
+            "brier": 0.02052793959868252
+          },
+          {
+            "beatmap_id": "2488937",
+            "candidates": 913,
+            "positives": 3,
+            "model_auc": 0.82344,
+            "baseline_auc": 0.91795,
+            "no_phase_auc": 0.83846,
+            "brier": 0.005427030856126611
+          },
+          {
+            "beatmap_id": "4635410",
+            "candidates": 1200,
+            "positives": 2,
+            "model_auc": 0.36144,
+            "baseline_auc": 0.9376,
+            "no_phase_auc": 0.38356,
+            "brier": 0.006398501811023807
+          },
+          {
+            "beatmap_id": "4890664",
+            "candidates": 2314,
+            "positives": 0,
+            "model_auc": null,
+            "baseline_auc": null,
+            "no_phase_auc": null,
+            "brier": 0.0028954203908091907
+          },
+          {
+            "beatmap_id": "4984293",
+            "candidates": 2296,
+            "positives": 27,
+            "model_auc": 0.67052,
+            "baseline_auc": 0.84107,
+            "no_phase_auc": 0.64231,
+            "brier": 0.013314710713437556
+          },
+          {
+            "beatmap_id": "5008549",
+            "candidates": 381,
+            "positives": 0,
+            "model_auc": null,
+            "baseline_auc": null,
+            "no_phase_auc": null,
+            "brier": 0.004459968951417171
+          },
+          {
+            "beatmap_id": "5060312",
+            "candidates": 1607,
+            "positives": 0,
+            "model_auc": null,
+            "baseline_auc": null,
+            "no_phase_auc": null,
+            "brier": 0.0029932813322560217
+          },
+          {
+            "beatmap_id": "5324688",
+            "candidates": 1050,
+            "positives": 19,
+            "model_auc": 0.64628,
+            "baseline_auc": 0.92026,
+            "no_phase_auc": 0.59375,
+            "brier": 0.01911808122601419
+          },
+          {
+            "beatmap_id": "1740489",
+            "candidates": 1772,
+            "positives": 33,
+            "model_auc": 0.54863,
+            "baseline_auc": 0.41533,
+            "no_phase_auc": 0.51508,
+            "brier": 0.02530603105534684
+          },
+          {
+            "beatmap_id": "4540611",
+            "candidates": 3839,
+            "positives": 198,
+            "model_auc": 0.6336,
+            "baseline_auc": 0.57945,
+            "no_phase_auc": 0.51797,
+            "brier": 0.04856752460105718
+          },
+          {
+            "beatmap_id": "4591888",
+            "candidates": 1626,
+            "positives": 0,
+            "model_auc": null,
+            "baseline_auc": null,
+            "no_phase_auc": null,
+            "brier": 0.002278616465515536
+          }
+        ],
+        "macro_auc": 0.71186,
+        "macro_no_phase_auc": 0.62029,
+        "macro_baseline_auc": 0.764
+      }
+    },
+    "manifest": [
+      {
+        "song": "variousartists:flowpart1",
+        "audio_sha256": "d2d704ebd28d6c091e48e41c31bebfcc7a1c41c2472eb1a22f19488695e5a3b5",
+        "map_sha256": "43f66361a5a5ea7260c6f251d73e238ad7306f3f84afa87242aaa21d9dfddacb",
+        "snapshot_sha256": "2a133c3087fe992c13be92f99653f3b521d3bb648970dcce0ea25d6e3823f0dd",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "2426683",
+        "keys": 10,
+        "ln_ratio": 0.17440660474716202,
+        "status": "loved",
+        "split": "test",
+        "candidates": 4948,
+        "group": "f191ebcd1ef6359acf98ddff64deae51dcfb491e9fdd7a30e4dca526796c92ae"
+      },
+      {
+        "song": "variousartists:frjmoljnokparta",
+        "audio_sha256": "18c271770a7cc88e716d4662d206e6efd44e749423646b6004aedb3be2d70442",
+        "map_sha256": "bf819c0967236c7132f7a01943c0a9253988d8b2ad956920f07304394b744b0b",
+        "snapshot_sha256": "835a7fe22c2cef39d871542b4745ef1f0dd882b301a349587c3bf5f3d0f4c923",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "2759255",
+        "keys": 10,
+        "ln_ratio": 0.21035058430717862,
+        "status": "loved",
+        "split": "train",
+        "candidates": 3181,
+        "group": "8c7030ed86d4d317765f6f57db8899f145e1084b0fe805f89bb5ccbeffdc995d"
+      },
+      {
+        "song": "tatatat:melodyofpromise",
+        "audio_sha256": "e1f2ba87a6796a55dbec582abec7403c97250c6ec0934f1682f8a61ce4b7b855",
+        "map_sha256": "2ba05796f56072866baeca4fe4d683ccda8bba36672c68d1d2af20a7e6e185ec",
+        "snapshot_sha256": "bbf6134756dac5e989b45d3be520681c2db75603ccdf5063cf2d1e33e78032f6",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "2950142",
+        "keys": 10,
+        "ln_ratio": 0.30864197530864196,
+        "status": 1,
+        "split": "test",
+        "candidates": 178,
+        "group": "9a0e0d9701d5df7b4cf1bf52672575766aa832ada1c2aa94e5ca7446942455b5"
+      },
+      {
+        "song": "mono:peacefulpiece",
+        "audio_sha256": "7fdd8390af2ccf1255fcaf2814f1c38b077afc58541e6162de6b58c79e2ccdb1",
+        "map_sha256": "2d44bc2e01264a5f3f9249951fce653a65c5f02e9916babf05db0707f65f0f37",
+        "snapshot_sha256": "3395a90fc35fba83948c3db9ebe973d8d846a3fa7d2de7a86956808403eff18c",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "3113732",
+        "keys": 10,
+        "ln_ratio": 0.19318181818181818,
+        "status": 1,
+        "split": "train",
+        "candidates": 5931,
+        "group": "6c82e72acf9f5cc10191ec597ca70104fef4255652010806315b23f923e32833"
+      },
+      {
+        "song": "seifuumeigetsu:yukinohana",
+        "audio_sha256": "d7594a033bdbedeaf5e02484e916c0e32a9b02a9df7d65f1f4280746ea9ce646",
+        "map_sha256": "f45ab280163e756bafd27d158b847fa5a5bf29118920c3f28c395abc6bb7abcc",
+        "snapshot_sha256": "359ec750db091d1a40cf7446c8baf841d674b0f74bf76c20c82ca6aad0bd3015",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "3472306",
+        "keys": 10,
+        "ln_ratio": 0.20384615384615384,
+        "status": 1,
+        "split": "train",
+        "candidates": 1560,
+        "group": "4350a0bdbef6aa4ae22c66e427dda2aad3e417f5a2d14476629d0def474a9cf3"
+      },
+      {
+        "song": "tobyfox:darknessfalls",
+        "audio_sha256": "284f0c17e2c9feea1fa48c2ecefeee25db389c78b0a93283283809554b1660c7",
+        "map_sha256": "22913d1ff0e891fafaba66e5469ccef4790e859691fb5b704e13fa885f61732e",
+        "snapshot_sha256": "4f860c56441e0b84363a140d8caa18559ed63a406082c140de0d96f047b1ef25",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "3578838",
+        "keys": 10,
+        "ln_ratio": 0.3916083916083916,
+        "status": 1,
+        "split": "train",
+        "candidates": 645,
+        "group": "c9947a9703970a072f9ef09b7418b93f81754f3b5b6abb77fc4206adf484d566"
+      },
+      {
+        "song": "lenaraine:spiritofhospitality",
+        "audio_sha256": "670a5a6fb2c1ee6b7590d11caa1e0bd8f5c5090b9d08f6d0887a3d8f291ae697",
+        "map_sha256": "857b60fb30f7a1708e94f2bd13b51fb73f678e35a0205c99343309f712d70f67",
+        "snapshot_sha256": "5c1c7c17b70bfc9ca7829761f0600c508a57e381bc73d192faa9a6ab87a8ad97",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "3619067",
+        "keys": 10,
+        "ln_ratio": 0.32242990654205606,
+        "status": 1,
+        "split": "train",
+        "candidates": 1683,
+        "group": "867b5fd6bcac9a9ef4df6e62532132ad7e00f6a14d69b694e084a8be825800ac"
+      },
+      {
+        "song": "hoshimiyatotokijibato:lowbitfantasy",
+        "audio_sha256": "9a69acbfe46940938629c9ad5c46d8620c9623e81843194ceea7ab4a72f350d2",
+        "map_sha256": "34fc80f1fcd66e28c778576e439665af8bdcd3c74619e12efcafb1938a16ab80",
+        "snapshot_sha256": "20f4e76ce236f9a38e188904c955dade1ee9c12741544a1253aebc4c4532aa0d",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "3630228",
+        "keys": 10,
+        "ln_ratio": 0.24817518248175183,
+        "status": 1,
+        "split": "test",
+        "candidates": 6194,
+        "group": "e33cee10abb7a1ee1e228bb924009f12a73f083980be077c8e240389d4448f9c"
+      },
+      {
+        "song": "dunderpatrullen:interludefantasyfriendshipforever",
+        "audio_sha256": "1a6e7ee4e2d7947150899968cfeb65a5fa377493bc83f6e6d25f56f77cb70903",
+        "map_sha256": "642698747631f466e97df7d19e1e0737cc3ccbc586f70bd512df1853a4c300dd",
+        "snapshot_sha256": "493960a0bcae7b94e97dd3b00201893f82c66a0dd96c24ad7f6c0395b0ef703a",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "3895553",
+        "keys": 10,
+        "ln_ratio": 0.4158415841584158,
+        "status": 1,
+        "split": "train",
+        "candidates": 455,
+        "group": "dfd401c1b7a09fcc3a401eaa9199ec04e52911f4179e895ccc2c44dd4f02272d"
+      },
+      {
+        "song": "feryquitous:dstorv",
+        "audio_sha256": "357ce8330363e33b3d472657981ffe12275ed4038aa1b7ebd7593c6477410c5e",
+        "map_sha256": "3e0aaf0337d1670a98a99d5a8d5a6671751c1189484f47e44d413a1799266262",
+        "snapshot_sha256": "00f1bacdfd84e3b61e2b433ffc84bd7bfc634b1a17c8bd8db4e3290166581a59",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4185029",
+        "keys": 10,
+        "ln_ratio": 0.15568862275449102,
+        "status": 1,
+        "split": "train",
+        "candidates": 4395,
+        "group": "39aaf7005cde8ac4607a8ade437877c283abcbe6d36821554d655f2f685078b8"
+      },
+      {
+        "song": "garoad:transitioni",
+        "audio_sha256": "a7855121d5a256d84424ae984c0720bff66ff51c4ed11453caf7b63b05e7b08c",
+        "map_sha256": "bb1e45fa02cc6e76dd848f8694fbf54ccdbe2276c5a56a37bc4aa12090cf35a4",
+        "snapshot_sha256": "e08c839f273c3bc50be260204f0f5294c4b24df7cca3af1ec5039c5041bff988",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4348413",
+        "keys": 10,
+        "ln_ratio": 0.16417910447761194,
+        "status": 1,
+        "split": "train",
+        "candidates": 411,
+        "group": "f14e114bf0484e9f39517427116e977e06cf63542da979b6110b235e30691aab"
+      },
+      {
+        "song": "nie:summerwithlittleroottown",
+        "audio_sha256": "9fe302bd66d6d29115b9e70686e30ab777c6f4be5b844310533604c7e9944225",
+        "map_sha256": "dcccfc0273bb55f1d2d891aee1d307e8d9afc15e2f92bb3a6f5a12087fa92a80",
+        "snapshot_sha256": "7bde3eebcda3da3a2fc0a5d8b79f3ddbea49b8f575430b8340ef541c79914545",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4380978",
+        "keys": 10,
+        "ln_ratio": 0.37209302325581395,
+        "status": 1,
+        "split": "train",
+        "candidates": 1286,
+        "group": "1815df60d16ee2097e8f4c89e0e0a0f827adc4f469b825ae3564e97448565ac9"
+      },
+      {
+        "song": "aethoro:snowy",
+        "audio_sha256": "b1b5dd5b25bbcc95e5a6a55ef7c52a0d9a29781ef10bbf186915686c3a79a52b",
+        "map_sha256": "5fe63b7c09b21c05d2593f23ea1c0930482a5ec05529f7ddd6a8224ae0e9f862",
+        "snapshot_sha256": "b1543e067ad1b42410fd47b1a67eeb13d98a3bbf859a8797b5d209a68116e86e",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4452867",
+        "keys": 10,
+        "ln_ratio": 0.35824977210574294,
+        "status": 1,
+        "split": "train",
+        "candidates": 3270,
+        "group": "8adab0294a95dd124f39fc9ed37fb2ceb19dd758cbd4eb87ae7288bf7ae7c115"
+      },
+      {
+        "song": "rejection:whitecanvasfeataitsukinakuruosuedit",
+        "audio_sha256": "696bb1e18b0acd1450f1eeed88ceb57d324117fdeee40916a62fd10029c23218",
+        "map_sha256": "e205403674fb17fae6e1967d79db94e1770c83b115d4bc91ac0ab474b9d8ccec",
+        "snapshot_sha256": "d83ad45140b070f4dc83567c2a5630f40007552ae79b20ecf764646b5fba7b3a",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4949158",
+        "keys": 10,
+        "ln_ratio": 0.15822291504286828,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 4622,
+        "group": "74bd9f0d78f55000a94c30df5e678aebd1ac548e3d5a8a50b0b3048fac62f46a"
+      },
+      {
+        "song": "mitsukiyo:nijuuyojinonengan",
+        "audio_sha256": "cda82c56ae7dd24e2cfa35ee310debe7f2030891b0aa8bc87d6017288778bd83",
+        "map_sha256": "121aa1b89119f19a27af4e87228f2deb1abe71fc9e77b23acf2bbcedade418f3",
+        "snapshot_sha256": "7f715b7d596ba8a6f3dc8f4e442da7a5bb84edbedfafceb7cdf5d264d87e5a11",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4966781",
+        "keys": 10,
+        "ln_ratio": 0.15822784810126583,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 1395,
+        "group": "e5d234b552bbad9073f6abeeef43d75f283dab32e20200ee44c59e2caeca38af"
+      },
+      {
+        "song": "stationearth:coldgreeneyesfeatroosdenayercutver",
+        "audio_sha256": "b2014ba430c611e871e09f5073350a784e3a277d9a29527a9a78740ee93a254c",
+        "map_sha256": "2ec9daa13a647c6e2687984b0ddeed08c3975e2e2f4cf0076afc1a7024db6d24",
+        "snapshot_sha256": "f63fd59d66ef986e59eeebce6271d1c675abfa1710e241b381bdc40642cbcfa6",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5163045",
+        "keys": 10,
+        "ln_ratio": 0.16358595194085027,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 2854,
+        "group": "a4e278ef26ac998ad51785896fb9fd1bbcc42250346211bdad06043a11af32eb"
+      },
+      {
+        "song": "myukke:antisafetyzone",
+        "audio_sha256": "7e0e22f925033e170cd7fdd8acc64d42136655baf85a920ab43277028b79fd02",
+        "map_sha256": "bed7d75c1b8de4811cf8b417ed75c3b2f87e7d6fbbdfc5acbc98f8c16d0c7cfe",
+        "snapshot_sha256": "8f617ff473ab66d1307d7efe5aa74ddb8fef18a0bb6c383168aa2c554c7d7f1f",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5661702",
+        "keys": 10,
+        "ln_ratio": 0.18031088082901556,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 4189,
+        "group": "8df6156a7a56f2629d2c7cc4acb44383d335df88c4aac456f6e367851344fde1"
+      },
+      {
+        "song": "wiklund:joyoflivingcutver",
+        "audio_sha256": "ed85aef47b789c8a88550819f1bc2cc20a5ba2adf4e969529a60ca5cc5ffb35d",
+        "map_sha256": "81666e39566b1d3afe63bccd5cd3aa710ec4a82a743d22a9b8e145d39150b9e7",
+        "snapshot_sha256": "81666e39566b1d3afe63bccd5cd3aa710ec4a82a743d22a9b8e145d39150b9e7",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "4473089",
+        "keys": 10,
+        "ln_ratio": 0.16802973977695168,
+        "status": 1,
+        "split": "train",
+        "candidates": 3443,
+        "group": "f380034f486bf9e4d34b241979e94941e73cc2230cad1eb049dbb09c7ca4878c"
+      },
+      {
+        "song": "ushirokarahaiyoritaig:koiwachaosnoshimobenaritvsize",
+        "audio_sha256": "4601d122f67d09ee26a5e443b5e942a117bb6e5d4744d461db8d729cb353cdc0",
+        "map_sha256": "2d476246455385a4feaf6333387f18913ccf2f3048d23873f9b988daa7bb27a6",
+        "snapshot_sha256": "2d476246455385a4feaf6333387f18913ccf2f3048d23873f9b988daa7bb27a6",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "273799",
+        "keys": 7,
+        "ln_ratio": 0.13230429988974643,
+        "status": 1,
+        "split": "train",
+        "candidates": 3434,
+        "group": "23212a4862ced1fe3d4c1228a534a0a931e960ae1bffca880cfc5d3f54d7d34b"
+      },
+      {
+        "song": "pendulum:theislandmaxnrgremix",
+        "audio_sha256": "75f379733bcfde6fc01ad703196c631b128f4d7ceadf5a0a96e650c834c958ae",
+        "map_sha256": "d6e308a86ed7835fb3d25aa20058cb2b1990684a587a290aa90664685e0b72df",
+        "snapshot_sha256": "d6e308a86ed7835fb3d25aa20058cb2b1990684a587a290aa90664685e0b72df",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "298810",
+        "keys": 6,
+        "ln_ratio": 0.1290566037735849,
+        "status": 1,
+        "split": "train",
+        "candidates": 9518,
+        "group": "1b0d6eaa90ca912d9b4fa3ec74f6a3e9f423a13e49c9a9d53c3a52dccaedc1bb"
+      },
+      {
+        "song": "variousartists:10kindopackfavourites",
+        "audio_sha256": "9cd895f09d3bf4a68a1a68adeeaa78574eec8b301090fa311205c2b038567fd6",
+        "map_sha256": "0dc0f636a411b380846137c44164df626a4040c673b307e694cc650162bc3903",
+        "snapshot_sha256": "0dc0f636a411b380846137c44164df626a4040c673b307e694cc650162bc3903",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "4995927",
+        "keys": 10,
+        "ln_ratio": 0.2436472346786248,
+        "status": "loved",
+        "split": "train",
+        "candidates": 6111,
+        "group": "fe9b0276cf6e98a422cfa67c240880c5d13cf5058b2b55d8ae0e03085a19768f"
+      },
+      {
+        "song": "noaiy:bachongreturntrue",
+        "audio_sha256": "48f5c99953e3b53066165a3b27f244a87a359ab9cd389dc11e62d5c05a643665",
+        "map_sha256": "83ddb115f90a7be82ca0c7dac36103f1516ae262fad5eb0dfa5a67052cf81927",
+        "snapshot_sha256": "83ddb115f90a7be82ca0c7dac36103f1516ae262fad5eb0dfa5a67052cf81927",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "3897925",
+        "keys": 10,
+        "ln_ratio": 0.21266133988936695,
+        "status": 1,
+        "split": "train",
+        "candidates": 4530,
+        "group": "56a897e8b983533f94eb4b1f32d4d8712cfa55f0b86ff66fa73553b45edbe0bd"
+      },
+      {
+        "song": "camelliafeatkagekihagakusei:lowermostrevoltjeremiadlongver",
+        "audio_sha256": "0df73e859bf3542859d098ad3e7bed01e8eeb45a141a685016e66aae2096d8ac",
+        "map_sha256": "4675e5491f8bf450f2c5657b7610305dfc218fc28077a6f5b4f76305ff82213f",
+        "snapshot_sha256": "4675e5491f8bf450f2c5657b7610305dfc218fc28077a6f5b4f76305ff82213f",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "2926818",
+        "keys": 10,
+        "ln_ratio": 0.1808438475105142,
+        "status": "loved",
+        "split": "train",
+        "candidates": 9043,
+        "group": "054e02bfefaa1e142a61c00a71081a963d35cd7875594bd79a3f8446081397a3"
+      },
+      {
+        "song": "variousartists:las10ksupermug",
+        "audio_sha256": "d975ebbb1a9f198598f0e0e2c81cf3de7e1975cb06339f4a4d505649bff5f418",
+        "map_sha256": "ceeb6925ed7d3b137b7d777d3b86f90c90259dd81eae1857a3a8d853adb4d22e",
+        "snapshot_sha256": "ceeb6925ed7d3b137b7d777d3b86f90c90259dd81eae1857a3a8d853adb4d22e",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "1505225",
+        "keys": 10,
+        "ln_ratio": 0.12405176260597947,
+        "status": "loved",
+        "split": "test",
+        "candidates": 3746,
+        "group": "6ecb07f8499c6633b8a6b1495902b37a57fb61a1326c4e1b44499260e2a9ded1"
+      },
+      {
+        "song": "ryo:shuffleheaven",
+        "audio_sha256": "cc9fc7e81eda9ffc80a48b253bd194c2803f6204422a26af193ea76f2c2357d4",
+        "map_sha256": "d5d09265cc5472746d2a8494bcdda142d9b849d0cdd2ec01abd51065c459e94e",
+        "snapshot_sha256": "d5d09265cc5472746d2a8494bcdda142d9b849d0cdd2ec01abd51065c459e94e",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "319884",
+        "keys": 7,
+        "ln_ratio": 0.12609457092819615,
+        "status": 1,
+        "split": "test",
+        "candidates": 3265,
+        "group": "d33b868ec87a3cd9f2b184f9a43bd36e6dcb70bf2b5fb84345fa1363d44ad649"
+      },
+      {
+        "song": "mitsukiyo:nijuujinohotarunomori",
+        "audio_sha256": "9f6e10acb78414d1749e0ae82bc566c63157816217b52fa9421eb8f7c44b9338",
+        "map_sha256": "ab0765a867bc8f4fbdea229f9fc84aa280e2dd8b006b24e640c8a45508310df7",
+        "snapshot_sha256": "ab0765a867bc8f4fbdea229f9fc84aa280e2dd8b006b24e640c8a45508310df7",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "4973962",
+        "keys": 10,
+        "ln_ratio": 0.3518987341772152,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 848,
+        "group": "ce7170100eb2a52051824c365e021aa2c47d5191c5d49eed4ef94e5798412734"
+      },
+      {
+        "song": "radwimps:yumetourou",
+        "audio_sha256": "d041e80363853457518fd0584faad84d9aa20a9a0f2d4d5cee69b30ebfeb7721",
+        "map_sha256": "eaf75b4daa71a430de60ba5da6130db11d7422dc25326b56fb95508f70fd8f1f",
+        "snapshot_sha256": "eaf75b4daa71a430de60ba5da6130db11d7422dc25326b56fb95508f70fd8f1f",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 36488,
+          "end_ms": 96488,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "d041e80363853457518fd0584faad84d9aa20a9a0f2d4d5cee69b30ebfeb7721",
+          "chart_sha256": "eaf75b4daa71a430de60ba5da6130db11d7422dc25326b56fb95508f70fd8f1f"
+        },
+        "beatmap_id": "1383162",
+        "keys": 8,
+        "ln_ratio": 0.15743440233236153,
+        "status": 1,
+        "split": "train",
+        "candidates": 1599,
+        "group": "e5bc25610d7928efba82536128fcd4bc08b0987b968191f285b20924717ab3d2"
+      },
+      {
+        "song": "variousartists:flowpart1",
+        "audio_sha256": "75adde92095d5452aa1f6a58a7d50639bc9e459d9e16b66045040ade1e118aba",
+        "map_sha256": "f8d1f4dc0402844b98cde279fbdc39f18059f117b8029d07400cf3e88e0e6ae7",
+        "snapshot_sha256": "f8d1f4dc0402844b98cde279fbdc39f18059f117b8029d07400cf3e88e0e6ae7",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 12052,
+          "end_ms": 72052,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "75adde92095d5452aa1f6a58a7d50639bc9e459d9e16b66045040ade1e118aba",
+          "chart_sha256": "f8d1f4dc0402844b98cde279fbdc39f18059f117b8029d07400cf3e88e0e6ae7"
+        },
+        "beatmap_id": "2426686",
+        "keys": 10,
+        "ln_ratio": 0.22135922330097088,
+        "status": "loved",
+        "split": "test",
+        "candidates": 733,
+        "group": "f191ebcd1ef6359acf98ddff64deae51dcfb491e9fdd7a30e4dca526796c92ae"
+      },
+      {
+        "song": "nekohacker:circulation",
+        "audio_sha256": "ba143d14ea6d5524c1fd9cf52562668bbd553f6739f7708e94b675b277a5807e",
+        "map_sha256": "0ac2110418209c26bc0d0722447428e59242a7c05a2ed6b9c463908289c99f83",
+        "snapshot_sha256": "0ac2110418209c26bc0d0722447428e59242a7c05a2ed6b9c463908289c99f83",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 12214,
+          "end_ms": 59377,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "ba143d14ea6d5524c1fd9cf52562668bbd553f6739f7708e94b675b277a5807e",
+          "chart_sha256": "0ac2110418209c26bc0d0722447428e59242a7c05a2ed6b9c463908289c99f83"
+        },
+        "beatmap_id": "4457395",
+        "keys": 7,
+        "ln_ratio": 0.8461538461538461,
+        "status": 1,
+        "split": "train",
+        "candidates": 1238,
+        "group": "ef0a92dc8909c8a2444c7b4ceef431ffd93a3181f1dfbefc7f485c321ee4860a"
+      },
+      {
+        "song": "nikkikaelar:mysongyournote",
+        "audio_sha256": "ca488a7bb121a25bbf8ae1386df3de90c9071c784865ed6ac572a4b7648fdaca",
+        "map_sha256": "cd7ad40c0166d2e1b626ab011333fa0519d473fa2c4329a6df5ce32e1571b29b",
+        "snapshot_sha256": "cd7ad40c0166d2e1b626ab011333fa0519d473fa2c4329a6df5ce32e1571b29b",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 38981,
+          "end_ms": 98981,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "ca488a7bb121a25bbf8ae1386df3de90c9071c784865ed6ac572a4b7648fdaca",
+          "chart_sha256": "cd7ad40c0166d2e1b626ab011333fa0519d473fa2c4329a6df5ce32e1571b29b"
+        },
+        "beatmap_id": "4709745",
+        "keys": 8,
+        "ln_ratio": 0.7280898876404495,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 515,
+        "group": "e4eea51208cf88e803e4b24f1d1feb0854ba467c6004111661e64ac075b5454b"
+      },
+      {
+        "song": "yuichirotsukagoshifeatyumemicaelestis:everbloomingwildrosecoronation",
+        "audio_sha256": "58af0077de5c291fe2417337910b8f3acd36164a4baba5171b34a55c3ab73e31",
+        "map_sha256": "ae519d2cd7b575229bb822c6a300b779c963fc88b1bf5953737547bfb9836cf9",
+        "snapshot_sha256": "ae519d2cd7b575229bb822c6a300b779c963fc88b1bf5953737547bfb9836cf9",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 19441,
+          "end_ms": 79441,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "58af0077de5c291fe2417337910b8f3acd36164a4baba5171b34a55c3ab73e31",
+          "chart_sha256": "ae519d2cd7b575229bb822c6a300b779c963fc88b1bf5953737547bfb9836cf9"
+        },
+        "beatmap_id": "5196084",
+        "keys": 10,
+        "ln_ratio": 0.5251989389920424,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 1676,
+        "group": "7797a59218e9e0cd7838081c136b84b588f407634da217435123e6e59ec7dad0"
+      },
+      {
+        "song": "ik4sumi:scamper",
+        "audio_sha256": "70bc54f8a8e55eac1a71a3e47dc3396a59ec01f5bea6dfb3627cf79fcea73a64",
+        "map_sha256": "c8f40840c5e263ef9bb4b35456abc71db372c843ea13c4ff055f7d594349ae20",
+        "snapshot_sha256": "c8f40840c5e263ef9bb4b35456abc71db372c843ea13c4ff055f7d594349ae20",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 12534,
+          "end_ms": 72534,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "70bc54f8a8e55eac1a71a3e47dc3396a59ec01f5bea6dfb3627cf79fcea73a64",
+          "chart_sha256": "c8f40840c5e263ef9bb4b35456abc71db372c843ea13c4ff055f7d594349ae20"
+        },
+        "beatmap_id": "5452281",
+        "keys": 6,
+        "ln_ratio": 0.5060606060606061,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 748,
+        "group": "f43e1470fddca68c60e9ea383230969ee184560d06c94103d45c2d96d3c32264"
+      },
+      {
+        "song": "reona:nainai",
+        "audio_sha256": "53cad42b5777c2cfd82e3699421cd694b6e840ecc6dbeab638c58f6976649dc2",
+        "map_sha256": "bc9ac451e08504ea51f3ceb7edc6f5aea12469a1d36043275f285e4b70bac92c",
+        "snapshot_sha256": "bc9ac451e08504ea51f3ceb7edc6f5aea12469a1d36043275f285e4b70bac92c",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 12364,
+          "end_ms": 72364,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "53cad42b5777c2cfd82e3699421cd694b6e840ecc6dbeab638c58f6976649dc2",
+          "chart_sha256": "bc9ac451e08504ea51f3ceb7edc6f5aea12469a1d36043275f285e4b70bac92c"
+        },
+        "beatmap_id": "5507095",
+        "keys": 9,
+        "ln_ratio": 0.6538095238095238,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 1943,
+        "group": "fa5f0aeb929c6459d27de252f0ef85a6dbec83629d9485c86bc7d1b247e25d73"
+      },
+      {
+        "song": "akiri:meowww",
+        "audio_sha256": "26a04b6dc6d29214475bc6d1a58346c58923f0df53a203427b796b753eb3ad9f",
+        "map_sha256": "a3bc0bc7713b0b60dbf467a372430db3019c5788c807aebd948464dc7ff88313",
+        "snapshot_sha256": "a3bc0bc7713b0b60dbf467a372430db3019c5788c807aebd948464dc7ff88313",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 12025,
+          "end_ms": 72025,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "26a04b6dc6d29214475bc6d1a58346c58923f0df53a203427b796b753eb3ad9f",
+          "chart_sha256": "a3bc0bc7713b0b60dbf467a372430db3019c5788c807aebd948464dc7ff88313"
+        },
+        "beatmap_id": "5647839",
+        "keys": 9,
+        "ln_ratio": 0.34458259325044405,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 924,
+        "group": "3259267361bc43e4e0fe605e549fdf1b7d0106bc794c50ba75468898694b7ae9"
+      },
+      {
+        "song": "imaiasami:asayakenostarmineanimever",
+        "audio_sha256": "a3ddd5659e2ea776d1da9555928b3470f8176c9235f7e6cd9f05617977fa20d1",
+        "map_sha256": "deedbf999ecc04eb7df4df320504a2b131559afd29f3b3b0d807165180b916dd",
+        "snapshot_sha256": "deedbf999ecc04eb7df4df320504a2b131559afd29f3b3b0d807165180b916dd",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 12649,
+          "end_ms": 72649,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "a3ddd5659e2ea776d1da9555928b3470f8176c9235f7e6cd9f05617977fa20d1",
+          "chart_sha256": "deedbf999ecc04eb7df4df320504a2b131559afd29f3b3b0d807165180b916dd"
+        },
+        "beatmap_id": "684852",
+        "keys": 7,
+        "ln_ratio": 0.16137566137566137,
+        "status": 1,
+        "split": "train",
+        "candidates": 2200,
+        "group": "b957b7c0700eec1ebdcc425f508044f626d70e9680fc5921f937e48cf23bb8aa"
+      },
+      {
+        "song": "siromaru:absurdgaff",
+        "audio_sha256": "88d718a25d954004ee45a9cb2dbbdaef9b551213468235c8bba260812f98c4b2",
+        "map_sha256": "dba0c2b0c90080a0466c3caf15bf75b155edb1f6979e258968ff895a31bb2cd1",
+        "snapshot_sha256": "dba0c2b0c90080a0466c3caf15bf75b155edb1f6979e258968ff895a31bb2cd1",
+        "newline_equivalent": false,
+        "clip": {
+          "start_ms": 13514,
+          "end_ms": 73514,
+          "excluded_edge_ms": 3000,
+          "original_audio_sha256": "88d718a25d954004ee45a9cb2dbbdaef9b551213468235c8bba260812f98c4b2",
+          "chart_sha256": "dba0c2b0c90080a0466c3caf15bf75b155edb1f6979e258968ff895a31bb2cd1"
+        },
+        "beatmap_id": "911177",
+        "keys": 6,
+        "ln_ratio": 0.44981412639405205,
+        "status": "loved",
+        "split": "train",
+        "candidates": 963,
+        "group": "70f6c89e90913c34e8209911cd33d784125a4443c0b1b596809b1663c8158b49"
+      },
+      {
+        "song": "variousartists:lasanime10kpack",
+        "audio_sha256": "e500abe3c7fa8645d336f9c8ebaf2c95c966e63a9a0052b7cea97884b62ae103",
+        "map_sha256": "f7828c370d81635b4960eea817c60a4fae4816fd28c015fc340436f1814c5485",
+        "snapshot_sha256": "56aa9da33362e76cf7462c0991bd2d6b93e7276474719c3e54e48b491a20c84f",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "1577245",
+        "keys": 10,
+        "ln_ratio": 0.10771581359816654,
+        "status": "loved",
+        "split": "train",
+        "candidates": 3190,
+        "group": "0a87118e725f6a2195f4cf9c77c232246d10f74704cd7c6fa8a4994c4939538d"
+      },
+      {
+        "song": "camelliaasreverseofriot:completenessunderincompleteness",
+        "audio_sha256": "2013185be2bf734d331af72eedb98ebf4a736df6e77f7d4210feaec64d861d0d",
+        "map_sha256": "1b896f0ab0637bd73997374feee87c93fab660326cde6baf52c05561bd5c2409",
+        "snapshot_sha256": "9f67b7548eae9d06e3c228e6bdff650fe03ac440d2dcaf90d3a735e8a2c41be2",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "2419420",
+        "keys": 10,
+        "ln_ratio": 0.029723991507430998,
+        "status": 1,
+        "split": "train",
+        "candidates": 3040,
+        "group": "f8f9e8e40edbc34d4a4fb8a897987260016ac0989c7701c5cec3e8c849533b42"
+      },
+      {
+        "song": "blackyoohvssiromaru:blackorwhite",
+        "audio_sha256": "eaf6cce7260ea6ee11c258db6463138eba4a7ac3ccbf65700f15e9a7a9e9bfb1",
+        "map_sha256": "7ccba494529be880c4422e38563b0bedde397f0209302277a0aeb55415094eba",
+        "snapshot_sha256": "ebc8e2b7594e10ec38d0ad728735f852f15b63ebbcf4a1ca961fc038b9d630b8",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "2488937",
+        "keys": 10,
+        "ln_ratio": 0.030545454545454546,
+        "status": 1,
+        "split": "test",
+        "candidates": 3399,
+        "group": "addd047f0b06a4c96639cc3d32090acd45665a483e4030621a2a00f4870ee621"
+      },
+      {
+        "song": "dot96:millennialroopremix",
+        "audio_sha256": "7cba28b0a9a6083909a3e438abf1b2463992b46d4442349b2e14b135f071d7ff",
+        "map_sha256": "7cc2906f81b6157601c63dcb4b44df7bf840a3a9b19f0c72b570a694df024dee",
+        "snapshot_sha256": "0cc89e8ce5b6964eabbb60f3b8b274e19b0c227ed25ffb3ffca9e45c0230ac47",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "2599562",
+        "keys": 10,
+        "ln_ratio": 0.023583111449220234,
+        "status": 1,
+        "split": "train",
+        "candidates": 7093,
+        "group": "aed9b97f0ae40b2eecf049b1aadf800eff1c04e0cc0cff8435cc519848c26953"
+      },
+      {
+        "song": "taishi:distantrelatives",
+        "audio_sha256": "70d01a4285cfb5a1ef91048bdd6d32fc29afe07b64e2e25c5cd09e51fed71287",
+        "map_sha256": "6549f55f6ed92329fc3a95257a6030feacbc712de58f77e6a28b5676fb34cfa9",
+        "snapshot_sha256": "0f956e6ccf217e5d426b5e4a27a67dfc9d3011b1640ccd3c3cfe0e6bad47862c",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "3474858",
+        "keys": 10,
+        "ln_ratio": 0.12254220456802384,
+        "status": 1,
+        "split": "train",
+        "candidates": 10033,
+        "group": "e66e29124592b8a5d08ce4911d25f0eab30256ead1c7d34f82bfb017e4c755df"
+      },
+      {
+        "song": "brz1128suimag:retribution",
+        "audio_sha256": "4986b4b3fe1b68ac16db8ab00050d44f7d87e7203d24e61f7c58c026cd5d1f3d",
+        "map_sha256": "d0f8e6125b2cdd4502136135a3268d86c65033922a7cc1988f7c01f51895bea7",
+        "snapshot_sha256": "156ccd0d54558c7e33a703aa15c10de6cd9296bd6019a0a5c9499f45e11a63fe",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "3943165",
+        "keys": 10,
+        "ln_ratio": 0.06764091858037578,
+        "status": 1,
+        "split": "train",
+        "candidates": 4079,
+        "group": "f55c1a3161162ce27e57802b4a5e77f34470c0f0b595e1129363b609c32ce5d0"
+      },
+      {
+        "song": "variousartists:mktr10k2sbmscollection",
+        "audio_sha256": "ea3ca0da3beef6120bfa5a1aa137837e13cd5648d9164ca8e18e22f7ccdb3c12",
+        "map_sha256": "3ccc0afb6ec8fa2ee4ba0b6101ada04c34983f36f6c83ea6fe0266a8848716dc",
+        "snapshot_sha256": "d6606df6a5130b21d36216b6b77e8b97d44718c77723b37ca8f6ae19ef9c022b",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "3953596",
+        "keys": 10,
+        "ln_ratio": 0.03382663847780127,
+        "status": "loved",
+        "split": "train",
+        "candidates": 3595,
+        "group": "e4ec6766568fa1029a6495c25f5789ddf5713df764c3e1e4d700d5a6f4023e02"
+      },
+      {
+        "song": "colorfulsoundsport:cherrydoll",
+        "audio_sha256": "a9b7bbf15db2015c6eb50667a8f69024fae24795c4d4f617d85bbb00631a0477",
+        "map_sha256": "99f6d2074a4630bc8e48e310c570e2195fbb17bde4de7efd0eec856abaec2477",
+        "snapshot_sha256": "bb878730f4c9ba1333940af9599dcc438cdde91c66a7c6585be317b287bf3233",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4053464",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": 1,
+        "split": "train",
+        "candidates": 3428,
+        "group": "01c8ed1049513cb4615e983a5318bc3687ee6dc5f1597e863fc257119a25e501"
+      },
+      {
+        "song": "aonefeatrute:spidersblood",
+        "audio_sha256": "d43e9bc7c7aa59d678dbc1340382c67b0a7133a23a3422c78cdea7a25e60e6fd",
+        "map_sha256": "0998afb0393bc6e3a70f639bd007aa4280085a0c1dc87ca10de2ed0da951956c",
+        "snapshot_sha256": "08994d5b82b7866a3b7528b71e079b51696ff86f10e18bc44c2404234f0c4064",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4252009",
+        "keys": 10,
+        "ln_ratio": 0.025535258298958946,
+        "status": 1,
+        "split": "train",
+        "candidates": 8970,
+        "group": "adc9d2b582dee3aad4c70979c38ae071ff6151379473dbcc91588e2814dfcdb4"
+      },
+      {
+        "song": "jacknifexqlank:movementnightcoremix",
+        "audio_sha256": "da54b5c77125f8eca9b8d9cb9dbbd15df17347306a0df45928d4b7f483a78fb4",
+        "map_sha256": "7f034c779cc8a7b896959a651035fca99ba6ae846d247e6b0720c49e83b5f874",
+        "snapshot_sha256": "41f8ee7d78c7069ab17033aa6382dffdd36041e362da349df4c87ef9114a29e0",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4486256",
+        "keys": 10,
+        "ln_ratio": 0.04333868378812199,
+        "status": 1,
+        "split": "train",
+        "candidates": 2264,
+        "group": "6baba1798a3eb50b51008dc0f47289415d2618c436a0b4783797bb2a79e2f61e"
+      },
+      {
+        "song": "okkafeatdianagarnet:rubyslippersmirage",
+        "audio_sha256": "f7c47e159167cadc5be79934ce706acce2aa73b2d259fdde222768ac3250a501",
+        "map_sha256": "a160560e0d4eb299a48dde5bf9b74eb36b5e6264172f608a9fd270fd811102ad",
+        "snapshot_sha256": "c06b02c58d5b9e2fdb70a2d1d491046de33105c8c590b48d6a23c01f8664556b",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4635410",
+        "keys": 10,
+        "ln_ratio": 0.07364341085271318,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 2350,
+        "group": "e3ff772473cd3986206e6b223d00f135f68338a4a2cfa0da87ccccf76efe76c0"
+      },
+      {
+        "song": "fvrwvrd:speedcoresonata",
+        "audio_sha256": "197982b82dd31a25afdd8814083af04979e06c62cd28841a64667dc07d25b75c",
+        "map_sha256": "d18b5a3d40760c82b062b901a5c7a8aa3ced0003a9d23acbc2e27847f25a7df2",
+        "snapshot_sha256": "b4d614d9138560aa962501eb32d8c34843a73f90c6aba0b67715ab227b71b3ac",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4890664",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 5953,
+        "group": "bcab5d6c29d20439994bb69ffb8cb5470d0f30e85a7e7ef07d46763db86268f6"
+      },
+      {
+        "song": "orgt:destiny",
+        "audio_sha256": "9f248a156b5bb8937f1bc51131a82cd9ed2c87729af16e16eb988d54318be7ae",
+        "map_sha256": "b393cd102e4d1e8408a1ff392dcd0d3cc9cd88a46138f94bf96f786b469ef0a4",
+        "snapshot_sha256": "0a565e13f5f24b81756e8cbe1c397eaacd549a0567c2104bfda08e0ad545ce72",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4964602",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 4359,
+        "group": "26eaac8db06c712b3ccb235c52370b2a5fe71cbe3e0485a6267d9193c617b360"
+      },
+      {
+        "song": "helblinde:areyvateilscurse",
+        "audio_sha256": "703d26208023567713c35325adcf48b59d58b406c690c93e0b1ec5f1bad2d5e0",
+        "map_sha256": "d2dde2f26f5f17990be2659edc14a21cbe2d23947bb927a859e9b7bf5cdf2e11",
+        "snapshot_sha256": "fd724f4bc2c84f6ddac111c6bd1c9b8edfb154ff1501aaeab2f84c58aee685d3",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "4984293",
+        "keys": 10,
+        "ln_ratio": 0.01395988989382619,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 6261,
+        "group": "71cf5fcce874d52c391146eaaac07d25380498ba7bfbb9e4fe189503d8fe4694"
+      },
+      {
+        "song": "makina:pluton",
+        "audio_sha256": "c1c9fd173c2cb83859c834ae0aeb288b04198a6ca173f59560f80f7cd40c1b1f",
+        "map_sha256": "4ad953a01149a3e834d923d326eeeb039ee24ed98ce7e9a7692c6dfd41c31dd3",
+        "snapshot_sha256": "9db11457195da315a1fb57b766521a62330024554788de78a1868702c14f2c26",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5008549",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 2255,
+        "group": "bd2276469f10acbd961e5f982889c593e62be2fa501f4f6be3f460b3f2df93f2"
+      },
+      {
+        "song": "gram:nibelungen",
+        "audio_sha256": "d9d61461dc66d753496d5c80bd5e4b1add48ee87465eb6561e08a58d6fcad810",
+        "map_sha256": "8581fa7dd0157ade4ec3020e1b93bfcdd6a9ba6e74bbe8a85cd72152a8ecf71f",
+        "snapshot_sha256": "5822c934013ce62bf914bcf4bd1b136c0f18fe6a77fadf39a08b0418235b3811",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5060312",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 4064,
+        "group": "b48155f6980737d228ca05109d3874f4a4cea061fdef6e1f601e2eb70064d457"
+      },
+      {
+        "song": "xi:akasha",
+        "audio_sha256": "64f19dc01982b0db11d496df44c05836bcb35a0538aa6fb7121b927be883c074",
+        "map_sha256": "e30a945e5ae67809a5429e715a044e0b7d305adff3eb1bd4662621c1ceccf19b",
+        "snapshot_sha256": "2669e77b29d82ab90f2a70e7e90f74dadc5cce02d9365ecf957a79668b3c22e2",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5154697",
+        "keys": 10,
+        "ln_ratio": 0.010746711135816194,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 8582,
+        "group": "2b694efac85bd26d2f85547e390ec4b5ebfbd54295f21177af6b6cd467df24c1"
+      },
+      {
+        "song": "yukihondafeatnanahira:pokedance",
+        "audio_sha256": "c19761ec103a100173d4d971a5524ad520b16d21d83eb36d7f52637496e6925f",
+        "map_sha256": "6d4dc6da7e63d89f1264b814789fb92ba37dfa008447a96d6d777da3be02b934",
+        "snapshot_sha256": "d1159b0f1cbfddf9e71217543bc96322f23896e7aaf5d16f51b7b1d85c1335e6",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5189083",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 2307,
+        "group": "d35a88ecf0520858a1f12c3a23818a8bdcde87a0cae36e76c9703901d6a97345"
+      },
+      {
+        "song": "yiruma:riverflowsinyoulorenzodelucacover",
+        "audio_sha256": "7f16d6c19200ed85f4ff9cc9abe06f175566051b99b9c476d7c9188dea79a5b8",
+        "map_sha256": "785a77d524f791eca9d40c16c490cd9bdb0bcfd10594bd6e9d00e61c3f51990c",
+        "snapshot_sha256": "f5b83b32e2921072582e7e6db9511065cf8d3542ff792f1abf2aac35a2733d73",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5317787",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 1379,
+        "group": "fc8799ce2980773493628a094f6383b5bf3996de575d7b4b47f23943f4fd1608"
+      },
+      {
+        "song": "israeldelgado:craiova",
+        "audio_sha256": "580b4f8abde0e8610f531e281892124db959b23b9e195857266fc7d5f7e6725d",
+        "map_sha256": "9f1479a269bf3e45e095862b4d50f22b02060641b4b39ba2a7d4d86b17d124c8",
+        "snapshot_sha256": "62bfc6b2d7d2d244716369a4d826068cd618c698d9554645b133ce761d630510",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5324688",
+        "keys": 10,
+        "ln_ratio": 0.1482758620689655,
+        "status": "ranked",
+        "split": "test",
+        "candidates": 2297,
+        "group": "408b40c196556b80c6f46277fb3776884babb90dcebc0c8bfdf1533ce84ada2b"
+      },
+      {
+        "song": "katagiri:kyuukou",
+        "audio_sha256": "97a7e04a41966c59bc0da89537cd33664121f8f84d7e318634221877280be272",
+        "map_sha256": "c1566dfe186bac5d2a04c53177cdf7980e4414e947b13091b920e52f8d424b7b",
+        "snapshot_sha256": "265e6d85fd7a25577407e8737798c0f417416f24b417e11f4cd2cfffe0a74fae",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5359181",
+        "keys": 10,
+        "ln_ratio": 0.04950765864332604,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 6420,
+        "group": "f60ae3acce2ea23cc7520909398ad6a3cdb15d3f41078f0cd5f805e279fab63f"
+      },
+      {
+        "song": "aone:sidebyside",
+        "audio_sha256": "0b96719e939ab2c10ad3298c55da2f884cadaf311bb7816122d1f4ba7adf7638",
+        "map_sha256": "b76424d1829a6bb8db59ca5b14920cfb9d7dc6baebd4d4782da0865c3a40042d",
+        "snapshot_sha256": "e6cdee55404bdce8227f563f582e3d75c27e49f6360d615906922c70dc36b15b",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5487297",
+        "keys": 10,
+        "ln_ratio": 0.0,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 8453,
+        "group": "e19bcbacfef6fd6e22c10056db625fb7b6fd4dea0188de06872df258129fd137"
+      },
+      {
+        "song": "xifeatrisayuzuki:kyokasuigetsu",
+        "audio_sha256": "f899534be02b363c45a2be119886228c02b910e00d085867c7e213f8278e09e4",
+        "map_sha256": "b40913bb7d30e561acc3f0c28660781644ea5daf11f6d77420e4aeb8bb9078e4",
+        "snapshot_sha256": "1c791fa3727329ac99727c53a6a9eff578dcb1e7772b80b011a05c5b4932fe60",
+        "newline_equivalent": true,
+        "clip": null,
+        "beatmap_id": "5535105",
+        "keys": 10,
+        "ln_ratio": 0.0037753657385559227,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 3885,
+        "group": "866ba4f6cf8920a7f5c4a4bcd9ae2c4c80aeeaa056ee38c7332f815dccbd0521"
+      },
+      {
+        "song": "winddrums:goddessblessyou",
+        "audio_sha256": "a14c40289c82fd9ff3e1a62bae226fbc7e8237b0e024d396b5076f9f3168ad88",
+        "map_sha256": "4d2f3d1b3dd9f7ff4ba981e6e0bc5592a499a4783a0d69b01142a42b36d97fa0",
+        "snapshot_sha256": "4d2f3d1b3dd9f7ff4ba981e6e0bc5592a499a4783a0d69b01142a42b36d97fa0",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "1740489",
+        "keys": 6,
+        "ln_ratio": 0.056155507559395246,
+        "status": 1,
+        "split": "test",
+        "candidates": 4271,
+        "group": "bf85c45d00f0aa5b1bdceecdd76b791169b887bea39e58ce4063ce9a2f6b697f"
+      },
+      {
+        "song": "claris:clicktvsize",
+        "audio_sha256": "6b527c2a87f7242766362a0572b29a05c0e2bddab6ed6c8b1c6bd86fe3f6c9fd",
+        "map_sha256": "47417a3d8fb075537ee3f282ccf42d127b1718bce446249b7290a11e00d8b126",
+        "snapshot_sha256": "47417a3d8fb075537ee3f282ccf42d127b1718bce446249b7290a11e00d8b126",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "4007091",
+        "keys": 6,
+        "ln_ratio": 0.1732283464566929,
+        "status": 1,
+        "split": "train",
+        "candidates": 3164,
+        "group": "7c18f99d6621c630e5d0fe3b027d46924876ffd8e24567437c766a55796bc9bc"
+      },
+      {
+        "song": "cidergirl:cinderellatvsize",
+        "audio_sha256": "2f331bfc4f88e4c2ea134d7cecd25c308ed6413446476b18ec142fdf035f1bc1",
+        "map_sha256": "327a12a883a713effdc58df31853375919361933b9950c551f76726983fc5bc1",
+        "snapshot_sha256": "327a12a883a713effdc58df31853375919361933b9950c551f76726983fc5bc1",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "3441405",
+        "keys": 6,
+        "ln_ratio": 0.5682302771855011,
+        "status": 1,
+        "split": "train",
+        "candidates": 3155,
+        "group": "99078a5cc7ad4af0a63b54e55ab56c8c9426cb43e4634d9fd063b1770f45caa3"
+      },
+      {
+        "song": "mili:rubberhuman",
+        "audio_sha256": "4955d5cd1d7417cef59b41efe4bd9487b1f017c598ddbc89a13b446ccfff396b",
+        "map_sha256": "c0398b9739f60a31a73db8b33c042aced73f6a7392e91a5590d204e5ebbb1dc7",
+        "snapshot_sha256": "c0398b9739f60a31a73db8b33c042aced73f6a7392e91a5590d204e5ebbb1dc7",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "5219674",
+        "keys": 9,
+        "ln_ratio": 0.07918968692449356,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 3730,
+        "group": "afa5e8117909e0557c6c48bd4d5e96e5b583aae402388ea58d80317e34af3ba7"
+      },
+      {
+        "song": "yak_won:core",
+        "audio_sha256": "299689c186ff173b604765d4dcb48ae5b42ebb1bcc767c0806a577d0087431b0",
+        "map_sha256": "5a52b77ae0f220bd51eae9adae0f1cb8614480b37e0090de3689a6782436ab34",
+        "snapshot_sha256": "5a52b77ae0f220bd51eae9adae0f1cb8614480b37e0090de3689a6782436ab34",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "3945798",
+        "keys": 10,
+        "ln_ratio": 0.07301587301587302,
+        "status": 1,
+        "split": "train",
+        "candidates": 4265,
+        "group": "91fca976f396df5243ac2afa5df64fc299d7f9f8acbbc537e6b9b008a7e222a4"
+      },
+      {
+        "song": "rabpit:saika",
+        "audio_sha256": "e2c7803422b624d583103a442f6aed5428a440f431dcb156cb0352296a92fbcd",
+        "map_sha256": "2b986f13555052ec2d35123a86dcec5982cf7fee7051e727494220f23a95d5fd",
+        "snapshot_sha256": "2b986f13555052ec2d35123a86dcec5982cf7fee7051e727494220f23a95d5fd",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "437109",
+        "keys": 7,
+        "ln_ratio": 0.1681654676258993,
+        "status": 1,
+        "split": "train",
+        "candidates": 3174,
+        "group": "f9e28c2ffc5b34ecea69d1731369b853b8057e641659b43808bb5bd9211748c3"
+      },
+      {
+        "song": "warak:reanimate",
+        "audio_sha256": "0f47f43c0078af94c92500b96a5df1e33154735d3666ad335af991ce07c80eab",
+        "map_sha256": "0e56a85bab7e7ee03128d21f6bf333aae89717987268cc973b1d1f7a5a7f76d8",
+        "snapshot_sha256": "0e56a85bab7e7ee03128d21f6bf333aae89717987268cc973b1d1f7a5a7f76d8",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "587625",
+        "keys": 8,
+        "ln_ratio": 0.18773373223635004,
+        "status": 1,
+        "split": "train",
+        "candidates": 3882,
+        "group": "e0262c4d0e3239bceb850c2fe2e4546fa02cb913ffcb0b3fcc6de03fc9e0b00f"
+      },
+      {
+        "song": "7:byebyetvsize",
+        "audio_sha256": "5a8b0fcb47e0b4a79a4134111edc2bfd2833aca38e16408b2bae5b12ed906d97",
+        "map_sha256": "cbe8c3494493ddf1e5756bb88526ff3dd2f658da38914a2bc5e294c5e6318194",
+        "snapshot_sha256": "cbe8c3494493ddf1e5756bb88526ff3dd2f658da38914a2bc5e294c5e6318194",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "418216",
+        "keys": 7,
+        "ln_ratio": 0.10662824207492795,
+        "status": 1,
+        "split": "train",
+        "candidates": 3054,
+        "group": "0af942abf97f4503adb6cdfd6eee032f4517db8e688c37b728e9b8a7edec60e3"
+      },
+      {
+        "song": "leaf:aleph0extendedver",
+        "audio_sha256": "8a7f37dd288f2cdc5cd8c1ee4b08e1eee64b5251ca70820d0405d9df01eebf62",
+        "map_sha256": "3a0dc564230ab23a6fb9f9fef31da60556965d41a81b115b5066ab07ca0d0ef1",
+        "snapshot_sha256": "3a0dc564230ab23a6fb9f9fef31da60556965d41a81b115b5066ab07ca0d0ef1",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "4540611",
+        "keys": 10,
+        "ln_ratio": 0.13035674220327576,
+        "status": 1,
+        "split": "test",
+        "candidates": 9918,
+        "group": "ed2d16c4151fe0373e842c6b6167e29a27d7f1910f13b80cf2162ec4e59f4641"
+      },
+      {
+        "song": "shibayanfeat3l:monochromeinthenightcytokineremix",
+        "audio_sha256": "471da30238c35fac04941c8524ae47ca874f03c0cc63f4b153d1fd61de0c7063",
+        "map_sha256": "9e05f9db156c46459d1ed401e05b48a8f5474e8ca8bef974fcb1bcaeff8b4455",
+        "snapshot_sha256": "9e05f9db156c46459d1ed401e05b48a8f5474e8ca8bef974fcb1bcaeff8b4455",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "4157803",
+        "keys": 9,
+        "ln_ratio": 0.05664488017429194,
+        "status": 1,
+        "split": "train",
+        "candidates": 10839,
+        "group": "59c2c528b6eda368aedbfc081955c33e0e522880bebffde2462f8fdaf669a203"
+      },
+      {
+        "song": "dannybaranowsky:cryptofthenecrodancerzone13",
+        "audio_sha256": "fbb38dd5ef64a99a1c06c03c7eeac261677ee3af4f52ef6f420ff38d79a05358",
+        "map_sha256": "1d99dee5720e0265ed1f87158614c1dbaf2a63685f4e3d68797b59013b3a1dbe",
+        "snapshot_sha256": "1d99dee5720e0265ed1f87158614c1dbaf2a63685f4e3d68797b59013b3a1dbe",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "733545",
+        "keys": 10,
+        "ln_ratio": 0.07571801566579635,
+        "status": "loved",
+        "split": "train",
+        "candidates": 2587,
+        "group": "66bbf02f937bf1d0e32745ae8b608c69fab1f16df082212867a1cae8e50327af"
+      },
+      {
+        "song": "soundsouler:diminitive",
+        "audio_sha256": "4a711d83e38c867f603cae95a1f267193767cf8c7b9c87cb5a93fe62d11fe471",
+        "map_sha256": "9fb3074c87db8cd962862d938cb9b8487a8707a5b329f9dc139419f41000c1f2",
+        "snapshot_sha256": "9fb3074c87db8cd962862d938cb9b8487a8707a5b329f9dc139419f41000c1f2",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "4591888",
+        "keys": 10,
+        "ln_ratio": 0.07623318385650224,
+        "status": 1,
+        "split": "test",
+        "candidates": 3258,
+        "group": "2a9d0684ec1411fd938e0650fe2ad0baf96f6581cdfca9d083b6948636ad9dc7"
+      },
+      {
+        "song": "chimametai:nakayoshimarunakayoshikiraramagicbootlegremix",
+        "audio_sha256": "dfaf217faca9122ef2a1c3620396d86934a6308ab4fd969ee828d89c875170dd",
+        "map_sha256": "ba47a8c3c66140d86d2481aca8052348db9b3c1acf8338d8b96251e21f05cfa9",
+        "snapshot_sha256": "ba47a8c3c66140d86d2481aca8052348db9b3c1acf8338d8b96251e21f05cfa9",
+        "newline_equivalent": false,
+        "clip": null,
+        "beatmap_id": "4775395",
+        "keys": 7,
+        "ln_ratio": 0.21382289416846653,
+        "status": "ranked",
+        "split": "train",
+        "candidates": 5610,
+        "group": "9dd9023d9871c81ce757a59f09b3fdad06bf0661137c6dab1c44eee3d0cf434c"
+      }
+    ],
+    "limitations": [
+      "Human chart choices are weak labels; no instrument attribution truth.",
+      "Sustain evaluation includes only pitched intervals at least 100ms long.",
+      "40ms onset / 80ms tail matching can label multiple simultaneous voices positive.",
+      "Existing audio development material; grouped holdout is not an untouched product benchmark.",
+      "This is a small arrangement preference model, not new source-separation or note-transcription weights."
+    ],
+    "skipped_reason_counts": {
+      "not_in_verified_expression_snapshot": 5
+    }
+  },
+  "additional_audio_preparation": [
+    {
+      "id": 5196084,
+      "keys": 10,
+      "ln_class": "ln_majority",
+      "ok": true
+    },
+    {
+      "id": 5452281,
+      "keys": 6,
+      "ln_class": "ln_majority",
+      "ok": true
+    },
+    {
+      "id": 4457395,
+      "keys": 7,
+      "ln_class": "ln_majority",
+      "ok": true
+    },
+    {
+      "id": 4709745,
+      "keys": 8,
+      "ln_class": "ln_majority",
+      "ok": true
+    },
+    {
+      "id": 5507095,
+      "keys": 9,
+      "ln_class": "ln_majority",
+      "ok": true
+    },
+    {
+      "id": 2426686,
+      "keys": 10,
+      "ln_class": "hybrid",
+      "ok": true
+    },
+    {
+      "id": 911177,
+      "keys": 6,
+      "ln_class": "hybrid",
+      "ok": true
+    },
+    {
+      "id": 684852,
+      "keys": 7,
+      "ln_class": "hybrid",
+      "ok": true
+    },
+    {
+      "id": 1383162,
+      "keys": 8,
+      "ln_class": "hybrid",
+      "ok": true
+    },
+    {
+      "id": 5647839,
+      "keys": 9,
+      "ln_class": "hybrid",
+      "ok": true
+    }
+  ],
+  "version": "0.1.0-alpha.6-dev.1"
+}

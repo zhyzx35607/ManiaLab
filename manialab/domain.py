@@ -134,7 +134,7 @@ def clean_meta(value):
 
 
 def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unknown", audio="audio.ogg",
-               bpm=120.0, offset=0.0, original=None, version="ManiaLab", creator="ManiaLab", grid_division=None):
+               bpm=120.0, offset=0.0, original=None, version="ManiaLab", creator="ManiaLab", grid_division=None, bookmarks=()):
     report = validate(notes, keys)
     if not report["valid"]:
         raise ValueError("谱面未通过结构校验：" + report["issues"][0])
@@ -166,6 +166,8 @@ def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unkno
         slider_multiplier=1.4, slider_tick_rate=1, background_line="",
         timing_points=f"{float(offset):.3f},{60000 / float(bpm):.8f},4,2,0,70,1,0", hit_objects="\n".join(lines))
     content = Template(template_path.read_text(encoding="utf-8")).substitute(substitutions)
+    if bookmarks:
+        content = re.sub(r'(?m)^Bookmarks:.*$', 'Bookmarks: '+','.join(str(t) for t in sorted(set(bookmarks))), content)
     if grid_division is not None:
         from .timing import grid_report
         content = re.sub(r"(?m)^BeatDivisor:.*$", f"BeatDivisor: {grid_division}", content)

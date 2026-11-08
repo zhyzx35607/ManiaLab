@@ -22,11 +22,11 @@ window.renderRecommendations=async()=>{
     const result=await api(`/api/projects/${state.id}/recommendations`,{settings:settings(),bpm:Number($('bpm').value)});
     if(request!==recommendationRequest)return;
     recommendationResult=result;
-    recommendationInfo.textContent=`${result.keys}K · ${result.summary.attacks_per_second.toFixed(1)} 次检测起音/秒 · ${(result.summary.sustain_fraction*100).toFixed(0)}% 候选有持续区间。${result.reference.available?`参考 ${result.reference.charts} 份谱、${result.reference.songs} 个歌曲分组，其中 LN≥50% 的有 ${result.reference.ln_charts} 份。`:'当前使用保守规则，尚未加载该键数的语料统计。'}${result.notice}`;
+    recommendationInfo.textContent=`${result.keys}K · ${result.summary.attacks_per_second.toFixed(1)} 次检测起音/秒 · ${(result.summary.sustain_fraction*100).toFixed(0)}% 候选有持续区间。${result.reference.available?`参考 ${result.reference.charts} 份谱、${result.reference.songs} 个歌曲分组，全部 LN 比例均已纳入，其中 LN≥50% 的有 ${result.reference.ln_charts} 份。`:'当前使用保守规则，尚未加载该键数的语料统计。'}${result.notice}`;
     for(const option of result.options){
       const card=document.createElement('div');card.className='recommendation-card';
       const heading=document.createElement('strong');heading.textContent=option.title+(result.suggested===option.id?' · 建议先试':'');
-      const text=document.createElement('p');text.className='muted compact';text.textContent=`${option.description}。全局上限 ${option.preferences.density} 物件/秒，LN 目标 ${(option.preferences.ln_ratio*100).toFixed(0)}%。`;
+      const text=document.createElement('p');text.className='muted compact';text.textContent=`${option.description}。全局上限 ${option.preferences.density} 物件/秒，${state?.analysis?.structure?'持续声部倾向':'LN 目标'} ${(option.preferences.ln_ratio*100).toFixed(0)}%。`;
       const details=document.createElement('details');const label=document.createElement('summary');label.textContent='查看分段理由';details.append(label);
       for(const section of option.section_reasons){
         const line=document.createElement('p');line.className='muted compact';

@@ -96,6 +96,10 @@ def create_app(resources, data_root):
         base = projects.path(state["id"]) / "files"
         source = safe_path(base, relative)
         parsed = parse_osu(source.read_text(encoding="utf-8-sig"))
+        from .structure import reference_marks
+        state['reference_marks'] = reference_marks(source.read_text(encoding='utf-8-sig'))
+        state.pop('expression', None)
+        state.pop('plan', None)
         state.update(mode="remap", original=relative, input_notes=[n.data() for n in parsed["notes"]],
                      title=parsed["metadata"].get("Title", source.stem), artist=parsed["metadata"].get("Artist", "Unknown"),
                      input_keys=parsed["keys"], input_timing=parsed["timing"], variants=[], active=-1)
@@ -239,6 +243,11 @@ def create_app(resources, data_root):
                 state["analysis"] = analyze(current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx", prefs, progress, cancelled)
             state["settings"] = prefs
             state["audio_shift_ms"] = requested_shift(payload, state)
+            from .expression import propose_expression
+            if state['analysis'].get('structure'):
+                state['expression'] = propose_expression(state['analysis'], prefs)
+            else:
+                state.pop('expression', None)
             if state.get('plan',{}).get('source')=='local-audio-recommendation':
                 state.pop('plan',None)
             # Keep old variants selectable, but never mask a fresh timing result
@@ -315,12 +324,29 @@ def create_app(resources, data_root):
                 if state["analysis"].get("revision", 1) < 3:
                     raise ValueError("该项目使用旧版采音结果，请先点击「分析音频」更新拍线和 LN 候选；音高缓存会自动复用")
                 detected, phrases, weak_omitted = plan_evidence(state['analysis'],state.get('plan',{}))
-                evidence, phrase_report = apply_phrase_evidence([note_from(n) for n in detected],
-                    [note_from(n) for n in phrases], prefs["phrase_ln"], segment_preferences)
+                expression = None
+                if state['analysis'].get('structure'):
+                    from .expression import propose_expression, validate_expression, expression_evidence, select_expression
+                    expression = state.get('expression')
+                    if not expression or expression.get('source') == 'automatic':
+                        expression = propose_expression(state['analysis'], prefs)
+                    validate_expression(expression, state['analysis'])
+                    evidence, expression_meta, decisions = expression_evidence(state['analysis'], expression, prefs)
+                    phrase_report = dict(used=sum(n.phrase for n in evidence), explanation='由段落声部策略选择连续乐句表达')
+                    state['expression'] = expression
+                else:
+                    evidence, phrase_report = apply_phrase_evidence([note_from(n) for n in detected],
+                        [note_from(n) for n in phrases], prefs["phrase_ln"], segment_preferences)
                 candidates, alignment = align_candidates(chart_clock_notes(evidence, tempo["audio_shift_ms"]),
                     tempo, enabled=payload.get("snap", True) is True, confirmed=payload.get("timing_confirmed", False) is True)
-                progress(25, "比较全曲采音取舍，求解 LN 比例与未来占轨约束")
-                selected, selection = select_notes(candidates, prefs, segment_preferences)
+                progress(25, "按段落声部方案选择音组，检查完整持续音的占轨")
+                if expression:
+                    selected, selection = select_expression(candidates, expression_meta, decisions, prefs,
+                        60000/tempo['bpm'], segment_preferences)
+                    selection['expression'] = expression
+                    selection['structure'] = state['analysis']['structure']
+                else:
+                    selected, selection = select_notes(candidates, prefs, segment_preferences)
                 selection["phrases"] = phrase_report
                 selection['recommendation_weak_candidates_omitted']=weak_omitted
                 selection["alignment"] = alignment
@@ -450,6 +476,59 @@ def create_app(resources, data_root):
             result=recommend(state.get('analysis'),prefs,resources,payload.get('bpm'))
         return jsonify(result)
 
+    @app.post('/api/projects/<pid>/structure')
+    def music_structure(pid):
+        payload = request.get_json() or {}
+        def operation(state, progress, cancelled):
+            from .structure import detect_structure, edit_boundaries
+            from .expression import propose_expression
+            analysis = state.get('analysis')
+            if not analysis or 'duration' not in analysis:
+                raise ValueError('请先分析音频')
+            structure = analysis.get('structure', {})
+            action = payload.get('action', 'detect')
+            if action == 'detect':
+                from .audio import decode, SR
+                progress(10, '读取音频，比较音色、能量与声部活动变化')
+                samples = decode(current_audio(state), projects.path(pid))
+                structure = detect_structure(analysis, samples, SR)
+            elif action == 'bookmarks':
+                marks = state.get('reference_marks', {}).get('bookmarks', [])
+                if not marks:
+                    raise ValueError('当前导入谱面没有书签')
+                # Bookmarks use the chart clock; acoustic sections use audio.
+                shift = requested_shift(payload, state)
+                marks = [round(t+shift) for t in marks if 0 < t+shift < analysis['duration']*1000]
+                structure = edit_boundaries(structure, marks, analysis, 'reference-bookmarks')
+            elif action == 'edit':
+                structure = edit_boundaries(structure, payload.get('boundaries'), analysis)
+            else:
+                raise ValueError('分段操作无效')
+            analysis['structure'] = structure
+            analysis['segments'] = structure['segments']
+            state.pop('plan', None)
+            state['expression'] = propose_expression(analysis, parameters(state['settings'] | payload.get('settings', {})))
+            return dict(sections=len(structure['segments']))
+        return submit(pid, operation)
+
+    @app.post('/api/projects/<pid>/expression')
+    def source_expression(pid):
+        from .expression import validate_expression, propose_expression
+        payload = request.get_json() or {}
+        with mutex:
+            busy(pid)
+            state = projects.load(pid)
+            if not state.get('analysis', {}).get('structure'):
+                raise ValueError('请先检测音乐段落')
+            if payload.get('action') == 'automatic':
+                value = propose_expression(state['analysis'], parameters(state['settings'] | payload.get('settings', {})))
+            else:
+                value = validate_expression(payload.get('expression'), state['analysis'])
+                value = dict(value, source='manual')
+            state['expression'] = value
+            projects.save(state)
+        return jsonify(state)
+
     @app.post('/api/projects/<pid>/apply-recommendation')
     def apply_recommendation(pid):
         from .recommendations import recommend
@@ -467,6 +546,9 @@ def create_app(resources, data_root):
             if option is None:
                 raise ValueError('请选择已有的编排建议')
             state['settings']=parameters(prefs | option['preferences'])
+            if state.get('expression', {}).get('source') == 'automatic':
+                from .expression import propose_expression
+                state['expression'] = propose_expression(state['analysis'], state['settings'])
             state['plan']={k:option[k] for k in ('preferences','segments','explanation')}
             state['plan'].update(source='local-audio-recommendation',choice=option['id'],
                 evidence_signature=result['evidence_signature'],reference=result['reference'],
@@ -630,7 +712,8 @@ def create_app(resources, data_root):
             if not state.get("analysis") and state["active"] < 0:
                 raise ValueError("请先分析音频或生成候选，再下载分析 JSON")
             evidence = {"title": state["title"], "variant": state["variants"][state["active"]] if state["active"] >= 0 else None,
-                        "analysis": state.get("analysis"), "plan": state.get("plan"), "reference_style": state.get("reference_style")}
+                        "analysis": state.get("analysis"), "plan": state.get("plan"), "reference_style": state.get("reference_style"),
+                        "expression": state.get('expression'), "reference_marks": state.get('reference_marks')}
             return send_file(io.BytesIO(json.dumps(evidence, ensure_ascii=False, indent=2).encode()), download_name="ManiaLab-analysis.json", as_attachment=True, mimetype="application/json")
         if state["active"] < 0:
             raise ValueError("请先生成谱面")
@@ -648,7 +731,9 @@ def create_app(resources, data_root):
                              title=state["title"], artist=state["artist"], audio=state.get("audio") or "audio.ogg",
                              bpm=variant["bpm"], offset=variant["offset"], original=original,
                              grid_division=variant["division"] if variant["mode"] == "audio" else None,
-                             version=f'ManiaLab {variant["settings"]["seed"]}')
+                             version=f'ManiaLab {variant["settings"]["seed"]}',
+                             bookmarks=[max(0, round(t-variant.get('audio_shift_ms', 0))) for t in
+                                 variant.get('selection', {}).get('structure', {}).get('boundaries', [])[1:-1]])
         if variant.get('provided_timing'):
             from .upstream import verify_fixed_timing
             verify_fixed_timing(content, variant['provided_timing'])

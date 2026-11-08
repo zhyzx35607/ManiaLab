@@ -71,7 +71,7 @@ for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
     shutil.copy2(ROOT/name,target/name)
 shutil.copytree(ROOT/'licenses',target/'licenses',dirs_exist_ok=True)
 shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
-(target/'开始使用.txt').write_text(f'ManiaLab {__version__}\n完整解压后双击 ManiaLab.exe。\n程序会自动打开浏览器；关闭控制台窗口退出。\n深度采音模型已随包提供，无需安装 Python、Docker、CUDA 或下载模型。\n导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 生成 → 下载 .osz。\n新项目制谱提前量默认 22.5ms，可改为 0 使用原始音频时间。\n项目数据：%LOCALAPPDATA%\\ManiaLab\\projects\n这是实验版；包含小型轨道偏好模型，尚非端到端的 10K 制谱模型。\n',encoding='utf-8-sig')
+(target/'开始使用.txt').write_text(f'ManiaLab {__version__}\n完整解压后双击 ManiaLab.exe。\n程序会自动打开浏览器；关闭控制台窗口退出。\n深度采音模型已随包提供，无需安装 Python、Docker、CUDA 或下载模型。\n导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 检查段落及主声部表达 → 保存方案 → 生成 → 下载 .osz。\n旧项目可点击“检测音乐段落”使用新流程；若要应用低音重复触发修正，请重新分析，模型缓存可复用。\n新项目制谱提前量默认 22.5ms，可改为 0 使用原始音频时间。\n项目数据：%LOCALAPPDATA%\\ManiaLab\\projects\n这是开发测试版；采音与段落建议仍需试听，尚非端到端的 10K 制谱模型。新采音取舍研究权重未启用。\n',encoding='utf-8-sig')
 release=ROOT/'release';release.mkdir(exist_ok=True)
 name=f'ManiaLab-{__version__}-windows-x64'
 archive=Path(shutil.make_archive(str(release/name),'zip',ROOT/'dist','ManiaLab'))

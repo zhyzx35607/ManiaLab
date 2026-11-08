@@ -76,8 +76,9 @@ def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):
     return np.concatenate(frames)[valid], np.concatenate(onsets)[valid], times[valid]
 
 
-def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_threshold=.3, attacks=None):
+def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_threshold=.3, attacks=None, suppressed=()):
     notes = []
+    suppressed = {(r['pitch'], r['time_ms']) for r in suppressed}
     attack_times = np.array([n.start / 1000 for n in attacks]) if attacks is not None else None
     for pitch in range(88):
         peaks, _ = find_peaks(onsets[:, pitch], height=onset_threshold, distance=3)
@@ -85,6 +86,8 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
             peaks = np.r_[0, peaks]
         accepted = []
         for i in peaks:
+            if (pitch+21, round(float(times[i])*1000)) in suppressed:
+                continue
             before = frames[max(0, i - 6):i, pitch]
             after = frames[i + 3:i + 12, pitch]
             supported = attack_times is None or bool(np.any(np.abs(attack_times - times[i]) <= .045))
@@ -242,20 +245,19 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     chunks = np.array_split(np.abs(samples), min(2400, len(samples)))
     waveform = [round(float(np.max(x)), 4) for x in chunks]
     candidates = sorted(notes + unmatched, key=lambda n: (n.start, n.pitch))
-    segments = []
-    for start in range(0, int(duration * 1000) + 1, 15000):
-        local = [n for n in candidates if start <= n.start < start + 15000]
-        segments.append({"start_ms": start, "end_ms": min(round(duration * 1000), start + 15000),
-                         "pitched": sum(n.source == "pitch" for n in local),
-                         "transients": sum(n.source == "transient" for n in local),
-                         "sustains_over_800ms": sum(n.end - n.start >= 800 for n in local)})
-    progress(100, "采音候选已准备好")
-    return {"revision": 3, "duration": duration, "waveform": waveform, "tempo": tempo, "segments": segments,
+    result = {"revision": 4, "duration": duration, "waveform": waveform, "tempo": tempo,
             "elapsed_seconds": round(time.perf_counter() - started, 2), "cached": cached is not None,
             "timing_attacks": [n.data() for n in transients], "fused_attacks": fused,
             "release_refinement": releases,
             "candidates": [n.data() for n in candidates], "thresholds": {k: settings[k] for k in ("onset_threshold", "frame_threshold")},
             "engine": "Basic Pitch 0.4.0 ONNX + onset refinement + phase regression", "notice": "音高候选并非乐器分轨；复杂混音、混响和音尾仍可能误判。"}
+    from .structure import detect_structure
+    progress(97, '比较音色与声部变化，建议音乐段落')
+    result['structure'] = detect_structure(result, samples, SR)
+    result['segments'] = result['structure']['segments']
+    result['elapsed_seconds'] = round(time.perf_counter()-started, 2)
+    progress(100, "采音候选与段落已准备好")
+    return result
 
 
 def align_stem_samples(stem, length):
@@ -367,6 +369,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
             tempos[voice] = estimate_timing(attacks, duration, beats_ms)
         attacks = [replace(n, voice=voice, id=f"{voice}:{n.id}") for n in attacks]
         cached = False
+        articulation = []
         if voice == "drums":
             drum_attacks = attacks
             candidates = attacks
@@ -389,7 +392,12 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
                 cached = True
             pitch_cached.append(cached)
             frames, onsets, times = data
-            pitched = pitched_notes(frames, onsets, times, duration, settings["onset_threshold"], settings["frame_threshold"], attacks)
+            if voice == 'bass':
+                from .articulation import steady_bass_onsets
+                articulation = steady_bass_onsets(frames, onsets, times, stem, SR,
+                    settings['onset_threshold'], settings['frame_threshold'])
+            pitched = pitched_notes(frames, onsets, times, duration, settings["onset_threshold"], settings["frame_threshold"], attacks,
+                                    suppressed=articulation)
             pitched, rejected_pitch = source_evidence(pitched, stem, samples)
             pitched, releases = refine_releases(pitched, stem)
             pitched, unmatched, _ = fuse_attacks(pitched, attacks)
@@ -404,6 +412,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
                               end_padding_samples=end_padding,
                               rejected_low_energy_attacks=rejected_attacks,
                               rejected_low_energy_pitch=0 if voice == "drums" else rejected_pitch,
+                              articulation_rejections=articulation,
                               release_refinement=None if voice == "drums" else releases,
                               sustains_over_800ms=sum(n.end - n.start >= 800 for n in candidates)))
         peak = max(float(np.max(np.abs(stem))), 1.)
@@ -425,16 +434,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     if use_drums:
         tempo, attacks = cover_missing_timing_windows(tempo,drum_attacks,mix_attacks)
     candidates = sorted(all_candidates, key=lambda n: (n.start, n.pitch, n.voice))
-    segments = []
-    for start in range(0, round(duration * 1000), 15000):
-        local = [n for n in candidates if start <= n.start < start + 15000]
-        segments.append(dict(start_ms=start, end_ms=min(round(duration * 1000), start + 15000),
-            pitched=sum(n.source == "pitch" for n in local), transients=sum(n.source == "transient" for n in local),
-            sustains_over_800ms=sum(n.end - n.start >= 800 for n in local),
-            voices={v: sum(n.voice == v for n in local) for v in voices},
-            vocal_phrases=sum(start <= n.start < start + 15000 for n in phrases)))
-    progress(100, "多声部采音与持续段已准备好")
-    return dict(revision=8, duration=duration, tempo=tempo, segments=segments,
+    result = dict(revision=9, duration=duration, tempo=tempo,
         waveform=[round(float(np.max(x)), 4) for x in np.array_split(np.abs(samples), min(2400, len(samples)))],
         elapsed_seconds=round(time.perf_counter() - started, 2), cached=separation["cached"] and all(pitch_cached),
         timing_attacks=[n.data() for n in attacks], fused_attacks=0, candidates=[n.data() for n in candidates],
@@ -443,3 +443,10 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
         thresholds={k: settings[k] for k in ("onset_threshold", "frame_threshold")},
         engine=profile_for(separation.get('profile','four'))['label']+" + source-verified Basic Pitch + vocal phrases + Beat This meter",
         notice="分离可能串音或遗漏乐器；声轨更多不代表采音必然更准。跨音高人声 LN 是编排选择，请用独立声部试听检查。")
+    from .structure import detect_structure
+    progress(97, '比较音色与声部变化，建议音乐段落')
+    result['structure'] = detect_structure(result, samples, SR)
+    result['segments'] = result['structure']['segments']
+    result['elapsed_seconds'] = round(time.perf_counter()-started, 2)
+    progress(100, "多声部采音、持续段与音乐分段已准备好")
+    return result

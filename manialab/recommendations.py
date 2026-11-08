@@ -33,7 +33,7 @@ def plan_evidence(analysis, plan):
 
 
 def evidence_signature(analysis):
-    content={k:analysis.get(k) for k in ('revision','duration','candidates','phrase_candidates','separation')}
+    content={k:analysis.get(k) for k in ('revision','duration','candidates','phrase_candidates','separation','structure')}
     return hashlib.sha256(json.dumps(content,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
 
@@ -164,8 +164,9 @@ def recommend(analysis, current, resources, bpm=None):
     if not summary['candidates']:
         raise ValueError('没有足够强的检测候选，请先检查采音；暂不提供自动编排建议')
     evidence_ceiling=max(1,summary['layer_nps95'])
-    # Existing detector sections are analysis windows, not claimed verse/chorus
-    # labels. Source/hold changes produce local recommendations within them.
+    # New analyses have acoustic-change sections. Legacy projects keep their
+    # old windows until the user runs structure detection; neither implies
+    # semantic verse/chorus recognition.
     sections=analysis.get('segments') or [dict(start_ms=0,end_ms=length)]
     measured=[]
     for s in sections:
@@ -229,4 +230,5 @@ def recommend(analysis, current, resources, bpm=None):
         reference=dict(available=bool(calibration),charts=calibration.get('charts',0),
             songs=calibration.get('songs',0),ln_charts=calibration.get('styles',{}).get('ln_majority',{}).get('charts',0),
             manifest_sha256=(profile or {}).get('manifest_sha256')),
-        notice='方案只取强度≥0.35的检测，描述编排负担而非官方星级。仍需试听误检；不会补音或为凑 LN 比例拉长。清除方案后可自行取舍较弱声音。')
+        notice=('新分段模式以逐段声部方案决定长短，LN 数值是表达倾向，不是强制比例。只取强度≥0.35的检测，仍需试听误检。'
+                if analysis.get('structure') else '方案只取强度≥0.35的检测，描述编排负担而非官方星级。仍需试听误检；不会补音或为凑 LN 比例拉长。清除方案后可自行取舍较弱声音。'))
