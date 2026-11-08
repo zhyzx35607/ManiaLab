@@ -1,5 +1,5 @@
 {
-  "revision": 7,
+  "revision": 8,
   "status": "development_not_accepted",
   "date": "2026-11-09",
   "reference": {
@@ -19022,5 +19022,11 @@
     "Reference piano taps supervise onset/layer choices, not acoustic offsets or MIDI-pitch truth.",
     "Author Nova stems were supplied in the mapset; this is not application separation quality.",
     "No research adapter is enabled by default. Both source and expression quality remain unaccepted."
-  ]
+  ],
+  "anchor_planning_research": {
+    "report": "docs/anchor-gesture-research.json",
+    "sha256": "01c6f7582a6e1d08f111bc05ed933d2f723f06b1d4ba6e49830eeb59478f840b",
+    "enabled_in_application": false,
+    "notice": "Fixed detected attacks, learned release anchors, optional acoustic evidence and source-aware layout; still fails long-LN and generalization acceptance."
+  }
 }

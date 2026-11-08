@@ -1,5 +1,6 @@
 """Publish measurements/protocol only; keep authored events, audio and weights local."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -11,7 +12,7 @@ def main():
     args=cli.parse_args();root=args.root
     read=lambda name:json.loads((root/name).read_text(encoding='utf-8'))
     manifest=read('manifest.json')
-    result=dict(revision=7,status='development_not_accepted',date='2026-11-09',
+    result=dict(revision=8,status='development_not_accepted',date='2026-11-09',
         reference=dict(beatmapset_id=manifest['beatmapset_id'],archive_sha256=manifest['archive_sha256'],
             charts={role:{k:v for k,v in row.items() if k in ('beatmap_id','official_checksum','chart_sha256','version','validation')}
                     for role,row in manifest['charts'].items()},annotations=manifest['annotations']),
@@ -122,6 +123,11 @@ def main():
         'Reference piano taps supervise onset/layer choices, not acoustic offsets or MIDI-pitch truth.',
         'Author Nova stems were supplied in the mapset; this is not application separation quality.',
         'No research adapter is enabled by default. Both source and expression quality remain unaccepted.']
+    anchor_report=Path('docs/anchor-gesture-research.json')
+    if anchor_report.exists():
+        result['anchor_planning_research']=dict(report=anchor_report.as_posix(),sha256=hashlib.sha256(anchor_report.read_bytes()).hexdigest(),
+            enabled_in_application=False,
+            notice='Fixed detected attacks, learned release anchors, optional acoustic evidence and source-aware layout; still fails long-LN and generalization acceptance.')
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
     print(str(args.output),flush=True)
