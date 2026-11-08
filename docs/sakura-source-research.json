@@ -1,5 +1,5 @@
 {
-  "revision": 4,
+  "revision": 5,
   "status": "development_not_accepted",
   "date": "2026-11-08",
   "reference": {
@@ -15455,6 +15455,361 @@
     },
     "enabled_in_application": false,
     "notice": "Same-song development only. Repeated musical material may overlap. Learned authored source attack selection, not exhaustive drum transcription. Occasional tom/other labels remain uncertain."
+  },
+  "instrument_source_layers": {
+    "piano": {
+      "role": "piano",
+      "candidate_identity": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+        "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+        "sources": {
+          "test-data\\sakura-benchmark\\bundled\\piano\\preview.wav": "377d853d326b6e66540f142d48e2928a94249bcc58695f7b531ab5935321750e"
+        },
+        "start_ms": 0,
+        "seconds": 283.84,
+        "context_seconds": 0.0,
+        "task": "mc13_full_plus_256",
+        "decoder_channels": 13,
+        "strict_weights": true
+      },
+      "notes_sha256": "40b5eedf3e554e79cfc8316c9763c13ff77abf34083cf99d4a2c2b16cd5b4113",
+      "reference_sha256": "a25e9048747e169568808be790051aed6e6470142ea6a8bf27378d631a2526b3",
+      "runner_sha256": "3bc47ca5fd30b54cc2656175be8fae8fd4e43dc3bb3c49ed5567107126528baa",
+      "features_sha256": "c1ce72433cf3c2dc93ffdd4642a9cb28cf3f5f41d3edcfcc25891e057ff5863e",
+      "bias": -0.3999999999999999,
+      "fit_class_counts": {
+        "1": 307,
+        "2": 139,
+        "0": 15
+      },
+      "results": {
+        "fit": {
+          "single": {
+            "reference": 591,
+            "predicted": 461,
+            "matched": 454,
+            "precision": 0.9848156182212582,
+            "recall": 0.7681895093062606,
+            "f1": 0.8631178707224335,
+            "mean_absolute_error_ms": [
+              8.22246696035237
+            ]
+          },
+          "always_double": {
+            "reference": 591,
+            "predicted": 922,
+            "matched": 585,
+            "precision": 0.6344902386117137,
+            "recall": 0.9898477157360406,
+            "f1": 0.7732980832782551,
+            "mean_absolute_error_ms": [
+              7.823076923076858
+            ]
+          },
+          "pitch_count": {
+            "reference": 591,
+            "predicted": 606,
+            "matched": 544,
+            "precision": 0.8976897689768977,
+            "recall": 0.9204737732656514,
+            "f1": 0.908939014202172,
+            "mean_absolute_error_ms": [
+              8.036764705882309
+            ]
+          },
+          "learned": {
+            "reference": 591,
+            "predicted": 561,
+            "matched": 556,
+            "precision": 0.9910873440285205,
+            "recall": 0.9407783417935702,
+            "f1": 0.9652777777777778,
+            "mean_absolute_error_ms": [
+              7.91187050359708
+            ]
+          }
+        },
+        "calibration": {
+          "single": {
+            "reference": 119,
+            "predicted": 98,
+            "matched": 95,
+            "precision": 0.9693877551020408,
+            "recall": 0.7983193277310925,
+            "f1": 0.8755760368663594,
+            "mean_absolute_error_ms": [
+              8.81578947368421
+            ]
+          },
+          "always_double": {
+            "reference": 119,
+            "predicted": 196,
+            "matched": 115,
+            "precision": 0.5867346938775511,
+            "recall": 0.9663865546218487,
+            "f1": 0.7301587301587301,
+            "mean_absolute_error_ms": [
+              8.543478260869565
+            ]
+          },
+          "pitch_count": {
+            "reference": 119,
+            "predicted": 143,
+            "matched": 114,
+            "precision": 0.7972027972027972,
+            "recall": 0.957983193277311,
+            "f1": 0.8702290076335878,
+            "mean_absolute_error_ms": [
+              8.508771929824562
+            ]
+          },
+          "learned": {
+            "reference": 119,
+            "predicted": 112,
+            "matched": 106,
+            "precision": 0.9464285714285714,
+            "recall": 0.8907563025210085,
+            "f1": 0.9177489177489178,
+            "mean_absolute_error_ms": [
+              8.622641509433961
+            ]
+          }
+        },
+        "later_sections": {
+          "single": {
+            "reference": 328,
+            "predicted": 273,
+            "matched": 267,
+            "precision": 0.978021978021978,
+            "recall": 0.8140243902439024,
+            "f1": 0.8885191347753744,
+            "mean_absolute_error_ms": [
+              10.447565543071052
+            ]
+          },
+          "always_double": {
+            "reference": 328,
+            "predicted": 546,
+            "matched": 327,
+            "precision": 0.5989010989010989,
+            "recall": 0.9969512195121951,
+            "f1": 0.7482837528604119,
+            "mean_absolute_error_ms": [
+              9.81804281345548
+            ]
+          },
+          "pitch_count": {
+            "reference": 328,
+            "predicted": 364,
+            "matched": 306,
+            "precision": 0.8406593406593407,
+            "recall": 0.9329268292682927,
+            "f1": 0.884393063583815,
+            "mean_absolute_error_ms": [
+              9.950980392156673
+            ]
+          },
+          "learned": {
+            "reference": 328,
+            "predicted": 320,
+            "matched": 298,
+            "precision": 0.93125,
+            "recall": 0.9085365853658537,
+            "f1": 0.9197530864197531,
+            "mean_absolute_error_ms": [
+              9.91275167785225
+            ]
+          }
+        }
+      },
+      "enabled_in_application": false,
+      "protocol": [
+        "Fit 0-162340ms, calibrate only 162340-188286ms, evaluate later 188286-283840ms.",
+        "Same development song with repeated musical material; no independent-song claim.",
+        "Acoustic timbre, model pitch/program/duration evidence only; no author grid, time position or note density feature.",
+        "Zero layers means author selection omission, not absence of physical sound.",
+        "No new attacks, LN lengths or columns are generated by this experiment."
+      ]
+    },
+    "other": {
+      "role": "other",
+      "candidate_identity": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+        "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+        "sources": {
+          "test-data\\sakura-benchmark\\bundled\\other\\preview.wav": "f932bd7a2e0787982adc0a31d48c628078288f47fac24f9a8f4d9a654d8c3d46",
+          "test-data\\sakura-benchmark\\bundled\\bass\\preview.wav": "4bbbd7e7110eb19f2fc3b428a294a2fcfb9e215eb88665a45e5dd04226de7794",
+          "test-data\\sakura-benchmark\\bundled\\guitar\\preview.wav": "ed03aa3d30117d055fa4b90418fee13549f03a30d75a2367715435821fda3df7"
+        },
+        "start_ms": 0,
+        "seconds": 283.84,
+        "context_seconds": 0.0,
+        "task": "mc13_full_plus_256",
+        "decoder_channels": 13,
+        "strict_weights": true
+      },
+      "notes_sha256": "3eb8d3ce4d8bf9a66a9cc662596c8b844b5ebe068bfbdadac9a248b71786212c",
+      "reference_sha256": "a25e9048747e169568808be790051aed6e6470142ea6a8bf27378d631a2526b3",
+      "runner_sha256": "3bc47ca5fd30b54cc2656175be8fae8fd4e43dc3bb3c49ed5567107126528baa",
+      "features_sha256": "c1ce72433cf3c2dc93ffdd4642a9cb28cf3f5f41d3edcfcc25891e057ff5863e",
+      "bias": 1.0,
+      "fit_class_counts": {
+        "1": 99,
+        "2": 32,
+        "0": 84,
+        "3": 16
+      },
+      "results": {
+        "fit": {
+          "single": {
+            "reference": 252,
+            "predicted": 231,
+            "matched": 148,
+            "precision": 0.6406926406926406,
+            "recall": 0.5873015873015873,
+            "f1": 0.6128364389233955,
+            "mean_absolute_error_ms": [
+              9.040540540540418
+            ]
+          },
+          "always_double": {
+            "reference": 252,
+            "predicted": 462,
+            "matched": 196,
+            "precision": 0.42424242424242425,
+            "recall": 0.7777777777777778,
+            "f1": 0.5490196078431373,
+            "mean_absolute_error_ms": [
+              9.25510204081616
+            ]
+          },
+          "pitch_count": {
+            "reference": 252,
+            "predicted": 598,
+            "matched": 197,
+            "precision": 0.3294314381270903,
+            "recall": 0.7817460317460317,
+            "f1": 0.46352941176470586,
+            "mean_absolute_error_ms": [
+              9.043147208121734
+            ]
+          },
+          "learned": {
+            "reference": 252,
+            "predicted": 219,
+            "matched": 211,
+            "precision": 0.9634703196347032,
+            "recall": 0.8373015873015873,
+            "f1": 0.8959660297239915,
+            "mean_absolute_error_ms": [
+              9.125592417061457
+            ]
+          }
+        },
+        "calibration": {
+          "single": {
+            "reference": 82,
+            "predicted": 63,
+            "matched": 35,
+            "precision": 0.5555555555555556,
+            "recall": 0.4268292682926829,
+            "f1": 0.4827586206896552,
+            "mean_absolute_error_ms": [
+              11.471428571428572
+            ]
+          },
+          "always_double": {
+            "reference": 82,
+            "predicted": 126,
+            "matched": 65,
+            "precision": 0.5158730158730159,
+            "recall": 0.7926829268292683,
+            "f1": 0.625,
+            "mean_absolute_error_ms": [
+              11.453846153846154
+            ]
+          },
+          "pitch_count": {
+            "reference": 82,
+            "predicted": 181,
+            "matched": 77,
+            "precision": 0.425414364640884,
+            "recall": 0.9390243902439024,
+            "f1": 0.5855513307984791,
+            "mean_absolute_error_ms": [
+              12.175324675324676
+            ]
+          },
+          "learned": {
+            "reference": 82,
+            "predicted": 49,
+            "matched": 39,
+            "precision": 0.7959183673469388,
+            "recall": 0.47560975609756095,
+            "f1": 0.5954198473282443,
+            "mean_absolute_error_ms": [
+              10.448717948717949
+            ]
+          }
+        },
+        "later_sections": {
+          "single": {
+            "reference": 243,
+            "predicted": 214,
+            "matched": 142,
+            "precision": 0.6635514018691588,
+            "recall": 0.5843621399176955,
+            "f1": 0.6214442013129103,
+            "mean_absolute_error_ms": [
+              10.556338028169629
+            ]
+          },
+          "always_double": {
+            "reference": 243,
+            "predicted": 428,
+            "matched": 210,
+            "precision": 0.49065420560747663,
+            "recall": 0.8641975308641975,
+            "f1": 0.6259314456035767,
+            "mean_absolute_error_ms": [
+              10.047619047619879
+            ]
+          },
+          "pitch_count": {
+            "reference": 243,
+            "predicted": 600,
+            "matched": 227,
+            "precision": 0.37833333333333335,
+            "recall": 0.934156378600823,
+            "f1": 0.538552787663108,
+            "mean_absolute_error_ms": [
+              9.980176211454385
+            ]
+          },
+          "learned": {
+            "reference": 243,
+            "predicted": 198,
+            "matched": 152,
+            "precision": 0.7676767676767676,
+            "recall": 0.6255144032921811,
+            "f1": 0.6893424036281179,
+            "mean_absolute_error_ms": [
+              10.66447368421091
+            ]
+          }
+        }
+      },
+      "enabled_in_application": false,
+      "protocol": [
+        "Fit 0-162340ms, calibrate only 162340-188286ms, evaluate later 188286-283840ms.",
+        "Same development song with repeated musical material; no independent-song claim.",
+        "Acoustic timbre, model pitch/program/duration evidence only; no author grid, time position or note density feature.",
+        "Zero layers means author selection omission, not absence of physical sound.",
+        "No new attacks, LN lengths or columns are generated by this experiment."
+      ]
+    }
   },
   "instrument_transcription_controls": {
     "rows": {

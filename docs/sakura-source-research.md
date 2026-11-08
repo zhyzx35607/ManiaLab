@@ -164,6 +164,19 @@
 
 随后加入带物理起止标注的两首真实弦乐、六个独奏/混音输入，全部按事前固定的规则选择。起音与完整音长在六例中均优于现有检测，但大提琴漏音、混音类别错误和分块音尾仍未消除，详见[真实弦乐对照](instrument-transcription-benchmark.md)。这项补充支持继续研究该模型，不等同于完成 LN 编排。
 
+### 从音高事件学习声部取舍与层数
+
+新增轻量多分类实验，输入为冻结 YourMT3 的起音组、局部声轨频谱、音高/乐器类别分布、持续长度分布和音尾来源标记。按 30ms 聚合和弦起音，输出钢琴 0–2 层或其他伴奏 0–4 层；0 层表示作者未选择表达，不表示声音不存在。**没有把一个 MIDI pitch 机械转换成一个 note。**
+
+拟合区间为 0–162340ms，层数偏置只在 162340–188286ms 校准，后段 188286–283840ms 单独报告。特征不包含作者 BPM、拍位、书签、歌曲绝对位置或谱面密度，不对预测吸附人工网格。其他伴奏的最优校准偏置落在事先固定搜索范围边缘，未根据后段分数扩大范围。
+
+|后段声部|每组单点 F1|每组双押 F1|按音高数放键 F1|学习取舍/层数 F1|
+|---|---:|---:|---:|---:|
+|钢琴|0.8885|0.7483|0.8844|0.9198|
+|其他伴奏|0.6214|0.6259|0.5386|0.6893|
+
+钢琴预测 320 个物件，匹配作者 328 个中的 298 个；其他伴奏预测 198 个，匹配作者 243 个中的 152 个，仍有明显漏选。这里评价的是已检测起音上的作者层数选择，不是音色分类、LN 起止或完整成品。原始谱面没有参与后段特征或阈值选择，但同曲重复乐句仍存在相关性，模型保持研究用途。
+
 ## 本地重现
 
 所有原声轨、原谱、逐音符标签、权重、试听音频都位于忽略目录 `test-data/sakura-benchmark`，不随公开仓库分发。以下命令需要已核验的本地材料与可选 Mapper 环境：
@@ -187,6 +200,7 @@ test-data\yourmt3\venv\Scripts\python.exe scripts/research_instrument_transcript
 test-data\yourmt3\venv\Scripts\python.exe scripts/audit_instrument_releases.py --runs <已完成的实验目录，可多个>
 .venv\Scripts\python.exe scripts/evaluate_instrument_controls.py
 .venv\Scripts\python.exe scripts/research_source_attack_classes.py --instrument-probe test-data/sakura-benchmark/drums-yourmt3-full --output <新的私有分类实验目录>
+.venv\Scripts\python.exe scripts/research_source_layers.py --role other --output <新的私有层数实验目录>
 ```
 
 下一步仍是修复实际声部漏音、层叠取舍和成品 LN 表达；还需要独立歌曲、6–9K 与全曲验证。当前实验证据不足以支持“完成版”或“超越 Mapperatorinator”的结论。
