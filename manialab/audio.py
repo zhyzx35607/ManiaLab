@@ -20,7 +20,7 @@ from scipy.signal import find_peaks, stft
 from scipy.io import wavfile
 
 from .domain import Note
-from .timing import estimate_timing
+from .timing import estimate_timing, cover_missing_timing_windows
 
 SR, FRAME, WINDOW, OVERLAP = 22050, 256, 43844, 7680
 _session = None
@@ -345,18 +345,22 @@ def reject_source_bleed(notes, stems, mixture_attacks, sample_rate=SR):
 def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: None, cancelled=lambda: False):
     """Separate sources, then run pitch/attack analysis on each isolated voice."""
     from .voices import vocal_phrases
+    from .stems import profile_for
     started = time.perf_counter()
     samples = decode(path, work)
     duration = len(samples) / SR
     stem_root, separation = separator.separate(path, work, progress, cancelled)
     beats_ms = separation.get("beat_evidence", {}).get("beats_ms")
+    voices = profile_for(separation.get('profile','four'))['voices']
+    pitch_cached = []
     all_candidates, phrases, summaries, drum_attacks, tempos = [], [], [], [], {}
-    for index, voice in enumerate(("drums", "bass", "vocals", "other")):
+    for index, voice in enumerate(voices):
         if cancelled():
             raise InterruptedError("已取消声部分析")
         stem = np.load(stem_root / f"{voice}.npy", allow_pickle=False)
         stem, end_padding = align_stem_samples(stem, len(samples))
-        progress(31 + index * 15, f"分析 {voice} 的起音与持续区间")
+        stage = 31 + round(index * 61 / len(voices))
+        progress(stage, f"分析 {voice} 的起音与持续区间")
         attacks, _ = rhythmic_evidence(stem, estimate=False)
         attacks, rejected_attacks = source_evidence(attacks, stem, samples)
         if voice == "drums":
@@ -372,15 +376,18 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
             if cache.is_file():
                 try:
                     with np.load(cache, allow_pickle=False) as d:
-                        if int(d["version"]) == 1 and str(d["audio_sha256"]) == separation["audio_sha256"]:
+                        if (int(d["version"]) == 2 and str(d["audio_sha256"]) == separation["audio_sha256"]
+                                and str(d['separation_sha256']) == separation['model_sha256']):
                             data = d["frames"], d["onsets"], d["times"]
                 except (ValueError, KeyError, OSError, EOFError):
                     pass
             if data is None:
-                data = infer(stem, model, lambda p, s: progress(31 + index * 15 + round(p * .14), f"{voice} · {s}"), cancelled)
-                np.savez_compressed(cache, frames=data[0], onsets=data[1], times=data[2], version=1, audio_sha256=separation["audio_sha256"])
+                data = infer(stem, model, lambda p, s: progress(stage + round(p * .60 / len(voices)), f"{voice} · {s}"), cancelled)
+                np.savez_compressed(cache, frames=data[0], onsets=data[1], times=data[2], version=2,
+                    audio_sha256=separation['audio_sha256'],separation_sha256=separation['model_sha256'])
             else:
                 cached = True
+            pitch_cached.append(cached)
             frames, onsets, times = data
             pitched = pitched_notes(frames, onsets, times, duration, settings["onset_threshold"], settings["frame_threshold"], attacks)
             pitched, rejected_pitch = source_evidence(pitched, stem, samples)
@@ -403,7 +410,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
         wavfile.write(stem_root / f"{voice}.wav", SR, (np.clip(stem / peak, -1, 1) * 32767).astype(np.int16))
     progress(94, "比较鼓声与混音拍线，保留人声持续段证据")
     mix_attacks, mix_tempo = rhythmic_evidence(samples, beats_ms)
-    stem_signals = {v:np.load(stem_root/f'{v}.npy',allow_pickle=False,mmap_mode='r') for v in ('bass','vocals','other')}
+    stem_signals = {v:np.load(stem_root/f'{v}.npy',allow_pickle=False,mmap_mode='r') for v in voices if v!='drums'}
     all_candidates, bleed_rejections = reject_source_bleed(all_candidates,stem_signals,mix_attacks)
     for summary in summaries:
         summary['rejected_cross_source_bleed'] = sum(r['note']['voice']==summary['voice'] for r in bleed_rejections)
@@ -415,6 +422,8 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     attacks = drum_attacks if use_drums else mix_attacks
     tempo["evidence_source"] = "drums" if use_drums else "mix"
     tempo["comparisons"] = {"drums": drum_tempo, "mix": mix_tempo}
+    if use_drums:
+        tempo, attacks = cover_missing_timing_windows(tempo,drum_attacks,mix_attacks)
     candidates = sorted(all_candidates, key=lambda n: (n.start, n.pitch, n.voice))
     segments = []
     for start in range(0, round(duration * 1000), 15000):
@@ -422,15 +431,15 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
         segments.append(dict(start_ms=start, end_ms=min(round(duration * 1000), start + 15000),
             pitched=sum(n.source == "pitch" for n in local), transients=sum(n.source == "transient" for n in local),
             sustains_over_800ms=sum(n.end - n.start >= 800 for n in local),
-            voices={v: sum(n.voice == v for n in local) for v in ("drums", "bass", "vocals", "other")},
+            voices={v: sum(n.voice == v for n in local) for v in voices},
             vocal_phrases=sum(start <= n.start < start + 15000 for n in phrases)))
-    progress(100, "四声部采音与持续段已准备好")
-    return dict(revision=6, duration=duration, tempo=tempo, segments=segments,
+    progress(100, "多声部采音与持续段已准备好")
+    return dict(revision=8, duration=duration, tempo=tempo, segments=segments,
         waveform=[round(float(np.max(x)), 4) for x in np.array_split(np.abs(samples), min(2400, len(samples)))],
-        elapsed_seconds=round(time.perf_counter() - started, 2), cached=separation["cached"] and all(s["cached"] for s in summaries[1:]),
+        elapsed_seconds=round(time.perf_counter() - started, 2), cached=separation["cached"] and all(pitch_cached),
         timing_attacks=[n.data() for n in attacks], fused_attacks=0, candidates=[n.data() for n in candidates],
         phrase_candidates=[n.data() for n in phrases], voices=summaries, separation=separation,
         source_bleed_rejections=bleed_rejections,
         thresholds={k: settings[k] for k in ("onset_threshold", "frame_threshold")},
-        engine="Hybrid Demucs + source-verified Basic Pitch + vocal phrases + Beat This meter",
-        notice="四声部分离可能串音；跨音高人声 LN 是编排选择，并不等于人工标注。请用独立声部试听检查。")
+        engine=profile_for(separation.get('profile','four'))['label']+" + source-verified Basic Pitch + vocal phrases + Beat This meter",
+        notice="分离可能串音或遗漏乐器；声轨更多不代表采音必然更准。跨音高人声 LN 是编排选择，请用独立声部试听检查。")

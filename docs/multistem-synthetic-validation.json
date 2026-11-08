@@ -1,0 +1,77 @@
+{
+  "audio_sha256": "d76ca148409404af9737177af1379c9543fd47aa599b4c6639ba01724b6ae544",
+  "protocol": "Compare the same local input with frozen four/six-source worker outputs.\n\nThe controlled mixture has known pitches and intervals. Natural-music outputs\nare inventory and timings only, never automatically labelled transcription truth.\n",
+  "modes": {
+    "four": {
+      "voices": {
+        "bass": 110,
+        "other": 158,
+        "drums": 47,
+        "vocals": 2
+      },
+      "holds": 270,
+      "separation_seconds": 75.34,
+      "analysis_seconds": 22.47,
+      "tempo": {
+        "bpm": 60.0,
+        "offset": 614,
+        "stable": true,
+        "coverage": 1.0,
+        "median_error_ms": 1.0
+      },
+      "source_model_sha256": "a004b2790d73ffeaa535db458a1a79b539dfdbafbccc31f275d07e632ebd7816",
+      "pitched_onsets": {
+        "predicted": 270,
+        "reference": 130,
+        "matched": 121,
+        "precision": 0.4481,
+        "recall": 0.9308,
+        "f1": 0.605
+      },
+      "pitched_intervals": {
+        "predicted": 270,
+        "reference": 130,
+        "matched": 69,
+        "precision": 0.2556,
+        "recall": 0.5308,
+        "f1": 0.345
+      }
+    },
+    "six": {
+      "voices": {
+        "bass": 113,
+        "drums": 64,
+        "piano": 47,
+        "other": 105,
+        "vocals": 1
+      },
+      "holds": 266,
+      "separation_seconds": 57.85,
+      "analysis_seconds": 28.12,
+      "tempo": {
+        "bpm": 120.0,
+        "offset": 115,
+        "stable": true,
+        "coverage": 1.0,
+        "median_error_ms": 0.0
+      },
+      "source_model_sha256": "34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd",
+      "pitched_onsets": {
+        "predicted": 266,
+        "reference": 130,
+        "matched": 120,
+        "precision": 0.4511,
+        "recall": 0.9231,
+        "f1": 0.6061
+      },
+      "pitched_intervals": {
+        "predicted": 266,
+        "reference": 130,
+        "matched": 67,
+        "precision": 0.2519,
+        "recall": 0.5154,
+        "f1": 0.3384
+      }
+    }
+  }
+}

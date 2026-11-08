@@ -1,0 +1,1421 @@
+{
+  "protocol": "Recompute source-coverage diagnostics on the frozen 67-song development audit.\n\nThis reuses already extracted attacks, not fresh model inference. It verifies\nthe missing-window policy only; original audio and LN scores are not recomputed.\n",
+  "source_sha256": "774cedae3a773463af95bc033e9657b110d667a07d03d6cd7d7958f0c5c949ba",
+  "summary": {
+    "songs": 67,
+    "accepted_before": 22,
+    "accepted_after": 18,
+    "revoked": [
+      {
+        "beatmap_id": 2735104,
+        "classification": "accepted_compatible"
+      },
+      {
+        "beatmap_id": 4591888,
+        "classification": "accepted_compatible"
+      },
+      {
+        "beatmap_id": 5894796,
+        "classification": "accepted_compatible"
+      },
+      {
+        "beatmap_id": 4252009,
+        "classification": "variable_reference_requires_review"
+      }
+    ]
+  },
+  "rows": [
+    {
+      "group": "audio-audit",
+      "beatmap_id": 4473089,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "c8ececcb073378e420b5493d099a3d596f9cdcbf6bc33b67fcbfa5086e261a9c",
+      "basic_analysis_sha256": "88108e7cde1e7fe7183c926be7ef8cf76f17ce77f44e574f42ab5c211b167f27",
+      "before": false,
+      "after": false,
+      "bpm": 188.0,
+      "offset": 110,
+      "added_sections": []
+    },
+    {
+      "group": "audio-audit",
+      "beatmap_id": 273799,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "36ae8db5ed2f7d6dc623edcaebbd109fb66fc1b2bde0f120a271fc31c89eb181",
+      "basic_analysis_sha256": "d857eee7167c6ff4393699cf10f2a733fe029b28a8d47ef496d3e7b5c6f6a3b3",
+      "before": false,
+      "after": false,
+      "bpm": 158.0,
+      "offset": 36,
+      "added_sections": []
+    },
+    {
+      "group": "audio-audit",
+      "beatmap_id": 298810,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "cff96a104260169e6cf7464a836f1da307145efd6094439524fdc8b3d3a02cee",
+      "basic_analysis_sha256": "05c9f266ef4ec4e23290c9fc1ffa4959f1507c265dea170afceb8e0d50e2281a",
+      "before": false,
+      "after": false,
+      "bpm": 174.0,
+      "offset": 27,
+      "added_sections": []
+    },
+    {
+      "group": "audio-audit",
+      "beatmap_id": 4995927,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "08a6f4c93c3319b7f950759ba1bc9cbe1c0aebdd7c93d1185e88e302c8f75282",
+      "basic_analysis_sha256": "4be49f9544d0585d5ad92b9d71c77965a3c8cff8819296f5dc2351082d2e0258",
+      "before": true,
+      "after": true,
+      "bpm": 186.0,
+      "offset": 99,
+      "added_sections": []
+    },
+    {
+      "group": "audio-audit",
+      "beatmap_id": 3897925,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "d9c63de493b51f496baeb843f1ea61df56cc50d487ca09ca01ae44e842cf4be4",
+      "basic_analysis_sha256": "6c398c83ca8c10ade423a5d031b8379ae89740601f7798e5362cc18ad3a624e8",
+      "before": false,
+      "after": false,
+      "bpm": 125.0,
+      "offset": 69,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 43,
+          "coverage": 0.968,
+          "phase_error_ms": 8.75,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-audit",
+      "beatmap_id": 2926818,
+      "classification": "blocked_incompatible",
+      "deep_analysis_sha256": "f0a6b4c1490afa96db1f5c3fa30df3f15f01e1835583eceea3ed2185dfe95772",
+      "basic_analysis_sha256": "07384d340e08bfe5678da46259617cc8cac5bdea94bd70f8cb879757f853c3d3",
+      "before": false,
+      "after": false,
+      "bpm": 219.0,
+      "offset": 141,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 109,
+          "coverage": 0.327,
+          "phase_error_ms": 29.97,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 12000,
+          "end_ms": 24000,
+          "attacks": 119,
+          "coverage": 0.263,
+          "phase_error_ms": 27.11,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-audit",
+      "beatmap_id": 1505225,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "0a5f58f23155f23c543e63d22747c77f11c2f44fdc40fed38bce7ba272aab96b",
+      "basic_analysis_sha256": "bd0a6aea31292f097493fc971e063cf1161eb5a3a2cbb32fa6be0902df39ce67",
+      "before": false,
+      "after": false,
+      "bpm": 181.0,
+      "offset": 109,
+      "added_sections": []
+    },
+    {
+      "group": "audio-audit",
+      "beatmap_id": 2735104,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "dea922ac33e0a3fb75bd9732d44a43dabe8d7ef73b7625a56dd997e976e4e57e",
+      "basic_analysis_sha256": "ebae16fbb6d1cfc21b105201af07d7b578ccb80a15facf1102492874c241aa4c",
+      "before": true,
+      "after": false,
+      "bpm": 150.0,
+      "offset": 13,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 25,
+          "coverage": 0.935,
+          "phase_error_ms": 1.04,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 96000,
+          "end_ms": 108000,
+          "attacks": 71,
+          "coverage": 0.314,
+          "phase_error_ms": 24.48,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-audit",
+      "beatmap_id": 319884,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "c9db76fd9266d84fafe54f6f6cce606f6c24d1b2ae28d685c7d5539f7170a478",
+      "basic_analysis_sha256": "24156b449ffebe6d35947a6258a3ee467e31779e75c8755bed18fca9090d6057",
+      "before": false,
+      "after": false,
+      "bpm": 190.0,
+      "offset": 193,
+      "added_sections": []
+    },
+    {
+      "group": "audio-audit",
+      "beatmap_id": 4973962,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "c74bee87a666adb3cd005514f72c181ff950bee66cb7aaaf5a50bd6ec581567b",
+      "basic_analysis_sha256": "538b670d4145dd76a4ec43ba5af0fd54654716b31fc4850a371597e3d76fc098",
+      "before": true,
+      "after": true,
+      "bpm": 75.0,
+      "offset": 329,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 1740489,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "1244d6d321abf3031c50e9a2dc1b6c54128101bb66f1c622f975c19f5fbab514",
+      "basic_analysis_sha256": "a021c1d7ea47adb281634b76aace1b7199361f8ebee53451fb6dd34dc386990b",
+      "before": false,
+      "after": false,
+      "bpm": 232.0,
+      "offset": 13,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 4007091,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "ba905b9abc2ec644dee7e38f3bdef367f17272436ae6f23e2dfdc1b72893e094",
+      "basic_analysis_sha256": "637add5dcc826f920ff10d418346ea73a09b055765c007ac1b2fef21e5fce3b1",
+      "before": true,
+      "after": true,
+      "bpm": 135.0,
+      "offset": 318,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 3441405,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "141fb166734ee09eeb14b6b0f5ad82ab92ab0f635af1f8836b9f708495f4f6de",
+      "basic_analysis_sha256": "03a273707c9b001f6a7a7811d89fc05adbb5c86c63e89345c7a35ecc78947bd3",
+      "before": true,
+      "after": true,
+      "bpm": 130.0,
+      "offset": 179,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 259320,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "ae5fbd1008b7cbb98a8e4e4b4c680621739700af6de3f2201df8e0900b712c4a",
+      "basic_analysis_sha256": "b8b84a48088ccd60811a8bd231c6ad2639e1bcd4dfbe4c3bc33b80db25879a18",
+      "before": true,
+      "after": true,
+      "bpm": 220.0,
+      "offset": 72,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 5219674,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "942474adf35cd3ab8b42225d24ab3583b762566b6e381057e688f57609c31e2b",
+      "basic_analysis_sha256": "a74a9beeaa7a47d738b73dfe1bb4ca008615d6e46feb138d930953497071f720",
+      "before": false,
+      "after": false,
+      "bpm": 124.0,
+      "offset": 128,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 3945798,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "ff73e9f6736fa7837ac067888273ac4a879fe1febbb9a3fbb437095dfaa2e509",
+      "basic_analysis_sha256": "acf4a6b956de3160ab411ffe04aa147b776bee1761daf1ceadf0f5a37ed83aec",
+      "before": true,
+      "after": true,
+      "bpm": 200.0,
+      "offset": 159,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 437109,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "b491583325c56a99db576336b0253f2ac2413f7b314769f904b16e5b5f5aec5a",
+      "basic_analysis_sha256": "8fb412991a18a7db2c091831a5197c1342fc477f76fdb433f03666439a1f010d",
+      "before": true,
+      "after": true,
+      "bpm": 145.0,
+      "offset": 132,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 587625,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "6ac8af3877030d603842454033b44f114ccaa19919f197cddf0f56cf6f9be913",
+      "basic_analysis_sha256": "7daabb2c0bcd763e9faddb1d9b6438312b9ce3efb397c44c8cdf3bd2ce32051c",
+      "before": false,
+      "after": false,
+      "bpm": 174.0,
+      "offset": 49,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 418216,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "ad37099f8464b560610e2123493bde972b22022ba6120e679b03606e06eb1611",
+      "basic_analysis_sha256": "129184252e133b9cd3b448f9dab41be63194385435913e5594aeed00b8e59c7e",
+      "before": true,
+      "after": true,
+      "bpm": 130.0,
+      "offset": 135,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 4540611,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "4b65061dd4857bb90ea1787bacdfc9b5d30e57b6e3e554913cf2bb7df4072111",
+      "basic_analysis_sha256": "6d57167d71db90a4a93be0c4840f0a1c3bc51a5e48db94faf23833fccf1baf40",
+      "before": false,
+      "after": false,
+      "bpm": 297.0,
+      "offset": 200,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 4157803,
+      "classification": "blocked_incompatible",
+      "deep_analysis_sha256": "897acfc20097773139dbfc459471db6c64501d60fc71031da82c31432e8e6054",
+      "basic_analysis_sha256": "1c13174a86a388a77428cffbc691ca905de064c47aeadb4f35d2de1e25c27578",
+      "before": false,
+      "after": false,
+      "bpm": 128.0,
+      "offset": 212,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 96,
+          "coverage": 0.174,
+          "phase_error_ms": -45.17,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 360000,
+          "end_ms": 372000,
+          "attacks": 9,
+          "coverage": 0.073,
+          "phase_error_ms": 56.76,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 733545,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "532cd23dfec97f8e127d2e2e84c66571da539cdc236be00d5955c670ba4d05b3",
+      "basic_analysis_sha256": "120ee600c3abab872fae1d84537254cc00de43eb74f95bd1b286bf2b98208970",
+      "before": true,
+      "after": true,
+      "bpm": 150.0,
+      "offset": 26,
+      "added_sections": []
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 4591888,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "7b8d3eb04d0ce7d7a1554c27ad1c5d5f5e81ebca718972343bff54be8d6010c5",
+      "basic_analysis_sha256": "a4e3398056ae779c26e629e181ac82c077d593bc6c67d702785034ea53e6c4e0",
+      "before": true,
+      "after": false,
+      "bpm": 136.0,
+      "offset": 181,
+      "added_sections": [
+        {
+          "start_ms": 48000,
+          "end_ms": 60000,
+          "attacks": 103,
+          "coverage": 0.53,
+          "phase_error_ms": 17.62,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 132000,
+          "end_ms": 144000,
+          "attacks": 8,
+          "coverage": 0.37,
+          "phase_error_ms": 51.32,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-holdout",
+      "beatmap_id": 4775395,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "3852982ad70b5dcfac806d30de1686febc157b297f5195981c763e6936b4d822",
+      "basic_analysis_sha256": "38b972702eed69d6507bb9bc5066a581b6dbe3738052f0130acced9ee42ae602",
+      "before": false,
+      "after": false,
+      "bpm": 125.0,
+      "offset": 241,
+      "added_sections": []
+    },
+    {
+      "group": "user-audio-audit",
+      "beatmap_id": 5877693,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "d1c0c0075212068607e80655ed4a92d55a28a9db697600fc445374596657e5ac",
+      "basic_analysis_sha256": "ff2ac0dbd59b4a93b4e4929a8b5b38c541d5b50ed2fefc457d14f09c63971fa2",
+      "before": false,
+      "after": false,
+      "bpm": 130.0,
+      "offset": 0,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 31,
+          "coverage": 0.947,
+          "phase_error_ms": 3.61,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 12000,
+          "end_ms": 24000,
+          "attacks": 40,
+          "coverage": 0.673,
+          "phase_error_ms": 4.81,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 24000,
+          "end_ms": 36000,
+          "attacks": 75,
+          "coverage": 0.467,
+          "phase_error_ms": -12.02,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 36000,
+          "end_ms": 48000,
+          "attacks": 92,
+          "coverage": 0.332,
+          "phase_error_ms": 36.66,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 48000,
+          "end_ms": 60000,
+          "attacks": 111,
+          "coverage": 0.403,
+          "phase_error_ms": 25.84,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 72000,
+          "end_ms": 84000,
+          "attacks": 108,
+          "coverage": 0.566,
+          "phase_error_ms": 12.62,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 84000,
+          "end_ms": 96000,
+          "attacks": 104,
+          "coverage": 0.485,
+          "phase_error_ms": 10.22,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 204000,
+          "end_ms": 216000,
+          "attacks": 98,
+          "coverage": 0.512,
+          "phase_error_ms": 6.61,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 216000,
+          "end_ms": 228000,
+          "attacks": 38,
+          "coverage": 0.333,
+          "phase_error_ms": 46.88,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "user-audio-audit",
+      "beatmap_id": 5894796,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "4ef2b2ae6cc90305f57905653c68b0ba38fd8a36c80f5c8846df7bc9249c92e4",
+      "basic_analysis_sha256": "c08e134c590b96d9591a9ff00720e89c57ffe88e621917ce6102369c239774e2",
+      "before": true,
+      "after": false,
+      "bpm": 124.0,
+      "offset": 221,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 44,
+          "coverage": 0.881,
+          "phase_error_ms": 3.78,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 12000,
+          "end_ms": 24000,
+          "attacks": 60,
+          "coverage": 0.653,
+          "phase_error_ms": 3.15,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 24000,
+          "end_ms": 36000,
+          "attacks": 83,
+          "coverage": 0.572,
+          "phase_error_ms": 0.0,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 36000,
+          "end_ms": 48000,
+          "attacks": 99,
+          "coverage": 0.483,
+          "phase_error_ms": 3.15,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 192000,
+          "end_ms": 204000,
+          "attacks": 98,
+          "coverage": 0.48,
+          "phase_error_ms": 3.15,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 228000,
+          "end_ms": 240000,
+          "attacks": 72,
+          "coverage": 0.501,
+          "phase_error_ms": 6.3,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 240000,
+          "end_ms": 252000,
+          "attacks": 17,
+          "coverage": 0.332,
+          "phase_error_ms": 39.06,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "user-audio-audit",
+      "beatmap_id": 5900981,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "cbc72e0ba2126c8a65c3b57e6b42c1decf0973cd63e525c83dc1d48e947542a8",
+      "basic_analysis_sha256": "c833703245018c1cb9bf1cbb74f43a9e4d00ed5bdc1d26ff94bb6cbf796b5ec2",
+      "before": false,
+      "after": false,
+      "bpm": 130.0,
+      "offset": 51,
+      "added_sections": [
+        {
+          "start_ms": 24000,
+          "end_ms": 36000,
+          "attacks": 111,
+          "coverage": 0.326,
+          "phase_error_ms": 37.26,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 48000,
+          "end_ms": 60000,
+          "attacks": 98,
+          "coverage": 0.446,
+          "phase_error_ms": 18.63,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 60000,
+          "end_ms": 72000,
+          "attacks": 77,
+          "coverage": 0.496,
+          "phase_error_ms": 6.61,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 72000,
+          "end_ms": 84000,
+          "attacks": 100,
+          "coverage": 0.558,
+          "phase_error_ms": -5.41,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 348000,
+          "end_ms": 360000,
+          "attacks": 96,
+          "coverage": 0.559,
+          "phase_error_ms": -3.61,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 360000,
+          "end_ms": 372000,
+          "attacks": 126,
+          "coverage": 0.43,
+          "phase_error_ms": 3.0,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 468000,
+          "end_ms": 480000,
+          "attacks": 84,
+          "coverage": 0.519,
+          "phase_error_ms": 5.41,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 2426683,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "0e0bcf5312741baaf188553949c848849f8fa7956de26e89d1a21ca373c18368",
+      "basic_analysis_sha256": "ac0cf08355affa3342a6df805bf5054c5bdf0ee7c2dc3d3186cd5a4d1f05763e",
+      "before": false,
+      "after": false,
+      "bpm": 103.0,
+      "offset": 53,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 22,
+          "coverage": 0.266,
+          "phase_error_ms": 47.79,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 2759255,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "1e74ffa1e6fce890995c202a1fd8f5a841e4e6fa1e17bf2857d9c0f3659b6bd3",
+      "basic_analysis_sha256": "f937c847ad0f0cbfb82e4b672fce37fbf1e57f3e449432873cf113001f113a00",
+      "before": true,
+      "after": true,
+      "bpm": 180.0,
+      "offset": 33,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 2950142,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "925f98b0c991de62ce3c6bf5c45f74778118df996a062f450ec13a934c89b768",
+      "basic_analysis_sha256": "72823f6fd769cfefdffe3c282e4826949a6a0ce7b40389cc1e2248370d7ea8c7",
+      "before": false,
+      "after": false,
+      "bpm": 68.0,
+      "offset": 473,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 3113732,
+      "classification": "blocked_incompatible",
+      "deep_analysis_sha256": "bd8ef9b5a7b5beeb147524aae76603af5d76312f5fd922eb4e860bbf143bc60f",
+      "basic_analysis_sha256": "2f052188a5ae34ebb9a58f87a98dcd4746f114ce0e3b820a82a4381f1e736369",
+      "before": false,
+      "after": false,
+      "bpm": 288.0,
+      "offset": 55,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 3472306,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "77d95dcdbc3becdc4b177f12ac05b18e58166847de35a1134637803a44285428",
+      "basic_analysis_sha256": "3a4bf77c5ef8def7e6fd5bfa0a8a80102436311e85557174198cb8487ea581a7",
+      "before": false,
+      "after": false,
+      "bpm": 142.0,
+      "offset": 234,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 3578838,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "b457b9bc6c2c3203075507e391033406ba3efd7bc6f8d0560e30df6d9d3b6deb",
+      "basic_analysis_sha256": "ad36c8e5bbd13cf35731155a76403b8c7a900ed0b117feb6a5b728a41b105ed7",
+      "before": false,
+      "after": false,
+      "bpm": 86.0,
+      "offset": 351,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 3619067,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "723199d06904ca9e0e1f6fb42d4c94ea7578be52fcdd8793a2c1cb1b1b51d3c8",
+      "basic_analysis_sha256": "fd40a5dd8d2dc38c67526ca811a0bc8227a67c3665e0bad229a97ac9d69cca7d",
+      "before": false,
+      "after": false,
+      "bpm": 120.0,
+      "offset": 72,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 3630228,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "66099c21b2a006fce3bddaa2e988b038a12016e5a127da3750eb8cc390003345",
+      "basic_analysis_sha256": "88dca6ed0291dfb6767c7298e1e502768812a2756007787a76daec9d4373c1b6",
+      "before": false,
+      "after": false,
+      "bpm": 172.0,
+      "offset": 228,
+      "added_sections": [
+        {
+          "start_ms": 192000,
+          "end_ms": 204000,
+          "attacks": 11,
+          "coverage": 0.717,
+          "phase_error_ms": -0.91,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 3895553,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "0366e89d76c266bb68fbf1647e91ccbd0d72ea35edb21c59a32dddfe55dd8715",
+      "basic_analysis_sha256": "1cffdaa37364963be8e7c62ac7960f45c03e2af253f861c193f09a6b4e0b675e",
+      "before": false,
+      "after": false,
+      "bpm": 194.0,
+      "offset": 294,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 4185029,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "e1c77cb6646361ac7a164e800cea003024452d25ebd3196e3528c6644cffeb18",
+      "basic_analysis_sha256": "f2619152f3099b5bfa9d1f8d91b73445c75daeae33554d1d0adf40915df95967",
+      "before": false,
+      "after": false,
+      "bpm": 191.0,
+      "offset": 97,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 51,
+          "coverage": 0.699,
+          "phase_error_ms": 4.91,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 4348413,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "ff6d9de61e545c1aa18cfac84612515e8887aef15d8fc0917abf8b81544a489a",
+      "basic_analysis_sha256": "ed3046840bd6812990188cb71759f8337d1b856f04a5a022139b3198ee3e35db",
+      "before": false,
+      "after": false,
+      "bpm": 240.0,
+      "offset": 179,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 4380978,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "d17b66e6ee5a4e09790e6d11cc545de8082357aee353efe8b43ec83561c10714",
+      "basic_analysis_sha256": "fd22af4068112d5e616c864e6311da66c29cf2ded9e08533bd15928ff77af42a",
+      "before": false,
+      "after": false,
+      "bpm": 168.0,
+      "offset": 19,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 4452867,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "3ba5ce9f445957cf45b77273e4ede1c907bf169192ccd852069bb23a1581014a",
+      "basic_analysis_sha256": "817da44b1241e04bc5cfd874fda6a76372c472425d3d26b0e5c1690845d1c23b",
+      "before": false,
+      "after": false,
+      "bpm": 92.0,
+      "offset": 649,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 4949158,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "dac26ab6d6badd3e3d0ea7087fb456edf66cc3a8bfbdcd6d0b7222fa0003bc12",
+      "basic_analysis_sha256": "cb577627b1e749a10ef3399383e66eff79feda111cf043ac8b56b949d73e733c",
+      "before": true,
+      "after": true,
+      "bpm": 140.0,
+      "offset": 208,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 4966781,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "4590934b7c73ee74a846c3922f32aace765808269744f40036ff00db09606068",
+      "basic_analysis_sha256": "2773991a87fd3cd39c9c66e4f69b57f8dfd93f4ca933a03843fee19af8449b05",
+      "before": false,
+      "after": false,
+      "bpm": 152.0,
+      "offset": 7,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 5163045,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "b5603ddcaa966b656e744bf8d33c31723cc215802c082b962e98ca695c9b9fb0",
+      "basic_analysis_sha256": "ae9a2c8ee99957ba0cee101ad8b8121e9e56b3aa8e336fc61c68399b03c327d6",
+      "before": false,
+      "after": false,
+      "bpm": 174.0,
+      "offset": 141,
+      "added_sections": []
+    },
+    {
+      "group": "audio-additional-10k",
+      "beatmap_id": 5661702,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "eabde6d82f80710c575ff0d98358e515f07e352d97efcf223d05b645032e62c5",
+      "basic_analysis_sha256": "ae19fb7c1df1acc85f721518cfd34222d36bbf5551bfdcf9d01e47639672d198",
+      "before": false,
+      "after": false,
+      "bpm": 170.0,
+      "offset": 352,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 1577245,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "d648abf638ea985b3c5dcce92a572baa0df29402127d8e4acd48ea05f6f0a7c6",
+      "basic_analysis_sha256": "fc79fc08b913e842ec16b5260a99c9ed65b9d0ca443478346208547664c8ea51",
+      "before": true,
+      "after": true,
+      "bpm": 153.0,
+      "offset": 182,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 2419420,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "ec56c8be6ce75e8156adb7d37db5ddb756b4df8d70a2e4681de8a8662ebedb71",
+      "basic_analysis_sha256": "850720c7a8895ea94311412046d078b0f7eaf6c21dfcc460f406e370c9ddb57d",
+      "before": false,
+      "after": false,
+      "bpm": 194.0,
+      "offset": 301,
+      "added_sections": [
+        {
+          "start_ms": 120000,
+          "end_ms": 132000,
+          "attacks": 13,
+          "coverage": 0.569,
+          "phase_error_ms": 12.48,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 2488937,
+      "classification": "blocked_incompatible",
+      "deep_analysis_sha256": "1fe795c4b11097962475df4a0349d332b0fd55e4bd67f6b41b8869457885d5e0",
+      "basic_analysis_sha256": "c0771fef78f3c35282da0464963352aa8d839da4714a2775dd7988761cfb13fb",
+      "before": false,
+      "after": false,
+      "bpm": 299.0,
+      "offset": 62,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 2599562,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "f3b5e34938b1e24b6e43a9f35e3e1d5fdf618ef7fbe75042eb7a9116a1d2afe0",
+      "basic_analysis_sha256": "15f7981c74df86c668cec3c050ecee5f9df40eace5e0ebeb70789b8e9372fd89",
+      "before": false,
+      "after": false,
+      "bpm": 280.0,
+      "offset": 1,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 3474858,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "7692867e0e8ad602bdd296237e00add8001401e85246a97358d415abd7b08e40",
+      "basic_analysis_sha256": "ec7173de56347820e14d71d21ec989b12136b593d98c001c07e4e8babed07149",
+      "before": false,
+      "after": false,
+      "bpm": 184.0,
+      "offset": 311,
+      "added_sections": [
+        {
+          "start_ms": 168000,
+          "end_ms": 180000,
+          "attacks": 124,
+          "coverage": 0.429,
+          "phase_error_ms": -15.71,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 180000,
+          "end_ms": 192000,
+          "attacks": 48,
+          "coverage": 0.418,
+          "phase_error_ms": 24.63,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 192000,
+          "end_ms": 204000,
+          "attacks": 77,
+          "coverage": 0.433,
+          "phase_error_ms": -23.78,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 468000,
+          "end_ms": 480000,
+          "attacks": 55,
+          "coverage": 0.943,
+          "phase_error_ms": -0.42,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 480000,
+          "end_ms": 492000,
+          "attacks": 79,
+          "coverage": 0.845,
+          "phase_error_ms": 0.42,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 492000,
+          "end_ms": 504000,
+          "attacks": 67,
+          "coverage": 0.599,
+          "phase_error_ms": 4.25,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 504000,
+          "end_ms": 516000,
+          "attacks": 69,
+          "coverage": 0.447,
+          "phase_error_ms": 11.04,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 516000,
+          "end_ms": 528000,
+          "attacks": 65,
+          "coverage": 0.312,
+          "phase_error_ms": 21.23,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 528000,
+          "end_ms": 540000,
+          "attacks": 5,
+          "coverage": 0.568,
+          "phase_error_ms": 12.31,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 3943165,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "60863582738113cb10eb1cd368774e931d20063d460c30d18cd7e37b301d32e1",
+      "basic_analysis_sha256": "ace0b30029d4c090ad516899c1419c9b9d2a0d629dce1a85953ee5e8b170f379",
+      "before": false,
+      "after": false,
+      "bpm": 190.0,
+      "offset": 62,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 3953596,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "5fd1eec29c6335f5651f9bf3e673672113b42276c120f978732ba72ecfb861d3",
+      "basic_analysis_sha256": "be979514e32bb22621b5630c18067334104c66f8149e09a15b1b1b297eaed0c7",
+      "before": false,
+      "after": false,
+      "bpm": 130.0,
+      "offset": 26,
+      "added_sections": [
+        {
+          "start_ms": 84000,
+          "end_ms": 96000,
+          "attacks": 104,
+          "coverage": 0.761,
+          "phase_error_ms": -1.2,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 144000,
+          "end_ms": 156000,
+          "attacks": 6,
+          "coverage": 1.0,
+          "phase_error_ms": 6.61,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4053464,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "dc6c6a2f5e65bf01116d3c982dcde92e96d5158ba145166f25722a52cb2acbd3",
+      "basic_analysis_sha256": "2ecee95fb59d90a57e2ab259da53e7cdadabb957d183950259c2bc75b7dcd796",
+      "before": true,
+      "after": true,
+      "bpm": 137.0,
+      "offset": 437,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4252009,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "b473ccc3495b076c95b51cfb78864def0283213373b05bcd2ea34e03597177e9",
+      "basic_analysis_sha256": "b17872495723088b76a9b918727024bb825b6623184c3d649a5586991daf1a0a",
+      "before": true,
+      "after": false,
+      "bpm": 164.0,
+      "offset": 15,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 29,
+          "coverage": 0.32,
+          "phase_error_ms": -36.2,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 12000,
+          "end_ms": 24000,
+          "attacks": 25,
+          "coverage": 0.455,
+          "phase_error_ms": -2.38,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 24000,
+          "end_ms": 36000,
+          "attacks": 13,
+          "coverage": 0.474,
+          "phase_error_ms": 0.0,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4486256,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "7d22ec95a7703ae83aea259df40077b0f6c33b1f5680f2d439c39b4c33a83f7b",
+      "basic_analysis_sha256": "792523c29ea38d9a0ddc113924a7a716834445b22418152948e7dee62432cfed",
+      "before": false,
+      "after": false,
+      "bpm": 175.0,
+      "offset": 250,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4635410,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "0a06474d3585dcc1b27aa353543671cfaff49262d8218c4df8c17a2a4610c354",
+      "basic_analysis_sha256": "fddd80d0605cb3891799affa79bc3c5f5c80ccf79128a051e01836fd9ee45952",
+      "before": true,
+      "after": true,
+      "bpm": 137.0,
+      "offset": 69,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4890664,
+      "classification": "blocked_incompatible",
+      "deep_analysis_sha256": "bf21d8e2eb04ad83203769a592fd18f1bc2f74ec7a4214b58ca1b04e278b05e5",
+      "basic_analysis_sha256": "2e1f24eab8052b60e211bf1de412795b9c0a3f586a19270876202fdd9afb1de3",
+      "before": false,
+      "after": false,
+      "bpm": 297.667,
+      "offset": 122,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4964602,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "96638028acbf1dcb2b1bfacf8785f086aecbf56530e61413941804a7aebc0b6c",
+      "basic_analysis_sha256": "a62c81f4417d73677fc8e6bf0e7b7562158aad026fec6d838ce2e40f967511e0",
+      "before": true,
+      "after": true,
+      "bpm": 182.0,
+      "offset": 165,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 4984293,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "4900de9142102c8ed1a9e3d5636f52e811d0b6fd68cf1101ed17f810416cbe3e",
+      "basic_analysis_sha256": "80cdc5e27cfa86dc4d469ded52a184a1fb9a85e34f427537fef2dcc210f973ff",
+      "before": false,
+      "after": false,
+      "bpm": 200.0,
+      "offset": 50,
+      "added_sections": [
+        {
+          "start_ms": 84000,
+          "end_ms": 96000,
+          "attacks": 118,
+          "coverage": 0.583,
+          "phase_error_ms": 10.55,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5008549,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "00bd0a2c3a3402895cf20e5d3038954dfc6035d209b6ea02494ae8e8836a6a14",
+      "basic_analysis_sha256": "51b042d9e6bb349f295c9bfa22c75ab7fa67afd43d7cb6d70148c1b6e373b222",
+      "before": false,
+      "after": false,
+      "bpm": 147.0,
+      "offset": 168,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5060312,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "e586c8cff2b985f6e6bce9b2606c10cb28071a5988768e1b450c3df87bdb03af",
+      "basic_analysis_sha256": "71a335fbb1483cd3bf2e5907c8ffcfda92803665bed787acd8ea64d8af1bd303",
+      "before": false,
+      "after": false,
+      "bpm": 222.0,
+      "offset": 101,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 35,
+          "coverage": 0.392,
+          "phase_error_ms": -32.85,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 96000,
+          "end_ms": 108000,
+          "attacks": 96,
+          "coverage": 0.747,
+          "phase_error_ms": 1.41,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 168000,
+          "end_ms": 180000,
+          "attacks": 59,
+          "coverage": 0.662,
+          "phase_error_ms": 2.35,
+          "suspect": false,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 180000,
+          "end_ms": 192000,
+          "attacks": 14,
+          "coverage": 0.053,
+          "phase_error_ms": -39.41,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5154697,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "97b90edbc652906431b0b1e3bd06a7c563c40744e3729fb5419768bfd415fa2e",
+      "basic_analysis_sha256": "5db583269ea3324e5fad73962976c7c47f89cdaa50440c7d1f6f78db7401260a",
+      "before": false,
+      "after": false,
+      "bpm": 185.0,
+      "offset": 130,
+      "added_sections": [
+        {
+          "start_ms": 0,
+          "end_ms": 12000,
+          "attacks": 19,
+          "coverage": 0.548,
+          "phase_error_ms": 2.96,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        },
+        {
+          "start_ms": 24000,
+          "end_ms": 36000,
+          "attacks": 92,
+          "coverage": 0.507,
+          "phase_error_ms": 2.11,
+          "suspect": true,
+          "evidence_source": "mix",
+          "fallback": true
+        }
+      ]
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5189083,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "79517691bf9701b64532c06a6e151c97eb3d07f9fb5c982d29db8fb1fbe34ebc",
+      "basic_analysis_sha256": "589f54b6f7cb219302d9315f8ed23710e51c5e987f4843997b798ef3210690d0",
+      "before": true,
+      "after": true,
+      "bpm": 124.0,
+      "offset": 28,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5317787,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "08c90a12bb4e72cd9203d4a27bc13dcbf04199f344a64bb783a1491fd7f3e2bd",
+      "basic_analysis_sha256": "45cac24d0e692a52da35708f3e539b70acbe6b58ec06bd693998d7544914430d",
+      "before": false,
+      "after": false,
+      "bpm": 299.0,
+      "offset": 123,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5324688,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "706980c289a6e7ab5af713f6b335f39a4a92cb893b0be811d918a7e991e08a81",
+      "basic_analysis_sha256": "5e8fbc836df7a896657ac0cef47e5ac4931c0beb184fb374c1d6951e6143e3e3",
+      "before": true,
+      "after": true,
+      "bpm": 177.0,
+      "offset": 28,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5359181,
+      "classification": "variable_reference_requires_review",
+      "deep_analysis_sha256": "2441c84fec07d9119a2d959a8fd286d879985a3850549e7d168934862e1c285e",
+      "basic_analysis_sha256": "5271fb098f44c066c05d5a5a9c50ad0f2202d2866e527c6461909b30d25bb976",
+      "before": false,
+      "after": false,
+      "bpm": 294.0,
+      "offset": 152,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5487297,
+      "classification": "blocked_compatible",
+      "deep_analysis_sha256": "51a94dcb24a3ef08dbae140a8c8eb1062fe4e01a0ac9b5b0f5dcbfaf8382d186",
+      "basic_analysis_sha256": "b0ae9fce482f9a976d59575a4716c186fc03b53d1b9880684e376ddc98119777",
+      "before": false,
+      "after": false,
+      "bpm": 165.0,
+      "offset": 361,
+      "added_sections": []
+    },
+    {
+      "group": "audio-extension2-10k",
+      "beatmap_id": 5535105,
+      "classification": "accepted_compatible",
+      "deep_analysis_sha256": "bbcce2c3daeff6dcf1c3b796f3d492a1cc55eefff78e6e7cbfb4aa6e330d80e2",
+      "basic_analysis_sha256": "744bcc70cfd7688d0c8fa1a9c0e9e7e31456a40eec346d024e03dfb0be8a8b98",
+      "before": true,
+      "after": true,
+      "bpm": 180.0,
+      "offset": 171,
+      "added_sections": []
+    }
+  ]
+}

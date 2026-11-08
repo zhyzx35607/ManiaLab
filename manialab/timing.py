@@ -168,6 +168,35 @@ def grid_diagnostics(attacks, bpm, offset, division=4):
     return result
 
 
+def cover_missing_timing_windows(tempo, primary, fallback, primary_name='drums'):
+    """Do not let a selected source silently omit an intro or breakdown.
+
+    The original source, tempo, phase and acceptance gates stay unchanged.
+    Only 12s windows without the five attacks needed by grid_diagnostics use
+    mixture attacks instead. Fallback is tested on the SAME proposed grid.
+    A conflict can revoke automatic acceptance; this never turns a rejection
+    into an acceptance or treats two correlated sources as independent votes.
+    """
+    supported = {s['start_ms'] for s in grid_diagnostics(primary,tempo['bpm'],tempo['offset'],tempo.get('division',4))}
+    fill = {s['start_ms'] for s in grid_diagnostics(fallback,tempo['bpm'],tempo['offset'],tempo.get('division',4))} - supported
+    combined = [n for n in primary if n.start//12000*12000 not in fill]
+    combined.extend(n for n in fallback if n.start//12000*12000 in fill)
+    combined.sort(key=lambda n:(n.start,n.id))
+    sections = grid_diagnostics(combined,tempo['bpm'],tempo['offset'],tempo.get('division',4))
+    for section in sections:
+        section['evidence_source'] = 'mix' if section['start_ms'] in fill else primary_name
+        section['fallback'] = section['start_ms'] in fill
+    added = [s for s in sections if s['fallback']]
+    conflict = any(s['suspect'] for s in added)
+    revised = dict(tempo, sections=sections, stable=bool(tempo.get('stable') and not conflict),
+                   uncovered_source_windows=len(added),timing_coverage_revision=1)
+    if conflict:
+        revised['reliability'] = '部分无鼓或起音稀少的段落与当前拍线不一致；请检查前奏、间奏或变速，再确认 Timing'
+        suspect = sum(s['suspect'] for s in sections)
+        revised['confidence'] = round(tempo.get('coverage',0)*(1-suspect/max(1,len(sections))),3)
+    return revised, combined
+
+
 def _precision_candidate(attacks, raw, rounded, duration):
     """Expose a real fractional tempo instead of hiding it as another harmonic.
 

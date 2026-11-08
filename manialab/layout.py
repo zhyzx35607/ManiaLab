@@ -18,6 +18,7 @@ from .domain import invariant, validate
 from .pattern_prior import preference_cost
 from .arrange import settings_at
 from .timing import BeatClock
+from .ln_patterns import ln_row_costs
 
 
 @lru_cache(maxsize=5)
@@ -36,6 +37,22 @@ def fingers(keys):
 @lru_cache(maxsize=50)
 def chord_choices(keys, size):
     return np.array(list(combinations(range(keys), size)), dtype=np.int16).reshape(-1, size)
+
+
+def release_choices(keys, ends):
+    """Bounded alternative voice orders for chords with different release times.
+
+    Ordered lane subsets alone force pitch order even when a different voice
+    needs the free hand. Include mirrored and release-ordered assignments; the
+    existing pitch preference still scores each actual voice-to-lane mapping.
+    """
+    base = chord_choices(keys, len(ends))
+    if len(ends) < 2 or np.all(ends == ends[0]):
+        return base
+    order = np.argsort(ends, kind='stable')
+    inverse = np.argsort(order)
+    alternatives = [base, base[:, ::-1], base[:, inverse], base[:, ::-1][:, inverse]]
+    return np.unique(np.concatenate(alternatives), axis=0)
 
 
 @dataclass(slots=True)
@@ -91,9 +108,9 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
         size = len(chord)
         if size > keys:
             raise ValueError(f"{start}ms 有 {size} 个同时起音，超过 {keys}K")
-        choices = chord_choices(keys, size)
         slot = np.arange(size)[None, :]
         ends = np.array([n.end for n in chord], float)
+        choices = release_choices(keys, ends)
         sources = [source_key(n) for n in chord]
         fixed_since = []
         while fixed_index < len(fixed) and fixed[fixed_index].start <= start:
@@ -124,7 +141,9 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
             jack_window = min(220., max(85., beat_ms * .42))
             lane_cost = np.maximum(0, 1 - last_gap / jack_window) * local["jack_avoid"] * 4
             was_hold = previous_ends > previous_last
-            lane_cost += np.where(was_hold, np.maximum(0, 1 - release_gap / max(80, local["release_gap"])) * 6, 0)
+            inverse_ok = (release_gap >= max(1, local['release_gap'])) & (release_gap <= min(150., beat_ms * .3))
+            release_weight = 1 - inverse_ok * local.get('ln_inverse', 0.) * .9
+            lane_cost += np.where(was_hold, np.maximum(0, 1 - release_gap / max(80, local["release_gap"])) * 6 * release_weight, 0)
             lane_cost += load / max(1., load.mean()) * local["balance"] * .25
             cost = np.broadcast_to(lane_cost, (size, keys)).copy()
             cost += abs(np.arange(keys)[None, :] - preferred[:, None]) / keys * local["pitch_follow"] * 1.6
@@ -141,6 +160,7 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
                         cost[i] += np.arange(keys) != old_lane
                         cost[i, old_lane] -= lane_cost[old_lane] * .75
             values = cost[slot, choices].sum(axis=1)
+            values += ln_row_costs(choices, start, ends, previous_ends, previous_last, hands, beat_ms, local)
             held = hands[previous_ends > start].sum(axis=0)
             hand_load = load @ hands
             values += np.sum(chord_hands * (hand_load + held * 1.8), axis=1) * local["balance"] * .1
@@ -155,7 +175,7 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
                 old_time, old_mask, old_size = state.recent[-1]
                 if size == old_size and size >= 2:
                     old_cols = np.array([i for i in range(keys) if old_mask & (1 << i)])
-                    values += np.mean(abs(choices - old_cols), axis=1) / keys * .15
+                    values += np.mean(abs(np.sort(choices, axis=1) - old_cols), axis=1) / keys * .15
             strength=local.get('pattern_prior',0)
             if strength:
                 values += preference_cost(choices,keys,start,previous_ends,previous_last,

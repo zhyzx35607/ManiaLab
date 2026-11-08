@@ -2,7 +2,7 @@
 let waveDetail=null,waveDetailRequest=0;
 const waveShift=()=>$('waveClock').checked?clockShift():0;
 
-function resetWaveDetail(){waveDetailRequest++;waveDetail=null;drawWaveDetail();}
+function resetWaveDetail(){waveDetailRequest++;waveDetail=null;$('waveDetailInfo').textContent='查看当前播放位置，或选中音符后检查起止。';drawWaveDetail();}
 async function loadWaveDetail(timeMs=Math.max(0,currentTime()*1000-waveShift())){
   if(!state?.analysis)throw Error('请先分析音频，再查看波形细节');
   const requestNumber=++waveDetailRequest,pid=state.id,voice=$('voice').value;

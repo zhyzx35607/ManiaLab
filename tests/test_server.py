@@ -98,6 +98,44 @@ def wait_job(client, job):
     raise AssertionError('job timed out')
 
 
+def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_path,monkeypatch):
+    from manialab.upstream import MapperEngine
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    projects=Projects(tmp_path/'projects')
+    state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=state['id'];base=f'/api/projects/{pid}'
+    (projects.path(pid)/'preview.wav').write_bytes(b'placeholder')
+    seen=[]
+    def model(self,audio,output,prefs,progress,cancelled,seconds,tempo):
+        seen.append(tempo)
+        output.mkdir(parents=True);target=output/'generated.osu'
+        target.write_text(export_osu([Note(1092,2092,0,id='a'),Note(2595,2595,1,id='b')],10,
+            ROOT/'vendor/mapperatorinator/template.osu',bpm=tempo['bpm'],offset=tempo['offset']),encoding='utf-8')
+        return target
+    monkeypatch.setattr(MapperEngine,'generate',model)
+    payload=dict(use_timing=True,bpm=120,offset=93,division=4,audio_shift_ms=22.5,settings={'keys':10})
+    try:
+        rejected=wait_job(client,client.post(base+'/engine-generate',json=payload,headers=headers).json)
+        assert rejected['status']=='error' and '确认' in rejected['message'] and not seen,rejected
+        result=wait_job(client,client.post(base+'/engine-generate',json=payload|{'timing_confirmed':True},headers=headers).json)
+        assert result['status']=='done',result
+        saved=client.get(base).json;v=saved['variants'][0]
+        assert seen[0]['bpm']==120 and seen[0]['offset']==93
+        assert v['report']['ln_patterns'] and v['provided_timing']['offset']==93
+        assert v['report']['grid']['off_grid']==0
+        assert v['selection']['alignment']['moved']==2 and v['division']==4
+        assert v['notes'][0]['evidence_start']==1092
+        exported=parse_osu(client.get(base+'/export/osu').data.decode())
+        assert [(n.start,n.end) for n in exported['notes']]==[(1093,2093),(2593,2593)]
+        assert '93.000,500.00000000,4,2,0,70,1,0' in exported['timing']
+        saved=projects.load(pid)
+        saved['variants'][0]['notes'][0]['raw']=saved['variants'][0]['notes'][0]['raw'].replace(',1093,128,',',1092,128,')
+        projects.save(saved)
+        response=client.get(base+'/export/osu')
+        assert response.status_code==400 and '落线' in response.json['error']
+    finally:app.extensions['executor'].shutdown()
+
+
 def test_mapping_clock_changes_export_once_and_audition_uses_actual_chart_time(tmp_path):
     import numpy as np
     from scipy.io import wavfile

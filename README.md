@@ -2,35 +2,36 @@
 
 为 **6–10K osu!mania、尤其 10K 和 LN** 制作的本地 Windows 工作台。先分离和检查音乐，再选择起音、持续区间与轨道；支持从音频生成，也支持已有谱面的严格重定轨。
 
-**0.1.0-alpha.4 · 实验版。** 已有四声部采音、跨音高人声长条、连续键型搜索和小型轨道偏好模型。尚未完成端到端 10K 制谱模型训练，也没有证据证明音乐性全面超过 Mapperatorinator。当前版本适合生成、检查和修改候选，再到 osu! 试打。
+**0.1.0-alpha.5 · 实验版。** 已有四／六声部采音、跨音高人声长条、LN 协调与放手控制、单音符修正、连续键型搜索和小型轨道偏好模型。尚未完成端到端 10K 制谱模型训练，也没有证据证明音乐性全面超过 Mapperatorinator。当前版本适合生成、检查和修改候选，再到 osu! 试打。
 
 ![ManiaLab 界面](docs/screenshot.png)
 
 ## 下载即用
 
-1. 从 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.4-windows-x64.zip`。
+1. 从 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.5-windows-x64.zip`。
 2. **完整解压**后双击 `ManiaLab.exe`。程序打开本机浏览器界面，关闭控制台窗口退出。
 3. 导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 生成候选 → 下载 `.osz` → 拖入 osu!。
 
 不熟悉 BPM / Offset、LN 比例和声部参数时，先看 [第一次使用](docs/quick-start.md)。
 
-完整包自带 CPU 运行时、四声部分离模型、节拍模型、音高模型和 FFmpeg。日常功能离线可用，不需要 Python、Docker、CUDA 或手动部署。仅 API 助手和可选 Mapperatorinator 原模型首次安装需要联网。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
+完整包自带 CPU 运行时、四／六声部分离模型、节拍模型、音高模型和 FFmpeg。日常功能离线可用，不需要 Python、Docker、CUDA 或手动部署。仅 API 助手和可选 Mapperatorinator 原模型首次安装需要联网。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
 
 首次全曲深度分析会真实运行多个模型，耗时取决于长度与 CPU；再次调整门槛会复用已完成的模型结果。界面显示实际耗时和缓存状态。`SHA256SUMS.txt` 是校验文件，正常使用只需下载 ZIP。
 
-公开 ZIP 已匿名下载复核，并通过 20 分钟容量测试；一次本机观测的耗时、内存和磁盘占用见 [下载包核验](docs/release-verification.md)。这些数据不是最低配置或任意歌曲质量保证。
+本轮变化与验证见 [alpha.5 验证记录](docs/alpha5-validation.md)。此前 alpha.4 的公开下载及 20 分钟容量测试见 [历史下载包核验](docs/release-verification.md)，不当作新包成绩。
 
 项目自动保存到 `%LOCALAPPDATA%\ManiaLab\projects`，日志在 `%LOCALAPPDATA%\ManiaLab\ManiaLab.log`。迁移项目可复制项目文件夹。
 
 ## 音频、Timing 和 LN
 
-- **深度采音**：Hybrid Demucs 分离鼓、贝斯、人声和其余伴奏，逐声部提取起音及持续音。过滤极弱分离残留；对进入近静音的模型尾巴做有界回收。可逐声部试听、查看波形及原始检测时间。
+- **深度采音**：默认 Hybrid Demucs 分离鼓、贝斯、人声和其余伴奏；可选 HTDemucs 六声部另分吉他和钢琴，逐声部提取起音及持续音。六声部没有证明整体更准，保留四声部用于对照。过滤极弱分离残留；对进入近静音的模型尾巴做有界回收。可逐声部试听、查看波形及原始检测时间。
 - **节拍校准**：起音拟合全曲 BPM 与 Offset，Beat This! 辅助判断半速/倍速。默认整理小数噪声，例如 `210.00073 → 210`；保留常见 `.25/.333/.5/.667/.75`。真实小数若取整会造成漂移，会另列精确候选并要求试听。手动 BPM 不强制取整。
 - **明确的时间基准**：新项目默认「制谱提前量」22.5ms，对应用户参考工具的补偿；设 0 使用原始音频时间。这是可见的制谱选择，不是解码纠错。原始采音保留，换算只发生一次。osu! 官方编辑器采用 20ms 的波形视觉补偿，背景及差异见 [Timing 调查](docs/timing-investigation-165340.md)。不同音源或环境可能需要调整。
 - **完整落线**：短键起点、LN 起止量化到 3/4/6/8/12/16 拍内细分。导出回读实际 `.osu` 红线，允许整数毫秒存储产生的最多 0.501ms 舍入误差。量化移动超过 30ms 的起音会单独列出。**落线不等于采音正确。**
 - **LN 取舍**：先在全曲密度与和弦约束下选择起音，再选择有持续依据且不堵轨的 LN。目标比例是 LN 数÷物件数，显示实际值及约束下可达值。可调最短 LN、同时占轨、声部取舍和放键间隔。
 - **跨音高人声长条**：连续的人声可跨过音高变化形成一条 LN；保留支撑它的音高候选与连续覆盖率，不跨明显呼吸缺口。它是可调的表达选择，并非人工乐句标注。
 - **对音实验室**：音乐和节拍/起止提示音混入同一个 PCM 片段，支持 Offset A/B、单声部与 LN 放键试听。提示按实际导出时间播放，不额外补偿。放大波形可切换原始时钟与制谱时钟。
+- **LN 键型与修正**：可调同手 Hybrid 配合、放手协调、反键接续；显示分段占轨与独立放手位置。可选音符修改起止、轨道、长短键或增删，波形选点可直接用于修正。每次保存为新候选；严格保时模式仅允许换轨。详见 [LN 设计与对照](docs/ln-design-notes.md)。
 - **定位问题位置**：点击可疑拍线区间即可打开对应试听，或逐一比较开头、中间、结尾。改变 Timing 会清除旧诊断，避免沿用过期提示。
 
 自动 Timing 不稳定时会阻止直接量化；输入参考 Timing 或手动校准并试听确认后可继续。当前不自动生成多段变速红线。已有变速谱面可严格重定轨并保留原始 TimingPoints。
@@ -49,7 +50,7 @@
 
 可选大模型 API 支持兼容 `/chat/completions` 的服务，读取段落统计、现有谱面检查与文字要求，返回全局/分段参数，包括声部权重和人声长条倾向。API 只接收统计和文字，不接收音频，不生成音符时间；密钥不落盘。兼容协议经过本地模拟服务验证，真实供应商仍取决于其接口与模型。
 
-可选 Mapperatorinator V32 仍作为对照引擎：按钮自动安装独立 CPU 环境并下载固定版本 mania 权重。它没有接受本项目 10K 专训，首次需要网络与额外数 GB 空间。运行会将结果设为当前项目的新原谱。
+可选 Mapperatorinator V32 仍作为对照引擎：按钮自动安装独立 CPU 环境并下载固定版本 mania 权重。它没有接受本项目 10K 专训，首次需要网络与额外数 GB 空间。可传入已确认的 BPM / Offset，并使用 LN 搜索重新定轨；运行会将结果设为当前项目的新原谱。它还未与逐声部采音合并训练，不应把可选接口当成已完成的新采音模型。
 
 ## 当前限制
 
@@ -61,6 +62,7 @@
 
 - [Mapperatorinator](https://github.com/OliBomby/Mapperatorinator)，commit `5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa`：复用 Event 表示、模板和可选原模型运行器；原目录未修改。
 - [Torosu](https://github.com/Manolo-dl/Torosu)，commit `b283791f46622b0dd1f47f53afa10bd62d700e66`：参考手指布局、LN 状态和多排搜索思路，独立实现严格保时的定轨器。Inverse 补空间不是音频持续音识别。
+- NovaMSS：检查本地程序确认其包含的分离架构，接入对应公开的六声部 Demucs 路径。未复用其私有加密模型，不声称输出等同。研究与四／六声部对照见 [多声部记录](docs/multistem-research.md)。
 - [Basic Pitch](https://github.com/spotify/basic-pitch)、[torchaudio Hybrid Demucs](https://github.com/pytorch/audio)、[Beat This!](https://github.com/CPJKU/beat_this)：模型来源、固定哈希和许可证见 `assets/*manifest*`、`assets/deep-models.json`、[第三方声明](THIRD_PARTY_NOTICES.md)。
 
 用户音频、下载谱面、参考 EXE、API 密钥和研究中间文件不进入公开仓库或 Release。

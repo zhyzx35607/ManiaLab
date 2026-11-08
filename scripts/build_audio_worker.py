@@ -32,6 +32,11 @@ if hashlib.sha256(beat_model.read_bytes()).hexdigest() != beat_expected:
     raise SystemExit("Unexpected beat model checksum")
 if beat_model.resolve() != (output / beat_model.name).resolve():
     shutil.copy2(beat_model, output / beat_model.name)
+six_model=ROOT/'assets/deep/htdemucs_6s.th'
+six_expected='34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd'
+if hashlib.sha256(six_model.read_bytes()).hexdigest()!=six_expected:
+    raise SystemExit('Unexpected six-source model checksum')
+if six_model.resolve()!=(output/six_model.name).resolve():shutil.copy2(six_model,output/six_model.name)
 args = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--name", "ManiaLabAudio", "--console",
     "--distpath", str(output), "--workpath", "build/deep", "--specpath", "build",
     "--collect-binaries", "torchaudio"]
@@ -44,7 +49,9 @@ licenses = ROOT / "licenses/deep-runtime"
 licenses.mkdir(parents=True, exist_ok=True)
 inventory = []
 for name in ("torch", "torchaudio", "numpy", "scipy", "sympy", "mpmath", "networkx", "jinja2", "markupsafe", "filelock", "fsspec", "typing_extensions",
-             "beat-this", "einops", "rotary-embedding-torch", "soxr"):
+             "beat-this", "einops", "rotary-embedding-torch", "soxr", "demucs", "dora-search", "omegaconf",
+             "julius", "openunmix", "antlr4-python3-runtime", "submitit", "cloudpickle", "retrying", "lameenc",
+             "pyyaml", "treetable", "tqdm", "colorama"):
     try:
         dist = metadata.distribution(name)
     except metadata.PackageNotFoundError:
@@ -64,6 +71,7 @@ manifest = dict(model="Hybrid Demucs MUSDB+", model_sha256=expected,
     torch=torch.__version__, torchaudio=torchaudio.__version__, runtime=sys.version,
     beat_model="Beat This! final0", beat_model_sha256=beat_expected,
     beat_model_url="https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/final0.ckpt",
-    sources=["drums", "bass", "other", "vocals"], sample_rate=44100)
+    sources=["drums", "bass", "other", "vocals"], sample_rate=44100,
+    profiles=['four','six'],six_source_model_sha256=six_expected)
 (output / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 print(json.dumps(manifest), flush=True)

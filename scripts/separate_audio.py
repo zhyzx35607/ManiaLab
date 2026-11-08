@@ -148,6 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("--threads", type=int, default=3)
     parser.add_argument("--beat-model", type=Path)
     parser.add_argument("--beats-only", action="store_true")
+    parser.add_argument('--profile',choices=('four','six'),default='four')
     args = parser.parse_args()
     if args.beats_only:
         torch.set_num_threads(args.threads)
@@ -157,5 +158,8 @@ if __name__ == "__main__":
         report["beat_evidence"] = beat_evidence(args.input, args.beat_model, args.seconds)
         manifest.write_text(json.dumps(report, indent=2), encoding="utf-8")
         progress(100, "Beat structure complete")
+    elif args.profile=='six':
+        from separate_six import separate_six
+        separate_six(args.input,args.output,args.model,args.seconds,args.threads,args.beat_model,progress,beat_evidence)
     else:
         separate(args.input, args.output, args.model, args.seconds, args.threads, args.beat_model)

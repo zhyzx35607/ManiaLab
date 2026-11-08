@@ -99,6 +99,13 @@ def run(executable, work):
         raise TimeoutError('Packaged job exceeded timeout')
 
     try:
+        release_manifest=json.loads((executable.parent/'release-manifest.json').read_text(encoding='utf-8'))
+        assert release_manifest['version']==__version__
+        assert release_manifest['executable_sha256']==hashlib.sha256(executable.read_bytes()).hexdigest()
+        for name,digest in release_manifest['sources'].items():
+            assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, f'Packaged source is stale: {name}'
+        assert release_manifest['worker_sha256']==hashlib.sha256((executable.parent/'_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe').read_bytes()).hexdigest()
+        checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),executable_sha256=release_manifest['executable_sha256']))
         expected_prior=hashlib.sha256((ROOT/'assets/pattern-prior.json').read_bytes()).hexdigest()
         bundled_prior=hashlib.sha256((executable.parent/'_internal/assets/pattern-prior.json').read_bytes()).hexdigest()
         assert bundled_prior==expected_prior, 'Packaged layout model differs from the source release'
@@ -130,6 +137,23 @@ def run(executable, work):
         stop();start();restored=request(base)
         assert restored['variants'][restored['active']]['notes']==saved_notes
         checks.append(dict(check='restart',preserved=True,unicode_audio=source.name))
+        # Both packaged separators must run with no Python or model downloads.
+        assert status['separator']['profiles']['six']['available'],status['separator']
+        job=wait(request(base+'/analyze',dict(engine='deep6',settings={})),timeout=360)
+        assert job['status']=='done',job
+        state=request(base)
+        assert state['analysis']['separation']['profile']=='six'
+        assert {v['voice'] for v in state['analysis']['voices']}=={'drums','bass','vocals','other','guitar','piano'}
+        for voice in ('guitar','piano'):
+            assert request(base+'/stem/'+voice)[:4]==b'RIFF'
+            assert request(base+f'/waveform?voice={voice}&start_ms=900&duration_ms=500')['sample_rate']==22050
+        job=wait(request(base+'/generate',dict(mode='audio',bpm=120,offset=-22,division=4,
+            audio_shift_ms=22.5,timing_confirmed=True,settings={'keys':10,'guitar_weight':0})))
+        assert job['status']=='done',job
+        state=request(base);candidate=state['variants'][state['active']]
+        assert candidate['report']['grid']['off_grid']==0 and all(n['voice']!='guitar' for n in candidate['notes'])
+        checks.append(dict(check='six_stem_analysis_export',seconds=state['analysis']['elapsed_seconds'],
+            voices=[v['voice'] for v in state['analysis']['voices']],notes=len(candidate['notes']),off_grid=0))
         # Cancel a fresh separation, then confirm the same server remains usable.
         second=request('/api/import',upload=('files','取消测试.wav',source.read_bytes()+b'\x00\x00'))
         second_base='/api/projects/'+second['id'];job=request(second_base+'/analyze',dict(engine='deep',settings={}))

@@ -25,6 +25,9 @@ from .separation import Separator
 from .voices import apply_phrase_evidence
 from .pattern_prior import prior_status
 from .review import review_chart
+from .ln_patterns import analyze_ln_patterns
+from .editing import edit_notes
+from .stems import stem_path
 from .style import describe_chart
 from .domain import clean_meta, export_osu, note_from, parse_osu, upstream_events, validate
 from .planner import plan
@@ -226,12 +229,12 @@ def create_app(resources, data_root):
         prefs = parameters(request.json.get("settings", {}))
         payload = request.json
         analysis_engine = request.json.get("engine", "basic")
-        if analysis_engine not in ("basic", "deep"):
+        if analysis_engine not in ("basic", "deep", "deep6"):
             raise ValueError("采音引擎无效")
         def operation(state, progress, cancelled):
-            if analysis_engine == "deep":
+            if analysis_engine in ('deep','deep6'):
                 state["analysis"] = analyze_deep(current_audio(state), projects.path(pid), resources / "assets/basic-pitch.onnx",
-                    prefs, separator, progress, cancelled)
+                    prefs, Separator(resources,'six') if analysis_engine=='deep6' else separator, progress, cancelled)
             else:
                 state["analysis"] = analyze(current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx", prefs, progress, cancelled)
             state["settings"] = prefs
@@ -260,8 +263,9 @@ def create_app(resources, data_root):
         if type(division) is not int or division not in DIVISIONS:
             raise ValueError("拍内细分必须为 3、4、6、8、12 或 16")
         unchanged = abs(bpm - detected["bpm"]) < .0001 and abs(offset - detected_offset) < .01 and division == detected.get("division", 4)
+        coverage_checked = detected.get('evidence_source') != 'drums' or detected.get('timing_coverage_revision',0) >= 1
         return detected | dict(bpm=bpm, offset=round(offset), division=division, audio_shift_ms=shift,
-                               stable=bool(unchanged and detected.get("stable")))
+                               stable=bool(unchanged and detected.get("stable") and coverage_checked))
 
     @app.post("/api/projects/<pid>/timing-refit")
     def timing_refit(pid):
@@ -348,6 +352,7 @@ def create_app(resources, data_root):
                     raise ValueError("生成结果存在离线音符，未保存；请重新分析并生成整谱")
             report["layout"] = layout_metrics(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
             report["review"] = review_chart(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
+            report["ln_patterns"] = analyze_ln_patterns(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
             timing_sections = grid_diagnostics(chart_clock_notes([note_from(n) for n in state.get("analysis", {}).get("timing_attacks", [])], tempo["audio_shift_ms"]),
                                               tempo["bpm"], tempo["offset"], tempo["division"]) if mode == "audio" else []
             if region is not None:
@@ -366,6 +371,42 @@ def create_app(resources, data_root):
             state["audio_shift_ms"] = tempo["audio_shift_ms"]
             return report
         return submit(pid, operation)
+
+    @app.post("/api/projects/<pid>/edit")
+    def edit_candidate(pid):
+        payload = request.json
+        def operation(state, progress, cancelled):
+            import copy
+            if state['active'] < 0:
+                raise ValueError('请先生成候选谱面')
+            old = state['variants'][state['active']]
+            if payload.get('base_created') != old.get('created'):
+                raise ValueError('候选版本已经改变，请重新选择音符再修改')
+            progress(20,'检查修改与相邻 LN 占轨')
+            length = state.get('analysis',{}).get('duration')
+            notes, edit = edit_notes(old,payload,round(length*1000) if length else None)
+            prefs = old['settings']
+            points = state.get('input_timing',[]) if old['mode']=='remap' else []
+            beat = 60000/old['bpm']
+            report = validate(notes,prefs['keys'])
+            if old['mode']=='audio':
+                report['clock'] = old['report'].get('clock',{})
+                report['grid'] = grid_report(notes,old)
+                if report['grid']['off_grid']:
+                    raise ValueError('修改后的音符未通过落线检查')
+            report['layout'] = layout_metrics(notes,prefs['keys'],beat,points)
+            report['review'] = review_chart(notes,prefs['keys'],beat,points)
+            report['ln_patterns'] = analyze_ln_patterns(notes,prefs['keys'],beat,points)
+            variant = copy.deepcopy(old)
+            variant.update(notes=[n.data() for n in notes],report=report,created=time.time(),elapsed_seconds=0.,
+                           event_count=len(upstream_events(notes)),region=None)
+            variant['edits'] = [*old.get('edits',[]),dict(parent_created=old['created'],**edit)]
+            variant['selection'] = dict(message='手动修改已保存为新候选。原始采音保留，可从候选列表返回上一版。')
+            state['variants'] = (state['variants']+[variant])[-8:]
+            state['active'] = len(state['variants'])-1
+            state['settings'] = prefs.copy()
+            return report
+        return submit(pid,operation)
 
     @app.post("/api/projects/<pid>/plan")
     def api_plan(pid):
@@ -426,8 +467,9 @@ def create_app(resources, data_root):
 
     @app.post("/api/projects/<pid>/engine-generate")
     def engine_generate(pid):
-        prefs = parameters(request.json.get("settings", {}))
-        seconds = request.json.get("seconds", 30)
+        payload = request.get_json() or {}
+        prefs = parameters(payload.get("settings", {}))
+        seconds = payload.get("seconds", 30)
         if type(seconds) not in (int, float) or not math.isfinite(seconds) or not 0 <= seconds <= 1200:
             raise ValueError("时长应为 0–1200 秒；0 表示全曲")
         def operation(state, progress, cancelled):
@@ -436,27 +478,49 @@ def create_app(resources, data_root):
             work = projects.path(pid)
             if not (work / "preview.wav").exists():
                 decode(current_audio(state), work)
-            raw = engine.generate(work / "preview.wav", work / ("engine-" + secrets.token_hex(4)), prefs, progress, cancelled, seconds)
+            tempo=requested_tempo(payload,state) if payload.get('use_timing') is True else None
+            if tempo is not None and not (tempo.get('stable') or payload.get('timing_confirmed') is True):
+                raise ValueError('请先检查并确认当前 BPM / Offset，再传入原模型')
+            raw = engine.generate(work / "preview.wav", work / ("engine-" + secrets.token_hex(4)), prefs, progress, cancelled, seconds, tempo)
             text = raw.read_text(encoding="utf-8-sig")
             import re
             text = re.sub(r"(?m)^AudioFilename:.*$", lambda _: "AudioFilename: " + state["audio"], text)
             for field, value in {"Title": state["title"], "TitleUnicode": state["title"], "Artist": state["artist"], "ArtistUnicode": state["artist"]}.items():
                 text = re.sub(r"(?m)^" + field + r":.*$", lambda _, f=field, v=value: f + ":" + clean_meta(v), text)
+            alignment = None
+            if tempo:
+                from .upstream import fixed_timing_output
+                text, model_notes, alignment = fixed_timing_output(text, tempo)
             parsed = parse_osu(text)
-            assigned = assign_lanes(parsed["notes"], prefs, timing_points=parsed["timing"])
+            selected = model_notes if tempo else parsed['notes']
+            assigned = assign_lanes(selected, prefs, timing_points=parsed["timing"],
+                                    progress=progress, cancelled=cancelled)
             name = "Mapperatorinator-" + secrets.token_hex(4) + ".osu"
             (work / "files" / name).write_text(text, encoding="utf-8")
-            state.update(original=name, input_notes=[n.data() for n in parsed["notes"]], input_keys=parsed["keys"], input_timing=parsed["timing"], mode="remap", settings=prefs)
+            state.update(original=name, input_notes=[n.data() for n in selected], input_keys=parsed["keys"], input_timing=parsed["timing"], mode="remap", settings=prefs)
             state["charts"].append({"path": name, "label": f'Mapperatorinator V32 · {prefs["keys"]}K'})
             report = validate(assigned, prefs["keys"])
+            beat=60000/tempo['bpm'] if tempo else 500
+            report['layout']=layout_metrics(assigned,prefs['keys'],beat,parsed['timing'])
+            report['review']=review_chart(assigned,prefs['keys'],beat,parsed['timing'])
+            report['ln_patterns']=analyze_ln_patterns(assigned,prefs['keys'],beat,parsed['timing'])
             warnings = getattr(engine, "last_warnings", [])
-            message = "原始 mania 模型输出已严格重新定轨。此模型尚未进行 10K 专训。"
+            message = "mania 模型输出已通过 LN 连续搜索重新定轨。此模型尚未进行 10K 专训。"
+            if tempo:
+                report['grid'] = grid_report(assigned, tempo)
+                message += (f" 已按确认的 BPM / Offset 及细分量化模型输出：移动 {alignment['moved']} 个起点、"
+                    f"{alignment['tails_moved']} 个音尾，{alignment['collapsed_holds']} 个不足一格的 LN 转为短键。"
+                    f" {alignment['large_attack_shifts']} 个起音移动超过 30ms，需要回听；落线不代表采音正确。")
             if warnings:
                 message += "\n原模型警告（可能包含未配对并被上游丢弃的 LN）：\n" + "\n".join(warnings)
             # Source reference is project-level, so discard variants belonging to an older source.
             state["variants"] = [dict(notes=[n.data() for n in assigned], settings=prefs, mode="remap", report=report,
-                selection={"message": message, "upstream_warnings": warnings},
-                bpm=120, offset=0, created=time.time(), region=None, event_count=len(upstream_events(assigned)))]
+                selection={"message": message, "upstream_warnings": warnings, 'alignment': alignment},
+                bpm=tempo['bpm'] if tempo else 120, offset=tempo['offset'] if tempo else 0,
+                division=tempo.get('division',4) if tempo else 4,
+                audio_shift_ms=tempo.get('audio_shift_ms',0) if tempo else 0,
+                timing_confirmed=bool(tempo),
+                provided_timing=tempo,created=time.time(), region=None, event_count=len(upstream_events(assigned)))]
             state["active"] = 0
             return report
         return submit(pid, operation)
@@ -469,19 +533,15 @@ def create_app(resources, data_root):
 
     @app.get("/api/projects/<pid>/stem/<voice>")
     def stem_audio(pid, voice):
-        if voice not in ("drums", "bass", "vocals", "other"):
-            raise ValueError("声部无效")
-        projects.load(pid)
-        return send_file(projects.path(pid) / "stems" / f"{voice}.wav", conditional=True)
+        state=projects.load(pid)
+        return send_file(stem_path(projects.path(pid),state.get('analysis'),voice),conditional=True)
 
     @app.post("/api/projects/<pid>/audition")
     def audition(pid):
         state = projects.load(pid)
         payload = request.json
         voice = payload.get("voice", "mix")
-        if voice not in ("mix", "drums", "bass", "vocals", "other"):
-            raise ValueError("声部无效")
-        preview = projects.path(pid) / ("preview.wav" if voice == "mix" else f"stems/{voice}.wav")
+        preview = projects.path(pid)/'preview.wav' if voice=='mix' else stem_path(projects.path(pid),state.get('analysis'),voice)
         if not preview.is_file():
             raise ValueError("请先分析音频，再生成同步试听片段")
         start = float(payload.get("start_ms", 0))
@@ -514,11 +574,9 @@ def create_app(resources, data_root):
 
     @app.get("/api/projects/<pid>/waveform")
     def waveform(pid):
-        projects.load(pid)
+        state=projects.load(pid)
         voice = request.args.get("voice", "mix")
-        if voice not in ("mix", "drums", "bass", "vocals", "other"):
-            raise ValueError("声部无效")
-        preview = projects.path(pid) / ("preview.wav" if voice == "mix" else f"stems/{voice}.wav")
+        preview = projects.path(pid)/'preview.wav' if voice=='mix' else stem_path(projects.path(pid),state.get('analysis'),voice)
         if not preview.is_file():
             raise ValueError("请先分析音频，再查看波形细节")
         return jsonify(waveform_window(preview, float(request.args.get("start_ms", 0)),
@@ -550,6 +608,9 @@ def create_app(resources, data_root):
                              bpm=variant["bpm"], offset=variant["offset"], original=original,
                              grid_division=variant["division"] if variant["mode"] == "audio" else None,
                              version=f'ManiaLab {variant["settings"]["seed"]}')
+        if variant.get('provided_timing'):
+            from .upstream import verify_fixed_timing
+            verify_fixed_timing(content, variant['provided_timing'])
         if kind == "osu":
             return send_file(io.BytesIO(content.encode("utf-8")), download_name="ManiaLab.osu", as_attachment=True, mimetype="application/octet-stream")
         if kind != "osz":

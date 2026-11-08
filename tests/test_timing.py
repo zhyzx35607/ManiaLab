@@ -4,7 +4,7 @@ import pytest
 
 from manialab.audio import rhythmic_evidence, SR, fuse_attacks
 from manialab.domain import Note
-from manialab.timing import BeatClock, chart_clock_notes, estimate_timing, align_candidates, normalize_bpm, refit_offset, grid_report
+from manialab.timing import BeatClock, chart_clock_notes, estimate_timing, align_candidates, normalize_bpm, refit_offset, grid_report, cover_missing_timing_windows
 
 
 def test_original_red_lines_change_period_and_ignore_inherited_velocity():
@@ -186,3 +186,29 @@ def test_attack_fusion_keeps_independent_transients():
     assert [n.start for n in merged] == [1000, 1000]
     assert [n.end for n in merged] == [3000, 4000]
     assert unmatched == transients[1:] and fused == 1
+
+
+def test_missing_drum_intro_uses_mixture_on_the_same_grid():
+    primary=[Note(t,t,id=f'd{t}') for t in range(36000,72000,500)]
+    intro=[Note(t,t,id=f'm{t}') for t in range(0,36000,631)]
+    tempo=dict(bpm=120,offset=0,division=4,stable=True,coverage=1,confidence=1)
+    revised,attacks=cover_missing_timing_windows(tempo,primary,intro+primary)
+    assert not revised['stable'] and tempo['stable']
+    assert revised['bpm']==120 and revised['offset']==0
+    assert revised['sections'][0]['evidence_source']=='mix'
+    assert revised['sections'][3]['evidence_source']=='drums'
+    assert any(s['suspect'] for s in revised['sections'][:3])
+    assert attacks==intro+primary
+
+
+def test_silent_intro_and_compatible_breakdown_do_not_revoke_acceptance():
+    primary=[Note(t,t) for t in range(36000,72000,500)]
+    tempo=dict(bpm=120,offset=0,division=4,stable=True,coverage=1)
+    revised,attacks=cover_missing_timing_windows(tempo,primary,primary)
+    assert revised['stable'] and revised['uncovered_source_windows']==0
+    mixture=[Note(t,t) for t in range(24000,72000,500)]
+    revised,attacks=cover_missing_timing_windows(tempo,primary,mixture)
+    assert revised['stable'] and revised['uncovered_source_windows']==1
+    assert attacks==mixture
+    blocked,_=cover_missing_timing_windows(tempo|{'stable':False},primary,mixture)
+    assert not blocked['stable']

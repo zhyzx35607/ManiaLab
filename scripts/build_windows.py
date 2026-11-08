@@ -14,7 +14,12 @@ sys.path.insert(0,str(ROOT))
 from manialab import __version__
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
-required=['basic-pitch.onnx','pattern-prior.json','deep/ManiaLabAudio/ManiaLabAudio.exe',
+def source_snapshot():
+    files=[ROOT/'launcher.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
+           *sorted(p for p in (ROOT/'static').rglob('*') if p.is_file())]
+    return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+build_sources=source_snapshot()
+required=['basic-pitch.onnx','pattern-prior.json','deep/ManiaLabAudio/ManiaLabAudio.exe','deep/htdemucs_6s.th',
           'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json']
 for relative in required:
     if not (ROOT/'assets'/relative).is_file():raise SystemExit(f'Missing release component: assets/{relative}')
@@ -55,6 +60,12 @@ args=[sys.executable,'-m','PyInstaller','--noconfirm','--name','ManiaLab','--con
       '--collect-all','imageio_ffmpeg','--collect-binaries','onnxruntime','--exclude-module','pytest','launcher.py']
 subprocess.run(args,check=True)
 target=ROOT/'dist/ManiaLab'
+if source_snapshot()!=build_sources:
+    raise SystemExit('Application sources changed during the build; rebuild before publishing.')
+release_manifest=dict(version=__version__,sources=build_sources,
+    executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
+    worker_sha256=hashlib.sha256((target/'_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe').read_bytes()).hexdigest())
+(target/'release-manifest.json').write_text(json.dumps(release_manifest,indent=2),encoding='utf-8')
 for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
     shutil.copy2(ROOT/name,target/name)
 shutil.copytree(ROOT/'licenses',target/'licenses',dirs_exist_ok=True)
