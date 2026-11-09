@@ -162,3 +162,17 @@ def test_plateau_onsets_skipped_by_decoder_do_not_desynchronize_event_identity()
 
 def test_empty_valid_activations_have_no_fabricated_events():
     assert diagnose(blank(0)) == ([], [], [])
+
+
+@pytest.mark.parametrize('reason', ['reattack', 'input_boundary', 'duration_limit'])
+def test_preexisting_forced_tail_stays_unobserved_and_unchanged(reason):
+    values = blank(700 if reason == 'duration_limit' else 100)
+    attack(values, 10)
+    active(values, 10, len(values['frame_output']))
+    if reason == 'reattack':
+        attack(values, 30)
+    old, new, rows = diagnose(values)
+    assert old == new
+    assert old[0]['release_reason'] == reason
+    assert not new[0]['release_observed']
+    assert rows[0]['proposed_offset'] is None

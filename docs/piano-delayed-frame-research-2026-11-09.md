@@ -19,6 +19,6 @@
 
 实际实现比初始协议一句“回落或者offset峰”更保守：必须先观察到持续激活回落，再允许从该活跃区间内选符合原规则的offset峰。若没有回落，即使出现offset峰也不延长；初始执行协议快照保持原文，不回写为事先规则。另一个报告字段 `existing_active_tail` 只是“本规则未处理的非frame_inactive候选”，其中也包含重弹/输入边界等强制结束，不能据名字断言音尾确实已观察到。
 
-27项构造控制通过，覆盖孤立尖峰、早offset、同音重弹、不同音高、50ms/6秒/输入边界、亚帧起音、不可变输入及空输入。17个本地产物的SHA256已核验。诊断脚本为 `scripts/piano_delayed_frames.py`，重放与评分入口为 `scripts/check_piano_delayed_frames.py`；原始逐事件结果留在 `test-data/piano-delayed-frames-v1`。
+30项构造控制通过，覆盖孤立尖峰、早offset、同音重弹、不同音高、50ms/6秒/输入边界、亚帧起音、不可变输入及空输入，并确认原已激活但强制截尾的候选仍保持未知。17个本地产物的SHA256已核验。诊断脚本为 `scripts/piano_delayed_frames.py`，重放与评分入口为 `scripts/check_piano_delayed_frames.py`；原始逐事件结果留在 `test-data/piano-delayed-frames-v1`。
 
 这次分析支持继续把“检测到了起音但持续不明确”作为可见的不确定证据。它没有证明应该统一拉长这些音，更没有把物理延音当作制谱LN放手。
