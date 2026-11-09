@@ -23,6 +23,7 @@ from .audio import analyze, analyze_deep
 from .audition import grid_events, render_audition, waveform_window
 from .separation import Separator
 from .provided_stems import ProvidedStemSeparator,prepare_provided_stems
+from .piano import PianoDetector
 from .voices import apply_phrase_evidence
 from .pattern_prior import prior_status
 from .review import review_chart
@@ -46,6 +47,7 @@ def create_app(resources, data_root):
     jobs = {}
     engine = MapperEngine(data_root, resources)
     separator = Separator(resources)
+    piano_detector = PianoDetector(resources)
     app.extensions.update(projects=projects, jobs=jobs, executor=executor)
 
     @app.before_request
@@ -82,7 +84,7 @@ def create_app(resources, data_root):
     def status():
         return jsonify(version=__version__, defaults=DEFAULTS, projects=projects.recent(),
                        capabilities={"audio": True, "remap": True, "api_planner": True, "trained_10k": False},
-                       engine=engine.status(), separator=separator.status(), pattern_prior=prior_status())
+                       engine=engine.status(), separator=separator.status(), piano=piano_detector.status(), pattern_prior=prior_status())
 
     def busy(pid):
         if any(j["project"] == pid and j["status"] in ("queued", "running") for j in jobs.values()):
@@ -236,14 +238,23 @@ def create_app(resources, data_root):
         prefs = parameters(request.json.get("settings", {}))
         payload = request.json
         analysis_engine = request.json.get("engine", "basic")
+        piano_engine = request.json.get('piano_engine','general')
         if analysis_engine not in ("basic", "deep", "deep6", "provided"):
             raise ValueError("采音引擎无效")
+        if piano_engine not in ('general','specialist'):
+            raise ValueError('钢琴采音方式无效')
+        if piano_engine=='specialist':
+            if analysis_engine not in ('deep6','provided'):
+                raise ValueError('钢琴专用采音需要六声部分离或已导入的钢琴声轨')
+            if not piano_detector.status()['available']:
+                raise ValueError('当前安装包未包含钢琴专用采音模型')
         def operation(state, progress, cancelled):
             if analysis_engine in ('deep','deep6','provided'):
                 selected_separator=(ProvidedStemSeparator(state.get('provided_stems')) if analysis_engine=='provided'
                     else Separator(resources,'six') if analysis_engine=='deep6' else separator)
                 state["analysis"] = analyze_deep(current_audio(state), projects.path(pid), resources / "assets/basic-pitch.onnx",
-                    prefs, selected_separator, progress, cancelled)
+                    prefs, selected_separator, progress, cancelled,
+                    piano_detector=piano_detector if piano_engine=='specialist' else None)
             else:
                 state["analysis"] = analyze(current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx", prefs, progress, cancelled)
             state["settings"] = prefs

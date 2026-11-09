@@ -313,7 +313,8 @@ def choose_holds(notes, local, settings):
     count = len(notes)
     wanted = int(math.floor(sum(p["ln_ratio"] for p in local) + .5))
     eligible = [i for i, n in enumerate(notes) if n.source == "pitch" and
-                n.end - n.start >= local[i]["min_ln"] and local[i]["ln_ratio"] > 0]
+                n.end - n.start >= local[i]["min_ln"] and local[i]["ln_ratio"] > 0
+                and n.release_reason not in ('duration_limit','input_boundary')]
     target_ratio = sum(p["ln_ratio"] for p in local) / max(1, count)
     chosen, attainable, optimal = set(), 0, True
     if eligible:

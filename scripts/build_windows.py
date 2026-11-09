@@ -24,6 +24,14 @@ required=['basic-pitch.onnx','pattern-prior.json','arrangement-profiles.json','d
           'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json']
 for relative in required:
     if not (ROOT/'assets'/relative).is_file():raise SystemExit(f'Missing release component: assets/{relative}')
+optional_piano=ROOT/'assets/deep/piano-regression.onnx'
+if optional_piano.exists():
+    piano_identity=json.loads((ROOT/'assets/piano-model.json').read_text(encoding='utf-8'))
+    with optional_piano.open('rb') as stream:
+        if hashlib.file_digest(stream,'sha256').hexdigest()!=piano_identity['sha256']:
+            raise SystemExit('Unexpected piano model checksum')
+    if not (ROOT/piano_identity['license_file']).is_file():
+        raise SystemExit('Missing piano model attribution/license')
 for model in json.loads((ROOT/'assets/deep-models.json').read_text(encoding='utf-8'))['models']:
     with (ROOT/'assets/deep'/model['filename']).open('rb') as stream:
         if hashlib.file_digest(stream,'sha256').hexdigest()!=model['sha256']:

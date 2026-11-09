@@ -25,6 +25,7 @@ class Note:
     support_coverage: float = 0.0
     evidence_start: int | None = None
     evidence_end: int | None = None
+    release_reason: str = ''
 
     @property
     def hold(self):

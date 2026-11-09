@@ -2,6 +2,8 @@
 
 这些是 alpha.4 发布后的独立研究，没有改变应用或安装包。目标是检查 LN 的问题能否通过更明确的音尾预测、或直接读取静音中断来改善。
 
+2026-11-09 后续：新增带真实演奏 MIDI 的自然钢琴对照，并提供默认关闭、只作用于钢琴声轨的便携运行入口，见 [钢琴专项记录](piano-acoustic-research.md)。本文件保留先前通用替换失败的原始结论；新入口不将钢琴模型用于所有声音。
+
 ## 钢琴起音 / 音尾回归模型
 
 使用作者的 [piano_transcription_inference](https://github.com/qiuqiangkong/piano_transcription_inference)，固定提交 `0226e74cbc805660e34bbd6a8fed2083890ebb88`。训练项目是 [bytedance/piano_transcription](https://github.com/bytedance/piano_transcription)，权重来自作者指定的 [Zenodo 4034264](https://zenodo.org/records/4034264)，下载核对提供方 MD5，并记录 SHA256 `c3fa9730725bf4a762f1c14bc80cd5986eacda01b026f5a4a2525cd607876141`。使用默认阈值、CPU 和隔离依赖，未调整发布环境。

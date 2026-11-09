@@ -142,6 +142,9 @@ def expression_evidence(analysis, plan, settings):
             n = replacements.get(original.id, original)
             hold = n.source == 'pitch' and policy['mode'] != 'onsets' and n.end-n.start >= p['min_ln']
             reason = 'supported_sustain' if hold else ('section_onsets' if policy['mode'] == 'onsets' else 'short_duration')
+            if hold and n.release_reason in ('duration_limit','input_boundary'):
+                hold=False
+                reason='unobserved_release'
             n = replace(n, end=n.end if hold else n.start, phrase=n.phrase and hold)
             output.append(n)
             metadata[n.id] = dict(section=index, role=policy['role'], voice=n.voice)
