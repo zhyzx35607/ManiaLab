@@ -1,0 +1,306 @@
+{
+  "identity": {
+    "source_revision": "1462e7c28d7adaae033150883a7cb00238ee364a",
+    "pretrained_sha256": "1f71ab8b6c7cd271e18adfba5ccbcd634a8530a44e46aabede27e15ce84dbe32",
+    "graph_input_sha256": "34708342e8265446c2650c365834f10f5a1739ce311cad1ce1df13908076b36e",
+    "analysis_sha256": "ef410a5feb747f2503d956c0b2300847b9bcf09acda2ea895785071ba6ba9cc7",
+    "pcm_sha256": "8eb46bbdf283028e5f5d4c13169741e734cc57f0bfd2fe3f19dd590f38ad2722",
+    "code_sha256": {
+      "runner": "407f9b4c932ec7008866f9619002550425ae1c177cd0e6784caecd17b5f66959",
+      "adapter": "a64c992a48df117ce50956d3a78b569768109ea8cfca5295ce149b94d5f72512",
+      "event_graph": "b4fc8077902c9884b54060e998a1fecc05274dc366304ed858f92e6256957b0c",
+      "forward": "5d2a06acd18e7878d249bd17ec92920af4e7bb266c1c217faae10d7ca04d4859",
+      "protocol": "4c51e6f6c51a2fb8316113e4c916490c3af66da480e40424d3be1eeafe62d0cf"
+    },
+    "weights_sha256": {
+      "original": "1f71ab8b6c7cd271e18adfba5ccbcd634a8530a44e46aabede27e15ce84dbe32",
+      "clean_adapted": "1d4e13e30ca34f36004b8b4765fa9c427322ebaf4a35167478f1fb0a8e630471",
+      "overlap_adapted": "972a21c07066fbdd4a2d9f299c2d504d44704ee9278de36c6e4c392f96fcfbdd"
+    },
+    "diagnostic_clock": {
+      "bpm": 74,
+      "offset_ms": 178,
+      "audio_shift_ms": 22.5,
+      "subdivision": 4,
+      "ticks_per_quarter": 480
+    },
+    "waveform": {
+      "sample_rate": 22050,
+      "samples": 6258672
+    },
+    "model_threshold": 0.5,
+    "raw_acoustic_candidates_preserved": true,
+    "voice_ground_truth_available": false,
+    "automatic_timing_evaluated": false,
+    "application_enabled": false
+  },
+  "source_events": 1557,
+  "graphs": 22,
+  "selection": [
+    {
+      "chunk": 2,
+      "fraction": 0.125,
+      "target_ms": 35480.0,
+      "begin_ms": 26146.445945945947,
+      "end_ms": 39119.41891891892
+    },
+    {
+      "chunk": 8,
+      "fraction": 0.375,
+      "target_ms": 106440.0,
+      "begin_ms": 103984.28378378379,
+      "end_ms": 116957.25675675676
+    },
+    {
+      "chunk": 13,
+      "fraction": 0.625,
+      "target_ms": 177400.0,
+      "begin_ms": 168849.14864864864,
+      "end_ms": 181822.12162162163
+    },
+    {
+      "chunk": 19,
+      "fraction": 0.875,
+      "target_ms": 248360.0,
+      "begin_ms": 246686.9864864865,
+      "end_ms": 259659.95945945947
+    }
+  ],
+  "models": [
+    {
+      "model": "original",
+      "windows": 22,
+      "owned_nodes": 1557,
+      "local_candidates": 14332,
+      "unvalidated_cross_bar_candidates": 71781,
+      "local_positive": {
+        "edges": 3888,
+        "sources_with_multiple_target_attack_groups": 749,
+        "targets_with_multiple_source_attack_groups": 828
+      },
+      "unvalidated_cross_bar_positive": 1327,
+      "chord_positive_directed": 1288,
+      "chord_asymmetric_directed": 0,
+      "staff_counts": {
+        "1": 601,
+        "0": 956
+      },
+      "elapsed_seconds": 1.75
+    },
+    {
+      "model": "clean_adapted",
+      "windows": 22,
+      "owned_nodes": 1557,
+      "local_candidates": 14332,
+      "unvalidated_cross_bar_candidates": 71781,
+      "local_positive": {
+        "edges": 2186,
+        "sources_with_multiple_target_attack_groups": 137,
+        "targets_with_multiple_source_attack_groups": 388
+      },
+      "unvalidated_cross_bar_positive": 934,
+      "chord_positive_directed": 1250,
+      "chord_asymmetric_directed": 0,
+      "staff_counts": {
+        "1": 554,
+        "0": 1003
+      },
+      "elapsed_seconds": 1.2810000000754371
+    },
+    {
+      "model": "overlap_adapted",
+      "windows": 22,
+      "owned_nodes": 1557,
+      "local_candidates": 14332,
+      "unvalidated_cross_bar_candidates": 71781,
+      "local_positive": {
+        "edges": 2647,
+        "sources_with_multiple_target_attack_groups": 458,
+        "targets_with_multiple_source_attack_groups": 562
+      },
+      "unvalidated_cross_bar_positive": 672,
+      "chord_positive_directed": 1134,
+      "chord_asymmetric_directed": 0,
+      "staff_counts": {
+        "1": 608,
+        "0": 949
+      },
+      "elapsed_seconds": 1.202999999979511
+    }
+  ],
+  "changes_from_original": [
+    {
+      "model": "clean_adapted",
+      "local_edges_added": 159,
+      "local_edges_removed": 1861,
+      "staff_changed": 59
+    },
+    {
+      "model": "overlap_adapted",
+      "local_edges_added": 382,
+      "local_edges_removed": 1623,
+      "staff_changed": 81
+    }
+  ],
+  "raw_audio_fields_unchanged": true,
+  "musical_acceptance": false,
+  "trained_in_this_run": false,
+  "application_enabled": false,
+  "limitations": [
+    "Synthetic score clock is reused for diagnostic inputs; it is not automatic timing evidence.",
+    "No source voice truth is available; positive edges are hypotheses, not measured accuracy.",
+    "Cross-bar scores are unvalidated and no global melody or LN assignments were made."
+  ],
+  "inference_report_sha256": "bf055ef1c9c22dc64793fbe84210c1876bb53ffb21e3670cd96aeae5383382eb",
+  "review_report_sha256": "06d0e78984a444b9739f41039f2252367b9dd32a55e4c3a5c0a9a4b5a1faf146",
+  "audio_review": {
+    "clips": [
+      {
+        "chunk": 2,
+        "first_sample": 576529,
+        "stop_sample": 862583,
+        "sample_rate": 22050,
+        "source_gain": 1.0,
+        "source_intervals_overlapping": 49,
+        "source_attacks_in_clip": 47,
+        "positive_edges": {
+          "original": 84,
+          "clean_adapted": 58,
+          "overlap_adapted": 74
+        },
+        "edge_visibility": {
+          "original": {
+            "fully_visible": 84,
+            "boundary_clipped": 0,
+            "outside_clip": 0
+          },
+          "clean_adapted": {
+            "fully_visible": 58,
+            "boundary_clipped": 0,
+            "outside_clip": 0
+          },
+          "overlap_adapted": {
+            "fully_visible": 74,
+            "boundary_clipped": 0,
+            "outside_clip": 0
+          }
+        },
+        "changed_from_original": {
+          "clean_adapted": 50,
+          "overlap_adapted": 50
+        }
+      },
+      {
+        "chunk": 8,
+        "first_sample": 2292853,
+        "stop_sample": 2578908,
+        "sample_rate": 22050,
+        "source_gain": 1.0,
+        "source_intervals_overlapping": 105,
+        "source_attacks_in_clip": 98,
+        "positive_edges": {
+          "original": 306,
+          "clean_adapted": 222,
+          "overlap_adapted": 225
+        },
+        "edge_visibility": {
+          "original": {
+            "fully_visible": 294,
+            "boundary_clipped": 12,
+            "outside_clip": 0
+          },
+          "clean_adapted": {
+            "fully_visible": 206,
+            "boundary_clipped": 16,
+            "outside_clip": 0
+          },
+          "overlap_adapted": {
+            "fully_visible": 213,
+            "boundary_clipped": 12,
+            "outside_clip": 0
+          }
+        },
+        "changed_from_original": {
+          "clean_adapted": 126,
+          "overlap_adapted": 145
+        }
+      },
+      {
+        "chunk": 13,
+        "first_sample": 3723124,
+        "stop_sample": 4009178,
+        "sample_rate": 22050,
+        "source_gain": 1.0,
+        "source_intervals_overlapping": 100,
+        "source_attacks_in_clip": 93,
+        "positive_edges": {
+          "original": 234,
+          "clean_adapted": 134,
+          "overlap_adapted": 158
+        },
+        "edge_visibility": {
+          "original": {
+            "fully_visible": 234,
+            "boundary_clipped": 0,
+            "outside_clip": 0
+          },
+          "clean_adapted": {
+            "fully_visible": 134,
+            "boundary_clipped": 0,
+            "outside_clip": 0
+          },
+          "overlap_adapted": {
+            "fully_visible": 158,
+            "boundary_clipped": 0,
+            "outside_clip": 0
+          }
+        },
+        "changed_from_original": {
+          "clean_adapted": 118,
+          "overlap_adapted": 112
+        }
+      },
+      {
+        "chunk": 19,
+        "first_sample": 5439448,
+        "stop_sample": 5725502,
+        "sample_rate": 22050,
+        "source_gain": 1.0,
+        "source_intervals_overlapping": 65,
+        "source_attacks_in_clip": 62,
+        "positive_edges": {
+          "original": 145,
+          "clean_adapted": 90,
+          "overlap_adapted": 92
+        },
+        "edge_visibility": {
+          "original": {
+            "fully_visible": 145,
+            "boundary_clipped": 0,
+            "outside_clip": 0
+          },
+          "clean_adapted": {
+            "fully_visible": 90,
+            "boundary_clipped": 0,
+            "outside_clip": 0
+          },
+          "overlap_adapted": {
+            "fully_visible": 92,
+            "boundary_clipped": 0,
+            "outside_clip": 0
+          }
+        },
+        "changed_from_original": {
+          "clean_adapted": 65,
+          "overlap_adapted": 75
+        }
+      }
+    ],
+    "model_rerun": false,
+    "manual_listening_performed": false,
+    "libraries": {
+      "numpy": "2.5.4",
+      "matplotlib": "3.10.8"
+    }
+  }
+}

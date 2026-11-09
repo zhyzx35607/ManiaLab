@@ -24,7 +24,7 @@
 
 **钢琴内部声部研究**：已完成重叠音尾的符号分组适配、77份留出乐谱评价和13项6–10K导出；持续声部识别部分改善，但正常音长、跨小节连续性和上下文稳定性仍不足，未启用应用默认。详见[实际训练与导出](docs/piano-stream-research-2026-11-09.md)及[分段构图修复对照](docs/piano-stream-context-research-2026-11-09.md)。
 
-**持续音数据审计**：自造乐谱证实上游预处理会将同小节延音线拆成额外起音，导入器对并行同音高延音线也会漏连。已建立独立的持续事件与记谱片段表示，未经源声明核实的关系保留未知状态；这还没有替换真实语料缓存或应用模型。见[延音线审计](docs/piano-bar-identity-research-2026-11-09.md)。
+**持续音数据与声部训练**：已用独立持续事件表示重建136份train/validation源，并完成重叠音尾增强训练；踏板控制有所恢复，交叉旋律与谱表分类仍有退步，研究权重未启用。见[延音线审计](docs/piano-bar-identity-research-2026-11-09.md)和[重叠训练结果](docs/piano-source-event-overlap-2026-11-09.md)。相同1557个《樱花草》钢琴候选的[三权重连接对照](docs/piano-audio-events-2026-11-09.md)已生成原音回放与局部图，尚不能证明稳定旋律或LN质量。另已修复[切段导致组尾误判](docs/piano-articulation-context-2026-11-09.md)。
 
 ![ManiaLab 界面](docs/screenshot.png)
 
