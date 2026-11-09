@@ -1,0 +1,3936 @@
+{
+  "revision": 2,
+  "runner_sha256": "1cc1842cbc1270e1b687d04a2c42a57b51e75900b56ddae907c200bd4e402581",
+  "scoring_sha256": "e5723d8d3da394568a90759b338013d99bd0c8aa8ba93cd78e3fa875ac0d900f",
+  "historical_report_sha256": "b6c32ffc0462c70418c401868b6fd2394a4115476717549658d8b84281ea3d69",
+  "frozen_model": {
+    "protocol": {
+      "fit_piece_ids": [
+        3,
+        4,
+        5
+      ],
+      "calibration_piece_ids": [
+        6
+      ],
+      "comparison_piece_ids": [
+        1,
+        2
+      ],
+      "seconds": 30,
+      "context_seconds": 2.1,
+      "onset_match_seconds": 0.05,
+      "label_min_error_difference_ms": 10,
+      "thresholds": [
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9,
+        0.95,
+        1.0
+      ],
+      "regularization": 0.05,
+      "features": [
+        "harmonic_level_0",
+        "harmonic_level_1",
+        "harmonic_level_2",
+        "harmonic_level_3",
+        "harmonic_level_4",
+        "harmonic_level_5",
+        "broadband_level_0",
+        "broadband_level_1",
+        "broadband_level_2",
+        "broadband_level_3",
+        "broadband_level_4",
+        "broadband_level_5",
+        "harmonic_share_0",
+        "harmonic_share_1",
+        "harmonic_share_2",
+        "harmonic_share_3",
+        "harmonic_share_4",
+        "harmonic_share_5",
+        "harmonic_drop",
+        "broadband_drop",
+        "duration_log",
+        "forced_boundary",
+        "explicit_off",
+        "reattack_end",
+        "boundary_distance",
+        "nearby_pitched_ends",
+        "active_same_program",
+        "active_other_program"
+      ],
+      "windows_seconds": [
+        [
+          -0.16,
+          -0.08
+        ],
+        [
+          -0.08,
+          -0.02
+        ],
+        [
+          -0.02,
+          0.02
+        ],
+        [
+          0.02,
+          0.08
+        ],
+        [
+          0.08,
+          0.16
+        ],
+        [
+          0.16,
+          0.32
+        ]
+      ],
+      "decision": "Calibrate macro strict-interval F1, then fewer edits, then higher threshold. No comparison-song fitting.",
+      "enabled_in_application": false
+    },
+    "model_sha256": "68d649bc9b033fa09f5e55d2a7565b0ce845071f0b06c08d13d9ec61ea96edab",
+    "runner_sha256": "09eeaa1c592dc8315ee51483575f9ba62583b0526598ebf3360e7404caa29c44",
+    "training_pairs": 177,
+    "positive_pairs": 76,
+    "negative_pairs": 101,
+    "calibration": [
+      {
+        "threshold": 0.5,
+        "macro_strict_interval_f1": 0.7262804428409524,
+        "changed": 42
+      },
+      {
+        "threshold": 0.6,
+        "macro_strict_interval_f1": 0.72394944050995,
+        "changed": 14
+      },
+      {
+        "threshold": 0.7,
+        "macro_strict_interval_f1": 0.72394944050995,
+        "changed": 7
+      },
+      {
+        "threshold": 0.8,
+        "macro_strict_interval_f1": 0.7289999455604552,
+        "changed": 4
+      },
+      {
+        "threshold": 0.9,
+        "macro_strict_interval_f1": 0.7289999455604552,
+        "changed": 3
+      },
+      {
+        "threshold": 0.95,
+        "macro_strict_interval_f1": 0.7289999455604552,
+        "changed": 3
+      },
+      {
+        "threshold": 1.0,
+        "macro_strict_interval_f1": 0.7224226587283913,
+        "changed": 0
+      }
+    ],
+    "chosen": {
+      "threshold": 0.95,
+      "macro_strict_interval_f1": 0.7289999455604552,
+      "changed": 3
+    }
+  },
+  "rows": [
+    {
+      "name": "03-1-fl",
+      "split": "fit",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "complete_intervals": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 56,
+            "precision": 0.9655172413793104,
+            "recall": 0.9655172413793104,
+            "f1": 0.9655172413793104,
+            "mean_onset_error_ms": 8.499999999999952,
+            "mean_release_error_ms": 13.446428571428344
+          },
+          "instrument_onsets": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "complete_instrument_intervals": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 56,
+            "precision": 0.9655172413793104,
+            "recall": 0.9655172413793104,
+            "f1": 0.9655172413793104,
+            "mean_onset_error_ms": 8.499999999999952,
+            "mean_release_error_ms": 13.446428571428344
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "complete_intervals": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "instrument_onsets": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "complete_instrument_intervals": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "complete_intervals": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 56,
+            "precision": 0.9655172413793104,
+            "recall": 0.9655172413793104,
+            "f1": 0.9655172413793104,
+            "mean_onset_error_ms": 8.499999999999952,
+            "mean_release_error_ms": 13.446428571428344
+          },
+          "instrument_onsets": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "complete_instrument_intervals": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 56,
+            "precision": 0.9655172413793104,
+            "recall": 0.9655172413793104,
+            "f1": 0.9655172413793104,
+            "mean_onset_error_ms": 8.499999999999952,
+            "mean_release_error_ms": 13.446428571428344
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "complete_intervals": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "instrument_onsets": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          },
+          "complete_instrument_intervals": {
+            "reference": 58,
+            "predicted": 58,
+            "matched": 57,
+            "precision": 0.9827586206896551,
+            "recall": 0.9827586206896551,
+            "f1": 0.9827586206896551,
+            "mean_onset_error_ms": 8.45614035087715,
+            "mean_release_error_ms": 14.105263157894484
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "c282d9b5db74a55b6897e216d5926d31aa8c3d01d9fa2f23c5ae1e6d061114a1",
+        "shifted_notes_sha256": "803d233ea7ad03ba916795ea2656fa81c25753a39c145e5b614a8f503984dc6a",
+        "audio_sha256": "9a6d49039909805a493c684208351e46589c38687e5ac489ffbb29f5397f876d",
+        "labels_sha256": "9afda88238f3dc27886531f30975f889a65c7935ef1245af2dc5013f1c6de480"
+      },
+      "learned_notes_sha256": "c282d9b5db74a55b6897e216d5926d31aa8c3d01d9fa2f23c5ae1e6d061114a1",
+      "decisions_sha256": "1f7d4d001728f93ab2af4eec4073e90e82fafbfd9303700257965cf811fd2e1e"
+    },
+    {
+      "name": "03-2-cl",
+      "split": "fit",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 62,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 7.741935483871197,
+            "mean_release_error_ms": 20.143145161290292
+          },
+          "complete_intervals": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 60,
+            "precision": 0.967741935483871,
+            "recall": 0.967741935483871,
+            "f1": 0.967741935483871,
+            "mean_onset_error_ms": 7.633333333333596,
+            "mean_release_error_ms": 18.214583333333323
+          },
+          "instrument_onsets": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 62,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 7.741935483871197,
+            "mean_release_error_ms": 20.143145161290292
+          },
+          "complete_instrument_intervals": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 60,
+            "precision": 0.967741935483871,
+            "recall": 0.967741935483871,
+            "f1": 0.967741935483871,
+            "mean_onset_error_ms": 7.633333333333596,
+            "mean_release_error_ms": 18.214583333333323
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 62,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 7.741935483871197,
+            "mean_release_error_ms": 20.143145161290292
+          },
+          "complete_intervals": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 61,
+            "precision": 0.9838709677419355,
+            "recall": 0.9838709677419355,
+            "f1": 0.9838709677419355,
+            "mean_onset_error_ms": 7.573770491803501,
+            "mean_release_error_ms": 18.93237704918028
+          },
+          "instrument_onsets": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 62,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 7.741935483871197,
+            "mean_release_error_ms": 20.143145161290292
+          },
+          "complete_instrument_intervals": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 61,
+            "precision": 0.9838709677419355,
+            "recall": 0.9838709677419355,
+            "f1": 0.9838709677419355,
+            "mean_onset_error_ms": 7.573770491803501,
+            "mean_release_error_ms": 18.93237704918028
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 62,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 7.741935483871197,
+            "mean_release_error_ms": 20.143145161290292
+          },
+          "complete_intervals": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 60,
+            "precision": 0.967741935483871,
+            "recall": 0.967741935483871,
+            "f1": 0.967741935483871,
+            "mean_onset_error_ms": 7.633333333333596,
+            "mean_release_error_ms": 18.214583333333323
+          },
+          "instrument_onsets": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 62,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 7.741935483871197,
+            "mean_release_error_ms": 20.143145161290292
+          },
+          "complete_instrument_intervals": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 60,
+            "precision": 0.967741935483871,
+            "recall": 0.967741935483871,
+            "f1": 0.967741935483871,
+            "mean_onset_error_ms": 7.633333333333596,
+            "mean_release_error_ms": 18.214583333333323
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 62,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 7.741935483871197,
+            "mean_release_error_ms": 20.143145161290292
+          },
+          "complete_intervals": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 61,
+            "precision": 0.9838709677419355,
+            "recall": 0.9838709677419355,
+            "f1": 0.9838709677419355,
+            "mean_onset_error_ms": 7.573770491803501,
+            "mean_release_error_ms": 18.93237704918028
+          },
+          "instrument_onsets": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 62,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 7.741935483871197,
+            "mean_release_error_ms": 20.143145161290292
+          },
+          "complete_instrument_intervals": {
+            "reference": 62,
+            "predicted": 62,
+            "matched": 61,
+            "precision": 0.9838709677419355,
+            "recall": 0.9838709677419355,
+            "f1": 0.9838709677419355,
+            "mean_onset_error_ms": 7.573770491803501,
+            "mean_release_error_ms": 18.93237704918028
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 0,
+          "predicted_crosses_end": 0,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 0,
+          "predicted_crosses_end": 0,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "6225c2076f00e1044a86ac0a1e4bc7baa9d24fedbfa9801a1637e9429643b7b1",
+        "shifted_notes_sha256": "13dbd3f5bc34a2f03f1e0d2b97a0d0f0956e0c4d96375cca7df09ae9c6c1ac01",
+        "audio_sha256": "48a740e6d93cdc8cda8b74a48d9bf02face37244e3c618ab1eb66bf413854792",
+        "labels_sha256": "0338be617c4cff4e07a36618340273fff8cbd9e86d6180b242853c5955621ee5"
+      },
+      "learned_notes_sha256": "6225c2076f00e1044a86ac0a1e4bc7baa9d24fedbfa9801a1637e9429643b7b1",
+      "decisions_sha256": "401446fa83d55f28f4664887c34fdf75864044a5baad3dc906705988ff954c22"
+    },
+    {
+      "name": "03-mix",
+      "split": "fit",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 107,
+            "precision": 0.963963963963964,
+            "recall": 0.8916666666666667,
+            "f1": 0.9264069264069265,
+            "mean_onset_error_ms": 7.822429906542165,
+            "mean_release_error_ms": 20.48306074766385
+          },
+          "complete_intervals": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 98,
+            "precision": 0.8828828828828829,
+            "recall": 0.8166666666666667,
+            "f1": 0.8484848484848485,
+            "mean_onset_error_ms": 7.918367346938878,
+            "mean_release_error_ms": 14.88201530612273
+          },
+          "instrument_onsets": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 107,
+            "precision": 0.963963963963964,
+            "recall": 0.8916666666666667,
+            "f1": 0.9264069264069265,
+            "mean_onset_error_ms": 7.915887850467397,
+            "mean_release_error_ms": 19.884929906542354
+          },
+          "complete_instrument_intervals": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 98,
+            "precision": 0.8828828828828829,
+            "recall": 0.8166666666666667,
+            "f1": 0.8484848484848485,
+            "mean_onset_error_ms": 7.918367346938878,
+            "mean_release_error_ms": 14.88201530612273
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 107,
+            "precision": 0.963963963963964,
+            "recall": 0.8916666666666667,
+            "f1": 0.9264069264069265,
+            "mean_onset_error_ms": 7.822429906542165,
+            "mean_release_error_ms": 20.48306074766385
+          },
+          "complete_intervals": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 105,
+            "precision": 0.9459459459459459,
+            "recall": 0.875,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 7.75238095238105,
+            "mean_release_error_ms": 18.04464285714312
+          },
+          "instrument_onsets": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 107,
+            "precision": 0.963963963963964,
+            "recall": 0.8916666666666667,
+            "f1": 0.9264069264069265,
+            "mean_onset_error_ms": 7.915887850467397,
+            "mean_release_error_ms": 19.884929906542354
+          },
+          "complete_instrument_intervals": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 105,
+            "precision": 0.9459459459459459,
+            "recall": 0.875,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 7.75238095238105,
+            "mean_release_error_ms": 18.04464285714312
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 107,
+            "precision": 0.963963963963964,
+            "recall": 0.8916666666666667,
+            "f1": 0.9264069264069265,
+            "mean_onset_error_ms": 7.822429906542165,
+            "mean_release_error_ms": 20.48306074766385
+          },
+          "complete_intervals": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 98,
+            "precision": 0.8828828828828829,
+            "recall": 0.8166666666666667,
+            "f1": 0.8484848484848485,
+            "mean_onset_error_ms": 7.918367346938878,
+            "mean_release_error_ms": 14.88201530612273
+          },
+          "instrument_onsets": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 107,
+            "precision": 0.963963963963964,
+            "recall": 0.8916666666666667,
+            "f1": 0.9264069264069265,
+            "mean_onset_error_ms": 7.915887850467397,
+            "mean_release_error_ms": 19.884929906542354
+          },
+          "complete_instrument_intervals": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 98,
+            "precision": 0.8828828828828829,
+            "recall": 0.8166666666666667,
+            "f1": 0.8484848484848485,
+            "mean_onset_error_ms": 7.918367346938878,
+            "mean_release_error_ms": 14.88201530612273
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 107,
+            "precision": 0.963963963963964,
+            "recall": 0.8916666666666667,
+            "f1": 0.9264069264069265,
+            "mean_onset_error_ms": 7.822429906542165,
+            "mean_release_error_ms": 20.48306074766385
+          },
+          "complete_intervals": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 105,
+            "precision": 0.9459459459459459,
+            "recall": 0.875,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 7.75238095238105,
+            "mean_release_error_ms": 18.04464285714312
+          },
+          "instrument_onsets": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 107,
+            "precision": 0.963963963963964,
+            "recall": 0.8916666666666667,
+            "f1": 0.9264069264069265,
+            "mean_onset_error_ms": 7.915887850467397,
+            "mean_release_error_ms": 19.884929906542354
+          },
+          "complete_instrument_intervals": {
+            "reference": 120,
+            "predicted": 111,
+            "matched": 105,
+            "precision": 0.9459459459459459,
+            "recall": 0.875,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 7.75238095238105,
+            "mean_release_error_ms": 18.04464285714312
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "e11c8ae431f5a3116d63b2aaa7433ce5456a2bf0807f70955ab89e7fdbddafe2",
+        "shifted_notes_sha256": "e5e2eecab82097744f441460856501fe75fefdb5f171324c61d42957ed47cc09",
+        "audio_sha256": "c287ac9dbb312837c18bafa9d84c0180c9ddc7961e73abe156966b8ff2549ba9",
+        "labels_sha256": "0fec9d813cde1394ada40d8a1341474cc7deefbb3ec36753763f64d4b9769adf"
+      },
+      "learned_notes_sha256": "e11c8ae431f5a3116d63b2aaa7433ce5456a2bf0807f70955ab89e7fdbddafe2",
+      "decisions_sha256": "267dc75a8d374074dfd4ce081c8b27d345297e40b4b09a7cfd614f5c808d1f6b"
+    },
+    {
+      "name": "04-1-fl",
+      "split": "fit",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 110,
+            "precision": 0.9322033898305084,
+            "recall": 0.9482758620689655,
+            "f1": 0.9401709401709402,
+            "mean_onset_error_ms": 9.572727272727281,
+            "mean_release_error_ms": 16.872727272727438
+          },
+          "complete_intervals": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 105,
+            "precision": 0.8898305084745762,
+            "recall": 0.9051724137931034,
+            "f1": 0.8974358974358975,
+            "mean_onset_error_ms": 9.838095238095283,
+            "mean_release_error_ms": 10.228571428571575
+          },
+          "instrument_onsets": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 110,
+            "precision": 0.9322033898305084,
+            "recall": 0.9482758620689655,
+            "f1": 0.9401709401709402,
+            "mean_onset_error_ms": 9.572727272727281,
+            "mean_release_error_ms": 16.872727272727438
+          },
+          "complete_instrument_intervals": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 105,
+            "precision": 0.8898305084745762,
+            "recall": 0.9051724137931034,
+            "f1": 0.8974358974358975,
+            "mean_onset_error_ms": 9.838095238095283,
+            "mean_release_error_ms": 10.228571428571575
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 107,
+            "precision": 0.9067796610169492,
+            "recall": 0.9224137931034483,
+            "f1": 0.9145299145299145,
+            "mean_onset_error_ms": 8.607476635514029,
+            "mean_release_error_ms": 17.21495327102818
+          },
+          "complete_intervals": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 102,
+            "precision": 0.864406779661017,
+            "recall": 0.8793103448275862,
+            "f1": 0.8717948717948718,
+            "mean_onset_error_ms": 8.833333333333384,
+            "mean_release_error_ms": 10.392156862745221
+          },
+          "instrument_onsets": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 107,
+            "precision": 0.9067796610169492,
+            "recall": 0.9224137931034483,
+            "f1": 0.9145299145299145,
+            "mean_onset_error_ms": 8.607476635514029,
+            "mean_release_error_ms": 17.21495327102818
+          },
+          "complete_instrument_intervals": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 102,
+            "precision": 0.864406779661017,
+            "recall": 0.8793103448275862,
+            "f1": 0.8717948717948718,
+            "mean_onset_error_ms": 8.833333333333384,
+            "mean_release_error_ms": 10.392156862745221
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 110,
+            "precision": 0.9322033898305084,
+            "recall": 0.9482758620689655,
+            "f1": 0.9401709401709402,
+            "mean_onset_error_ms": 9.572727272727281,
+            "mean_release_error_ms": 16.872727272727438
+          },
+          "complete_intervals": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 105,
+            "precision": 0.8898305084745762,
+            "recall": 0.9051724137931034,
+            "f1": 0.8974358974358975,
+            "mean_onset_error_ms": 9.838095238095283,
+            "mean_release_error_ms": 10.228571428571575
+          },
+          "instrument_onsets": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 110,
+            "precision": 0.9322033898305084,
+            "recall": 0.9482758620689655,
+            "f1": 0.9401709401709402,
+            "mean_onset_error_ms": 9.572727272727281,
+            "mean_release_error_ms": 16.872727272727438
+          },
+          "complete_instrument_intervals": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 105,
+            "precision": 0.8898305084745762,
+            "recall": 0.9051724137931034,
+            "f1": 0.8974358974358975,
+            "mean_onset_error_ms": 9.838095238095283,
+            "mean_release_error_ms": 10.228571428571575
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 107,
+            "precision": 0.9067796610169492,
+            "recall": 0.9224137931034483,
+            "f1": 0.9145299145299145,
+            "mean_onset_error_ms": 8.607476635514029,
+            "mean_release_error_ms": 17.21495327102818
+          },
+          "complete_intervals": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 102,
+            "precision": 0.864406779661017,
+            "recall": 0.8793103448275862,
+            "f1": 0.8717948717948718,
+            "mean_onset_error_ms": 8.833333333333384,
+            "mean_release_error_ms": 10.392156862745221
+          },
+          "instrument_onsets": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 107,
+            "precision": 0.9067796610169492,
+            "recall": 0.9224137931034483,
+            "f1": 0.9145299145299145,
+            "mean_onset_error_ms": 8.607476635514029,
+            "mean_release_error_ms": 17.21495327102818
+          },
+          "complete_instrument_intervals": {
+            "reference": 116,
+            "predicted": 118,
+            "matched": 102,
+            "precision": 0.864406779661017,
+            "recall": 0.8793103448275862,
+            "f1": 0.8717948717948718,
+            "mean_onset_error_ms": 8.833333333333384,
+            "mean_release_error_ms": 10.392156862745221
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "d4e19e62fbf8435f61d49d7287b8c16402703f3a87000c1b4681cd9651536d67",
+        "shifted_notes_sha256": "d5123797dfddcf093310b11b21afa04ede779d89ac5d92df04c4573c133aea49",
+        "audio_sha256": "a7b98d11abd3e1a9045e346937d88d8e037a9e3e6febd60f0276fd3450243a02",
+        "labels_sha256": "0b9437702265e2142799cfefd898986807e5f8bcad35b339e4ca219a2ba62961"
+      },
+      "learned_notes_sha256": "d4e19e62fbf8435f61d49d7287b8c16402703f3a87000c1b4681cd9651536d67",
+      "decisions_sha256": "418db0c20294e953de1fff3c23b5ab4a4eafba02a4d9ca518202e9ab204be723"
+    },
+    {
+      "name": "04-2-fl",
+      "split": "fit",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "complete_intervals": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "instrument_onsets": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "complete_instrument_intervals": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "complete_intervals": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "instrument_onsets": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "complete_instrument_intervals": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "complete_intervals": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "instrument_onsets": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "complete_instrument_intervals": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "complete_intervals": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "instrument_onsets": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          },
+          "complete_instrument_intervals": {
+            "reference": 46,
+            "predicted": 46,
+            "matched": 46,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "mean_onset_error_ms": 8.369565217391386,
+            "mean_release_error_ms": 17.739130434782826
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "e5d96426b130d729703d8d3037b5a014d5fd04739988e0f5a967120f5f632f78",
+        "shifted_notes_sha256": "1883bb2400032b97343c3cc58ee20bc63c3c0dac71ef0881dc1952ebcc990edb",
+        "audio_sha256": "984cf2d38717d52e3fb9207a759b90c72edff0030494276a9969bb66a30dfce6",
+        "labels_sha256": "0ed74577c54189b4031b5651139f110981f764f8d61c83ffbc85ee1e15526682"
+      },
+      "learned_notes_sha256": "e5d96426b130d729703d8d3037b5a014d5fd04739988e0f5a967120f5f632f78",
+      "decisions_sha256": "b23143301dc232e45f493d5c27a87b8d7ff5d1dda58f6d57c7334ab83a6fb5ea"
+    },
+    {
+      "name": "04-mix",
+      "split": "fit",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 154,
+            "precision": 0.8953488372093024,
+            "recall": 0.9506172839506173,
+            "f1": 0.9221556886227545,
+            "mean_onset_error_ms": 9.999999999999899,
+            "mean_release_error_ms": 19.35064935064937
+          },
+          "complete_intervals": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 147,
+            "precision": 0.8546511627906976,
+            "recall": 0.9074074074074074,
+            "f1": 0.8802395209580839,
+            "mean_onset_error_ms": 10.095238095238031,
+            "mean_release_error_ms": 13.414965986394565
+          },
+          "instrument_onsets": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 154,
+            "precision": 0.8953488372093024,
+            "recall": 0.9506172839506173,
+            "f1": 0.9221556886227545,
+            "mean_onset_error_ms": 9.999999999999899,
+            "mean_release_error_ms": 19.35064935064937
+          },
+          "complete_instrument_intervals": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 147,
+            "precision": 0.8546511627906976,
+            "recall": 0.9074074074074074,
+            "f1": 0.8802395209580839,
+            "mean_onset_error_ms": 10.095238095238031,
+            "mean_release_error_ms": 13.414965986394565
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 150,
+            "precision": 0.872093023255814,
+            "recall": 0.9259259259259259,
+            "f1": 0.8982035928143712,
+            "mean_onset_error_ms": 9.086666666666577,
+            "mean_release_error_ms": 19.306666666666686
+          },
+          "complete_intervals": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 143,
+            "precision": 0.8313953488372093,
+            "recall": 0.8827160493827161,
+            "f1": 0.8562874251497006,
+            "mean_onset_error_ms": 9.013986013985958,
+            "mean_release_error_ms": 13.356643356643366
+          },
+          "instrument_onsets": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 150,
+            "precision": 0.872093023255814,
+            "recall": 0.9259259259259259,
+            "f1": 0.8982035928143712,
+            "mean_onset_error_ms": 9.086666666666577,
+            "mean_release_error_ms": 19.306666666666686
+          },
+          "complete_instrument_intervals": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 143,
+            "precision": 0.8313953488372093,
+            "recall": 0.8827160493827161,
+            "f1": 0.8562874251497006,
+            "mean_onset_error_ms": 9.013986013985958,
+            "mean_release_error_ms": 13.356643356643366
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 154,
+            "precision": 0.8953488372093024,
+            "recall": 0.9506172839506173,
+            "f1": 0.9221556886227545,
+            "mean_onset_error_ms": 9.999999999999899,
+            "mean_release_error_ms": 19.35064935064937
+          },
+          "complete_intervals": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 147,
+            "precision": 0.8546511627906976,
+            "recall": 0.9074074074074074,
+            "f1": 0.8802395209580839,
+            "mean_onset_error_ms": 10.095238095238031,
+            "mean_release_error_ms": 13.414965986394565
+          },
+          "instrument_onsets": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 154,
+            "precision": 0.8953488372093024,
+            "recall": 0.9506172839506173,
+            "f1": 0.9221556886227545,
+            "mean_onset_error_ms": 9.999999999999899,
+            "mean_release_error_ms": 19.35064935064937
+          },
+          "complete_instrument_intervals": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 147,
+            "precision": 0.8546511627906976,
+            "recall": 0.9074074074074074,
+            "f1": 0.8802395209580839,
+            "mean_onset_error_ms": 10.095238095238031,
+            "mean_release_error_ms": 13.414965986394565
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 150,
+            "precision": 0.872093023255814,
+            "recall": 0.9259259259259259,
+            "f1": 0.8982035928143712,
+            "mean_onset_error_ms": 9.086666666666577,
+            "mean_release_error_ms": 19.306666666666686
+          },
+          "complete_intervals": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 143,
+            "precision": 0.8313953488372093,
+            "recall": 0.8827160493827161,
+            "f1": 0.8562874251497006,
+            "mean_onset_error_ms": 9.013986013985958,
+            "mean_release_error_ms": 13.356643356643366
+          },
+          "instrument_onsets": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 150,
+            "precision": 0.872093023255814,
+            "recall": 0.9259259259259259,
+            "f1": 0.8982035928143712,
+            "mean_onset_error_ms": 9.086666666666577,
+            "mean_release_error_ms": 19.306666666666686
+          },
+          "complete_instrument_intervals": {
+            "reference": 162,
+            "predicted": 172,
+            "matched": 143,
+            "precision": 0.8313953488372093,
+            "recall": 0.8827160493827161,
+            "f1": 0.8562874251497006,
+            "mean_onset_error_ms": 9.013986013985958,
+            "mean_release_error_ms": 13.356643356643366
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 2,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 2,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "5b66d0920af163d8d21cee47cd998db459d131c42ed26395dbba0ffe06836150",
+        "shifted_notes_sha256": "bd7f03ec1bd6d40640879414872021e8d31311cac49f7ee3c91a457172b254d2",
+        "audio_sha256": "94353b279caf4f0df0732500f524f30dc396ab4589f9f4001deacb83df93e69a",
+        "labels_sha256": "c9bc4fb191d7575fbd516da942e3b42a27b8dbead9846c3e16b6437e5775ab7f"
+      },
+      "learned_notes_sha256": "5b66d0920af163d8d21cee47cd998db459d131c42ed26395dbba0ffe06836150",
+      "decisions_sha256": "e8b7da2470babe8c41e5e25f2ce4e26e9ead3218708c0ed7afc417f0cd001dd6"
+    },
+    {
+      "name": "05-1-tpt",
+      "split": "fit",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 80,
+            "precision": 0.975609756097561,
+            "recall": 0.975609756097561,
+            "f1": 0.975609756097561,
+            "mean_onset_error_ms": 7.962500000000145,
+            "mean_release_error_ms": 10.062500000000174
+          },
+          "complete_intervals": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 80,
+            "precision": 0.975609756097561,
+            "recall": 0.975609756097561,
+            "f1": 0.975609756097561,
+            "mean_onset_error_ms": 7.962500000000145,
+            "mean_release_error_ms": 10.062500000000174
+          },
+          "instrument_onsets": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 80,
+            "precision": 0.975609756097561,
+            "recall": 0.975609756097561,
+            "f1": 0.975609756097561,
+            "mean_onset_error_ms": 7.962500000000145,
+            "mean_release_error_ms": 10.062500000000174
+          },
+          "complete_instrument_intervals": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 80,
+            "precision": 0.975609756097561,
+            "recall": 0.975609756097561,
+            "f1": 0.975609756097561,
+            "mean_onset_error_ms": 7.962500000000145,
+            "mean_release_error_ms": 10.062500000000174
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 78,
+            "precision": 0.9512195121951219,
+            "recall": 0.9512195121951219,
+            "f1": 0.9512195121951219,
+            "mean_onset_error_ms": 6.9871794871796284,
+            "mean_release_error_ms": 9.743589743589922
+          },
+          "complete_intervals": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 78,
+            "precision": 0.9512195121951219,
+            "recall": 0.9512195121951219,
+            "f1": 0.9512195121951219,
+            "mean_onset_error_ms": 6.9871794871796284,
+            "mean_release_error_ms": 9.743589743589922
+          },
+          "instrument_onsets": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 78,
+            "precision": 0.9512195121951219,
+            "recall": 0.9512195121951219,
+            "f1": 0.9512195121951219,
+            "mean_onset_error_ms": 6.9871794871796284,
+            "mean_release_error_ms": 9.743589743589922
+          },
+          "complete_instrument_intervals": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 78,
+            "precision": 0.9512195121951219,
+            "recall": 0.9512195121951219,
+            "f1": 0.9512195121951219,
+            "mean_onset_error_ms": 6.9871794871796284,
+            "mean_release_error_ms": 9.743589743589922
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 80,
+            "precision": 0.975609756097561,
+            "recall": 0.975609756097561,
+            "f1": 0.975609756097561,
+            "mean_onset_error_ms": 7.962500000000145,
+            "mean_release_error_ms": 10.062500000000174
+          },
+          "complete_intervals": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 80,
+            "precision": 0.975609756097561,
+            "recall": 0.975609756097561,
+            "f1": 0.975609756097561,
+            "mean_onset_error_ms": 7.962500000000145,
+            "mean_release_error_ms": 10.062500000000174
+          },
+          "instrument_onsets": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 80,
+            "precision": 0.975609756097561,
+            "recall": 0.975609756097561,
+            "f1": 0.975609756097561,
+            "mean_onset_error_ms": 7.962500000000145,
+            "mean_release_error_ms": 10.062500000000174
+          },
+          "complete_instrument_intervals": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 80,
+            "precision": 0.975609756097561,
+            "recall": 0.975609756097561,
+            "f1": 0.975609756097561,
+            "mean_onset_error_ms": 7.962500000000145,
+            "mean_release_error_ms": 10.062500000000174
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 78,
+            "precision": 0.9512195121951219,
+            "recall": 0.9512195121951219,
+            "f1": 0.9512195121951219,
+            "mean_onset_error_ms": 6.9871794871796284,
+            "mean_release_error_ms": 9.743589743589922
+          },
+          "complete_intervals": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 78,
+            "precision": 0.9512195121951219,
+            "recall": 0.9512195121951219,
+            "f1": 0.9512195121951219,
+            "mean_onset_error_ms": 6.9871794871796284,
+            "mean_release_error_ms": 9.743589743589922
+          },
+          "instrument_onsets": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 78,
+            "precision": 0.9512195121951219,
+            "recall": 0.9512195121951219,
+            "f1": 0.9512195121951219,
+            "mean_onset_error_ms": 6.9871794871796284,
+            "mean_release_error_ms": 9.743589743589922
+          },
+          "complete_instrument_intervals": {
+            "reference": 82,
+            "predicted": 82,
+            "matched": 78,
+            "precision": 0.9512195121951219,
+            "recall": 0.9512195121951219,
+            "f1": 0.9512195121951219,
+            "mean_onset_error_ms": 6.9871794871796284,
+            "mean_release_error_ms": 9.743589743589922
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "9675b43dd58ecfc2444402ab17fec4010526baf7a2438b6aa54e3b780f50983c",
+        "shifted_notes_sha256": "31f1ab7ebe62392a25d060ea4be5a806f81550695eabb85f7f2d9927ae71acf9",
+        "audio_sha256": "737de04fec990e8b65546cef220761e5da9a4fde3d978c32de3128fd0ccd7992",
+        "labels_sha256": "cadac364471ccebb1487ed7541b9631602980eb8a712f8ddbbe89db19ea62876"
+      },
+      "learned_notes_sha256": "9675b43dd58ecfc2444402ab17fec4010526baf7a2438b6aa54e3b780f50983c",
+      "decisions_sha256": "dafe32170fc71c3e1d2ac6f8cac2354cc57aa21b95877d8c001e954c824a3895"
+    },
+    {
+      "name": "05-2-tpt",
+      "split": "fit",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "complete_intervals": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 66,
+            "precision": 0.9850746268656716,
+            "recall": 0.9705882352941176,
+            "f1": 0.9777777777777777,
+            "mean_onset_error_ms": 6.742424242424132,
+            "mean_release_error_ms": 14.370265151515472
+          },
+          "instrument_onsets": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "complete_instrument_intervals": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 66,
+            "precision": 0.9850746268656716,
+            "recall": 0.9705882352941176,
+            "f1": 0.9777777777777777,
+            "mean_onset_error_ms": 6.742424242424132,
+            "mean_release_error_ms": 14.370265151515472
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "complete_intervals": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "instrument_onsets": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "complete_instrument_intervals": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "complete_intervals": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 66,
+            "precision": 0.9850746268656716,
+            "recall": 0.9705882352941176,
+            "f1": 0.9777777777777777,
+            "mean_onset_error_ms": 6.742424242424132,
+            "mean_release_error_ms": 14.370265151515472
+          },
+          "instrument_onsets": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "complete_instrument_intervals": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 66,
+            "precision": 0.9850746268656716,
+            "recall": 0.9705882352941176,
+            "f1": 0.9777777777777777,
+            "mean_onset_error_ms": 6.742424242424132,
+            "mean_release_error_ms": 14.370265151515472
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "complete_intervals": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "instrument_onsets": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          },
+          "complete_instrument_intervals": {
+            "reference": 68,
+            "predicted": 67,
+            "matched": 67,
+            "precision": 1.0,
+            "recall": 0.9852941176470589,
+            "f1": 0.9925925925925926,
+            "mean_onset_error_ms": 6.656716417910304,
+            "mean_release_error_ms": 15.081156716418244
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "c8b8dbdbabb1a15f66efb441875a2025124ea9aeda6f8bd3ab49d9b45e45d1a2",
+        "shifted_notes_sha256": "49681789f88684c283ca262eb13a8a0accbb85519c61d1e11417d9d588ec5c55",
+        "audio_sha256": "68734f17b2d200a55752c478c2b9325ccf382834d587f4eac16ae85f963f59ad",
+        "labels_sha256": "3e14615e05795d59da6d7a8091fa418657198f07f0127148068bb2e27a15f355"
+      },
+      "learned_notes_sha256": "c8b8dbdbabb1a15f66efb441875a2025124ea9aeda6f8bd3ab49d9b45e45d1a2",
+      "decisions_sha256": "3f54b3f533853c83a37fe78e423cfc984abf36150cb2739aaaa112e78e688cc5"
+    },
+    {
+      "name": "05-mix",
+      "split": "fit",
+      "changed": 1,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 140,
+            "precision": 0.9859154929577465,
+            "recall": 0.9333333333333333,
+            "f1": 0.958904109589041,
+            "mean_onset_error_ms": 7.335714285714179,
+            "mean_release_error_ms": 22.099107142857346
+          },
+          "complete_intervals": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 136,
+            "precision": 0.9577464788732394,
+            "recall": 0.9066666666666666,
+            "f1": 0.9315068493150684,
+            "mean_onset_error_ms": 7.27941176470574,
+            "mean_release_error_ms": 14.613970588235501
+          },
+          "instrument_onsets": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 140,
+            "precision": 0.9859154929577465,
+            "recall": 0.9333333333333333,
+            "f1": 0.958904109589041,
+            "mean_onset_error_ms": 7.335714285714179,
+            "mean_release_error_ms": 22.099107142857346
+          },
+          "complete_instrument_intervals": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 136,
+            "precision": 0.9577464788732394,
+            "recall": 0.9066666666666666,
+            "f1": 0.9315068493150684,
+            "mean_onset_error_ms": 7.27941176470574,
+            "mean_release_error_ms": 14.613970588235501
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 138,
+            "precision": 0.971830985915493,
+            "recall": 0.92,
+            "f1": 0.9452054794520548,
+            "mean_onset_error_ms": 6.775362318840467,
+            "mean_release_error_ms": 22.310688405797315
+          },
+          "complete_intervals": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 133,
+            "precision": 0.9366197183098591,
+            "recall": 0.8866666666666667,
+            "f1": 0.910958904109589,
+            "mean_onset_error_ms": 6.736842105263004,
+            "mean_release_error_ms": 13.642857142857368
+          },
+          "instrument_onsets": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 138,
+            "precision": 0.971830985915493,
+            "recall": 0.92,
+            "f1": 0.9452054794520548,
+            "mean_onset_error_ms": 6.775362318840467,
+            "mean_release_error_ms": 22.310688405797315
+          },
+          "complete_instrument_intervals": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 133,
+            "precision": 0.9366197183098591,
+            "recall": 0.8866666666666667,
+            "f1": 0.910958904109589,
+            "mean_onset_error_ms": 6.736842105263004,
+            "mean_release_error_ms": 13.642857142857368
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 140,
+            "precision": 0.9859154929577465,
+            "recall": 0.9333333333333333,
+            "f1": 0.958904109589041,
+            "mean_onset_error_ms": 7.335714285714179,
+            "mean_release_error_ms": 19.527678571428776
+          },
+          "complete_intervals": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 137,
+            "precision": 0.9647887323943662,
+            "recall": 0.9133333333333333,
+            "f1": 0.9383561643835616,
+            "mean_onset_error_ms": 7.277372262773579,
+            "mean_release_error_ms": 14.53649635036518
+          },
+          "instrument_onsets": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 140,
+            "precision": 0.9859154929577465,
+            "recall": 0.9333333333333333,
+            "f1": 0.958904109589041,
+            "mean_onset_error_ms": 7.335714285714179,
+            "mean_release_error_ms": 19.527678571428776
+          },
+          "complete_instrument_intervals": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 137,
+            "precision": 0.9647887323943662,
+            "recall": 0.9133333333333333,
+            "f1": 0.9383561643835616,
+            "mean_onset_error_ms": 7.277372262773579,
+            "mean_release_error_ms": 14.53649635036518
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 138,
+            "precision": 0.971830985915493,
+            "recall": 0.92,
+            "f1": 0.9452054794520548,
+            "mean_onset_error_ms": 6.775362318840467,
+            "mean_release_error_ms": 19.701992753623404
+          },
+          "complete_intervals": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 134,
+            "precision": 0.9436619718309859,
+            "recall": 0.8933333333333333,
+            "f1": 0.9178082191780822,
+            "mean_onset_error_ms": 6.738805970149098,
+            "mean_release_error_ms": 13.570895522388295
+          },
+          "instrument_onsets": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 138,
+            "precision": 0.971830985915493,
+            "recall": 0.92,
+            "f1": 0.9452054794520548,
+            "mean_onset_error_ms": 6.775362318840467,
+            "mean_release_error_ms": 19.701992753623404
+          },
+          "complete_instrument_intervals": {
+            "reference": 150,
+            "predicted": 142,
+            "matched": 134,
+            "precision": 0.9436619718309859,
+            "recall": 0.8933333333333333,
+            "f1": 0.9178082191780822,
+            "mean_onset_error_ms": 6.738805970149098,
+            "mean_release_error_ms": 13.570895522388295
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 2,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 2,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "e191b43234cd83659a699278b75b44020c6a1db147e2dbaf5dae375832099147",
+        "shifted_notes_sha256": "9ee9f2eca4f6e9d0fa22219c57fd8ec707b9c27b59419edb4103019e3802c0b3",
+        "audio_sha256": "79361ee8dd0c4008d6d9ea546706dc8b7d520d938b7cc0c16771ec48405ac4fa",
+        "labels_sha256": "2af7bb330912d54f040b015cbc60f2ce8b2d597321ac93a2811d347e606e1a27"
+      },
+      "learned_notes_sha256": "012a3efd3083c01a0d7f7f7fb3b0e70277498ccabd388084afca352663d1b800",
+      "decisions_sha256": "0672c4ddda41168ae558e25829c82eec05ea51857c6284e2dc99196773b9ea78"
+    },
+    {
+      "name": "06-1-sax",
+      "split": "calibration",
+      "changed": 1,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 67,
+            "precision": 0.8481012658227848,
+            "recall": 0.8375,
+            "f1": 0.8427672955974843,
+            "mean_onset_error_ms": 14.074626865671755,
+            "mean_release_error_ms": 12.673507462686446
+          },
+          "complete_intervals": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 65,
+            "precision": 0.8227848101265823,
+            "recall": 0.8125,
+            "f1": 0.8176100628930818,
+            "mean_onset_error_ms": 14.107692307692428,
+            "mean_release_error_ms": 6.630769230769109
+          },
+          "instrument_onsets": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 67,
+            "precision": 0.8481012658227848,
+            "recall": 0.8375,
+            "f1": 0.8427672955974843,
+            "mean_onset_error_ms": 14.074626865671755,
+            "mean_release_error_ms": 12.673507462686446
+          },
+          "complete_intervals": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 65,
+            "precision": 0.8227848101265823,
+            "recall": 0.8125,
+            "f1": 0.8176100628930818,
+            "mean_onset_error_ms": 14.107692307692428,
+            "mean_release_error_ms": 6.630769230769109
+          },
+          "instrument_onsets": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 67,
+            "precision": 0.8481012658227848,
+            "recall": 0.8375,
+            "f1": 0.8427672955974843,
+            "mean_onset_error_ms": 14.074626865671755,
+            "mean_release_error_ms": 8.73134328358197
+          },
+          "complete_intervals": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 66,
+            "precision": 0.8354430379746836,
+            "recall": 0.825,
+            "f1": 0.8301886792452831,
+            "mean_onset_error_ms": 14.151515151515275,
+            "mean_release_error_ms": 7.5757575757574545
+          },
+          "instrument_onsets": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 67,
+            "precision": 0.8481012658227848,
+            "recall": 0.8375,
+            "f1": 0.8427672955974843,
+            "mean_onset_error_ms": 14.074626865671755,
+            "mean_release_error_ms": 8.73134328358197
+          },
+          "complete_intervals": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 66,
+            "precision": 0.8354430379746836,
+            "recall": 0.825,
+            "f1": 0.8301886792452831,
+            "mean_onset_error_ms": 14.151515151515275,
+            "mean_release_error_ms": 7.5757575757574545
+          },
+          "instrument_onsets": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 80,
+            "predicted": 79,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "538a743587d65fac807703c09ae4db28cdebf2b8d37c4bbff15762ae09ddb213",
+        "shifted_notes_sha256": "29b397c4b06f30fde8aa6b21467fd139a1e6f96222bd00f85134aac498d3f113",
+        "audio_sha256": "1284e64e66b8b1923d10ec31548e0573063df17a58a4da9a77797aaf3ea4b6ba",
+        "labels_sha256": "67cd266dbbe9661ed5e6ee0c5ed7a1856211e0607762d0ba42333aa6f11fd208"
+      },
+      "learned_notes_sha256": "e90f6616ec003a1b9980b216c65b0276a24a42d60805405971b1718040784824",
+      "decisions_sha256": "54c01e800afe278dcb4087c468221de3a28a207742a640194fa7831d6c57221e"
+    },
+    {
+      "name": "06-2-sax",
+      "split": "calibration",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 54,
+            "precision": 0.84375,
+            "recall": 0.7941176470588235,
+            "f1": 0.8181818181818182,
+            "mean_onset_error_ms": 27.18518518518525,
+            "mean_release_error_ms": 26.921296296296024
+          },
+          "complete_intervals": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 47,
+            "precision": 0.734375,
+            "recall": 0.6911764705882353,
+            "f1": 0.7121212121212122,
+            "mean_onset_error_ms": 28.89361702127676,
+            "mean_release_error_ms": 18.888297872340207
+          },
+          "instrument_onsets": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 42,
+            "precision": 0.65625,
+            "recall": 0.6176470588235294,
+            "f1": 0.6363636363636364,
+            "mean_onset_error_ms": 22.35714285714275,
+            "mean_release_error_ms": 29.690476190475913
+          },
+          "complete_intervals": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 38,
+            "precision": 0.59375,
+            "recall": 0.5588235294117647,
+            "f1": 0.5757575757575758,
+            "mean_onset_error_ms": 22.342105263157876,
+            "mean_release_error_ms": 23.473684210526045
+          },
+          "instrument_onsets": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 54,
+            "precision": 0.84375,
+            "recall": 0.7941176470588235,
+            "f1": 0.8181818181818182,
+            "mean_onset_error_ms": 27.18518518518525,
+            "mean_release_error_ms": 26.921296296296024
+          },
+          "complete_intervals": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 47,
+            "precision": 0.734375,
+            "recall": 0.6911764705882353,
+            "f1": 0.7121212121212122,
+            "mean_onset_error_ms": 28.89361702127676,
+            "mean_release_error_ms": 18.888297872340207
+          },
+          "instrument_onsets": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 42,
+            "precision": 0.65625,
+            "recall": 0.6176470588235294,
+            "f1": 0.6363636363636364,
+            "mean_onset_error_ms": 22.35714285714275,
+            "mean_release_error_ms": 29.690476190475913
+          },
+          "complete_intervals": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 38,
+            "precision": 0.59375,
+            "recall": 0.5588235294117647,
+            "f1": 0.5757575757575758,
+            "mean_onset_error_ms": 22.342105263157876,
+            "mean_release_error_ms": 23.473684210526045
+          },
+          "instrument_onsets": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 68,
+            "predicted": 64,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 0,
+          "predicted_crosses_end": 0,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 0,
+          "predicted_crosses_end": 0,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "344f1b5fbf97f05e106736a1051a859f647145e486d10471cdf119896f4e4ef7",
+        "shifted_notes_sha256": "a0b2bd40c6ca1f42cab131f6f76c6c9ee1f98e0d275af55ff624c48bb60c1c29",
+        "audio_sha256": "d13caa37a211f003f05be38ecba335c388044deee461ef28a5b0217986febe58",
+        "labels_sha256": "a5e92d23fe603933a1fb12937b8c05fc353b181ee9bd68a4d273121bb2d5afbc"
+      },
+      "learned_notes_sha256": "344f1b5fbf97f05e106736a1051a859f647145e486d10471cdf119896f4e4ef7",
+      "decisions_sha256": "1f41c6ef216f6a4dc8263450b8e1a77b656d9c9b674501217d88e768eb954240"
+    },
+    {
+      "name": "06-mix",
+      "split": "calibration",
+      "changed": 2,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 126,
+            "precision": 0.9,
+            "recall": 0.8513513513513513,
+            "f1": 0.875,
+            "mean_onset_error_ms": 13.182539682539623,
+            "mean_release_error_ms": 26.65823412698415
+          },
+          "complete_intervals": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 107,
+            "precision": 0.7642857142857142,
+            "recall": 0.722972972972973,
+            "f1": 0.7430555555555556,
+            "mean_onset_error_ms": 13.691588785046735,
+            "mean_release_error_ms": 11.853971962616862
+          },
+          "instrument_onsets": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 123,
+            "precision": 0.8785714285714286,
+            "recall": 0.831081081081081,
+            "f1": 0.8541666666666666,
+            "mean_onset_error_ms": 12.471544715447102,
+            "mean_release_error_ms": 27.115345528455286
+          },
+          "complete_intervals": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 112,
+            "precision": 0.8,
+            "recall": 0.7567567567567568,
+            "f1": 0.7777777777777778,
+            "mean_onset_error_ms": 12.517857142857137,
+            "mean_release_error_ms": 16.314174107142833
+          },
+          "instrument_onsets": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 126,
+            "precision": 0.9,
+            "recall": 0.8513513513513513,
+            "f1": 0.875,
+            "mean_onset_error_ms": 13.182539682539623,
+            "mean_release_error_ms": 24.280753968254004
+          },
+          "complete_intervals": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 108,
+            "precision": 0.7714285714285715,
+            "recall": 0.7297297297297297,
+            "f1": 0.75,
+            "mean_onset_error_ms": 13.83333333333334,
+            "mean_release_error_ms": 12.105324074074126
+          },
+          "instrument_onsets": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 123,
+            "precision": 0.8785714285714286,
+            "recall": 0.831081081081081,
+            "f1": 0.8541666666666666,
+            "mean_onset_error_ms": 12.471544715447102,
+            "mean_release_error_ms": 24.6798780487805
+          },
+          "complete_intervals": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 113,
+            "precision": 0.8071428571428572,
+            "recall": 0.7635135135135135,
+            "f1": 0.7847222222222222,
+            "mean_onset_error_ms": 12.663716814159285,
+            "mean_release_error_ms": 16.53650442477876
+          },
+          "instrument_onsets": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          },
+          "complete_instrument_intervals": {
+            "reference": 148,
+            "predicted": 140,
+            "matched": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "mean_onset_error_ms": null,
+            "mean_release_error_ms": null
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "c271e69f0542e023120ca4a56cfc8e7ce0ddb81f97bc6776480d57a1bd55c8dd",
+        "shifted_notes_sha256": "92d54502a8725a4129a30e763bd343a9cb1b2120deecb2893293344908763bd4",
+        "audio_sha256": "193218c28a63627885522e949daee8cbe8c782c0a59ee4940e906a5a37159b73",
+        "labels_sha256": "d69cceab8e50b95bd5bddb6758fcb4c639dbd163a10ff98f4e69f11978184135"
+      },
+      "learned_notes_sha256": "c7386c9f03c2f4be0354f24f48cba052f0b14f1e4e9da351413e484fb2746640",
+      "decisions_sha256": "7e4de3b3be0fd8bdde5a1e856914c9587ff8220f5e75fbdb44a90b1902f32f41"
+    },
+    {
+      "name": "01-1-vn",
+      "split": "comparison",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 40,
+            "precision": 0.975609756097561,
+            "recall": 0.9302325581395349,
+            "f1": 0.9523809523809523,
+            "mean_onset_error_ms": 11.674999999999791,
+            "mean_release_error_ms": 27.467187499999614
+          },
+          "complete_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 38,
+            "precision": 0.926829268292683,
+            "recall": 0.8837209302325582,
+            "f1": 0.9047619047619048,
+            "mean_onset_error_ms": 11.868421052631405,
+            "mean_release_error_ms": 9.697368421052305
+          },
+          "instrument_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 37,
+            "precision": 0.9024390243902439,
+            "recall": 0.8604651162790697,
+            "f1": 0.8809523809523809,
+            "mean_onset_error_ms": 12.270270270270048,
+            "mean_release_error_ms": 18.932432432431973
+          },
+          "complete_instrument_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 36,
+            "precision": 0.8780487804878049,
+            "recall": 0.8372093023255814,
+            "f1": 0.8571428571428571,
+            "mean_onset_error_ms": 12.444444444444258,
+            "mean_release_error_ms": 9.76388888888851
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 38,
+            "precision": 0.926829268292683,
+            "recall": 0.8837209302325582,
+            "f1": 0.9047619047619048,
+            "mean_onset_error_ms": 9.815789473684006,
+            "mean_release_error_ms": 28.333881578947004
+          },
+          "complete_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 35,
+            "precision": 0.8536585365853658,
+            "recall": 0.813953488372093,
+            "f1": 0.8333333333333334,
+            "mean_onset_error_ms": 9.62857142857127,
+            "mean_release_error_ms": 7.157142857142545
+          },
+          "instrument_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 35,
+            "precision": 0.8536585365853658,
+            "recall": 0.813953488372093,
+            "f1": 0.8333333333333334,
+            "mean_onset_error_ms": 10.285714285714066,
+            "mean_release_error_ms": 19.385714285713846
+          },
+          "complete_instrument_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 33,
+            "precision": 0.8048780487804879,
+            "recall": 0.7674418604651163,
+            "f1": 0.7857142857142857,
+            "mean_onset_error_ms": 10.121212121211949,
+            "mean_release_error_ms": 7.0757575757572075
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 40,
+            "precision": 0.975609756097561,
+            "recall": 0.9302325581395349,
+            "f1": 0.9523809523809523,
+            "mean_onset_error_ms": 11.674999999999791,
+            "mean_release_error_ms": 27.467187499999614
+          },
+          "complete_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 38,
+            "precision": 0.926829268292683,
+            "recall": 0.8837209302325582,
+            "f1": 0.9047619047619048,
+            "mean_onset_error_ms": 11.868421052631405,
+            "mean_release_error_ms": 9.697368421052305
+          },
+          "instrument_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 37,
+            "precision": 0.9024390243902439,
+            "recall": 0.8604651162790697,
+            "f1": 0.8809523809523809,
+            "mean_onset_error_ms": 12.270270270270048,
+            "mean_release_error_ms": 18.932432432431973
+          },
+          "complete_instrument_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 36,
+            "precision": 0.8780487804878049,
+            "recall": 0.8372093023255814,
+            "f1": 0.8571428571428571,
+            "mean_onset_error_ms": 12.444444444444258,
+            "mean_release_error_ms": 9.76388888888851
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 38,
+            "precision": 0.926829268292683,
+            "recall": 0.8837209302325582,
+            "f1": 0.9047619047619048,
+            "mean_onset_error_ms": 9.815789473684006,
+            "mean_release_error_ms": 28.333881578947004
+          },
+          "complete_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 35,
+            "precision": 0.8536585365853658,
+            "recall": 0.813953488372093,
+            "f1": 0.8333333333333334,
+            "mean_onset_error_ms": 9.62857142857127,
+            "mean_release_error_ms": 7.157142857142545
+          },
+          "instrument_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 35,
+            "precision": 0.8536585365853658,
+            "recall": 0.813953488372093,
+            "f1": 0.8333333333333334,
+            "mean_onset_error_ms": 10.285714285714066,
+            "mean_release_error_ms": 19.385714285713846
+          },
+          "complete_instrument_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 33,
+            "precision": 0.8048780487804879,
+            "recall": 0.7674418604651163,
+            "f1": 0.7857142857142857,
+            "mean_onset_error_ms": 10.121212121211949,
+            "mean_release_error_ms": 7.0757575757572075
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "4f3e7d9d2aae0a6f5b94d79495e40154adc2bb29921da032a002564fc161c29c",
+        "shifted_notes_sha256": "b214520e8ad3d7cc7446cc025e8c15b01260bbed8c6340c6c7f33bb9921afa65",
+        "audio_sha256": "cdb6b667405796944a5876f640fac10b467d665f5014086e5d5fa1d394ba628f",
+        "labels_sha256": "3a4e1bd43a1067ad15841357a0627bd5d4a697dfdc7e571d6e892f95833f73d7"
+      },
+      "learned_notes_sha256": "4f3e7d9d2aae0a6f5b94d79495e40154adc2bb29921da032a002564fc161c29c",
+      "decisions_sha256": "b2c104070e2b8890fe7550d82e56a63cf25b3369ca88d4c3c3dd5bc799e678c8"
+    },
+    {
+      "name": "01-2-vc",
+      "split": "comparison",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          },
+          "instrument_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_instrument_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          },
+          "instrument_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_instrument_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          },
+          "instrument_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_instrument_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          },
+          "instrument_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_instrument_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "8b499783a3f0ce41ef28675660d47399e122f273dc3a305820082c33c6131458",
+        "shifted_notes_sha256": "1719c2b91293b07e3818fd3689cbb077a99883e273219d08ebc526e0e27fa483",
+        "audio_sha256": "18e4fbe7eba4d7ac9ee58d7f2e69e422649445111366b727a37708468bd292ce",
+        "labels_sha256": "85c4eef85c371e70256a3c3e22adfc55b07a0f85ad77e1ca47d328ca5a997e87"
+      },
+      "learned_notes_sha256": "8b499783a3f0ce41ef28675660d47399e122f273dc3a305820082c33c6131458",
+      "decisions_sha256": "f665e1537cce0682bdf5ea1e50f6e9dab8b7c3f2cf54d887db8efbf3048fb297"
+    },
+    {
+      "name": "01-mix",
+      "split": "comparison",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 50,
+            "precision": 0.819672131147541,
+            "recall": 0.7692307692307693,
+            "f1": 0.7936507936507936,
+            "mean_onset_error_ms": 11.83999999999969,
+            "mean_release_error_ms": 73.92625000000002
+          },
+          "complete_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 46,
+            "precision": 0.7540983606557377,
+            "recall": 0.7076923076923077,
+            "f1": 0.7301587301587301,
+            "mean_onset_error_ms": 10.934782608695308,
+            "mean_release_error_ms": 29.907608695652232
+          },
+          "instrument_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 39,
+            "precision": 0.639344262295082,
+            "recall": 0.6,
+            "f1": 0.6190476190476191,
+            "mean_onset_error_ms": 11.743589743589476,
+            "mean_release_error_ms": 62.878205128205195
+          },
+          "complete_instrument_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 37,
+            "precision": 0.6065573770491803,
+            "recall": 0.5692307692307692,
+            "f1": 0.5873015873015873,
+            "mean_onset_error_ms": 10.486486486486196,
+            "mean_release_error_ms": 33.52027027027041
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 49,
+            "precision": 0.8032786885245902,
+            "recall": 0.7538461538461538,
+            "f1": 0.7777777777777778,
+            "mean_onset_error_ms": 11.14285714285684,
+            "mean_release_error_ms": 59.108418367346985
+          },
+          "complete_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 43,
+            "precision": 0.7049180327868853,
+            "recall": 0.6615384615384615,
+            "f1": 0.6825396825396826,
+            "mean_onset_error_ms": 10.720930232557734,
+            "mean_release_error_ms": 19.1235465116279
+          },
+          "instrument_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 38,
+            "precision": 0.6229508196721312,
+            "recall": 0.5846153846153846,
+            "f1": 0.6031746031746031,
+            "mean_onset_error_ms": 10.842105263157636,
+            "mean_release_error_ms": 43.480263157894846
+          },
+          "complete_instrument_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 34,
+            "precision": 0.5573770491803278,
+            "recall": 0.5230769230769231,
+            "f1": 0.5396825396825397,
+            "mean_onset_error_ms": 10.176470588234931,
+            "mean_release_error_ms": 20.200367647058883
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 50,
+            "precision": 0.819672131147541,
+            "recall": 0.7692307692307693,
+            "f1": 0.7936507936507936,
+            "mean_onset_error_ms": 11.83999999999969,
+            "mean_release_error_ms": 73.92625000000002
+          },
+          "complete_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 46,
+            "precision": 0.7540983606557377,
+            "recall": 0.7076923076923077,
+            "f1": 0.7301587301587301,
+            "mean_onset_error_ms": 10.934782608695308,
+            "mean_release_error_ms": 29.907608695652232
+          },
+          "instrument_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 39,
+            "precision": 0.639344262295082,
+            "recall": 0.6,
+            "f1": 0.6190476190476191,
+            "mean_onset_error_ms": 11.743589743589476,
+            "mean_release_error_ms": 62.878205128205195
+          },
+          "complete_instrument_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 37,
+            "precision": 0.6065573770491803,
+            "recall": 0.5692307692307692,
+            "f1": 0.5873015873015873,
+            "mean_onset_error_ms": 10.486486486486196,
+            "mean_release_error_ms": 33.52027027027041
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 49,
+            "precision": 0.8032786885245902,
+            "recall": 0.7538461538461538,
+            "f1": 0.7777777777777778,
+            "mean_onset_error_ms": 11.14285714285684,
+            "mean_release_error_ms": 59.108418367346985
+          },
+          "complete_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 43,
+            "precision": 0.7049180327868853,
+            "recall": 0.6615384615384615,
+            "f1": 0.6825396825396826,
+            "mean_onset_error_ms": 10.720930232557734,
+            "mean_release_error_ms": 19.1235465116279
+          },
+          "instrument_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 38,
+            "precision": 0.6229508196721312,
+            "recall": 0.5846153846153846,
+            "f1": 0.6031746031746031,
+            "mean_onset_error_ms": 10.842105263157636,
+            "mean_release_error_ms": 43.480263157894846
+          },
+          "complete_instrument_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 34,
+            "precision": 0.5573770491803278,
+            "recall": 0.5230769230769231,
+            "f1": 0.5396825396825397,
+            "mean_onset_error_ms": 10.176470588234931,
+            "mean_release_error_ms": 20.200367647058883
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 2,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 2,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "c1d4f858bda1ea7cf05c813247cfb2b6a4eb09205d9e76f646c51ee859b4d4bc",
+        "shifted_notes_sha256": "25436ff9e56c2f320cb4c248967b813ee87ba549be1a2197e6666f409182145d",
+        "audio_sha256": "ae5845c47e7fa4b7f0b7bafcff3e37e2c6a4d3675d56f1b6beeceb7791a9d2ae",
+        "labels_sha256": "f6c3e1c1549e878a8c7af464265acff1340ec67a7d85e815e7e6ea4fa1a070ec"
+      },
+      "learned_notes_sha256": "c1d4f858bda1ea7cf05c813247cfb2b6a4eb09205d9e76f646c51ee859b4d4bc",
+      "decisions_sha256": "e42912bba7ac2eda92a211b168935ed265ee9041d0ff717fde72dc4bf40c5ba4"
+    },
+    {
+      "name": "02-1-vn",
+      "split": "comparison",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          },
+          "complete_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          },
+          "instrument_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          },
+          "complete_instrument_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 52,
+            "precision": 0.9629629629629629,
+            "recall": 0.9285714285714286,
+            "f1": 0.9454545454545454,
+            "mean_onset_error_ms": 11.538461538461686,
+            "mean_release_error_ms": 14.158653846154342
+          },
+          "complete_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 50,
+            "precision": 0.9259259259259259,
+            "recall": 0.8928571428571429,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 11.540000000000123,
+            "mean_release_error_ms": 10.725000000000495
+          },
+          "instrument_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 52,
+            "precision": 0.9629629629629629,
+            "recall": 0.9285714285714286,
+            "f1": 0.9454545454545454,
+            "mean_onset_error_ms": 11.538461538461686,
+            "mean_release_error_ms": 14.158653846154342
+          },
+          "complete_instrument_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 50,
+            "precision": 0.9259259259259259,
+            "recall": 0.8928571428571429,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 11.540000000000123,
+            "mean_release_error_ms": 10.725000000000495
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          },
+          "complete_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          },
+          "instrument_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          },
+          "complete_instrument_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 52,
+            "precision": 0.9629629629629629,
+            "recall": 0.9285714285714286,
+            "f1": 0.9454545454545454,
+            "mean_onset_error_ms": 11.538461538461686,
+            "mean_release_error_ms": 14.158653846154342
+          },
+          "complete_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 50,
+            "precision": 0.9259259259259259,
+            "recall": 0.8928571428571429,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 11.540000000000123,
+            "mean_release_error_ms": 10.725000000000495
+          },
+          "instrument_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 52,
+            "precision": 0.9629629629629629,
+            "recall": 0.9285714285714286,
+            "f1": 0.9454545454545454,
+            "mean_onset_error_ms": 11.538461538461686,
+            "mean_release_error_ms": 14.158653846154342
+          },
+          "complete_instrument_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 50,
+            "precision": 0.9259259259259259,
+            "recall": 0.8928571428571429,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 11.540000000000123,
+            "mean_release_error_ms": 10.725000000000495
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "097232ff125566d110dd6bc358334ea9d65b837e55e0c0e2df43a05f117a0ec7",
+        "shifted_notes_sha256": "345269e6790c04f3541bb74325c409b2da2f28eb7e569607f04b1047f2814cb3",
+        "audio_sha256": "cbc6cc6db8d0df2ac64dc947c8098642fcc6dc718f33b0e8d5e8591e5a97a0af",
+        "labels_sha256": "b1d46e839d63f3600acc87e0cf1442219ce1c8ff1567e0242f1a061d9941d679"
+      },
+      "learned_notes_sha256": "097232ff125566d110dd6bc358334ea9d65b837e55e0c0e2df43a05f117a0ec7",
+      "decisions_sha256": "394ba04b9c580eacea2940ae2c2edba3537469eeaad2b33392601719d9eac064"
+    },
+    {
+      "name": "02-2-vn",
+      "split": "comparison",
+      "changed": 0,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          },
+          "complete_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          },
+          "instrument_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          },
+          "complete_instrument_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          },
+          "complete_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          },
+          "instrument_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          },
+          "complete_instrument_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          },
+          "complete_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          },
+          "instrument_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          },
+          "complete_instrument_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          },
+          "complete_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          },
+          "instrument_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          },
+          "complete_instrument_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "596044dbcad3197c99b5ff8810cb372d07706cf8819dba42a2a6ac3fa5a17e93",
+        "shifted_notes_sha256": "76f628e3ed4600438798edda9c2ae4260755168b7855f7aa9d631f12a6db6b31",
+        "audio_sha256": "642cdcb8c2898784e82740204af4e9c7b6d5a8db6951cedfb2b573cbe288e9c8",
+        "labels_sha256": "df1346bb9f93a666dc8f78e1e4552d9d1ac8496f13fc89c982b68c981f9891e1"
+      },
+      "learned_notes_sha256": "596044dbcad3197c99b5ff8810cb372d07706cf8819dba42a2a6ac3fa5a17e93",
+      "decisions_sha256": "0ef4aa18c2abc6cf456303f052ac638209930e3f2c12f10a1421ca4ff4a7333c"
+    },
+    {
+      "name": "02-mix",
+      "split": "comparison",
+      "changed": 1,
+      "baseline": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 81,
+            "precision": 0.9310344827586207,
+            "recall": 0.9204545454545454,
+            "f1": 0.9257142857142857,
+            "mean_onset_error_ms": 15.86419753086431,
+            "mean_release_error_ms": 34.77237654321004
+          },
+          "complete_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 77,
+            "precision": 0.8850574712643678,
+            "recall": 0.875,
+            "f1": 0.88,
+            "mean_onset_error_ms": 15.155844155844257,
+            "mean_release_error_ms": 18.55275974025989
+          },
+          "instrument_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 81,
+            "precision": 0.9310344827586207,
+            "recall": 0.9204545454545454,
+            "f1": 0.9257142857142857,
+            "mean_onset_error_ms": 15.86419753086431,
+            "mean_release_error_ms": 34.77237654321004
+          },
+          "complete_instrument_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 77,
+            "precision": 0.8850574712643678,
+            "recall": 0.875,
+            "f1": 0.88,
+            "mean_onset_error_ms": 15.155844155844257,
+            "mean_release_error_ms": 18.55275974025989
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 74,
+            "precision": 0.8505747126436781,
+            "recall": 0.8409090909090909,
+            "f1": 0.8457142857142858,
+            "mean_onset_error_ms": 13.081081081081189,
+            "mean_release_error_ms": 30.696790540540793
+          },
+          "complete_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 68,
+            "precision": 0.7816091954022989,
+            "recall": 0.7727272727272727,
+            "f1": 0.7771428571428571,
+            "mean_onset_error_ms": 12.750000000000078,
+            "mean_release_error_ms": 15.478860294117798
+          },
+          "instrument_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 74,
+            "precision": 0.8505747126436781,
+            "recall": 0.8409090909090909,
+            "f1": 0.8457142857142858,
+            "mean_onset_error_ms": 13.081081081081189,
+            "mean_release_error_ms": 30.696790540540793
+          },
+          "complete_instrument_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 68,
+            "precision": 0.7816091954022989,
+            "recall": 0.7727272727272727,
+            "f1": 0.7771428571428571,
+            "mean_onset_error_ms": 12.750000000000078,
+            "mean_release_error_ms": 15.478860294117798
+          }
+        }
+      },
+      "learned": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 81,
+            "precision": 0.9310344827586207,
+            "recall": 0.9204545454545454,
+            "f1": 0.9257142857142857,
+            "mean_onset_error_ms": 15.86419753086431,
+            "mean_release_error_ms": 35.7847222222224
+          },
+          "complete_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 77,
+            "precision": 0.8850574712643678,
+            "recall": 0.875,
+            "f1": 0.88,
+            "mean_onset_error_ms": 15.155844155844257,
+            "mean_release_error_ms": 19.617694805194965
+          },
+          "instrument_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 81,
+            "precision": 0.9310344827586207,
+            "recall": 0.9204545454545454,
+            "f1": 0.9257142857142857,
+            "mean_onset_error_ms": 15.86419753086431,
+            "mean_release_error_ms": 35.7847222222224
+          },
+          "complete_instrument_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 77,
+            "precision": 0.8850574712643678,
+            "recall": 0.875,
+            "f1": 0.88,
+            "mean_onset_error_ms": 15.155844155844257,
+            "mean_release_error_ms": 19.617694805194965
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 74,
+            "precision": 0.8505747126436781,
+            "recall": 0.8409090909090909,
+            "f1": 0.8457142857142858,
+            "mean_onset_error_ms": 13.081081081081189,
+            "mean_release_error_ms": 31.804898648648912
+          },
+          "complete_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 67,
+            "precision": 0.7701149425287356,
+            "recall": 0.7613636363636364,
+            "f1": 0.7657142857142857,
+            "mean_onset_error_ms": 12.507462686567246,
+            "mean_release_error_ms": 15.650186567164338
+          },
+          "instrument_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 74,
+            "precision": 0.8505747126436781,
+            "recall": 0.8409090909090909,
+            "f1": 0.8457142857142858,
+            "mean_onset_error_ms": 13.081081081081189,
+            "mean_release_error_ms": 31.804898648648912
+          },
+          "complete_instrument_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 67,
+            "precision": 0.7701149425287356,
+            "recall": 0.7613636363636364,
+            "f1": 0.7657142857142857,
+            "mean_onset_error_ms": 12.507462686567246,
+            "mean_release_error_ms": 15.650186567164338
+          }
+        }
+      },
+      "interval_scope": {
+        "baseline": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 2,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "learned": {
+          "begin_seconds": 0,
+          "end_seconds": 30,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 2,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        }
+      },
+      "identity": {
+        "baseline_notes_sha256": "f343db74fb618893d1d7dc96d11d8af1fb45a079c3d970a1732795fe3e34a61a",
+        "shifted_notes_sha256": "d242f377b8ca3418d3fff0e5a3d44107aaec81867ae88b1990017d6c9c9a778b",
+        "audio_sha256": "32818f4a77cbf1e0fddc6171bb656df14a2048e20392fa75b1fceb408d37bafd",
+        "labels_sha256": "e5d31cdce1b5467c173580df766c89bd1e02c988ca8476a68626c7b6906cfc6f"
+      },
+      "learned_notes_sha256": "48459db0dfda03bcc0a94c0e2999834c9115972ce38aa2f0d689bb4fd21d9225",
+      "decisions_sha256": "1acb1703fe0450121be0a349196faf9e20084153ef34a71d9dd7d6b3660fc97e"
+    }
+  ],
+  "summary": {
+    "calibration": {
+      "cases": 3,
+      "changed": 3,
+      "macro_fixed_interval_f1": {
+        "baseline": 0.7237151388094785,
+        "learned": 0.7302228257416937
+      }
+    },
+    "comparison": {
+      "cases": 6,
+      "changed": 1,
+      "macro_fixed_interval_f1": {
+        "baseline": 0.7932532621340761,
+        "learned": 0.7913485002293141
+      }
+    },
+    "fit": {
+      "cases": 9,
+      "changed": 1,
+      "macro_fixed_interval_f1": {
+        "baseline": 0.9398415337071528,
+        "learned": 0.9406025687147631
+      }
+    }
+  },
+  "retrained": false,
+  "recalibrated": false,
+  "reinferred": false,
+  "enabled_in_application": false,
+  "notice": "All window attacks enter interval scores. The old 0.95 threshold stays frozen; historical calibration scores do not use this revised denominator."
+}
