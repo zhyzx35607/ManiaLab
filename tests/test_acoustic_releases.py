@@ -3,7 +3,7 @@ import copy
 import numpy as np
 from scipy.io import wavfile
 
-from scripts.research_acoustic_releases import AcousticEvidence, FEATURES, apply
+from scripts.research_acoustic_releases import AcousticEvidence, FEATURES, apply, score
 from scripts.research_instrument_overlap import refine
 
 
@@ -48,3 +48,11 @@ def test_explicit_endpoint_candidates_need_opt_in_and_still_require_same_pitch()
     assert refine(base,alternative,flags,flags,only_forced=False,**args)[0]==alternative
     alternative[0]['pitch']=70
     assert refine(base,alternative,flags,flags,only_forced=False,**args)[0]==base
+
+
+def test_endpoint_training_scores_do_not_hide_overlong_prediction():
+    item=dict(reference=[note(onset=29.,offset=30.5)],context_start=0.,context_end=32.1)
+    result=score(item,[note(onset=29.,offset=40.)])
+    assert result['standard']['complete_intervals']['predicted']==1
+    assert result['standard']['complete_intervals']['reference']==1
+    assert result['standard']['complete_intervals']['matched']==0

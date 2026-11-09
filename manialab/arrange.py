@@ -12,7 +12,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment, milp, Bounds, LinearConstraint
 from scipy.sparse import csc_matrix, vstack
 
-from .domain import Note, invariant, validate
+from .domain import UNOBSERVED_RELEASES, Note, invariant, validate
 from .timing import BeatClock
 
 
@@ -314,7 +314,7 @@ def choose_holds(notes, local, settings):
     wanted = int(math.floor(sum(p["ln_ratio"] for p in local) + .5))
     eligible = [i for i, n in enumerate(notes) if n.source == "pitch" and
                 n.end - n.start >= local[i]["min_ln"] and local[i]["ln_ratio"] > 0
-                and n.release_reason not in ('duration_limit','input_boundary')]
+                and n.release_reason not in UNOBSERVED_RELEASES]
     target_ratio = sum(p["ln_ratio"] for p in local) / max(1, count)
     chosen, attainable, optimal = set(), 0, True
     if eligible:

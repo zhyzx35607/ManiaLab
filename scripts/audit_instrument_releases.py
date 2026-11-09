@@ -8,6 +8,7 @@ from collections import Counter
 from dataclasses import asdict
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -67,7 +68,9 @@ def main():
             counts.update(flags)
             provenance.append(dict(note_index=index,endpoint_evidence=flags))
         (folder/'release-provenance.json').write_text(json.dumps(provenance,indent=2),encoding='utf-8')
+        shutil.copyfile(__file__,folder/'audit-runner-snapshot.py')
         result=dict(source_commit=revision,tokens_sha256=sha(folder/'tokens.npz'),
+            provenance_sha256=sha(folder/'release-provenance.json'),
             notes_sha256=sha(folder/'notes.json'),runner_sha256=sha(__file__),
             decoded_notes_equal=True,notes=len(decoded),endpoint_counts=dict(counts),
             limits=['Endpoint evidence is from model tokens, not acoustic or authored-LN truth.',

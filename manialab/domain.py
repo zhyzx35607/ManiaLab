@@ -9,6 +9,12 @@ from string import Template
 from vendor.mapperatorinator.event import Event, EventType
 
 
+# These endings describe exhausted or broken model context, not a supported
+# musical release. Preserve attacks and raw ends, but do not auto-create LNs.
+UNOBSERVED_RELEASES = frozenset(('duration_limit', 'input_boundary',
+    'forced_segment_boundary', 'unresolved_or_postprocessed'))
+
+
 @dataclass
 class Note:
     start: int

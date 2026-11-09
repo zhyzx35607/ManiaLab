@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.research_instrument_overlap import load_run, refine
-from scripts.evaluate_instrument_overlap import metrics
+from scripts.evaluate_instrument_benchmark import verified_context,window_metrics
 from scripts.probe_mapper_adapter import sha
 
 
@@ -22,7 +22,7 @@ WINDOWS=((-0.16,-0.08),(-0.08,-0.02),(-0.02,0.02),(0.02,0.08),(0.08,0.16),(0.16,
 FEATURES=[f'{kind}_{i}' for kind in ('harmonic_level','broadband_level','harmonic_share') for i in range(len(WINDOWS))]+[
     'harmonic_drop','broadband_drop','duration_log','forced_boundary','explicit_off','reattack_end',
     'boundary_distance','nearby_pitched_ends','active_same_program','active_other_program']
-PROTOCOL=dict(fit_piece_ids=[3,4,5],calibration_piece_ids=[6],comparison_piece_ids=[1,2],
+PROTOCOL=dict(scoring_revision=2,fit_piece_ids=[3,4,5],calibration_piece_ids=[6],comparison_piece_ids=[1,2],
     seconds=30,context_seconds=2.1,onset_match_seconds=.05,label_min_error_difference_ms=10,
     thresholds=[.5,.6,.7,.8,.9,.95,1.],regularization=.05,
     features=FEATURES,windows_seconds=WINDOWS,
@@ -110,8 +110,8 @@ def build_case(case,base_folder,shift_folder):
     for decision in decisions:
         if decision['status']!='replaced_from_explicit_prediction':continue
         i,j=decision['note_index'],decision['alternate_note_index'];n=notes[i];alternate=shifted[j]
-        # Keep the complete-interval denominator fixed: selecting a later tail
-        # must not hide a false positive beyond the evaluation boundary.
+        # Preserve the historical alternative-pair scope. Revised scoring now
+        # retains all window attacks regardless of where their tails end.
         if (not 0<=n['onset']<30 or max(n['offset'],alternate['offset'])>=30 or
             max(n['offset'],alternate['offset'])>acoustic.duration-.32):continue
         original_features,new_features=acoustic.feature_pair(n,alternate,flags[i],shift_flags[j],base_report,shift_report,notes)
@@ -123,7 +123,9 @@ def build_case(case,base_folder,shift_folder):
             if abs(improvement)>=PROTOCOL['label_min_error_difference_ms']:label=int(improvement>0)
         examples.append(dict(index=i,alternate_index=j,x=new_features-original_features,
             new_offset=alternate['offset'],label=label,improvement_ms=improvement))
+    context_start,context_end=verified_context(case,base_report)
     return dict(case=case,notes=notes,reference=reference,examples=examples,
+        context_start=context_start,context_end=context_end,
         identity=dict(baseline_notes_sha256=sha(base_folder/'notes.json'),shifted_notes_sha256=sha(shift_folder/'notes.json'),
             audio_sha256=case['audio_sha256'],labels_sha256=case['labels_sha256']))
 
@@ -165,7 +167,9 @@ def apply(item,model,threshold):
 
 
 def score(item,notes):
-    return metrics(item['reference'],[n for n in notes if 0<=n['onset']<30],30)
+    values,_=window_metrics(item['reference'],notes,begin=0,end=30,
+        context_start=item['context_start'],context_end=item['context_end'])
+    return values
 
 
 def main():

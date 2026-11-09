@@ -16,7 +16,7 @@ from scipy.optimize import Bounds, LinearConstraint
 from scipy.sparse import csc_matrix
 
 from .arrange import _solve_binary, parameters, settings_at
-from .domain import note_from
+from .domain import UNOBSERVED_RELEASES,note_from
 from .structure import detect_structure
 
 MODES = ('sustain', 'onsets', 'phrase', 'omit')
@@ -142,7 +142,7 @@ def expression_evidence(analysis, plan, settings):
             n = replacements.get(original.id, original)
             hold = n.source == 'pitch' and policy['mode'] != 'onsets' and n.end-n.start >= p['min_ln']
             reason = 'supported_sustain' if hold else ('section_onsets' if policy['mode'] == 'onsets' else 'short_duration')
-            if hold and n.release_reason in ('duration_limit','input_boundary'):
+            if hold and n.release_reason in UNOBSERVED_RELEASES:
                 hold=False
                 reason='unobserved_release'
             n = replace(n, end=n.end if hold else n.start, phrase=n.phrase and hold)

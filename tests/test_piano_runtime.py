@@ -39,12 +39,13 @@ def test_piano_decoder_preserves_reattacks_and_distinguishes_forced_release():
     assert notes[0]['offset']<3. and abs(notes[1]['offset']-4.98)<1e-5
 
 
-def test_unobserved_piano_end_keeps_attack_but_is_not_eligible_for_auto_ln():
+@pytest.mark.parametrize('reason',['duration_limit','input_boundary','forced_segment_boundary','unresolved_or_postprocessed'])
+def test_unobserved_piano_end_keeps_attack_but_is_not_eligible_for_auto_ln(reason):
     from manialab.domain import Note
     from manialab.arrange import parameters,choose_holds
     from manialab.expression import propose_expression,expression_evidence
     p=parameters({'ln_ratio':1.})
-    note=Note(1000,7000,pitch=60,strength=.9,source='pitch',voice='piano',id='p',release_reason='duration_limit')
+    note=Note(1000,7000,pitch=60,strength=.9,source='pitch',voice='piano',id='p',release_reason=reason)
     selected,_=choose_holds([note],[p],p)
     assert selected[0].start==1000 and selected[0].end==1000
     analysis=dict(duration=10,candidates=[note.data()],structure=dict(segments=[dict(start_ms=0,end_ms=10000)]))

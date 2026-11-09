@@ -5,23 +5,13 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.evaluate_instrument_benchmark import match
+from scripts.evaluate_instrument_benchmark import verified_context,window_metrics
 from scripts.evaluate_synthetic_mix import pitched_match
 from scripts.probe_mapper_adapter import sha
 from manialab.domain import Note, note_from
 
 
-def metrics(reference, predicted, end):
-    complete_ref = [n for n in reference if n['offset'] < end]
-    complete_pred = [n for n in predicted if n['offset'] < end]
-    return {('strict' if strict else 'standard'): dict(
-        pitched_onsets=match(reference, predicted, strict=strict),
-        complete_intervals=match(complete_ref, complete_pred, offset=True, strict=strict),
-        complete_instrument_intervals=match(complete_ref, complete_pred, offset=True,
-            strict=strict, instrument=True)) for strict in (False, True)}
-
-
-def inspect_edits(reference, base, decisions, end):
+def inspect_edits(reference, base, decisions, begin, end, context_end):
     """Diagnostics only; no predictions are chosen from annotation errors."""
     result = []
     for edit in decisions:
@@ -31,12 +21,12 @@ def inspect_edits(reference, base, decisions, end):
         possible = [r for r in reference if r['pitch'] == n['pitch']
             and abs(r['onset']-n['onset']) <= .05 and not n['is_drum']]
         row = dict(edit, reference_onset_candidates=len(possible))
-        if n['onset'] >= end:
+        if not begin <= n['onset'] < end:
             row['comparison'] = 'context_only'
         elif len(possible) != 1:
             row['comparison'] = 'no_unique_reference_attack'
-        elif possible[0]['offset'] >= end:
-            row['comparison'] = 'reference_crosses_end'
+        elif possible[0]['offset'] >= context_end:
+            row['comparison'] = 'reference_tail_unobservable'
         else:
             ref = possible[0]
             before, after = [abs(edit[k]-ref['offset'])*1000
@@ -50,7 +40,11 @@ def inspect_edits(reference, base, decisions, end):
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--root', type=Path, default=Path('test-data/yourmt3/overlap-v1'))
+    cli.add_argument('--output', type=Path)
     args = cli.parse_args()
+    output=args.output or args.root/'comparison-v2.json'
+    diagnostics=output.with_name(output.stem+'-edit-diagnostics.json')
+    if output.exists() or diagnostics.exists():raise ValueError('Preserve earlier evaluation; use a new output')
     read = lambda p: json.loads(Path(p).read_text(encoding='utf-8'))
     plan = read(args.root/'plan.json')
     manifest = read('test-data/urmp/benchmark/manifest.json')
@@ -67,23 +61,26 @@ def main():
         if len(base) != len(refined) or any({k:v for k,v in a.items() if k != 'offset'} !=
             {k:v for k,v in b.items() if k != 'offset'} for a,b in zip(base, refined)):
             raise ValueError('Refinement changed an attack or its instrument')
-        end = base_report['identity']['start_ms']/1000 + base_report['identity']['seconds']
+        begin = base_report['identity']['start_ms']/1000
+        end = begin + base_report['identity']['seconds']
         row = dict(name=name, refinement=refined_report, metrics={})
         decisions = read(folder/'refined/decisions.json')
         if name.startswith('urmp-'):
             case = cases[name[5:]]
             if sha(case['labels_path']) != case['labels_sha256']:
                 raise ValueError('Reference annotations changed')
+            if sha(case['audio']) != case['audio_sha256']:
+                raise ValueError('Reference audio changed')
             if base_report['identity']['sources'] != {case['audio']:case['audio_sha256']}:
                 raise ValueError('Reference and prediction use different audio')
-            reference = [n for n in read(case['labels_path']) if 0 <= n['onset'] < end]
+            context_start,context_end=verified_context(case,base_report)
+            reference = [n for n in read(case['labels_path']) if begin <= n['onset'] < end]
             for kind, prediction in (('baseline', base), ('refined', refined)):
-                local = [n for n in prediction if 0 <= n['onset'] < end]
-                row['metrics'][kind] = metrics(reference, local, end)
-                row.setdefault('interval_scope', {})[kind] = dict(
-                    reference_crosses_end=sum(n['offset'] >= end for n in reference),
-                    predicted_crosses_end=sum(n['offset'] >= end for n in local))
-            private[name] = inspect_edits(reference, base, decisions, end)
+                values,scope=window_metrics(reference,prediction,begin=begin,end=end,
+                    context_start=context_start,context_end=context_end)
+                row['metrics'][kind] = values
+                row.setdefault('interval_scope', {})[kind] = scope
+            private[name] = inspect_edits(reference, base, decisions, begin, end, context_end)
             row['edited_reference_diagnostics'] = dict(Counter(r['comparison'] for r in private[name]))
         else:
             if name == 'control-controlled-mix':
@@ -103,15 +100,17 @@ def main():
                         false_long_on_repeated_pitches=sum(n.pitch in (60, 64, 67) and n.end-n.start >= 800 for n in notes)
                             if name == 'control-repeated-chords' else None)
         rows.append(row)
-    result = dict(plan=plan, rows=rows, enabled_in_application=False,
+    result = dict(revision=2,runner_sha256=sha(__file__),plan=plan, rows=rows, enabled_in_application=False,
         protocol=['All frozen cases retained. No search over shifts, match tolerance or boundary margin.',
             'Same first-pass attacks and exact programs/pitches. Second pass only supplies selected explicit predicted tails.',
             'Physical audio clock; no mapping anticipation or grid snapping.',
-            'Complete URMP intervals exclude evaluation-end-crossing notes and report those counts.',
+            'All URMP predictions with attacks in the scoring window remain in interval denominators regardless of tail length.',
+            'Reference offsets must be observable in inference context. Fixed 40/80ms is not universally stricter than duration-relative tolerance.',
             'Synthetic controls use their existing pitch metric and exclude drum predictions.',
             'Edited-note error diagnostics do not select or filter predictions.'])
-    (args.root/'comparison.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
-    (args.root/'edit-diagnostics.json').write_text(json.dumps(private, indent=2), encoding='utf-8')
+    output.parent.mkdir(parents=True,exist_ok=True)
+    output.write_text(json.dumps(result, indent=2), encoding='utf-8')
+    diagnostics.write_text(json.dumps(private, indent=2), encoding='utf-8')
     print(json.dumps([dict(name=r['name'], changed=r['refinement']['changed'], metrics=r['metrics'],
         edited_reference_diagnostics=r.get('edited_reference_diagnostics')) for r in rows]), flush=True)
 
