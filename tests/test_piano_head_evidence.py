@@ -25,3 +25,12 @@ def test_sustain_loss_anchors_the_reference_tail_not_the_attack():
     sustain = [note(1., 1.9)]
     before, after = [note(1., 1.91)], [note(1., 2.6)]
     assert ('lost-sustain-interval', 1.9, 60, None) in choose_examples(reference, before, after, sustain)
+
+
+def test_largest_tail_regression_is_visible_even_without_interval_loss():
+    reference = [note(1., 5.)]
+    tails = [dict(reference_index=0, reference_end=5., pitch=60,
+                  error_increase_seconds=.125, exceeds_80ms=True)]
+    examples = choose_examples(reference, reference, [note(1., 5.125)], reference, tails)
+    assert ('largest-tail-regression', 5., 60, None) in examples
+    assert all(row[0] != 'lost-sustain-interval' for row in examples)

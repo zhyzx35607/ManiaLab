@@ -17,7 +17,7 @@ def read(path):
     return json.loads(Path(path).read_text(encoding='utf-8'))
 
 
-def choose_examples(reference, before, after, sustain_reference=None):
+def choose_examples(reference, before, after, sustain_reference=None, tail_changes=None):
     delta=changes(reference,before,after)
     choices=[]
     for label,field in [('new-miss','new_missing'),('recovered','recovered')]:
@@ -44,6 +44,11 @@ def choose_examples(reference, before, after, sustain_reference=None):
             if indices:
                 i=min(indices,key=lambda j:(sustain_reference[j]['onset'],sustain_reference[j]['pitch']))
                 choices.append((label,sustain_reference[i]['offset'],sustain_reference[i]['pitch'],None))
+    if tail_changes:
+        regressions=[row for row in tail_changes if row['exceeds_80ms']]
+        if regressions:
+            worst=max(regressions,key=lambda row:(row['error_increase_seconds'],-row['reference_index']))
+            choices.append(('largest-tail-regression',worst['reference_end'],worst['pitch'],None))
     if not choices:
         first=min(reference,key=lambda n:(n['onset'],n['pitch']))
         choices.append(('first-reference',first['onset'],first['pitch'],None))
@@ -63,7 +68,9 @@ def main():
     source=read(cache/'report.json')
     if report['identity']['cache_report_sha256']!=sha256(cache/'report.json'):
         raise ValueError('Wrong source cache')
-    if report['identity']['code']['scoring']!=sha256(ROOT/'scripts/evaluate_piano_acoustics.py'):
+    code=report['identity']['code']
+    scoring=code.get('scoring',code.get('evaluate_piano_acoustics'))
+    if scoring!=sha256(ROOT/'scripts/evaluate_piano_acoustics.py'):
         raise ValueError('Current scoring differs from the training snapshot')
     for folder,data in [(cache,source),(run,report)]:
         for name,digest in data['artifacts_sha256'].items():
@@ -102,7 +109,13 @@ def main():
                 continue
             new=read(events_path)['notes']
             new_scored=[n for n in new if 0<=n['onset']<170]
-            for label,anchor,pitch,unambiguous in choose_examples(reference_scored,old_scored,new_scored,sustain_scored):
+            tail_changes=None
+            if 'piano_joint_selection' in code:
+                comparison_path=run/(name+f'-epoch{epoch}-comparison.json')
+                if comparison_path.name not in report['artifacts_sha256']:
+                    raise ValueError('Joint-head comparison is not part of the verified run')
+                tail_changes=read(comparison_path)['50ms']['tail_changes']
+            for label,anchor,pitch,unambiguous in choose_examples(reference_scored,old_scored,new_scored,sustain_scored,tail_changes):
                 stem=f'{name}-epoch{epoch}-{label}'
                 begin,end=max(0.,anchor-1.5),min(180.,anchor+2.5)
                 a,b=round(begin*16000),round(end*16000)
@@ -146,7 +159,7 @@ def main():
                 plt.close(fig)
                 examples.append(dict(recording=name,epoch=epoch,label=label,anchor=anchor,pitch=pitch,
                     audio=stem+'.wav',image=stem+'.png',start=begin,end=end,
-                    anchor_kind='sustain-offset' if 'sustain-interval' in label else 'onset',
+                    anchor_kind='sustain-offset' if 'sustain-interval' in label or label=='largest-tail-regression' else 'onset',
                     unavoidable_coverage_change=unambiguous))
                 note=('全部最大基数配对均支持这处覆盖变化。' if unambiguous is True else
                       '存在其他最大基数配对：此处仅表示选定配对的归属变化。' if unambiguous is False else
@@ -154,13 +167,14 @@ def main():
                 cards.append(f'<section><h2>{stem}</h2><p>{note}</p><audio controls preload="none" src="{stem}.wav"></audio>'
                              f'<img loading="lazy" src="{stem}.png" alt="原声与模型差异"></section>')
     page='''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>起音头适配原声对照</title><style>body{font:16px system-ui;max-width:1200px;margin:auto;padding:24px;color:#18202c}
+<title>声学头适配原声对照</title><style>body{font:16px system-ui;max-width:1200px;margin:auto;padding:24px;color:#18202c}
 img{width:100%}table{border-collapse:collapse;width:100%}td,th{padding:8px;border-bottom:1px solid #ddd;text-align:left}
 section{padding:16px;border:1px solid #ddd;margin-top:24px}audio{max-width:100%}</style>
-<h1>起音头适配：全部验证录音、全部epoch</h1><p>输入前180秒，评分前170秒。每首每轮固定取最早新漏、找回、
+<h1>声学头适配：全部验证录音、全部epoch</h1><p>输入前180秒，评分前170秒。每首每轮固定取最早新漏、找回、
 未匹配预测、消失的未匹配预测及踏板区间配对变化，无检查位置则首参考音；不挑最好一轮。
 踏板区间变化以参考音尾为图中锚点。此处在首版图页之后补充了被删除的额外预测与音尾变化类别，
-不参与训练和选轮。播放模型实际输入的16kHz单声道片段，
+不参与训练和选轮。双头实验另展示误差增量最大的可比音尾退步，门槛为严格超过80ms；
+该项只覆盖前后起音配对均无歧义的参考。播放模型实际输入的16kHz单声道片段，
 不额外归一化并保留物理时钟。128ms频谱窗用于检查声音结构，不提供逐采样的起音证明。按键参考和踏板延音语义不同，
 均不是LN目标。图中完整参考保留至输入末端，170秒后的灰色区域不参与起音评分。
 找回/新漏位置来自确定性最大匹配，另标记其覆盖变化是否在全部最大基数配对下均成立；
