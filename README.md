@@ -34,6 +34,10 @@
 
 **更晚候选竞争训练**：仅为有可靠较早后继的同part未知候选增加辅助排序，完成四轮与逐边核验；raw指标局部提高，但完整真组和交叉旋律退步，更晚候选竞争也未改善，研究权重继续禁用。见[训练结果及上下文诊断](docs/piano-later-ranking-2026-11-09.md)和[证明范围与覆盖](docs/piano-later-negative-coverage-2026-11-09.md)。
 
+**排序权重诊断**：保存预测的独立重算确认新负组压低原目标的绝对 logit 梯度权重，但不能认定训练退步原因；见[公式、配对统计和限制](docs/piano-ranking-weight-diagnostic-2026-11-09.md)。
+
+**独立辅助项对照**：保留原目标权重、单独训练可证更晚负组后，模拟踏板部分改善，但交叉旋律、部分完整和弦及错误后继竞争仍未通过预定条件；继续不启用。见[四轮结果及不采用原因](docs/piano-separate-later-ranking-2026-11-09.md)。
+
 **原音与标签核查**：补充[极短高音的波形、频谱和激活对照](docs/piano-attack-evidence-2026-11-09.md)，区分潜在泛音混淆与已观测音尾；另定位[同刻错声部连接及监督覆盖缺口](docs/piano-successor-label-audit-2026-11-09.md)。这些诊断尚未成为自动删音或新LN规则。
 
 ![ManiaLab 界面](docs/screenshot.png)

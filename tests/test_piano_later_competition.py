@@ -2,7 +2,28 @@ import numpy as np
 import pytest
 
 from scripts.piano_successor_decode import select_successor_groups
-from scripts.summarize_piano_later_competition import competition_diagnostics
+from scripts.summarize_piano_later_competition import competition_diagnostics, verify_proof_specification
+
+
+@pytest.mark.parametrize('separate_training_protocol', [False, True])
+def test_different_training_objective_keeps_explicit_frozen_proof_identity(separate_training_protocol):
+    proof = dict(code_sha256=dict(runner='loader', proof='rules', source_context='source', protocol='proof'))
+    training = dict(code_sha256=dict(proof_loader='loader', proof='rules', source_context='source',
+                                    protocol='training' if separate_training_protocol else 'proof'))
+    if separate_training_protocol:
+        training['proof_protocol_sha256'] = 'proof'
+    verify_proof_specification(training, proof)
+    training['proof_protocol_sha256'] = 'changed'
+    with pytest.raises(ValueError, match='proof protocol'):
+        verify_proof_specification(training, proof)
+
+
+def test_explicit_protocol_identity_does_not_allow_changed_proof_code():
+    proof = dict(code_sha256=dict(runner='loader', proof='rules', source_context='source', protocol='proof'))
+    training = dict(code_sha256=dict(proof_loader='changed', proof='rules', source_context='source', protocol='new'),
+                    proof_protocol_sha256='proof')
+    with pytest.raises(ValueError, match='proof specification'):
+        verify_proof_specification(training, proof)
 
 
 def example(logits, *, same_winning_tick=False):

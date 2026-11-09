@@ -15,6 +15,18 @@ from scripts.prepare_piano_later_negatives import dataset_folders, MANIFESTS
 from scripts.summarize_piano_successor_ranking import read, load, require, verify_artifacts, sum_fields
 
 
+def verify_proof_specification(training_identity, proof_identity):
+    """Allow a distinct training protocol while retaining the frozen proof rules."""
+    for current, snapshot in (('proof_loader', 'runner'), ('proof', 'proof'),
+                              ('source_context', 'source_context')):
+        require(training_identity['code_sha256'][current] == proof_identity['code_sha256'][snapshot],
+                'Different fitted proof specification')
+    proof_protocol = training_identity.get('proof_protocol_sha256',
+                                           training_identity['code_sha256']['protocol'])
+    require(proof_protocol == proof_identity['code_sha256']['protocol'],
+            'Different fitted proof protocol')
+
+
 def competition_diagnostics(data, logits, selected, proved, auxiliary_eligible):
     """Count maxima inside the winning tick, without relabelling scored edges.
 
@@ -73,8 +85,10 @@ def main():
             paired['selected_weights']['after'] == run['selected_sha256'] and
             run['identity']['proof_report_sha256'] == sha256(args.sidecars/'report.json'), 'Different fitted model/proof report')
     require(run['identity']['dataset_sha256'] == proofs['identity']['dataset_sha256'], 'Different annotation dataset')
-    for current, snapshot in (('proof_loader','runner'), ('proof','proof'), ('source_context','source_context'), ('protocol','protocol')):
-        require(run['identity']['code_sha256'][current] == proofs['identity']['code_sha256'][snapshot], 'Different fitted proof specification')
+    verify_proof_specification(run['identity'], proofs['identity'])
+    if 'proof_protocol_sha256' in run['identity']:
+        require(sha256(args.run/'proof-protocol.md') == run['identity']['proof_protocol_sha256'],
+                'Changed saved proof protocol')
     verify_artifacts(args.comparison, paired); verify_artifacts(args.sidecars, proofs)
     rows = {(r['input'], r['name'], r['chunk']):r for r in proofs['items'] if r['split'] == 'validation'}
     owned, eligible_pairs = {}, defaultdict(set)

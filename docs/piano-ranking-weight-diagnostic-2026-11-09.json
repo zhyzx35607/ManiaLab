@@ -1,0 +1,505 @@
+{
+  "scope": "Post-result fixed-logit analysis on already used validation; not parameter-gradient measurements or causal training evidence.",
+  "identity": {
+    "report_sha256": "65a4b47a1b36f523393fdae7ab3da83270c3bcefbb641e7202987075009fa9b7",
+    "shares_sha256": "03d0710f520d19e92fa4133eb33c5d34cd1ba4d48a1692b0d90db5b43ed03ef2",
+    "independent_check_sha256": "32beb0bcd76dd6a80ab89248b0c82457931406f7e8218f4edd98f5eb1703eff6",
+    "audit_code_sha256": "9f6b36d669c63127803aba427307dbbbadaf1ee6b0cd1491ba9a8133e5845d3c",
+    "summary_code_sha256": "9b59f7b53421bbba52f936788c69e15d06786530abcd9650e025b20071393672",
+    "independent_code_sha256": "a85bd46431ab91b6075d9617a6a424c68c79692382ee27627dde78369cf0b50e",
+    "protocol_sha256": "b19723645cbea3503d7311e11db2f137b592202039cc3ff3df3435fe7bbd7eb5"
+  },
+  "formula": "L=mean_source mean_negative_tick mean_all_positive softplus(max_negative_logit-positive_logit)",
+  "units": {
+    "loss": "Unscaled rank loss; no alpha",
+    "gradient": "Absolute derivative sum over positive logits, including alpha=.1 and within-window source mean; not model-parameter gradients or Adam updates"
+  },
+  "independent_group_records_checked": 131022,
+  "finite_difference_checks": 24,
+  "rows": [
+    {
+      "input": "clean",
+      "model": "old_rank",
+      "old_negative_ticks": 2691,
+      "added_negative_ticks": 16455,
+      "mixed_ticks": 0,
+      "old_rank_sources": 981,
+      "extended_rank_sources": 1323,
+      "newly_ranked_sources": 342,
+      "unscaled_rank_loss_old": 0.026853252753250165,
+      "unscaled_rank_loss_extended": 0.020350899321543513,
+      "absolute_positive_logit_gradient_old_including_alpha": 0.0009025962134985604,
+      "absolute_positive_logit_gradient_extended_including_alpha": 0.0005506001183510135,
+      "known_tick_aggregate_gradient_retention": 0.5890672994245386,
+      "old_hard_tick_aggregate_gradient_retention": 0.6519546080260067,
+      "old_hard_tick_count": 19,
+      "added_hard_tick_count": 0,
+      "added_hard_tick_share_all_gradient": 0.0,
+      "all_added_share_all_gradient": 0.03434471545563087,
+      "easy_added": {
+        "0.01": {
+          "groups": 16406,
+          "fraction_added_groups": 0.9970221817076876,
+          "fraction_of_all_positive_logit_gradient": 0.00633937051888894,
+          "fraction_of_added_positive_logit_gradient": 0.18458066793648717
+        },
+        "0.05": {
+          "groups": 16436,
+          "fraction_added_groups": 0.9988453357642054,
+          "fraction_of_all_positive_logit_gradient": 0.009805210939151631,
+          "fraction_of_added_positive_logit_gradient": 0.28549402168781257
+        },
+        "0.1": {
+          "groups": 16444,
+          "fraction_added_groups": 0.9993315101792768,
+          "fraction_of_all_positive_logit_gradient": 0.013383253072488608,
+          "fraction_of_added_positive_logit_gradient": 0.38967430345370363
+        }
+      },
+      "paired_common_top_share_old": {
+        "0": 0.28609885268912494,
+        "10": 0.5748722676920536,
+        "25": 0.7578630797572706,
+        "50": 0.9548318504180642,
+        "75": 1.0,
+        "90": 1.0,
+        "95": 1.0,
+        "100": 1.0
+      },
+      "paired_common_top_share_extended": {
+        "0": 0.16474559630061775,
+        "10": 0.3390852635645229,
+        "25": 0.4769360630451735,
+        "50": 0.6686690905776769,
+        "75": 0.8737399540676182,
+        "90": 0.96224325021485,
+        "95": 0.9868781064669974,
+        "100": 1.0
+      },
+      "common_old_top_absolute_retention": {
+        "0": 0.022857142857142854,
+        "10": 0.04923076923076923,
+        "25": 0.07866666666666668,
+        "50": 0.13108614232209737,
+        "75": 0.210989010989011,
+        "90": 0.32,
+        "95": 0.37739872068230274,
+        "100": 1.0
+      },
+      "common_original_hard_absolute_retention": {
+        "0": 0.1212121212121212,
+        "10": 0.17239057239057237,
+        "25": 0.18518518518518517,
+        "50": 0.38461538461538464,
+        "75": 1.0,
+        "90": 1.0,
+        "95": 1.0,
+        "100": 1.0
+      }
+    },
+    {
+      "input": "clean",
+      "model": "later",
+      "old_negative_ticks": 2691,
+      "added_negative_ticks": 16455,
+      "mixed_ticks": 0,
+      "old_rank_sources": 981,
+      "extended_rank_sources": 1323,
+      "newly_ranked_sources": 342,
+      "unscaled_rank_loss_old": 0.025806989158346734,
+      "unscaled_rank_loss_extended": 0.017642848141689177,
+      "absolute_positive_logit_gradient_old_including_alpha": 0.001151604634568867,
+      "absolute_positive_logit_gradient_extended_including_alpha": 0.0007248527395283266,
+      "known_tick_aggregate_gradient_retention": 0.6120833305397801,
+      "old_hard_tick_aggregate_gradient_retention": 0.6409248180936574,
+      "old_hard_tick_count": 25,
+      "added_hard_tick_count": 1,
+      "added_hard_tick_share_all_gradient": 0.012985746370684661,
+      "all_added_share_all_gradient": 0.027556961913899867,
+      "easy_added": {
+        "0.01": {
+          "groups": 16409,
+          "fraction_added_groups": 0.9972044971133394,
+          "fraction_of_all_positive_logit_gradient": 0.004205229990797084,
+          "fraction_of_added_positive_logit_gradient": 0.15260136454577544
+        },
+        "0.05": {
+          "groups": 16441,
+          "fraction_added_groups": 0.9991491947736251,
+          "fraction_of_all_positive_logit_gradient": 0.006705825099376631,
+          "fraction_of_added_positive_logit_gradient": 0.2433441364228972
+        },
+        "0.1": {
+          "groups": 16447,
+          "fraction_added_groups": 0.9995138255849286,
+          "fraction_of_all_positive_logit_gradient": 0.008652293911276135,
+          "fraction_of_added_positive_logit_gradient": 0.31397851251925835
+        }
+      },
+      "paired_common_top_share_old": {
+        "0": 0.2829402628640118,
+        "10": 0.5738696189230086,
+        "25": 0.7698085593807815,
+        "50": 0.9492660826180647,
+        "75": 1.0,
+        "90": 1.0,
+        "95": 1.0,
+        "100": 1.0
+      },
+      "paired_common_top_share_extended": {
+        "0": 0.1438306603832826,
+        "10": 0.34186110295891825,
+        "25": 0.4773521482607284,
+        "50": 0.6960460006261011,
+        "75": 0.8784683059257173,
+        "90": 0.9697717052339528,
+        "95": 0.9879252161012504,
+        "100": 1.0
+      },
+      "common_old_top_absolute_retention": {
+        "0": 0.022857142857142854,
+        "10": 0.04923076923076923,
+        "25": 0.07866666666666668,
+        "50": 0.13108614232209737,
+        "75": 0.210989010989011,
+        "90": 0.32,
+        "95": 0.37739872068230274,
+        "100": 1.0
+      },
+      "common_original_hard_absolute_retention": {
+        "0": 0.0905349794238683,
+        "10": 0.16947800679143962,
+        "25": 0.18518518518518517,
+        "50": 0.2440838404327248,
+        "75": 0.5384615384615385,
+        "90": 1.0,
+        "95": 1.0,
+        "100": 1.0
+      }
+    },
+    {
+      "input": "plus1",
+      "model": "old_rank",
+      "old_negative_ticks": 2691,
+      "added_negative_ticks": 16455,
+      "mixed_ticks": 0,
+      "old_rank_sources": 981,
+      "extended_rank_sources": 1323,
+      "newly_ranked_sources": 342,
+      "unscaled_rank_loss_old": 0.3518586721398164,
+      "unscaled_rank_loss_extended": 0.12303984893768069,
+      "absolute_positive_logit_gradient_old_including_alpha": 0.017481999920497572,
+      "absolute_positive_logit_gradient_extended_including_alpha": 0.005448694804468219,
+      "known_tick_aggregate_gradient_retention": 0.21531346861400313,
+      "old_hard_tick_aggregate_gradient_retention": 0.24924696032375646,
+      "old_hard_tick_count": 248,
+      "added_hard_tick_count": 140,
+      "added_hard_tick_share_all_gradient": 0.13875840260845262,
+      "all_added_share_all_gradient": 0.3091721639271685,
+      "easy_added": {
+        "0.01": {
+          "groups": 15385,
+          "fraction_added_groups": 0.9349741719841993,
+          "fraction_of_all_positive_logit_gradient": 0.005257657083242511,
+          "fraction_of_added_positive_logit_gradient": 0.017005596546786968
+        },
+        "0.05": {
+          "groups": 15882,
+          "fraction_added_groups": 0.9651777575205105,
+          "fraction_of_all_positive_logit_gradient": 0.01974575099480891,
+          "fraction_of_added_positive_logit_gradient": 0.06386652260020538
+        },
+        "0.1": {
+          "groups": 16009,
+          "fraction_added_groups": 0.9728957763597691,
+          "fraction_of_all_positive_logit_gradient": 0.03267354618820172,
+          "fraction_of_added_positive_logit_gradient": 0.10568075008168785
+        }
+      },
+      "paired_common_top_share_old": {
+        "0": 0.21146395785171315,
+        "10": 0.5279643804089668,
+        "25": 0.7284043263908163,
+        "50": 0.9488202903359392,
+        "75": 1.0,
+        "90": 1.0,
+        "95": 1.0,
+        "100": 1.0
+      },
+      "paired_common_top_share_extended": {
+        "0": 0.17172328049490068,
+        "10": 0.4111706301288947,
+        "25": 0.5389038560616618,
+        "50": 0.7691357723335386,
+        "75": 0.9341036888045532,
+        "90": 0.9830635351357766,
+        "95": 0.9936845502005915,
+        "100": 1.0
+      },
+      "common_old_top_absolute_retention": {
+        "0": 0.022857142857142854,
+        "10": 0.04923076923076923,
+        "25": 0.07866666666666668,
+        "50": 0.13108614232209737,
+        "75": 0.210989010989011,
+        "90": 0.32,
+        "95": 0.37739872068230274,
+        "100": 1.0
+      },
+      "common_original_hard_absolute_retention": {
+        "0": 0.02469135802469136,
+        "10": 0.04875816993464053,
+        "25": 0.08210526315789474,
+        "50": 0.13883677298311445,
+        "75": 0.21234934420418292,
+        "90": 0.3246386554621848,
+        "95": 0.4074509803921565,
+        "100": 1.0
+      }
+    },
+    {
+      "input": "plus1",
+      "model": "later",
+      "old_negative_ticks": 2691,
+      "added_negative_ticks": 16455,
+      "mixed_ticks": 0,
+      "old_rank_sources": 981,
+      "extended_rank_sources": 1323,
+      "newly_ranked_sources": 342,
+      "unscaled_rank_loss_old": 0.34740911560212057,
+      "unscaled_rank_loss_extended": 0.13737095075643982,
+      "absolute_positive_logit_gradient_old_including_alpha": 0.017418405056988735,
+      "absolute_positive_logit_gradient_extended_including_alpha": 0.00567850598938509,
+      "known_tick_aggregate_gradient_retention": 0.22663210115063986,
+      "old_hard_tick_aggregate_gradient_retention": 0.2770063077788211,
+      "old_hard_tick_count": 243,
+      "added_hard_tick_count": 139,
+      "added_hard_tick_share_all_gradient": 0.14471831071590283,
+      "all_added_share_all_gradient": 0.3048224754649313,
+      "easy_added": {
+        "0.01": {
+          "groups": 15414,
+          "fraction_added_groups": 0.9367365542388332,
+          "fraction_of_all_positive_logit_gradient": 0.005547354067409221,
+          "fraction_of_added_positive_logit_gradient": 0.018198638597590626
+        },
+        "0.05": {
+          "groups": 15895,
+          "fraction_added_groups": 0.9659677909450015,
+          "fraction_of_all_positive_logit_gradient": 0.018524389735568237,
+          "fraction_of_added_positive_logit_gradient": 0.06077107571321262
+        },
+        "0.1": {
+          "groups": 16011,
+          "fraction_added_groups": 0.9730173199635369,
+          "fraction_of_all_positive_logit_gradient": 0.026854347549764415,
+          "fraction_of_added_positive_logit_gradient": 0.08809831856658452
+        }
+      },
+      "paired_common_top_share_old": {
+        "0": 0.2025988716489867,
+        "10": 0.5260373623275528,
+        "25": 0.7636287695546835,
+        "50": 0.9498508563857431,
+        "75": 1.0,
+        "90": 1.0,
+        "95": 1.0,
+        "100": 1.0
+      },
+      "paired_common_top_share_extended": {
+        "0": 0.1372592800394271,
+        "10": 0.43115196681705836,
+        "25": 0.559059896469877,
+        "50": 0.788277373182501,
+        "75": 0.9397357044035362,
+        "90": 0.985967408373294,
+        "95": 0.9938546428141519,
+        "100": 1.0
+      },
+      "common_old_top_absolute_retention": {
+        "0": 0.022857142857142854,
+        "10": 0.04923076923076923,
+        "25": 0.07866666666666668,
+        "50": 0.13108614232209737,
+        "75": 0.210989010989011,
+        "90": 0.32,
+        "95": 0.37739872068230274,
+        "100": 1.0
+      },
+      "common_original_hard_absolute_retention": {
+        "0": 0.024242424242424242,
+        "10": 0.050031982942430706,
+        "25": 0.0862934362934363,
+        "50": 0.13965446318387495,
+        "75": 0.20926899187768752,
+        "90": 0.34285714285714286,
+        "95": 0.5336029411764687,
+        "100": 1.0
+      }
+    },
+    {
+      "input": "plus2",
+      "model": "old_rank",
+      "old_negative_ticks": 2691,
+      "added_negative_ticks": 16455,
+      "mixed_ticks": 0,
+      "old_rank_sources": 981,
+      "extended_rank_sources": 1323,
+      "newly_ranked_sources": 342,
+      "unscaled_rank_loss_old": 0.41609980873561697,
+      "unscaled_rank_loss_extended": 0.14872622195988916,
+      "absolute_positive_logit_gradient_old_including_alpha": 0.02339683954494876,
+      "absolute_positive_logit_gradient_extended_including_alpha": 0.008581060818653478,
+      "known_tick_aggregate_gradient_retention": 0.1922208884973427,
+      "old_hard_tick_aggregate_gradient_retention": 0.20835459364935063,
+      "old_hard_tick_count": 334,
+      "added_hard_tick_count": 272,
+      "added_hard_tick_share_all_gradient": 0.24504628788118699,
+      "all_added_share_all_gradient": 0.47589681737443623,
+      "easy_added": {
+        "0.01": {
+          "groups": 14787,
+          "fraction_added_groups": 0.8986326344576117,
+          "fraction_of_all_positive_logit_gradient": 0.0032811223955283983,
+          "fraction_of_added_positive_logit_gradient": 0.006894608822203588
+        },
+        "0.05": {
+          "groups": 15273,
+          "fraction_added_groups": 0.9281677301731996,
+          "fraction_of_all_positive_logit_gradient": 0.012605933558334935,
+          "fraction_of_added_positive_logit_gradient": 0.026488795676094152
+        },
+        "0.1": {
+          "groups": 15463,
+          "fraction_added_groups": 0.9397143725311455,
+          "fraction_of_all_positive_logit_gradient": 0.024194706785283366,
+          "fraction_of_added_positive_logit_gradient": 0.05084023658482872
+        }
+      },
+      "paired_common_top_share_old": {
+        "0": 0.19086558550304009,
+        "10": 0.4231239463455716,
+        "25": 0.595873168371914,
+        "50": 0.9274411472431905,
+        "75": 1.0,
+        "90": 1.0,
+        "95": 1.0,
+        "100": 1.0
+      },
+      "paired_common_top_share_extended": {
+        "0": 0.14797748821496226,
+        "10": 0.3017852095829491,
+        "25": 0.4505474716370557,
+        "50": 0.6478361882673334,
+        "75": 0.8963265018845759,
+        "90": 0.9793087265697779,
+        "95": 0.9934316700728437,
+        "100": 1.0
+      },
+      "common_old_top_absolute_retention": {
+        "0": 0.022857142857142854,
+        "10": 0.04923076923076923,
+        "25": 0.07866666666666668,
+        "50": 0.13108614232209737,
+        "75": 0.210989010989011,
+        "90": 0.32,
+        "95": 0.37739872068230274,
+        "100": 1.0
+      },
+      "common_original_hard_absolute_retention": {
+        "0": 0.024242424242424242,
+        "10": 0.04793028322440088,
+        "25": 0.07584033613445378,
+        "50": 0.12637628554143981,
+        "75": 0.2,
+        "90": 0.34285714285714286,
+        "95": 0.4509724857685009,
+        "100": 1.0
+      }
+    },
+    {
+      "input": "plus2",
+      "model": "later",
+      "old_negative_ticks": 2691,
+      "added_negative_ticks": 16455,
+      "mixed_ticks": 0,
+      "old_rank_sources": 981,
+      "extended_rank_sources": 1323,
+      "newly_ranked_sources": 342,
+      "unscaled_rank_loss_old": 0.40774817439106054,
+      "unscaled_rank_loss_extended": 0.14909687531736485,
+      "absolute_positive_logit_gradient_old_including_alpha": 0.023127214329770544,
+      "absolute_positive_logit_gradient_extended_including_alpha": 0.008522511120135329,
+      "known_tick_aggregate_gradient_retention": 0.19290509936988176,
+      "old_hard_tick_aggregate_gradient_retention": 0.20279817137180345,
+      "old_hard_tick_count": 334,
+      "added_hard_tick_count": 275,
+      "added_hard_tick_share_all_gradient": 0.2550050140744504,
+      "all_added_share_all_gradient": 0.47652076770043594,
+      "easy_added": {
+        "0.01": {
+          "groups": 14807,
+          "fraction_added_groups": 0.8998480704952901,
+          "fraction_of_all_positive_logit_gradient": 0.0035503698058195914,
+          "fraction_of_added_positive_logit_gradient": 0.007450608759304958
+        },
+        "0.05": {
+          "groups": 15296,
+          "fraction_added_groups": 0.92956548161653,
+          "fraction_of_all_positive_logit_gradient": 0.011795146297929899,
+          "fraction_of_added_positive_logit_gradient": 0.024752638494330848
+        },
+        "0.1": {
+          "groups": 15469,
+          "fraction_added_groups": 0.9400790033424491,
+          "fraction_of_all_positive_logit_gradient": 0.020523503617198808,
+          "fraction_of_added_positive_logit_gradient": 0.043069484077766104
+        }
+      },
+      "paired_common_top_share_old": {
+        "0": 0.19208357625312125,
+        "10": 0.4287607922903946,
+        "25": 0.6166879375016092,
+        "50": 0.9443621551190998,
+        "75": 1.0,
+        "90": 1.0,
+        "95": 1.0,
+        "100": 1.0
+      },
+      "paired_common_top_share_extended": {
+        "0": 0.11852926047341873,
+        "10": 0.29545100940052416,
+        "25": 0.452255604204838,
+        "50": 0.6766315760083207,
+        "75": 0.9208252287432948,
+        "90": 0.981784582266553,
+        "95": 0.9938740659902927,
+        "100": 1.0
+      },
+      "common_old_top_absolute_retention": {
+        "0": 0.022857142857142854,
+        "10": 0.04923076923076923,
+        "25": 0.07866666666666668,
+        "50": 0.13108614232209737,
+        "75": 0.210989010989011,
+        "90": 0.32,
+        "95": 0.37739872068230274,
+        "100": 1.0
+      },
+      "common_original_hard_absolute_retention": {
+        "0": 0.023529411764705882,
+        "10": 0.04753072067650073,
+        "25": 0.07823529411764707,
+        "50": 0.12903225806451613,
+        "75": 0.20111133884448085,
+        "90": 0.3261848739495799,
+        "95": 0.4,
+        "100": 1.0
+      }
+    }
+  ],
+  "new_model_inference": false,
+  "training": false,
+  "application_enabled": false,
+  "musical_acceptance": false
+}
