@@ -1,0 +1,261 @@
+{
+  "date": "2026-11-10",
+  "decision": "diagnostic_only_no_model_or_application_change",
+  "source_report_sha256": "87323da6d3f3c5b0ec83dabb951082d761f72aae18e761245b4679635fe195e3",
+  "supplement_report_sha256": "134b754e05173c8d4b995f06b6015c0a1e1dbc9bf2c9c8ff46033c9e872f8095",
+  "evidence_report_sha256": "6604f8a597fab54925ecc1468e32ec778aa663a1c329ddda3c14ed10f5d79823",
+  "original_identity": {
+    "code": {
+      "runner": "3d50228bfcdfef2cac570454e43ca58937fcad759a900ad5bd657b15344859d0",
+      "helper": "3c4e0ad970d87547ac8f36a363ea885d6bc6c0de0c3f163a8e58c106a828fa53",
+      "runtime": "57855e0888edef8dcc442aa2baee53fa04b97abea410924aa9d9403c55ba9947",
+      "protocol": "8efede772001fdae920d1bfd80b5ad00a3131c16ee8985ab26e75611c8cb8fb2"
+    },
+    "manifest_sha256": "63b6990ef00bba0c10b36fe491b1b527d1b53cbe403db24c85d4f4b7cce486d0",
+    "model_sha256": "7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa",
+    "thresholds": {
+      "onset": 0.3,
+      "offset": 0.3,
+      "frame": 0.1
+    },
+    "environment": {
+      "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+      "numpy": "2.5.4",
+      "onnxruntime": "1.31.1"
+    },
+    "provider": "CPUExecutionProvider",
+    "intra_op_threads": 2,
+    "inter_op_threads": 1
+  },
+  "supplement_identity": {
+    "source_report_sha256": "87323da6d3f3c5b0ec83dabb951082d761f72aae18e761245b4679635fe195e3",
+    "manifest_sha256": "63b6990ef00bba0c10b36fe491b1b527d1b53cbe403db24c85d4f4b7cce486d0",
+    "code": {
+      "runner": "4c328845c532c2ae0732b9327468ec25c2f1f840550288cbb48f59aa28021d7c",
+      "helper": "3c4e0ad970d87547ac8f36a363ea885d6bc6c0de0c3f163a8e58c106a828fa53",
+      "runtime": "57855e0888edef8dcc442aa2baee53fa04b97abea410924aa9d9403c55ba9947",
+      "protocol": "c9db480d93301cec7b88b7bd262c37c06fabff1f99a5264bd7d66e915ab596f8"
+    },
+    "model_sha256": "7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa",
+    "thresholds": {
+      "onset": 0.3,
+      "offset": 0.3,
+      "frame": 0.1
+    },
+    "provider": "CPUExecutionProvider",
+    "intra_op_threads": 2,
+    "inter_op_threads": 1,
+    "environment": {
+      "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+      "numpy": "2.5.4",
+      "onnxruntime": "1.31.1"
+    },
+    "supplement_registered_after_original_inference_started": true
+  },
+  "original_cases": 83,
+  "supplement_cases": 8,
+  "source_notes": 9,
+  "original_counts": {
+    "expected": 162,
+    "matched": 154,
+    "missing": 8,
+    "extra": 75
+  },
+  "supplement_counts": {
+    "expected": 8,
+    "matched": 8,
+    "missing": 0,
+    "extra": 1
+  },
+  "original_groups": {
+    "g0_silence": {
+      "cases": 1,
+      "expected": 0,
+      "predicted": 0,
+      "matched": 0,
+      "missing": 0,
+      "extra": 0,
+      "all_expected_matched_cases": 1,
+      "no_extra_cases": 1
+    },
+    "g1_single": {
+      "cases": 9,
+      "expected": 9,
+      "predicted": 10,
+      "matched": 9,
+      "missing": 0,
+      "extra": 1,
+      "all_expected_matched_cases": 9,
+      "no_extra_cases": 8
+    },
+    "g1_simultaneous": {
+      "cases": 8,
+      "expected": 16,
+      "predicted": 18,
+      "matched": 16,
+      "missing": 0,
+      "extra": 2,
+      "all_expected_matched_cases": 8,
+      "no_extra_cases": 6
+    },
+    "g1_weak_high": {
+      "cases": 8,
+      "expected": 16,
+      "predicted": 16,
+      "matched": 12,
+      "missing": 4,
+      "extra": 4,
+      "all_expected_matched_cases": 4,
+      "no_extra_cases": 5
+    },
+    "g1_delayed_high": {
+      "cases": 8,
+      "expected": 16,
+      "predicted": 17,
+      "matched": 16,
+      "missing": 0,
+      "extra": 1,
+      "all_expected_matched_cases": 8,
+      "no_extra_cases": 7
+    },
+    "g1_repeated_high": {
+      "cases": 8,
+      "expected": 24,
+      "predicted": 25,
+      "matched": 24,
+      "missing": 0,
+      "extra": 1,
+      "all_expected_matched_cases": 8,
+      "no_extra_cases": 7
+    },
+    "g4_single": {
+      "cases": 9,
+      "expected": 9,
+      "predicted": 19,
+      "matched": 9,
+      "missing": 0,
+      "extra": 10,
+      "all_expected_matched_cases": 9,
+      "no_extra_cases": 3
+    },
+    "g4_simultaneous": {
+      "cases": 8,
+      "expected": 16,
+      "predicted": 30,
+      "matched": 16,
+      "missing": 0,
+      "extra": 14,
+      "all_expected_matched_cases": 8,
+      "no_extra_cases": 2
+    },
+    "g4_weak_high": {
+      "cases": 8,
+      "expected": 16,
+      "predicted": 24,
+      "matched": 12,
+      "missing": 4,
+      "extra": 12,
+      "all_expected_matched_cases": 4,
+      "no_extra_cases": 1
+    },
+    "g4_delayed_high": {
+      "cases": 8,
+      "expected": 16,
+      "predicted": 32,
+      "matched": 16,
+      "missing": 0,
+      "extra": 16,
+      "all_expected_matched_cases": 8,
+      "no_extra_cases": 1
+    },
+    "g4_repeated_high": {
+      "cases": 8,
+      "expected": 24,
+      "predicted": 38,
+      "matched": 24,
+      "missing": 0,
+      "extra": 14,
+      "all_expected_matched_cases": 8,
+      "no_extra_cases": 3
+    }
+  },
+  "matched_level_groups": {
+    "1": {
+      "pairs": 8,
+      "high_solo_matched": 8,
+      "high_mixture_matched": 4,
+      "detected_alone_lost_in_mixture": 4,
+      "missed_alone_and_in_mixture": 0,
+      "missed_alone_detected_in_mixture": 0
+    },
+    "4": {
+      "pairs": 8,
+      "high_solo_matched": 8,
+      "high_mixture_matched": 4,
+      "detected_alone_lost_in_mixture": 4,
+      "missed_alone_and_in_mixture": 0,
+      "missed_alone_detected_in_mixture": 0
+    }
+  },
+  "extra_classification": {
+    "1": {
+      "same_pitch_outside_anchor": 6,
+      "unplaced_pitch": 3,
+      "duplicate_inside_anchor": 0
+    },
+    "4": {
+      "same_pitch_outside_anchor": 41,
+      "unplaced_pitch": 24,
+      "duplicate_inside_anchor": 1
+    }
+  },
+  "extra_categories_are_descriptive_not_perceptual": true,
+  "original_inference_elapsed_seconds": 337.7079999995185,
+  "audits": {
+    "input-review": {
+      "sha256": "5f1155245364c3c398edafa7a035faf2b4c9dc40e23685204e2eeb815a0e021b",
+      "checks_total": 4045,
+      "checks_failed": 0
+    },
+    "result-review": {
+      "sha256": "2448e52e610bb15a5a498b1422bdb718f92088450fa2e798c960e1f2b327c40c",
+      "checks_total": 3906,
+      "checks_failed": 0
+    },
+    "supplement-review": {
+      "sha256": "f6f6d818359ea75173028fd59f0c15609ff9bff962a4c7472d9c5513051a28cd",
+      "checks_total": 2690,
+      "checks_failed": 0
+    }
+  },
+  "evidence": {
+    "cases": 83,
+    "matplotlib_version": "3.10.8",
+    "inspected_images": [
+      "g1-single-72",
+      "g1-60-72-weak_high",
+      "g4-72-84-weak_high",
+      "g1-60-72-repeated_high"
+    ],
+    "html_local_links": 249,
+    "all_link_targets_exist": true
+  },
+  "tests": {
+    "command": ".venv/Scripts/python.exe -m pytest -q tests/test_piano_source_controls.py",
+    "passed": 98
+  },
+  "offsets_scored": false,
+  "threshold_search": false,
+  "training_performed": false,
+  "direct_listening_performed": false,
+  "application_changed": false,
+  "new_release": false,
+  "musical_acceptance": false,
+  "limitations": [
+    "One piano, one dynamic, one recording session",
+    "Recorded notes are additively mixed, not a natural simultaneous performance or Nova output",
+    "Envelope anchors are not MIDI key times",
+    "Cropped/faded source tails are not natural releases or LN labels",
+    "Supplementary same-level protocol was added after the original run began"
+  ]
+}
