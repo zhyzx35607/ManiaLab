@@ -162,12 +162,35 @@ def resolve_phrase_decisions(trace):
                 entry['reason'] = 'phrase_not_selected'
 
 
-def select_expression(candidates, metadata, trace, settings, beat_ms, segment_preferences=()):
-    """Select complete rhythmic groups; retained LNs keep their supported end.
+def chord_layer_options(notes, settings, segment_preferences):
+    """Offer fewer pitch layers without deleting a source's rhythmic attacks.
 
-    Each group is a binary choice. Capacity/density pressure removes a group,
-    not a random subset of syllables or a few tails. Split at rests or beat
-    groups; at most one beat is grouped when a primary source is too dense.
+    These express one source's pitches at the same quantized attack, not claims
+    that omitted pitches are false positives. Retained notes keep their ends.
+    """
+    attacks = defaultdict(list)
+    for note in notes:
+        attacks[note.start].append(note)
+    rows = []
+    depth = 1
+    for time, row in sorted(attacks.items()):
+        row.sort(key=lambda n: (-n.strength, n.pitch, n.id))
+        pref = settings_at(settings, time, segment_preferences)
+        cap = min(pref['chord_size'], math.ceil(pref['density']))
+        pitched = all(n.source == 'pitch' for n in row)
+        if pitched:
+            depth = max(depth, min(len(row), cap))
+        rows.append((row, cap, pitched))
+    return [[n for row, cap, pitched in rows for n in
+             (row[:min(layers, cap)] if pitched else row)] for layers in range(1, depth+1)]
+
+
+def select_expression(candidates, metadata, trace, settings, beat_ms, segment_preferences=()):
+    """Select rhythmic groups and chord depth; retained LNs keep their ends.
+
+    A source group can use fewer simultaneous pitch layers while retaining its
+    attack sequence. Choose at most one depth per group. If even one layer per
+    attack cannot fit alone, split the group into attacks before selection.
     """
     p = parameters(settings)
     by_voice = defaultdict(list)
@@ -179,7 +202,14 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
         if trace[n.id].get('expression_end', n.end) > trace[n.id]['start'] and not n.hold:
             trace[n.id]['reason'] = 'duration_collapsed_on_grid'
         by_voice[(meta['section'], n.voice, meta['role'])].append(n)
-    units, roles = [], []
+    units, roles, families = [], [], []
+    def family(group, role):
+        indices = []
+        for option in chord_layer_options(group, p, segment_preferences):
+            indices.append(len(units))
+            units.append(option)
+            roles.append(role)
+        families.append((group, indices))
     for (section, voice, role), notes in by_voice.items():
         notes.sort(key=lambda n: (n.start, -n.strength, n.pitch))
         seen, groups, current = set(), [], []
@@ -199,21 +229,24 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
         if current:
             groups.append(current)
         for group in groups:
-            # If a group by itself cannot fit, make per-attack decisions. All
-            # simultaneous pitches of that voice remain one attack unit.
-            pref = settings_at(p, group[0].start, segment_preferences)
+            # Test the lightest expression, not the number of MIDI pitches.
+            # A five-pitch chord must not force an entire phrase to disappear
+            # when the configured chart chord limit is only two notes.
+            base = chord_layer_options(group, p, segment_preferences)[0]
             impossible = any(
-                sum(t.start-1000 < n.start <= t.start for n in group) > math.ceil(pref['density']) or
-                sum(n.hold and n.start <= t.start < n.end for n in group) > pref['max_held'] or
-                sum(n.start == t.start for n in group) + sum(n.hold and n.start < t.start < n.end+pref['release_gap'] for n in group) > p['keys']
-                for t in group)
+                sum(t.start-1000 < n.start <= t.start for n in base) > math.ceil(pref['density']) or
+                sum(n.hold and n.start <= t.start < n.end for n in base) > pref['max_held'] or
+                sum(n.start == t.start for n in base) > pref['chord_size'] or
+                sum(n.start == t.start for n in base) + sum(n.hold and n.start < t.start < n.end+pref['release_gap'] for n in base) > p['keys']
+                for t in base for pref in (settings_at(p, t.start, segment_preferences),))
             if impossible:
                 attacks = defaultdict(list)
                 for n in group:
                     attacks[n.start].append(n)
-                units.extend(attacks.values()); roles.extend([role]*len(attacks))
+                for attack in attacks.values():
+                    family(attack, role)
             else:
-                units.append(group); roles.append(role)
+                family(group, role)
     if not units:
         resolve_phrase_decisions(trace)
         return [], dict(message='当前段落方案没有可用音符。', decisions=list(trace.values()), selected=0)
@@ -230,6 +263,9 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
         for col, value in weights.items():
             if value:
                 rows.append(row); cols.append(col); vals.append(value)
+    for _, indices in families:
+        if len(indices) > 1:
+            constraint({index: 1 for index in indices}, 1)
     # Sweep events in half-open intervals. Release and gap-end events happen
     # before attacks at the same millisecond, matching layout feasibility.
     events = defaultdict(list)
@@ -269,13 +305,18 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
     matrix = csc_matrix((vals, (rows, cols)), shape=(len(upper), len(units)))
     utility = []
     for role, group in zip(roles, units):
-        score = 0.
+        attack_scores = defaultdict(list)
         for n in group:
             pref = settings_at(p, n.start, segment_preferences)
             shift = abs(n.start-n.evidence_start) if n.evidence_start is not None else 0
             alignment = .4+.6*math.exp(-.5*(shift/20)**2)
-            score += (.25+n.strength)*pref.get(n.voice+'_weight', 1.)*alignment
-        utility.append(score*(5 if role == 'primary' else 1))
+            attack_scores[n.start].append((.25+n.strength)*pref.get(n.voice+'_weight', 1.)*alignment)
+        # Prioritize distinct source attacks over extra pitches of one chord.
+        # Extra layers still have positive value when the budget permits them.
+        score = sum(max(values)+.15*(sum(values)-max(values)) for values in attack_scores.values())
+        # A main-source preference must not overwhelm timing/source evidence:
+        # clearly aligned support may beat an uncertain, far-moved main note.
+        utility.append(score*(2 if role == 'primary' else 1))
     solved = _solve_binary(-np.asarray(utility), integrality=np.ones(len(units)), bounds=Bounds(0, 1),
         constraints=LinearConstraint(matrix, -np.inf, np.asarray(upper)), options={'time_limit': 15., 'mip_rel_gap': .005})
     if solved.x is None:
@@ -284,11 +325,23 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
     if np.any(matrix @ chosen.astype(float) > np.asarray(upper)+1e-6):
         raise ValueError('段落取舍没有通过占轨约束')
     selected = []
-    for i, group in enumerate(units):
+    for family_index, (group, indices) in enumerate(families):
+        active = [index for index in indices if chosen[index]]
+        if len(active) > 1:
+            raise ValueError('同一音组选择了多个表达层数')
+        retained = units[active[0]] if active else []
+        retained_ids = {n.id for n in retained}
+        represented = defaultdict(list)
+        for n in retained:
+            represented[n.start].append(n.id)
         for n in group:
-            trace[n.id].update(decision='selected' if chosen[i] else 'omitted', group=i)
-            if not chosen[i]:
-                trace[n.id]['reason'] = 'group_capacity_or_density'
+            keep = n.id in retained_ids
+            trace[n.id].update(decision='selected' if keep else 'omitted', group=family_index)
+            if not keep:
+                trace[n.id]['reason'] = 'represented_by_chord' if represented[n.start] else 'group_capacity_or_density'
+                if represented[n.start]:
+                    trace[n.id]['represented_by'] = represented[n.start]
+                    trace[n.id]['represented_at'] = n.start
             else:
                 selected.append(n)
                 trace[n.id].update(chart_start=n.start, chart_end=n.end)
@@ -298,7 +351,7 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
     reasons = dict(Counter(r['reason'] for r in trace.values() if r['decision'] == 'omitted'))
     return selected, dict(selected=count, candidates=len(trace), omitted=len(trace)-count,
         attack_selection='source_groups', attack_optimal=solved.status == 0,
-        expression_revision=1, actual_ln_ratio=round(ln/max(1, count), 4),
+        expression_revision=2, actual_ln_ratio=round(ln/max(1, count), 4),
         selected_voices=dict(Counter(n.voice for n in selected)), omission_reasons=reasons,
         selected_large_attack_shifts=sum(abs(n.start-n.evidence_start)>30 for n in selected if n.evidence_start is not None),
         decisions=list(trace.values()),

@@ -1,0 +1,972 @@
+{
+  "date": "2026-11-09",
+  "reference_chart_read": false,
+  "automatic_timing_acceptance": false,
+  "music_quality_accepted": false,
+  "generation_clock": {
+    "bpm": 74.0,
+    "offset": 178.0,
+    "division": 4,
+    "audio_shift_ms": 22.5
+  },
+  "settings": {
+    "keys": 10,
+    "density": 7.0,
+    "ln_ratio": 0.55,
+    "min_ln": 240,
+    "max_held": 5,
+    "release_gap": 55,
+    "chord_size": 4,
+    "pitch_follow": 0.55,
+    "balance": 0.8,
+    "jack_avoid": 0.8,
+    "seed": 42,
+    "onset_threshold": 0.45,
+    "frame_threshold": 0.3,
+    "focus": "balanced",
+    "phrase_ln": 0.65,
+    "layout_engine": "beam",
+    "pattern_prior": 0.35,
+    "drums_weight": 1.0,
+    "bass_weight": 1.0,
+    "vocals_weight": 0.0,
+    "other_weight": 1.0,
+    "guitar_weight": 1.0,
+    "piano_weight": 1.0,
+    "ln_coordination": 0.35,
+    "ln_release": 0.65,
+    "ln_inverse": 0.0
+  },
+  "evidence_sha256": {
+    "full_pipeline": "ac0114795a6b24354deceac6900feed66d68bfc7611b414edcb6aafd7b04fb01",
+    "v1": "4393b1037fc8f273345e5916a80559b28558698dffc9f2e82275e1e1940477ce",
+    "v2": "db8fbe64538716d2884ac146369d555131909ac0c94a0d79e686e5e98d5dc84c"
+  },
+  "baseline": {
+    "general": {
+      "structural": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 1621,
+        "ln": 758,
+        "ln_ratio": 0.468,
+        "max_held": 5,
+        "longest_ln_ms": 2230,
+        "lane_counts": [
+          139,
+          157,
+          169,
+          173,
+          168,
+          202,
+          178,
+          164,
+          140,
+          131
+        ]
+      },
+      "source_counts": {
+        "drums": 53,
+        "other": 1496,
+        "piano": 64,
+        "bass": 8
+      },
+      "source_holds": {
+        "other": 758
+      },
+      "auto_timing": {
+        "bpm": 148.0,
+        "offset": 204,
+        "division": 4,
+        "stable": false,
+        "confidence": 0.719
+      },
+      "omission_reasons": {
+        "duplicate_pitch": 821,
+        "weak_detection": 1291,
+        "group_capacity_or_density": 4279,
+        "voice_not_selected": 1126
+      },
+      "selected_large_attack_shifts": 980
+    },
+    "specialist": {
+      "structural": {
+        "valid": true,
+        "issues": [],
+        "issue_count": 0,
+        "notes": 1621,
+        "ln": 760,
+        "ln_ratio": 0.469,
+        "max_held": 5,
+        "longest_ln_ms": 2230,
+        "lane_counts": [
+          151,
+          166,
+          167,
+          171,
+          166,
+          193,
+          179,
+          166,
+          142,
+          120
+        ]
+      },
+      "source_counts": {
+        "drums": 52,
+        "other": 1496,
+        "piano": 65,
+        "bass": 8
+      },
+      "source_holds": {
+        "other": 760
+      },
+      "auto_timing": {
+        "bpm": 148.0,
+        "offset": 204,
+        "division": 4,
+        "stable": false,
+        "confidence": 0.719
+      },
+      "omission_reasons": {
+        "duplicate_pitch": 783,
+        "weak_detection": 1138,
+        "group_capacity_or_density": 3823,
+        "voice_not_selected": 1127
+      },
+      "selected_large_attack_shifts": 971
+    }
+  },
+  "revisions": {
+    "v1": {
+      "identity": {
+        "runner_sha256": "f5fc29f7d887bd88e1441e41d749d714eeb4a4b0f0e4bd166c6102fb637e5131",
+        "expression_sha256": "44e9de6e472363d17c723800f12ae6513dafd8c4071fa63d3340cceb825b2e09",
+        "baseline_report_sha256": "ac0114795a6b24354deceac6900feed66d68bfc7611b414edcb6aafd7b04fb01",
+        "reference_chart_read": false,
+        "generation_clock": {
+          "bpm": 74.0,
+          "offset": 178.0,
+          "division": 4,
+          "audio_shift_ms": 22.5
+        },
+        "inputs": {
+          "general": {
+            "analysis_sha256": "39e76feeb806c07c984293d668e3a4a6044b56f625b5add6a9a4bf1bd01e47cc",
+            "plan_sha256": "8228fc84dd4c79ace6f1ed473f97ab4b9bbc52a32c1d969221cf4ef991ee5c54"
+          },
+          "specialist": {
+            "analysis_sha256": "ef410a5feb747f2503d956c0b2300847b9bcf09acda2ea895785071ba6ba9cc7",
+            "plan_sha256": "f434612d2fac4bcd2a2daf44a99d573bc08c1effb02d4ade5b6840d92b79a9f7"
+          }
+        }
+      },
+      "cases": [
+        {
+          "name": "general-10k",
+          "elapsed_seconds": 10.5,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1546,
+            "ln": 553,
+            "ln_ratio": 0.358,
+            "max_held": 4,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              94,
+              122,
+              166,
+              180,
+              198,
+              199,
+              192,
+              184,
+              130,
+              81
+            ]
+          },
+          "grid": {
+            "endpoints": 2099,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 207,
+            "other": 1225,
+            "piano": 32,
+            "bass": 82
+          },
+          "source_attacks": {
+            "other": 1202,
+            "piano": 32,
+            "bass": 72,
+            "drums": 206
+          },
+          "source_holds": {
+            "other": 553
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 821,
+            "weak_detection": 1291,
+            "group_capacity_or_density": 2639,
+            "represented_by_chord": 1715,
+            "voice_not_selected": 1126
+          },
+          "reduced_chord_groups": 884,
+          "layout": {
+            "cost": 2019.889,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.961
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 938
+        },
+        {
+          "name": "specialist-6k",
+          "elapsed_seconds": 10.797000000020489,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1549,
+            "ln": 552,
+            "ln_ratio": 0.356,
+            "max_held": 4,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              192,
+              262,
+              302,
+              318,
+              271,
+              204
+            ]
+          },
+          "grid": {
+            "endpoints": 2101,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 171,
+            "other": 1221,
+            "piano": 77,
+            "bass": 80
+          },
+          "source_attacks": {
+            "other": 1204,
+            "bass": 70,
+            "drums": 170,
+            "piano": 77
+          },
+          "source_holds": {
+            "other": 552
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2144,
+            "represented_by_chord": 1751,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 907,
+          "layout": {
+            "cost": 2008.06,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.501
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 920
+        },
+        {
+          "name": "specialist-7k",
+          "elapsed_seconds": 12.875,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1549,
+            "ln": 552,
+            "ln_ratio": 0.356,
+            "max_held": 4,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              146,
+              213,
+              273,
+              258,
+              274,
+              226,
+              159
+            ]
+          },
+          "grid": {
+            "endpoints": 2101,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 171,
+            "other": 1221,
+            "piano": 77,
+            "bass": 80
+          },
+          "source_attacks": {
+            "other": 1204,
+            "bass": 70,
+            "drums": 170,
+            "piano": 77
+          },
+          "source_holds": {
+            "other": 552
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2144,
+            "represented_by_chord": 1751,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 907,
+          "layout": {
+            "cost": 2045.994,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.295
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 920
+        },
+        {
+          "name": "specialist-8k",
+          "elapsed_seconds": 12.297000000020489,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1549,
+            "ln": 552,
+            "ln_ratio": 0.356,
+            "max_held": 4,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              116,
+              180,
+              225,
+              243,
+              245,
+              232,
+              195,
+              113
+            ]
+          },
+          "grid": {
+            "endpoints": 2101,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 171,
+            "other": 1221,
+            "piano": 77,
+            "bass": 80
+          },
+          "source_attacks": {
+            "other": 1204,
+            "bass": 70,
+            "drums": 170,
+            "piano": 77
+          },
+          "source_holds": {
+            "other": 552
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2144,
+            "represented_by_chord": 1751,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 907,
+          "layout": {
+            "cost": 2027.271,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.016
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 920
+        },
+        {
+          "name": "specialist-9k",
+          "elapsed_seconds": 12.562999999965541,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1549,
+            "ln": 552,
+            "ln_ratio": 0.356,
+            "max_held": 4,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              96,
+              152,
+              184,
+              226,
+              207,
+              233,
+              201,
+              158,
+              92
+            ]
+          },
+          "grid": {
+            "endpoints": 2101,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 171,
+            "other": 1221,
+            "piano": 77,
+            "bass": 80
+          },
+          "source_attacks": {
+            "other": 1204,
+            "bass": 70,
+            "drums": 170,
+            "piano": 77
+          },
+          "source_holds": {
+            "other": 552
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2144,
+            "represented_by_chord": 1751,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 907,
+          "layout": {
+            "cost": 2052.279,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.788
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 920
+        },
+        {
+          "name": "specialist-10k",
+          "elapsed_seconds": 13.688000000081956,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1550,
+            "ln": 552,
+            "ln_ratio": 0.356,
+            "max_held": 4,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              93,
+              123,
+              163,
+              178,
+              201,
+              197,
+              197,
+              183,
+              129,
+              86
+            ]
+          },
+          "grid": {
+            "endpoints": 2102,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 171,
+            "other": 1221,
+            "piano": 77,
+            "bass": 81
+          },
+          "source_attacks": {
+            "other": 1204,
+            "bass": 71,
+            "drums": 170,
+            "piano": 77
+          },
+          "source_holds": {
+            "other": 552
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2143,
+            "represented_by_chord": 1751,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 907,
+          "layout": {
+            "cost": 2028.416,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.803
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 920
+        }
+      ]
+    },
+    "v2": {
+      "identity": {
+        "runner_sha256": "5400b7f9cce6ec3eea663f442be260b2637f9f345029a81cc96f6490d4835538",
+        "expression_sha256": "123081339c9186db8a8e7720234529b75479d6d4b7cb625db77297e33f4f86fa",
+        "baseline_report_sha256": "ac0114795a6b24354deceac6900feed66d68bfc7611b414edcb6aafd7b04fb01",
+        "reference_chart_read": false,
+        "generation_clock": {
+          "bpm": 74.0,
+          "offset": 178.0,
+          "division": 4,
+          "audio_shift_ms": 22.5
+        },
+        "inputs": {
+          "general": {
+            "analysis_sha256": "39e76feeb806c07c984293d668e3a4a6044b56f625b5add6a9a4bf1bd01e47cc",
+            "plan_sha256": "8228fc84dd4c79ace6f1ed473f97ab4b9bbc52a32c1d969221cf4ef991ee5c54"
+          },
+          "specialist": {
+            "analysis_sha256": "ef410a5feb747f2503d956c0b2300847b9bcf09acda2ea895785071ba6ba9cc7",
+            "plan_sha256": "f434612d2fac4bcd2a2daf44a99d573bc08c1effb02d4ade5b6840d92b79a9f7"
+          }
+        }
+      },
+      "cases": [
+        {
+          "name": "general-10k",
+          "elapsed_seconds": 12.375,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1585,
+            "ln": 424,
+            "ln_ratio": 0.268,
+            "max_held": 4,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              92,
+              126,
+              168,
+              189,
+              202,
+              200,
+              198,
+              185,
+              139,
+              86
+            ]
+          },
+          "grid": {
+            "endpoints": 2009,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 301,
+            "other": 1001,
+            "piano": 203,
+            "bass": 80
+          },
+          "source_attacks": {
+            "other": 990,
+            "piano": 203,
+            "bass": 71,
+            "drums": 300
+          },
+          "source_holds": {
+            "other": 424
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 821,
+            "weak_detection": 1291,
+            "group_capacity_or_density": 2552,
+            "represented_by_chord": 1763,
+            "voice_not_selected": 1126
+          },
+          "reduced_chord_groups": 867,
+          "layout": {
+            "cost": 2073.774,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.241
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 785
+        },
+        {
+          "name": "specialist-6k",
+          "elapsed_seconds": 12.76500000001397,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1591,
+            "ln": 308,
+            "ln_ratio": 0.194,
+            "max_held": 3,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              206,
+              275,
+              309,
+              307,
+              278,
+              216
+            ]
+          },
+          "grid": {
+            "endpoints": 1899,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 285,
+            "other": 769,
+            "piano": 471,
+            "bass": 66
+          },
+          "source_attacks": {
+            "other": 764,
+            "piano": 463,
+            "bass": 59,
+            "drums": 284
+          },
+          "source_holds": {
+            "other": 308
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2430,
+            "represented_by_chord": 1423,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 784,
+          "layout": {
+            "cost": 2053.337,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.013
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 550
+        },
+        {
+          "name": "specialist-7k",
+          "elapsed_seconds": 14.561999999918044,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1591,
+            "ln": 308,
+            "ln_ratio": 0.194,
+            "max_held": 3,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              159,
+              227,
+              276,
+              259,
+              264,
+              236,
+              170
+            ]
+          },
+          "grid": {
+            "endpoints": 1899,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 285,
+            "other": 769,
+            "piano": 471,
+            "bass": 66
+          },
+          "source_attacks": {
+            "other": 764,
+            "piano": 463,
+            "bass": 59,
+            "drums": 284
+          },
+          "source_holds": {
+            "other": 308
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2430,
+            "represented_by_chord": 1423,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 784,
+          "layout": {
+            "cost": 2085.814,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.711
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 550
+        },
+        {
+          "name": "specialist-8k",
+          "elapsed_seconds": 12.579000000027008,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1591,
+            "ln": 308,
+            "ln_ratio": 0.194,
+            "max_held": 3,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              127,
+              194,
+              226,
+              243,
+              235,
+              227,
+              212,
+              127
+            ]
+          },
+          "grid": {
+            "endpoints": 1899,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 285,
+            "other": 769,
+            "piano": 471,
+            "bass": 66
+          },
+          "source_attacks": {
+            "other": 764,
+            "piano": 463,
+            "bass": 59,
+            "drums": 284
+          },
+          "source_holds": {
+            "other": 308
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2430,
+            "represented_by_chord": 1423,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 784,
+          "layout": {
+            "cost": 2075.264,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.176
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 550
+        },
+        {
+          "name": "specialist-9k",
+          "elapsed_seconds": 14.265999999945052,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1591,
+            "ln": 308,
+            "ln_ratio": 0.194,
+            "max_held": 3,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              102,
+              164,
+              199,
+              220,
+              210,
+              224,
+              197,
+              166,
+              109
+            ]
+          },
+          "grid": {
+            "endpoints": 1899,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 285,
+            "other": 769,
+            "piano": 471,
+            "bass": 66
+          },
+          "source_attacks": {
+            "other": 764,
+            "piano": 463,
+            "bass": 59,
+            "drums": 284
+          },
+          "source_holds": {
+            "other": 308
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2430,
+            "represented_by_chord": 1423,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 784,
+          "layout": {
+            "cost": 2092.754,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.177
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 550
+        },
+        {
+          "name": "specialist-10k",
+          "elapsed_seconds": 13.297000000020489,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1591,
+            "ln": 308,
+            "ln_ratio": 0.194,
+            "max_held": 3,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              91,
+              133,
+              176,
+              188,
+              197,
+              191,
+              189,
+              186,
+              133,
+              107
+            ]
+          },
+          "grid": {
+            "endpoints": 1899,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 285,
+            "other": 769,
+            "piano": 471,
+            "bass": 66
+          },
+          "source_attacks": {
+            "other": 764,
+            "piano": 463,
+            "bass": 59,
+            "drums": 284
+          },
+          "source_holds": {
+            "other": 308
+          },
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2430,
+            "represented_by_chord": 1423,
+            "voice_not_selected": 1127
+          },
+          "reduced_chord_groups": 784,
+          "layout": {
+            "cost": 2071.057,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.171
+          },
+          "raw_evidence_unchanged": true,
+          "retained_endpoints_unchanged": true,
+          "representation_links_valid": true,
+          "selected_large_attack_shifts": 550
+        }
+      ]
+    }
+  },
+  "tests": {
+    "local_passed": 340,
+    "visual_check": false
+  },
+  "notice": "Source retention and structural integration diagnostics, not authored similarity or proof of musical quality. Physical detection evidence is unchanged."
+}

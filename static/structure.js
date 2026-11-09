@@ -18,7 +18,7 @@ structurePanel.append(structureTitle,structureInfo,boundaryLabel,structureAction
 document.querySelector('article .project-head').after(structurePanel);
 let expressionDraft=null;
 const sourceNames={mix:'混音（未分轨）',vocals:'人声',drums:'鼓 / 打击',bass:'贝斯',other:'其余伴奏',piano:'钢琴',guitar:'吉他'};
-const omissionNames={weak_detection:'检测较弱',voice_not_selected:'本段不采该声部',represented_by_phrase:'已由连续乐句表示',phrase_not_selected:'所属连续乐句未被保留',group_capacity_or_density:'完整音组超出密度或占轨预算',duplicate_pitch:'同声部重复候选'};
+const omissionNames={weak_detection:'检测较弱',voice_not_selected:'本段不采该声部',represented_by_phrase:'已由连续乐句表示',represented_by_chord:'该声部在同拍位置已用较少层数表示',phrase_not_selected:'所属连续乐句未被保留',group_capacity_or_density:'完整音组超出密度或占轨预算',duplicate_pitch:'同声部重复候选'};
 
 function preserveTimingLoad(next){
   const retained=Object.fromEntries(['bpm','offset','division','audioShift','auditionOffset','mode'].map(k=>[k,$(k).value]));

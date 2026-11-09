@@ -95,6 +95,63 @@ def test_explicit_local_mute_and_quiet_section_hold_cap_apply_to_planned_groups(
     assert next(r for r in report['decisions'] if r['id']=='later')['reason']=='voice_not_selected'
 
 
+@pytest.mark.parametrize('keys', range(6, 11))
+def test_dense_chords_can_keep_the_rhythm_with_fewer_layers(keys):
+    times = (1000, 1500, 2000, 2500)
+    notes = [Note(t,t,pitch=pitch,strength=.8,source='pitch',voice='piano',id=f'{t}:{pitch}')
+             for t in times for pitch in (48,55,60,64,67)]
+    a=analysis(notes);original=copy.deepcopy(a)
+    p=parameters({'keys':keys,'density':2,'chord_size':2,'ln_ratio':0})
+    evidence,meta,trace=expression_evidence(a,propose_expression(a,p),p)
+    selected,report=select_expression(evidence,meta,trace,p,500)
+    assert len(selected)==len(times) and {n.start for n in selected}==set(times)
+    assert a==original and len({n.id for n in selected})==len(selected)
+    actual={n.id:n for n in selected}
+    represented=[r for r in report['decisions'] if r['reason']=='represented_by_chord']
+    assert len(represented)==16
+    for entry in represented:
+        assert entry['decision']=='omitted'
+        assert all(identity in actual and actual[identity].start==entry['start']
+                   for identity in entry['represented_by'])
+    assert validate(assign_lanes(selected,p),keys)['valid']
+
+
+def test_chord_reduction_keeps_observed_ends_and_respects_later_hold_capacity():
+    notes=[Note(1000,5000+i*100,pitch=60+i,strength=.9-i*.05,source='pitch',voice='piano',id=str(i))
+           for i in range(5)]
+    a=analysis(notes);p=parameters({'ln_ratio':1,'density':8,'chord_size':4})
+    evidence,meta,trace=expression_evidence(a,propose_expression(a,p),p)
+    segment=[dict(start_ms=2000,end_ms=4000,preferences={'max_held':1})]
+    selected,report=select_expression(evidence,meta,trace,p,500,segment)
+    assert len(selected)==1 and selected[0].id=='0'
+    assert selected[0].start==1000 and selected[0].end==5000
+    assert report['omission_reasons']=={'represented_by_chord':4}
+
+
+def test_muted_chord_does_not_claim_that_missing_notes_are_represented():
+    notes=[Note(1000,1000,pitch=60+i,source='pitch',voice='piano',id=str(i)) for i in range(5)]
+    a=analysis(notes);p=parameters({'ln_ratio':0,'chord_size':2})
+    evidence,meta,trace=expression_evidence(a,propose_expression(a,p),p)
+    selected,report=select_expression(evidence,meta,trace,p,500,
+        [dict(start_ms=0,end_ms=3000,preferences={'piano_weight':0})])
+    assert not selected
+    assert all(r['reason']=='voice_not_selected' and 'represented_by' not in r for r in report['decisions'])
+
+
+@pytest.mark.parametrize('shift,expected', [(0,'main'), (90,'support')])
+def test_main_voice_preference_does_not_hide_clear_support_when_alignment_is_poor(shift,expected):
+    notes=[Note(1000,1000,source='pitch',voice='other',strength=.6,id='main',evidence_start=1000-shift),
+           Note(1000,1000,source='pitch',voice='piano',strength=.95,id='support',evidence_start=1000)]
+    a=analysis(notes);p=parameters({'ln_ratio':0,'density':1,'chord_size':1})
+    plan=propose_expression(a,p)
+    for voice,policy in plan['sections'][0]['voices'].items():
+        policy['role']='primary' if voice=='other' else 'support'
+    plan['sections'][0]['main_voice']='other'
+    evidence,meta,trace=expression_evidence(a,plan,p)
+    selected,_=select_expression(evidence,meta,trace,p,500)
+    assert [n.id for n in selected]==[expected]
+
+
 def test_phrase_mode_represents_internal_pitch_without_double_counting():
     notes=[Note(1000,1400,source='pitch',voice='vocals',id='a'),Note(1400,2000,source='pitch',voice='vocals',id='b')]
     a=analysis(notes)
