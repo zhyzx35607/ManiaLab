@@ -71,8 +71,12 @@ Piano Corpora DCML固定提交 `aa732b635bc75c6583d86c6ac488e77b08b1b37e`，419�
 
 需要解决的是可靠音频持续与停顿、稳定声部身份、跨小节乐句、交叉旋律、合理主次取舍与可演奏LN表达。本轮结果支持继续研究重叠声部连接，不支持将符号分组直接当成LN自动规划，更不支持宣称已经达到用户完整要求。
 
+后续自造MusicXML审计确认，当前上游预处理还会静默拆开同小节延音线，导入器也存在并行同音tie漏连；见[数据身份审计](piano-bar-identity-research-2026-11-09.md)。本报告的音符数和分数均属于原预处理口径，不据此称音频起音已准确。既有缓存保留，后续应先核对源声明并区分持续事件与记谱片段，再创建新的训练数据。
+
 ## 重现
 
 使用本地独立 `test-data/piano-svsep/venv/Scripts/python.exe`，固定依赖列表保存在忽略目录 `requirements-resolved.txt`。研究输出目录不能复用覆盖。准备、核验、训练、评价分别用 `prepare_piano_stream_data.py`、`check_piano_stream_training.py`、`adapt_piano_streams.py`、`evaluate_piano_stream_adaptation.py`；应用环境运行 `check_piano_stream_expression.py` 和 `summarize_piano_streams.py`。全部原运行快照和失败日志保留。
 
 失败记录包括初次缺pandas、初次JSON遇NumPy整数、首次准备数据误读另一个语料测试名单，均修复后使用新目录；不把失败尝试计入完成训练。上下文脚本的未运行初稿被替换；后续上下文与rest修复运行均已完成，原脚本快照保留。
+
+公开研究源码提交为 `502d69efa084f7af207a7ff91f9954ee628597ea`。本机全量应用测试363项通过（72.81秒），该提交的 GitHub Windows validation 运行 `42581201815` 成功；本次没有重建便携程序，工作流中的打包步骤按条件跳过。研究公开统计的重新汇总与文件身份检查通过；原始音频、乐谱、逐音符结果和适配权重继续留在忽略目录。本段工程核验不属于音乐验收。
