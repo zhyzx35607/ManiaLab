@@ -156,6 +156,8 @@ def fit(args):
         raise ValueError('Release feature implementation changed')
     if manifest.get('stem_feature_sha256') and manifest['stem_feature_sha256'] != sha('manialab/stem_release_evidence.py'):
         raise ValueError('Stem observation implementation changed')
+    if manifest.get('embedding_feature_sha256') and manifest['embedding_feature_sha256'] != sha('manialab/mapper_release_evidence.py'):
+        raise ValueError('Mapper embedding implementation changed')
     if manifest['source'] == 'sakura' and args.initial is None:
         print('Training explicit same-song-only diagnostic without a community initialization', flush=True)
     data = {}
@@ -258,6 +260,7 @@ def fit(args):
         acoustic_feature_sha256=manifest.get('acoustic_feature_sha256'),
         release_feature_sha256=manifest.get('release_feature_sha256'),
         stem_feature_sha256=manifest.get('stem_feature_sha256'), evidence_revision=manifest.get('evidence_revision'),
+        embedding_feature_sha256=manifest.get('embedding_feature_sha256'),
         parent_dataset_sha256=manifest.get('parent_dataset_sha256'),
         adaptation_mode='frozen_rhythm_acoustic_extension' if freeze_rhythm else 'all_parameters',
         selected_epoch=best_epoch, enabled_in_application=False)

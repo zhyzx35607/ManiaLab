@@ -28,6 +28,7 @@ def main():
         files[split]=metadata|dict(sha256=sha(output))
     manifest.update(features=RELEASE_FEATURES, source='paired_stems_rhythm_control', files=files,
         parent_dataset_sha256=sha(args.dataset/'manifest.json'), stem_feature_sha256=None,evidence_revision=None,
+        embedding_feature_sha256=None,
         script_sha256=sha(__file__),protocol_sha256=sha('docs/paired-stem-comparison-protocol.md'))
     (args.output/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     print(json.dumps(files),flush=True)
