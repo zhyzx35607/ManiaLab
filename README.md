@@ -32,6 +32,8 @@
 
 **同刻错声部训练**：增加同一时刻已知错声部的排序监督，完成四轮和双基线对照；同刻误连减少，但交叉旋律漏连及重叠和弦完整性退步，继续不启用。详见[本轮改善与退步](docs/piano-same-tick-ranking-2026-11-09.md)。
 
+**更晚候选竞争训练**：仅为有可靠较早后继的同part未知候选增加辅助排序，完成四轮与逐边核验；raw指标局部提高，但完整真组和交叉旋律退步，更晚候选竞争也未改善，研究权重继续禁用。见[训练结果及上下文诊断](docs/piano-later-ranking-2026-11-09.md)和[证明范围与覆盖](docs/piano-later-negative-coverage-2026-11-09.md)。
+
 **原音与标签核查**：补充[极短高音的波形、频谱和激活对照](docs/piano-attack-evidence-2026-11-09.md)，区分潜在泛音混淆与已观测音尾；另定位[同刻错声部连接及监督覆盖缺口](docs/piano-successor-label-audit-2026-11-09.md)。这些诊断尚未成为自动删音或新LN规则。
 
 ![ManiaLab 界面](docs/screenshot.png)
