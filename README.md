@@ -26,6 +26,8 @@
 
 **持续音数据与声部训练**：已用独立持续事件表示重建136份train/validation源，并完成重叠音尾增强训练；踏板控制有所恢复，交叉旋律与谱表分类仍有退步，研究权重未启用。见[延音线审计](docs/piano-bar-identity-research-2026-11-09.md)和[重叠训练结果](docs/piano-source-event-overlap-2026-11-09.md)。相同1557个《樱花草》钢琴候选的[三权重连接对照](docs/piano-audio-events-2026-11-09.md)已生成原音回放与局部图，尚不能证明稳定旋律或LN质量。另已修复[切段导致组尾误判](docs/piano-articulation-context-2026-11-09.md)。
 
+**后继起音组对照**：在原音符不变的前提下，限制每个来源音只选一组后续起音。重叠模型的模拟踏板误连减少，但复杂验证输入丢失了正确连接，仍未启用；见[解码结果与退步项](docs/piano-successor-decode-2026-11-09.md)。
+
 ![ManiaLab 界面](docs/screenshot.png)
 
 ## 下载即用
