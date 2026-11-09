@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-09",
+  "report_sha256": "f73c2b97e7f5d39686fdcb5a76487fe457889e36d5f73077d95c9b2becadeb4b",
+  "identity": {
+    "audio": "8eb46bbdf283028e5f5d4c13169741e734cc57f0bfd2fe3f19dd590f38ad2722",
+    "analysis": "ef410a5feb747f2503d956c0b2300847b9bcf09acda2ea895785071ba6ba9cc7",
+    "semantics": "6b8e3a1e3109b8e39ddd906700e36978820038b3b92f83a468843bd832957d88",
+    "events": "4a122a8cbf7f1b3098d793110613b636d0471a9e4c0aa3f7c4d07109a754b946",
+    "activations": "51b6b39ad65390f34f23f38e1b4c9eead43ee90422f8d7eeccb2f4a2c11019ab",
+    "runner": "bf61cf44d35c361a040168d16f3552f80738b40e0a18bf0564f90b2cbfa68cac",
+    "protocol": "cb7aeda6dd0f715fd4a580d0b79caffe27447c391d321becece49e1baf5c7da0"
+  },
+  "centers_seconds": [
+    215.881,
+    216.5
+  ],
+  "stft_windows": [
+    512,
+    2048
+  ],
+  "hop": 44,
+  "band_cents": 35,
+  "summary": {
+    "candidates": 4,
+    "candidates_with_possible_lower_harmonic": 3,
+    "harmonic_relation_counts": {
+      "2": 2,
+      "3": 1
+    },
+    "envelope_correlation_range": [
+      0.7386605910319487,
+      0.9204716891108065
+    ],
+    "fft_band_overlap_bins": 0,
+    "output_interval_ms_range": [
+      6.3018798828125,
+      10.162353515625
+    ],
+    "unknown_release_candidates": 4,
+    "all_1557_physical_candidates_verified": true,
+    "largest_frame_activation_first_50ms": 0.008709102869033813
+  },
+  "model_rerun": false,
+  "notes_changed": false,
+  "direct_listening_performed": false,
+  "application_enabled": false,
+  "musical_acceptance": false,
+  "limitations": [
+    "Four previously selected diagnostic candidates, not a blind accuracy sample.",
+    "Common onset and pre-onset silence affect envelope correlation.",
+    "True octave or other simultaneous notes can meet the harmonic criterion.",
+    "No harmonic within 2..8 does not establish an independent note.",
+    "Normalized spectral envelopes do not compare absolute loudness.",
+    "2ms hops do not give 2ms onset resolution."
+  ],
+  "verification": {
+    "initial_report_sha256": "d8cd591ed1de69b0929d2cdfec41f1673ed586a8976f1add19b7c98df672dfb5",
+    "independent_review_inputs_verified": 7,
+    "independent_review_artifacts_verified": 7,
+    "all_stft_arrays_recomputed": true,
+    "periodic_hann_fft_checked": true,
+    "renamed_field_only": true,
+    "figures_and_numerical_arrays_identical": true
+  }
+}
