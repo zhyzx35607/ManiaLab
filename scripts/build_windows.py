@@ -12,19 +12,23 @@ import urllib.request
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from manialab import __version__
+from build_provenance import sha256, verify_worker
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
 def source_snapshot():
     files=[ROOT/'launcher.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
            *sorted(p for p in (ROOT/'static').rglob('*') if p.is_file()),
-           ROOT/'assets/pattern-prior.json',ROOT/'assets/arrangement-profiles.json']
+           ROOT/'assets/pattern-prior.json',ROOT/'assets/arrangement-profiles.json',
+           ROOT/'assets/piano-model.json',ROOT/'assets/deep-models.json']
     return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
 build_sources=source_snapshot()
 required=['basic-pitch.onnx','pattern-prior.json','arrangement-profiles.json','deep/ManiaLabAudio/ManiaLabAudio.exe','deep/htdemucs_6s.th',
           'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json']
 for relative in required:
     if not (ROOT/'assets'/relative).is_file():raise SystemExit(f'Missing release component: assets/{relative}')
+worker_identity=verify_worker(ROOT,ROOT/'assets/deep')
 optional_piano=ROOT/'assets/deep/piano-regression.onnx'
+piano_identity=None
 if optional_piano.exists():
     piano_identity=json.loads((ROOT/'assets/piano-model.json').read_text(encoding='utf-8'))
     with optional_piano.open('rb') as stream:
@@ -71,9 +75,15 @@ subprocess.run(args,check=True)
 target=ROOT/'dist/ManiaLab'
 if source_snapshot()!=build_sources:
     raise SystemExit('Application sources changed during the build; rebuild before publishing.')
+bundled_worker=verify_worker(ROOT,target/'_internal/assets/deep')
+if bundled_worker!=worker_identity:
+    raise SystemExit('Audio worker changed during the build; rebuild before publishing.')
+if piano_identity and sha256(target/'_internal/assets/deep/piano-regression.onnx')!=piano_identity['sha256']:
+    raise SystemExit('Piano model changed during the build; rebuild before publishing.')
 release_manifest=dict(version=__version__,sources=build_sources,
     executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
-    worker_sha256=hashlib.sha256((target/'_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe').read_bytes()).hexdigest())
+    worker_sha256=bundled_worker['worker_sha256'],worker_sources=bundled_worker['worker_sources'],
+    piano_model=piano_identity)
 (target/'release-manifest.json').write_text(json.dumps(release_manifest,indent=2),encoding='utf-8')
 for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
     shutil.copy2(ROOT/name,target/name)

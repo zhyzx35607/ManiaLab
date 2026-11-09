@@ -17,9 +17,10 @@ from scipy.sparse import csc_matrix
 
 from .arrange import _solve_binary, parameters, settings_at
 from .domain import UNOBSERVED_RELEASES,note_from
+from .expression_articulation import articulation_policy,source_activity
 from .structure import detect_structure
 
-MODES = ('sustain', 'onsets', 'phrase', 'omit')
+MODES = ('sustain', 'articulation', 'onsets', 'phrase', 'omit')
 
 
 def signature(analysis):
@@ -36,17 +37,19 @@ def propose_expression(analysis, settings):
     for segment in structure['segments']:
         a, b = segment['start_ms'], segment['end_ms']
         local = [n for n in notes if a <= n['start'] < b and n.get('strength', 0) >= .35]
-        scores = {}
+        scores,evidence = {},{}
         for voice in voices:
             if p.get(voice+'_weight', 1.) <= 0:
                 continue
             source = [n for n in local if n.get('voice', 'mix') == voice]
-            # Cap overlapping activation: harmonics and polyphony must not
-            # automatically outrank a monophonic melody.
-            occupied = set()
+            evidence[voice]=source_activity([note_from(n) for n in source],a,b)
+            # Keep the established recommendation until the separate activity
+            # and articulation proposals have musical validation. The exact
+            # observed/uncertain diagnostic is not a salience probability.
+            occupied=set()
             for n in source:
-                occupied.update(range(n['start']//250, (min(b, max(n['end'], n['start']+250))+249)//250))
-            scores[voice] = len(occupied)*250/max(1, b-a)
+                occupied.update(range(n['start']//250,(min(b,max(n['end'],n['start']+250))+249)//250))
+            scores[voice]=len(occupied)*250/max(1,b-a)
         melodic = {v:s for v,s in scores.items() if v != 'drums' and s > .02}
         if melodic.get('vocals', 0) >= .18:
             main = 'vocals'
@@ -66,11 +69,12 @@ def propose_expression(analysis, settings):
                 mode = 'sustain'
             else:
                 mode = 'onsets'
-            policies[voice] = dict(mode=mode, role='primary' if voice == main else 'support')
+            policies[voice] = dict(mode=mode, role='primary' if voice == main else 'support',
+                activity=evidence.get(voice,{}))
         sections.append(dict(start_ms=a, end_ms=b, label=segment.get('label', ''),
             similarity_group=segment.get('similarity_group'), main_voice=main,
-            voices=policies, reason='主声部优先保留连续音组；辅声部按整组取舍。长短由本段策略和真实持续区间决定。'))
-    return dict(revision=1, source='automatic', evidence_signature=signature(analysis),
+            voices=policies, reason='主声部按检测活动建议，仍需试听确认；长短表达可单独修改。连续起音表达为可选编排方式，不代表手指松键检测。'))
+    return dict(revision=2, source='automatic', evidence_signature=signature(analysis),
         sections=sections, notice='LN 参数用于选择声部表达方向，不强凑全曲比例。段内策略保持一致；短音、停顿和占轨限制仍会影响实际结果。')
 
 
@@ -90,7 +94,7 @@ def validate_expression(value, analysis):
             raise ValueError('声部方案必须包含当前分析的全部声部')
         for policy in policies.values():
             if not isinstance(policy, dict) or policy.get('mode') not in MODES or policy.get('role') not in ('primary', 'support'):
-                raise ValueError('声部表达只能选择持续音、起音、连贯乐句或不采')
+                raise ValueError('声部表达只能选择持续音、连续起音优先、起音、连贯乐句或不采')
         active_primary = [v for v, policy in policies.items() if policy['role'] == 'primary' and policy['mode'] != 'omit']
         if len(active_primary) > 1:
             raise ValueError('每个段落最多指定一个主声部')
@@ -107,6 +111,10 @@ def expression_evidence(analysis, plan, settings):
     for index, section in enumerate(plan['sections']):
         local = [n for n in raw if section['start_ms'] <= n.start < section['end_ms']]
         by_id = {n.id: n for n in local}
+        articulation={}
+        for voice,policy in section['voices'].items():
+            if policy['mode']=='articulation':
+                articulation.update(articulation_policy([n for n in local if n.voice==voice and n.strength>=.35]))
         replacements, covered = {}, {}
         for phrase in phrases:
             policy = section['voices'].get(phrase.voice, {})
@@ -142,6 +150,12 @@ def expression_evidence(analysis, plan, settings):
             n = replacements.get(original.id, original)
             hold = n.source == 'pitch' and policy['mode'] != 'onsets' and n.end-n.start >= p['min_ln']
             reason = 'supported_sustain' if hold else ('section_onsets' if policy['mode'] == 'onsets' else 'short_duration')
+            gesture=articulation.get(original.id)
+            if gesture is not None:
+                base['articulation']=gesture
+                if gesture['tap']:
+                    hold=False
+                    reason='articulated_attack_run'
             if hold and n.release_reason in UNOBSERVED_RELEASES:
                 hold=False
                 reason='unobserved_release'

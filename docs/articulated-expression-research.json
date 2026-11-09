@@ -1,0 +1,2177 @@
+{
+  "runs": [
+    {
+      "name": "articulated-expression-v1",
+      "evidence_sha256": "274871d5b6ec0849ba84faee010be065d6fd946c99646b5602e95356235e4538",
+      "identity": {
+        "runner_sha256": "330e6b59bb7684b8fdcc0a1687f34607d4fdae3efdeba5ff8c2ab719e551834a",
+        "snapshots": {
+          "manialab/expression.py": "d7f22d6036c8d157a72ccaa3446fd96f9a0ce948cecb6578a048c6ab9cc51753",
+          "manialab/expression_articulation.py": "039cebbdc07893384fee74d267107a76ba78284e789f082a7774ab96e3111192",
+          "manialab/arrange.py": "e6638aa27ddf97d446655d785a7d85bfde6a4a85af262d1e5afe4a3c7286e814",
+          "manialab/domain.py": "8c082337c118f2b6078f12b1231318ae14fcc87c383e974f4f531cc8c3c3ac2c",
+          "manialab/timing.py": "6e8bf724db50aafd70af4fee9260d4bdee5ac6917c0063fb29fb6c854cb40e2b",
+          "manialab/piano.py": "deb8be75eeaa54b086761b7d813b8b972f03df70821609401fcfcca535c4f90b"
+        },
+        "protocol_sha256": "7debc1b9dd7435291ddbe27f501727aeefbd7471b12485ecf71df9ad8c5aa9ce",
+        "previous_report_sha256": "834f7d3eaf189badb8a9bbbe87e006a7b8caae2b4caf2305d18d56d26ac8b3f6",
+        "analyses_sha256": {
+          "basic-other": "ef410a5feb747f2503d956c0b2300847b9bcf09acda2ea895785071ba6ba9cc7",
+          "instrument-other": "65b9e22e320d7b6d2123c053700a59cfbea904fb0de4be9c3e68c0640e40a02c"
+        },
+        "generation_clock": {
+          "bpm": 74.0,
+          "offset": 178.0,
+          "division": 4,
+          "audio_shift_ms": 22.5
+        },
+        "reference_chart_read": false,
+        "network_rerun": false
+      },
+      "cases": [
+        {
+          "name": "basic-other-old-plan-10k",
+          "source": "basic-other",
+          "mode": "old-plan",
+          "keys": 10,
+          "elapsed_seconds": 11.375,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1591,
+            "ln": 308,
+            "ln_ratio": 0.194,
+            "max_held": 3,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              91,
+              133,
+              176,
+              188,
+              197,
+              191,
+              189,
+              186,
+              133,
+              107
+            ]
+          },
+          "grid": {
+            "endpoints": 1899,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 6093,
+            "tails_moved": 1428,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 2907,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 285,
+            "other": 769,
+            "piano": 471,
+            "bass": 66
+          },
+          "source_attacks": {
+            "drums": 284,
+            "other": 764,
+            "piano": 463,
+            "bass": 59
+          },
+          "source_holds": {
+            "other": 308
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 2419,
+            "drums": 558
+          },
+          "articulation_runs": 0,
+          "expression_reasons": {
+            "section_onsets": 2728,
+            "short_duration": 2064,
+            "weak_detection": 1138,
+            "supported_sustain": 1435,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 14,
+            "other": 503,
+            "bass": 32,
+            "piano": 1
+          },
+          "main_voices": [
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2430,
+            "represented_by_chord": 1423,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 2071.057,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.171
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": true
+        },
+        {
+          "name": "basic-other-activity-only-10k",
+          "source": "basic-other",
+          "mode": "activity-only",
+          "keys": 10,
+          "elapsed_seconds": 11.172000000020489,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1591,
+            "ln": 308,
+            "ln_ratio": 0.194,
+            "max_held": 3,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              91,
+              133,
+              176,
+              188,
+              197,
+              191,
+              189,
+              186,
+              133,
+              107
+            ]
+          },
+          "grid": {
+            "endpoints": 1899,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 6093,
+            "tails_moved": 1428,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 2907,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 285,
+            "other": 769,
+            "piano": 471,
+            "bass": 66
+          },
+          "source_attacks": {
+            "drums": 284,
+            "other": 764,
+            "piano": 463,
+            "bass": 59
+          },
+          "source_holds": {
+            "other": 308
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 2419,
+            "drums": 558
+          },
+          "articulation_runs": 0,
+          "expression_reasons": {
+            "section_onsets": 2728,
+            "short_duration": 2064,
+            "weak_detection": 1138,
+            "supported_sustain": 1435,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 14,
+            "other": 503,
+            "bass": 32,
+            "piano": 1
+          },
+          "main_voices": [
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2430,
+            "represented_by_chord": 1423,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 2071.057,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.171
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "basic-other-articulation-10k",
+          "source": "basic-other",
+          "mode": "articulation",
+          "keys": 10,
+          "elapsed_seconds": 12.156000000075437,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1591,
+            "ln": 317,
+            "ln_ratio": 0.199,
+            "max_held": 3,
+            "longest_ln_ms": 2027,
+            "lane_counts": [
+              94,
+              135,
+              174,
+              186,
+              196,
+              190,
+              190,
+              188,
+              133,
+              105
+            ]
+          },
+          "grid": {
+            "endpoints": 1908,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 6093,
+            "tails_moved": 1464,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 2907,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 285,
+            "other": 769,
+            "piano": 471,
+            "bass": 66
+          },
+          "source_attacks": {
+            "drums": 284,
+            "other": 764,
+            "piano": 463,
+            "bass": 59
+          },
+          "source_holds": {
+            "other": 308,
+            "piano": 9
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 2419,
+            "drums": 558
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 1196,
+            "short_duration": 2069,
+            "weak_detection": 1138,
+            "supported_sustain": 1471,
+            "articulated_attack_run": 1491,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 14,
+            "other": 503,
+            "bass": 32,
+            "piano": 1
+          },
+          "main_voices": [
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2430,
+            "represented_by_chord": 1423,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 2078.576,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.014
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-old-plan-10k",
+          "source": "instrument-other",
+          "mode": "old-plan",
+          "keys": 10,
+          "elapsed_seconds": 9.281000000075437,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1424,
+            "ln": 698,
+            "ln_ratio": 0.49,
+            "max_held": 5,
+            "longest_ln_ms": 2838,
+            "lane_counts": [
+              91,
+              111,
+              152,
+              168,
+              189,
+              192,
+              167,
+              148,
+              112,
+              94
+            ]
+          },
+          "grid": {
+            "endpoints": 2122,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 1260,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 354,
+            "piano": 807,
+            "other": 180,
+            "bass": 83
+          },
+          "source_attacks": {
+            "drums": 353,
+            "piano": 774,
+            "other": 172,
+            "bass": 77
+          },
+          "source_holds": {
+            "other": 28,
+            "piano": 650,
+            "bass": 20
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 405,
+            "drums": 558
+          },
+          "articulation_runs": 0,
+          "expression_reasons": {
+            "section_onsets": 2451,
+            "supported_sustain": 1300,
+            "weak_detection": 918,
+            "unobserved_release": 37,
+            "short_duration": 186,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 19,
+            "bass": 30,
+            "other": 14,
+            "piano": 3
+          },
+          "main_voices": [
+            "other",
+            "other",
+            "other",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1077,
+            "group_capacity_or_density": 1061,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 2131.363,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.696
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": true
+        },
+        {
+          "name": "instrument-other-activity-only-10k",
+          "source": "instrument-other",
+          "mode": "activity-only",
+          "keys": 10,
+          "elapsed_seconds": 9.484000000054948,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1434,
+            "ln": 726,
+            "ln_ratio": 0.506,
+            "max_held": 5,
+            "longest_ln_ms": 2838,
+            "lane_counts": [
+              94,
+              115,
+              151,
+              163,
+              194,
+              197,
+              168,
+              147,
+              117,
+              88
+            ]
+          },
+          "grid": {
+            "endpoints": 2160,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 1243,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 365,
+            "other": 179,
+            "piano": 807,
+            "bass": 83
+          },
+          "source_attacks": {
+            "drums": 364,
+            "other": 171,
+            "piano": 774,
+            "bass": 77
+          },
+          "source_holds": {
+            "piano": 706,
+            "bass": 20
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 405,
+            "drums": 558
+          },
+          "articulation_runs": 0,
+          "expression_reasons": {
+            "section_onsets": 2522,
+            "supported_sustain": 1285,
+            "short_duration": 167,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 30,
+            "other": 14,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1073,
+            "group_capacity_or_density": 1055,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 2186.854,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.445
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-articulation-10k",
+          "source": "instrument-other",
+          "mode": "articulation",
+          "keys": 10,
+          "elapsed_seconds": 11.109000000054948,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 44,
+            "ln_ratio": 0.031,
+            "max_held": 4,
+            "longest_ln_ms": 2432,
+            "lane_counts": [
+              92,
+              129,
+              166,
+              179,
+              170,
+              177,
+              166,
+              159,
+              109,
+              94
+            ]
+          },
+          "grid": {
+            "endpoints": 1485,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 67,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "piano": 849,
+            "other": 184,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "piano": 813,
+            "other": 176,
+            "bass": 78
+          },
+          "source_holds": {
+            "piano": 24,
+            "bass": 20
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 405,
+            "drums": 558
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 2377,
+            "supported_sustain": 67,
+            "short_duration": 39,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1700.68,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.743
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-articulation-6k",
+          "source": "instrument-other",
+          "mode": "articulation",
+          "keys": 6,
+          "elapsed_seconds": 10.265999999945052,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 44,
+            "ln_ratio": 0.031,
+            "max_held": 4,
+            "longest_ln_ms": 2432,
+            "lane_counts": [
+              172,
+              267,
+              288,
+              281,
+              249,
+              184
+            ]
+          },
+          "grid": {
+            "endpoints": 1485,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 67,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "other": 184,
+            "piano": 849,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "other": 176,
+            "piano": 813,
+            "bass": 78
+          },
+          "source_holds": {
+            "piano": 24,
+            "bass": 20
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 405,
+            "drums": 558
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 2377,
+            "supported_sustain": 67,
+            "short_duration": 39,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1693.609,
+            "short_jacks": 1,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.371
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-articulation-7k",
+          "source": "instrument-other",
+          "mode": "articulation",
+          "keys": 7,
+          "elapsed_seconds": 8.327999999979511,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 44,
+            "ln_ratio": 0.031,
+            "max_held": 4,
+            "longest_ln_ms": 2432,
+            "lane_counts": [
+              146,
+              216,
+              255,
+              237,
+              237,
+              196,
+              154
+            ]
+          },
+          "grid": {
+            "endpoints": 1485,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 67,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "other": 184,
+            "piano": 849,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "other": 176,
+            "piano": 813,
+            "bass": 78
+          },
+          "source_holds": {
+            "piano": 24,
+            "bass": 20
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 405,
+            "drums": 558
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 2377,
+            "supported_sustain": 67,
+            "short_duration": 39,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1715.907,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.344
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-articulation-8k",
+          "source": "instrument-other",
+          "mode": "articulation",
+          "keys": 8,
+          "elapsed_seconds": 8.280999999959022,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 44,
+            "ln_ratio": 0.031,
+            "max_held": 4,
+            "longest_ln_ms": 2432,
+            "lane_counts": [
+              113,
+              195,
+              214,
+              215,
+              216,
+              203,
+              181,
+              104
+            ]
+          },
+          "grid": {
+            "endpoints": 1485,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 67,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "other": 184,
+            "piano": 849,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "other": 176,
+            "piano": 813,
+            "bass": 78
+          },
+          "source_holds": {
+            "piano": 24,
+            "bass": 20
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 405,
+            "drums": 558
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 2377,
+            "supported_sustain": 67,
+            "short_duration": 39,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1704.78,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.948
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-articulation-9k",
+          "source": "instrument-other",
+          "mode": "articulation",
+          "keys": 9,
+          "elapsed_seconds": 8.577999999979511,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 44,
+            "ln_ratio": 0.031,
+            "max_held": 4,
+            "longest_ln_ms": 2432,
+            "lane_counts": [
+              105,
+              151,
+              186,
+              206,
+              193,
+              190,
+              168,
+              146,
+              96
+            ]
+          },
+          "grid": {
+            "endpoints": 1485,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 67,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "other": 184,
+            "piano": 849,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "other": 176,
+            "piano": 813,
+            "bass": 78
+          },
+          "source_holds": {
+            "piano": 24,
+            "bass": 20
+          },
+          "expressed_source_attacks": {
+            "piano": 1414,
+            "bass": 531,
+            "other": 405,
+            "drums": 558
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 2377,
+            "supported_sustain": 67,
+            "short_duration": 39,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1718.071,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.936
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        }
+      ],
+      "smd": [
+        {
+          "name": "bach",
+          "activation_sha256": "27ed5212c72f4d0c7b6bdeb705a3eab981021953ca20e9cb2f35d8010e0fd547",
+          "raw_events": 279,
+          "strong_attacks": 279,
+          "expressed_attacks": 279,
+          "holds": 11,
+          "articulation_body": 268,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "bartok",
+          "activation_sha256": "f368ea297e2038be8bc9c908982c477a9a87ebebe3790737bd58f3b89b0aacb6",
+          "raw_events": 820,
+          "strong_attacks": 807,
+          "expressed_attacks": 807,
+          "holds": 203,
+          "articulation_body": 0,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "beethoven",
+          "activation_sha256": "f109fd8599703ee408ae0601d1c7f321449123567f5a09bad712efc90e57e450",
+          "raw_events": 322,
+          "strong_attacks": 322,
+          "expressed_attacks": 322,
+          "holds": 214,
+          "articulation_body": 22,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "brahms",
+          "activation_sha256": "9a4e4fa1f40838f12cedc221ad2e603aaa72a7035e837ea1bc30e7d84decf9c3",
+          "raw_events": 476,
+          "strong_attacks": 468,
+          "expressed_attacks": 468,
+          "holds": 125,
+          "articulation_body": 298,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "chopin",
+          "activation_sha256": "d268023cc26612358fbda4362b020d81448d4c448ed8cbe7ae376f156f232040",
+          "raw_events": 269,
+          "strong_attacks": 266,
+          "expressed_attacks": 266,
+          "holds": 2,
+          "articulation_body": 264,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "haydn",
+          "activation_sha256": "afca061b904bdd275bb17fa553ad989d3211ced4d62dd637d338aaf30bb465c4",
+          "raw_events": 689,
+          "strong_attacks": 689,
+          "expressed_attacks": 689,
+          "holds": 123,
+          "articulation_body": 0,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "liszt",
+          "activation_sha256": "8be190a44dad66a1faecfa29390292fa9c3b920ba155c53bdd51c8ab6660e2af",
+          "raw_events": 164,
+          "strong_attacks": 163,
+          "expressed_attacks": 163,
+          "holds": 84,
+          "articulation_body": 40,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "mozart",
+          "activation_sha256": "f32df275a95d60bd3ba62de01dd7e523efebd0ce59d1ae543a4231f71af65434",
+          "raw_events": 425,
+          "strong_attacks": 425,
+          "expressed_attacks": 425,
+          "holds": 131,
+          "articulation_body": 50,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "rachmaninoff",
+          "activation_sha256": "91e89efb41a50c98d7bb36c3d9e8b83f5ce166cf7065d4495782bb030e9a20e4",
+          "raw_events": 535,
+          "strong_attacks": 527,
+          "expressed_attacks": 527,
+          "holds": 24,
+          "articulation_body": 503,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "ravel",
+          "activation_sha256": "c4ec8721de5b8aae95e9eaabf3dc157ec33ea46d0a59e233d808288352279997",
+          "raw_events": 657,
+          "strong_attacks": 654,
+          "expressed_attacks": 654,
+          "holds": 2,
+          "articulation_body": 652,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "skryabin",
+          "activation_sha256": "73af30d9459f1b5b9ae15a11226d0cc357fa0fdb5476f9fa4cc7027e8a7eb6b6",
+          "raw_events": 369,
+          "strong_attacks": 367,
+          "expressed_attacks": 367,
+          "holds": 5,
+          "articulation_body": 362,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        }
+      ],
+      "visual_check": false,
+      "musical_acceptance": false,
+      "notice": "Fixed rule comparison on detected evidence. Explicit musical-expression choice; no claim of physical key-release inference or musical acceptance. Manual chart timing."
+    },
+    {
+      "name": "articulated-expression-v2",
+      "evidence_sha256": "43e304930dfa7fcaaefadc1438d6861fcfbcc43fcc43f284596920e2f5c7cea9",
+      "identity": {
+        "runner_sha256": "272d4aacf7346f0262ecdc665c3e2ff4052fe4c70466696a3ce3b0a095cf655b",
+        "snapshots": {
+          "manialab/expression.py": "06e616ae58ac704d69a55c7e826427f5ceb5471d5c33e24ab3746e4d1df0b450",
+          "manialab/expression_articulation.py": "039cebbdc07893384fee74d267107a76ba78284e789f082a7774ab96e3111192",
+          "scripts/research_expression_policies.py": "bc66a79180d40ef8a21ced3bdcecd7fe9c613ca80b17cecfa3e8f8ec834228b3",
+          "manialab/arrange.py": "e6638aa27ddf97d446655d785a7d85bfde6a4a85af262d1e5afe4a3c7286e814",
+          "manialab/domain.py": "8c082337c118f2b6078f12b1231318ae14fcc87c383e974f4f531cc8c3c3ac2c",
+          "manialab/timing.py": "6e8bf724db50aafd70af4fee9260d4bdee5ac6917c0063fb29fb6c854cb40e2b",
+          "manialab/piano.py": "deb8be75eeaa54b086761b7d813b8b972f03df70821609401fcfcca535c4f90b"
+        },
+        "protocol_sha256": "3c2b4c5fbe93df9c116b8f51b69cad2159414a871948e54dfb13ede7e3133a8d",
+        "previous_report_sha256": "834f7d3eaf189badb8a9bbbe87e006a7b8caae2b4caf2305d18d56d26ac8b3f6",
+        "analyses_sha256": {
+          "basic-other": "ef410a5feb747f2503d956c0b2300847b9bcf09acda2ea895785071ba6ba9cc7",
+          "instrument-other": "65b9e22e320d7b6d2123c053700a59cfbea904fb0de4be9c3e68c0640e40a02c"
+        },
+        "generation_clock": {
+          "bpm": 74.0,
+          "offset": 178.0,
+          "division": 4,
+          "audio_shift_ms": 22.5
+        },
+        "reference_chart_read": false,
+        "network_rerun": false
+      },
+      "cases": [
+        {
+          "name": "basic-other-independent-10k",
+          "source": "basic-other",
+          "mode": "independent",
+          "keys": 10,
+          "elapsed_seconds": 12.204000000027008,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1591,
+            "ln": 364,
+            "ln_ratio": 0.229,
+            "max_held": 4,
+            "longest_ln_ms": 2433,
+            "lane_counts": [
+              86,
+              120,
+              163,
+              184,
+              197,
+              201,
+              197,
+              194,
+              139,
+              110
+            ]
+          },
+          "grid": {
+            "endpoints": 1955,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 6093,
+            "tails_moved": 1793,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 2907,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 285,
+            "other": 769,
+            "piano": 471,
+            "bass": 66
+          },
+          "source_attacks": {
+            "drums": 284,
+            "other": 764,
+            "piano": 463,
+            "bass": 59
+          },
+          "source_holds": {
+            "other": 308,
+            "piano": 9,
+            "bass": 47
+          },
+          "expressed_source_attacks": {
+            "other": 2419,
+            "bass": 531,
+            "piano": 1414,
+            "drums": 558
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 558,
+            "short_duration": 2377,
+            "weak_detection": 1138,
+            "supported_sustain": 1801,
+            "articulated_attack_run": 1491,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 14,
+            "other": 503,
+            "bass": 32,
+            "piano": 1
+          },
+          "main_voices": [
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other",
+            "other"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 783,
+            "weak_detection": 1138,
+            "group_capacity_or_density": 2430,
+            "represented_by_chord": 1423,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 2142.299,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.46
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-independent-6k",
+          "source": "instrument-other",
+          "mode": "independent",
+          "keys": 6,
+          "elapsed_seconds": 8.031000000075437,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 219,
+            "ln_ratio": 0.152,
+            "max_held": 4,
+            "longest_ln_ms": 3244,
+            "lane_counts": [
+              171,
+              247,
+              291,
+              277,
+              252,
+              203
+            ]
+          },
+          "grid": {
+            "endpoints": 1660,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 1138,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "other": 184,
+            "piano": 849,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "other": 176,
+            "piano": 813,
+            "bass": 78
+          },
+          "source_holds": {
+            "other": 130,
+            "piano": 24,
+            "bass": 65
+          },
+          "expressed_source_attacks": {
+            "drums": 558,
+            "piano": 1414,
+            "bass": 531,
+            "other": 405
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 558,
+            "supported_sustain": 1146,
+            "short_duration": 500,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "unobserved_release": 279,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1788.537,
+            "short_jacks": 1,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.826
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-independent-7k",
+          "source": "instrument-other",
+          "mode": "independent",
+          "keys": 7,
+          "elapsed_seconds": 9.5,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 219,
+            "ln_ratio": 0.152,
+            "max_held": 4,
+            "longest_ln_ms": 3244,
+            "lane_counts": [
+              142,
+              209,
+              242,
+              248,
+              238,
+              205,
+              157
+            ]
+          },
+          "grid": {
+            "endpoints": 1660,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 1138,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "other": 184,
+            "piano": 849,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "other": 176,
+            "piano": 813,
+            "bass": 78
+          },
+          "source_holds": {
+            "other": 130,
+            "piano": 24,
+            "bass": 65
+          },
+          "expressed_source_attacks": {
+            "drums": 558,
+            "piano": 1414,
+            "bass": 531,
+            "other": 405
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 558,
+            "supported_sustain": 1146,
+            "short_duration": 500,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "unobserved_release": 279,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1807.193,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 8.115
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-independent-8k",
+          "source": "instrument-other",
+          "mode": "independent",
+          "keys": 8,
+          "elapsed_seconds": 12.077999999979511,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 219,
+            "ln_ratio": 0.152,
+            "max_held": 4,
+            "longest_ln_ms": 3244,
+            "lane_counts": [
+              113,
+              179,
+              205,
+              218,
+              224,
+              206,
+              181,
+              115
+            ]
+          },
+          "grid": {
+            "endpoints": 1660,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 1138,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "piano": 849,
+            "other": 184,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "piano": 813,
+            "other": 176,
+            "bass": 78
+          },
+          "source_holds": {
+            "piano": 24,
+            "other": 130,
+            "bass": 65
+          },
+          "expressed_source_attacks": {
+            "drums": 558,
+            "piano": 1414,
+            "bass": 531,
+            "other": 405
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 558,
+            "supported_sustain": 1146,
+            "short_duration": 500,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "unobserved_release": 279,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1798.191,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.909
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-independent-9k",
+          "source": "instrument-other",
+          "mode": "independent",
+          "keys": 9,
+          "elapsed_seconds": 9.53200000000652,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 219,
+            "ln_ratio": 0.152,
+            "max_held": 4,
+            "longest_ln_ms": 3244,
+            "lane_counts": [
+              103,
+              138,
+              177,
+              197,
+              196,
+              196,
+              181,
+              146,
+              107
+            ]
+          },
+          "grid": {
+            "endpoints": 1660,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 1138,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "other": 184,
+            "piano": 849,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "other": 176,
+            "piano": 813,
+            "bass": 78
+          },
+          "source_holds": {
+            "other": 130,
+            "piano": 24,
+            "bass": 65
+          },
+          "expressed_source_attacks": {
+            "drums": 558,
+            "piano": 1414,
+            "bass": 531,
+            "other": 405
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 558,
+            "supported_sustain": 1146,
+            "short_duration": 500,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "unobserved_release": 279,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1805.946,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.4
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        },
+        {
+          "name": "instrument-other-independent-10k",
+          "source": "instrument-other",
+          "mode": "independent",
+          "keys": 10,
+          "elapsed_seconds": 9.062999999965541,
+          "structural": {
+            "valid": true,
+            "issues": [],
+            "issue_count": 0,
+            "notes": 1441,
+            "ln": 219,
+            "ln_ratio": 0.152,
+            "max_held": 4,
+            "longest_ln_ms": 3244,
+            "lane_counts": [
+              88,
+              121,
+              161,
+              169,
+              176,
+              182,
+              172,
+              165,
+              114,
+              93
+            ]
+          },
+          "grid": {
+            "endpoints": 1660,
+            "off_grid": 0,
+            "max_error_ms": 0.4865,
+            "tolerance_ms": 0.501
+          },
+          "alignment": {
+            "enabled": true,
+            "moved": 3875,
+            "tails_moved": 1138,
+            "max_shift_ms": 101,
+            "large_attack_shifts": 510,
+            "collapsed_holds": 0,
+            "warning_threshold_ms": 30,
+            "reason": "\u77ed\u952e\u4e0e LN \u8d77\u6b62\u5747\u5df2\u91cf\u5316\uff1b\u8d85\u8fc7 30ms \u7684\u8d77\u97f3\u79fb\u52a8\u9700\u56de\u542c\u68c0\u67e5\uff0c\u843d\u7ebf\u4e0d\u4ee3\u8868\u91c7\u97f3\u6b63\u786e"
+          },
+          "selection_optimal": true,
+          "source_counts": {
+            "drums": 324,
+            "other": 184,
+            "piano": 849,
+            "bass": 84
+          },
+          "source_attacks": {
+            "drums": 323,
+            "other": 176,
+            "piano": 813,
+            "bass": 78
+          },
+          "source_holds": {
+            "other": 130,
+            "piano": 24,
+            "bass": 65
+          },
+          "expressed_source_attacks": {
+            "drums": 558,
+            "piano": 1414,
+            "bass": 531,
+            "other": 405
+          },
+          "articulation_runs": 16,
+          "expression_reasons": {
+            "section_onsets": 558,
+            "supported_sustain": 1146,
+            "short_duration": 500,
+            "weak_detection": 918,
+            "articulated_attack_run": 1491,
+            "unobserved_release": 279,
+            "voice_not_selected": 1127
+          },
+          "retained_large_attack_shifts": {
+            "drums": 21,
+            "bass": 32,
+            "other": 15,
+            "piano": 3
+          },
+          "main_voices": [
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "piano",
+            "bass"
+          ],
+          "omission_reasons": {
+            "duplicate_pitch": 412,
+            "represented_by_chord": 1093,
+            "group_capacity_or_density": 1028,
+            "weak_detection": 918,
+            "voice_not_selected": 1127
+          },
+          "layout": {
+            "cost": 1788.255,
+            "short_jacks": 0,
+            "release_repeats": 0,
+            "peak_hand_pressure": 7.711
+          },
+          "original_candidates_unchanged": true,
+          "retained_endpoints_preserved_after_selection": true,
+          "old_output_exactly_reproduced": false
+        }
+      ],
+      "smd": [
+        {
+          "name": "bach",
+          "activation_sha256": "27ed5212c72f4d0c7b6bdeb705a3eab981021953ca20e9cb2f35d8010e0fd547",
+          "raw_events": 279,
+          "strong_attacks": 279,
+          "expressed_attacks": 279,
+          "holds": 11,
+          "articulation_body": 268,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "bartok",
+          "activation_sha256": "f368ea297e2038be8bc9c908982c477a9a87ebebe3790737bd58f3b89b0aacb6",
+          "raw_events": 820,
+          "strong_attacks": 807,
+          "expressed_attacks": 807,
+          "holds": 203,
+          "articulation_body": 0,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "beethoven",
+          "activation_sha256": "f109fd8599703ee408ae0601d1c7f321449123567f5a09bad712efc90e57e450",
+          "raw_events": 322,
+          "strong_attacks": 322,
+          "expressed_attacks": 322,
+          "holds": 214,
+          "articulation_body": 22,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "brahms",
+          "activation_sha256": "9a4e4fa1f40838f12cedc221ad2e603aaa72a7035e837ea1bc30e7d84decf9c3",
+          "raw_events": 476,
+          "strong_attacks": 468,
+          "expressed_attacks": 468,
+          "holds": 125,
+          "articulation_body": 298,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "chopin",
+          "activation_sha256": "d268023cc26612358fbda4362b020d81448d4c448ed8cbe7ae376f156f232040",
+          "raw_events": 269,
+          "strong_attacks": 266,
+          "expressed_attacks": 266,
+          "holds": 2,
+          "articulation_body": 264,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "haydn",
+          "activation_sha256": "afca061b904bdd275bb17fa553ad989d3211ced4d62dd637d338aaf30bb465c4",
+          "raw_events": 689,
+          "strong_attacks": 689,
+          "expressed_attacks": 689,
+          "holds": 123,
+          "articulation_body": 0,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "liszt",
+          "activation_sha256": "8be190a44dad66a1faecfa29390292fa9c3b920ba155c53bdd51c8ab6660e2af",
+          "raw_events": 164,
+          "strong_attacks": 163,
+          "expressed_attacks": 163,
+          "holds": 84,
+          "articulation_body": 40,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "mozart",
+          "activation_sha256": "f32df275a95d60bd3ba62de01dd7e523efebd0ce59d1ae543a4231f71af65434",
+          "raw_events": 425,
+          "strong_attacks": 425,
+          "expressed_attacks": 425,
+          "holds": 131,
+          "articulation_body": 50,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "rachmaninoff",
+          "activation_sha256": "91e89efb41a50c98d7bb36c3d9e8b83f5ce166cf7065d4495782bb030e9a20e4",
+          "raw_events": 535,
+          "strong_attacks": 527,
+          "expressed_attacks": 527,
+          "holds": 24,
+          "articulation_body": 503,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "ravel",
+          "activation_sha256": "c4ec8721de5b8aae95e9eaabf3dc157ec33ea46d0a59e233d808288352279997",
+          "raw_events": 657,
+          "strong_attacks": 654,
+          "expressed_attacks": 654,
+          "holds": 2,
+          "articulation_body": 652,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        },
+        {
+          "name": "skryabin",
+          "activation_sha256": "73af30d9459f1b5b9ae15a11226d0cc357fa0fdb5476f9fa4cc7027e8a7eb6b6",
+          "raw_events": 369,
+          "strong_attacks": 367,
+          "expressed_attacks": 367,
+          "holds": 5,
+          "articulation_body": 362,
+          "original_candidate_data_unchanged": true,
+          "all_strong_attacks_retained": true,
+          "original_or_tap_end_only": true,
+          "unsafe_tail_holds": 0
+        }
+      ],
+      "visual_check": false,
+      "musical_acceptance": false,
+      "notice": "Fixed rule comparison on detected evidence. Explicit musical-expression choice; no claim of physical key-release inference or musical acceptance. Manual chart timing."
+    }
+  ],
+  "automatic_recommendation_enabled": false,
+  "optional_manual_mode": true,
+  "notice": "Original automatic policy retained. Alternatives need music/phrase validation; all run results retained."
+}

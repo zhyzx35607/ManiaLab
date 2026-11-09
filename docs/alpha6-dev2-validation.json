@@ -1,0 +1,305 @@
+{
+  "version": "0.1.0-alpha.6-dev.2",
+  "date": "2026-11-09",
+  "scope": "Packaged application/API verification, not music acceptance",
+  "tests": {
+    "passed": 363,
+    "seconds": 44.89
+  },
+  "portable": [
+    {
+      "check": "release_manifest",
+      "source_files": 55,
+      "executable_sha256": "e833f8192483277d4abe0a778187689a1f96aef456cb16ea0dca4e0ff69fe95b"
+    },
+    {
+      "check": "bundled_model",
+      "sha256": "a7b60de4c9d8d4d86c9c16cc4b79001607fc6c069bfb6a752f743de1847fb12c"
+    },
+    {
+      "check": "bundled_arrangement_profiles",
+      "sha256": "f5ec85ffdd85afc6712577e263f8540a795631d9c513b74d05e13fc84160c29c"
+    },
+    {
+      "check": "startup",
+      "version": "0.1.0-alpha.6-dev.2",
+      "separator": {
+        "available": true,
+        "beat_model": true,
+        "cpu": true,
+        "model": "四声部 · Hybrid Demucs",
+        "profile": "four",
+        "profiles": {
+          "four": {
+            "available": true,
+            "label": "四声部 · Hybrid Demucs"
+          },
+          "six": {
+            "available": true,
+            "label": "六声部 · HTDemucs"
+          }
+        },
+        "voices": [
+          "drums",
+          "bass",
+          "vocals",
+          "other"
+        ]
+      },
+      "prior": {
+        "available": true,
+        "keys": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "purpose": "固定起止时间下的轨道偏好；不预测音频或 LN 长度",
+        "revision": 2
+      }
+    },
+    {
+      "check": "deep_analysis",
+      "seconds": 56.37,
+      "candidates": 5,
+      "engine": "四声部 · Hybrid Demucs + source-verified Basic Pitch + vocal phrases + Beat This meter"
+    },
+    {
+      "check": "generate_export",
+      "keys": 6,
+      "notes": 5,
+      "ln": 5,
+      "off_grid": 0
+    },
+    {
+      "check": "generate_export",
+      "keys": 7,
+      "notes": 5,
+      "ln": 5,
+      "off_grid": 0
+    },
+    {
+      "check": "generate_export",
+      "keys": 8,
+      "notes": 5,
+      "ln": 5,
+      "off_grid": 0
+    },
+    {
+      "check": "generate_export",
+      "keys": 9,
+      "notes": 5,
+      "ln": 5,
+      "off_grid": 0
+    },
+    {
+      "check": "generate_export",
+      "keys": 10,
+      "notes": 5,
+      "ln": 5,
+      "off_grid": 0
+    },
+    {
+      "check": "local_recommendation",
+      "choice": "melody",
+      "notes": 5,
+      "evidence_preserved": true
+    },
+    {
+      "check": "local_recommendation",
+      "choice": "hybrid",
+      "notes": 5,
+      "evidence_preserved": true
+    },
+    {
+      "check": "local_recommendation",
+      "choice": "layers",
+      "notes": 5,
+      "evidence_preserved": true
+    },
+    {
+      "check": "stale_recommendation_rejected",
+      "reason": "BPM changed"
+    },
+    {
+      "check": "restart",
+      "preserved": true,
+      "unicode_audio": "音频测试.wav"
+    },
+    {
+      "check": "six_stem_analysis_export",
+      "seconds": 74.15,
+      "voices": [
+        "drums",
+        "bass",
+        "vocals",
+        "other",
+        "guitar",
+        "piano"
+      ],
+      "notes": 4,
+      "off_grid": 0
+    },
+    {
+      "check": "piano_cold_inference",
+      "input_sha256": "f31f580dd3ff85d38969b80f1a0fc5ff0a1ab0173887965972c40ac7298d0a83",
+      "model_sha256": "7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa",
+      "candidates": 44,
+      "seconds": 17.72,
+      "release_reasons": {
+        "frame_decay": 4,
+        "input_boundary": 6,
+        "reattack": 7,
+        "release_regression": 27
+      }
+    },
+    {
+      "check": "piano_manual_expression",
+      "modes": {
+        "articulation": {
+          "notes": 44,
+          "ln": 11
+        },
+        "sustain": {
+          "notes": 43,
+          "ln": 30
+        }
+      },
+      "evidence_preserved": true,
+      "timing": "fixed synthetic grid for export verification, not musical timing acceptance"
+    },
+    {
+      "check": "piano_restart_warm_cache",
+      "candidates": 44,
+      "identical": true,
+      "seconds": 1.26
+    },
+    {
+      "check": "cancel_and_failure",
+      "cancelled": "cancelled",
+      "bad_audio": "error",
+      "service_alive": true
+    }
+  ],
+  "shutdown": {
+    "worker_stopped_on_parent_exit": true
+  },
+  "piano_input": {
+    "source_sha256": "c6e7eeb973aeae6133bb60db36d2ef186e36b99fbce62d14a8fadfc8b7a33ad2",
+    "clip_sha256": "f31f580dd3ff85d38969b80f1a0fc5ff0a1ab0173887965972c40ac7298d0a83",
+    "range_seconds": [
+      0,
+      12
+    ],
+    "sample_rate": 22050,
+    "purpose": "Packaged runtime check; not music quality acceptance"
+  },
+  "build": {
+    "version": "0.1.0-alpha.6-dev.2",
+    "sources": {
+      "launcher.py": "0f76faa82e8880613a83b2531607465067d026647aa5d422613df061b2a90f50",
+      "manialab/__init__.py": "90734518d9c9b78566fe1407900d971d7e44f968dfd4e40d18b9d3e4221f9700",
+      "manialab/acoustic_anchors.py": "e09a30e2f9c57e90a059980dd2b393a59cd9f6409d50f8db543d87550994bfb3",
+      "manialab/anchor_gestures.py": "11017571dc248a630c305b3bac8735fcdbb946c26fd552637bfec7b1e80b6421",
+      "manialab/arrange.py": "e6638aa27ddf97d446655d785a7d85bfde6a4a85af262d1e5afe4a3c7286e814",
+      "manialab/articulation.py": "113991de370ca296ee07b1e150451dca44df8c578f95c212da8b796ca2b56b19",
+      "manialab/audio.py": "1bb446698a431fba14c8c794a49dbe6159a4abb658f5196f8850b4cab2a0a3b0",
+      "manialab/audition.py": "742dfa1b0a3858e2d938b26dfafd4f5310ec86a33c636bcdacf0990b3fc3688f",
+      "manialab/domain.py": "8c082337c118f2b6078f12b1231318ae14fcc87c383e974f4f531cc8c3c3ac2c",
+      "manialab/editing.py": "32eb5a0da7eb31bdaae0f5cb532f1758ecdb70520f6c4d1fddb2af89c8cf2fa6",
+      "manialab/expression.py": "06e616ae58ac704d69a55c7e826427f5ceb5471d5c33e24ab3746e4d1df0b450",
+      "manialab/expression_articulation.py": "039cebbdc07893384fee74d267107a76ba78284e789f082a7774ab96e3111192",
+      "manialab/gesture_flow.py": "85c20be0a630d50cb7072241a5f3cc5d63e0a62a21e199b03d0b179a00d414a4",
+      "manialab/layout.py": "e3500bb76491b958a515f50951f638b49362dbc37cb030d3a75bc8fe5efa900e",
+      "manialab/ln_patterns.py": "6447fd72e1f19423aa280dec56f954096e0fe2aec1ea7150a6d46792cf2c915e",
+      "manialab/mapper_release_evidence.py": "a423571567165f596987fe5b8b316db7fdf0529680e2a4db3b5bee1431042859",
+      "manialab/pattern_prior.py": "9539f070069a443ed0c0b0236f91805b40219324b98821b4a253a4f3272f997a",
+      "manialab/percussion_tokens.py": "49354fb2009cb738f500a8731982a3f93072f8ca8d6c4499cf95bddfd9f8be96",
+      "manialab/piano.py": "deb8be75eeaa54b086761b7d813b8b972f03df70821609401fcfcca535c4f90b",
+      "manialab/planner.py": "d6a18bb0f037ec9d94474a4ffaaa7e5135aef5acc7c5d076f145f89e3a13ee89",
+      "manialab/provided_stems.py": "509fe1478757daed94d6093c5a377c42eb2bfcaae4e2a24db4f4687abbd8075b",
+      "manialab/recommendations.py": "3552ae9a3aa2a32e9ce6085db6984061a802b4a78f55697e3073e5917a2ae2f4",
+      "manialab/release_candidates.py": "6aceef15b56801359a02374ca5791a20baff1c7b21c90bbe63eee0f08469dbd0",
+      "manialab/review.py": "7ef3ac6da9d5c3112726ff18062983dc752ccdd02629fe464ca111dd781959ba",
+      "manialab/separation.py": "5b6b5c3a9d6c35185046e7bc2ec3bf79a935df78c6d04bcacb7a6813441fd19d",
+      "manialab/server.py": "aa614ec1e528d760b62d3d01f9358b1055d05e7a3d0cef0aa0c907411335074b",
+      "manialab/stem_release_evidence.py": "325db0e0134c24c74370012a7a5eef515b375f9a616443f283af2017803a1697",
+      "manialab/stems.py": "7fa07a01e15c5405937277ee93db2310262db8856430f695d8037f8486e88f1f",
+      "manialab/storage.py": "96c79216275f443f60b348ad5a785996ea07d70f00703258abfc847ded6aa9ee",
+      "manialab/structure.py": "257f94d2a9072adae3149f7301fe204dd555ebb20653d5bf554381f43116d9ba",
+      "manialab/style.py": "fe9dbbf8bcc4c224814ecab70c4a24164ab00f7b89b859f317593890173d69d9",
+      "manialab/timbre_kernel.py": "1688a598fc4e26dc085773b68a52cabdc596855dc2bba3b11e30563deb65ba6e",
+      "manialab/timbre_mixture.py": "61bedad3405d4b961eb93fa5a266d75597cde26b75ba898967b3c7d67c503c50",
+      "manialab/timing.py": "6e8bf724db50aafd70af4fee9260d4bdee5ac6917c0063fb29fb6c854cb40e2b",
+      "manialab/upstream.py": "29bebb259f80713deef86f2bcac14d7d9cf629fdea22254cb9b4d36a108f9f0b",
+      "manialab/voices.py": "ade763e7b85fba38b521f9a9d57b251ddebafbd2af9f833c241e7f346fc4084e",
+      "assets/download_mapper.py": "fcf88ccdf3c6ec5e2a37012bbd67a4fe1c1f95c5a28410664508f34af89a6090",
+      "assets/mania_event_constraints.py": "b468b397cbcfb5a60cd823a4c898d397bc4fd112af104cf43c8d1efd5142fb35",
+      "assets/mapper_sketch_context.py": "6077ca3360846dc84b1e3bd5b017b3930d0571db85e14e710e590b7499c3fe83",
+      "assets/run_mapper.py": "05d9929dd5771ba798e465ec5d7d1c0e927606b14ad18fcc62da25bd78e5e6f0",
+      "static/app.js": "b62dc39a511dc4566b4500fe9cac17945f842da84e8d677d9cb435d65c8739f4",
+      "static/audio-clock.js": "e06a080a166355e07739c1833748591e021f81f5913c76b350fe1542dd2ba6b3",
+      "static/index.html": "4c46ef68e66e0527cc81f66e8189e6b6a1e489e3e46d40dc2f007b0db312b9ff",
+      "static/ln-design.js": "6c41058a9904f4c6217ec462a8e172a7777e865bfcfde4f057e27893a70a812c",
+      "static/note-editor.js": "62171588c92c3595706c9ff6231319077ae7f6746dbca7e3e77f6c910e64327d",
+      "static/piano-detector.js": "ed2f804aab9a7b19e25ef9e404b903043faca52d51cb6cb86513d895d317d2b9",
+      "static/provided-stems.js": "39328e9c684a9546ddfbbfa4805bfd9ade4186f0824a3e8b0fa4557fbe014d72",
+      "static/recommendations.js": "1ed51699e356844c7c2b5f6ca6e9669b97b89bf8b178f3eed3e0a31162323396",
+      "static/structure.js": "3811e5066fb57a58c79c433570207e4797b58d835dd0986eaa05fa9ee811d24d",
+      "static/style.css": "75ffd3ccb007a7b2449435b5f41b6e1385083387196290862e2cd4a7f25dc640",
+      "static/timing-detail.js": "d5e6d75cc50e12df17442d81daef2dd667ad5c346e503625e7571b341e6155da",
+      "assets/pattern-prior.json": "a7b60de4c9d8d4d86c9c16cc4b79001607fc6c069bfb6a752f743de1847fb12c",
+      "assets/arrangement-profiles.json": "f5ec85ffdd85afc6712577e263f8540a795631d9c513b74d05e13fc84160c29c",
+      "assets/piano-model.json": "9fb6a9962f6d35ef41273ea07e257bc229c55af7e7131fd22290bf07df1de2e1",
+      "assets/deep-models.json": "a9c0715525d90b03771463f11b4fdc0d610c40fadcf2bf3a01b66cce47d45dde"
+    },
+    "executable_sha256": "e833f8192483277d4abe0a778187689a1f96aef456cb16ea0dca4e0ff69fe95b",
+    "worker_sha256": "dc5cf272a82042c8bbde584658a4cb391d4b3f75b69e4d1a4e0057560c11095b",
+    "worker_sources": {
+      "scripts/separate_audio.py": "6df9a96b3e3e97dcdc106365fbe2541325c2afbe59ff80f74f944a6a7e9837c1",
+      "scripts/worker_lifetime.py": "b86d54b1c5296ad373d7baea428cd9a69bd1e82f4f00187a8e76b415272019f2"
+    },
+    "piano_model": {
+      "name": "High-resolution Piano Transcription with Pedals by Regressing Onsets and Offsets Times",
+      "authors": [
+        "Qiuqiang Kong",
+        "Bochen Li",
+        "Xuchen Song",
+        "Yuan Wan",
+        "Yuxuan Wang"
+      ],
+      "model_record": "https://zenodo.org/records/4034264",
+      "upstream_checkpoint_sha256": "c3fa9730725bf4a762f1c14bc80cd5986eacda01b026f5a4a2525cd607876141",
+      "source_commit": "0226e74cbc805660e34bbd6a8fed2083890ebb88",
+      "source_repository": "https://github.com/qiuqiangkong/piano_transcription_inference",
+      "license": "CC-BY-4.0",
+      "license_file": "licenses/PianoRegression-CC-BY-4.0.txt",
+      "modification": "Fixed batch-1, 10-second ONNX graph exported from the verified original weights; no fine-tuning. ManiaLab provides overlap stitching and release provenance.",
+      "filename": "piano-regression.onnx",
+      "sha256": "7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa",
+      "sample_rate": 16000,
+      "input_samples": 160000,
+      "intended_source": "isolated piano",
+      "default_enabled": false,
+      "research_validation": "docs/piano-acoustic-research.md"
+    }
+  },
+  "visual_validation": {
+    "completed": false,
+    "reason": "computer-use initialization failed: kernel assets path not found"
+  },
+  "excluded": [
+    "YourMT3 accompaniment model",
+    "experimental trained audio/expression weights",
+    "user songs and charts",
+    "SMD recordings"
+  ],
+  "unresolved": [
+    "automatic timing",
+    "drum transcription and selection",
+    "independent melodic streams",
+    "LN musical planning",
+    "cross-machine gameplay"
+  ]
+}

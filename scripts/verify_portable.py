@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 from manialab import __version__
 from manialab.domain import parse_osu, validate
 from manialab.timing import grid_report
+from scripts.build_provenance import sha256, verify_worker
 
 
 def synthetic(path, seconds=30):
@@ -39,12 +40,12 @@ def synthetic(path, seconds=30):
         stream.setnchannels(1);stream.setsampwidth(2);stream.setframerate(rate);stream.writeframes(data)
 
 
-def run(executable, work):
+def run(executable, work, piano_audio=None):
     executable, work = executable.resolve(), work.resolve()
     work.mkdir(parents=True,exist_ok=True)
     data=work/'独立项目';data.mkdir(exist_ok=True)
     source=work/'音频测试.wav';synthetic(source)
-    environment={k:v for k,v in os.environ.items() if k not in ('PYTHONHOME','PYTHONPATH','VIRTUAL_ENV','MANIALAB_DEEP_PYTHON','MANIALAB_DEEP_MODEL')}
+    environment={k:v for k,v in os.environ.items() if k not in ('PYTHONHOME','PYTHONPATH','VIRTUAL_ENV') and not k.startswith('MANIALAB_DEEP_')}
     environment['PATH']=str(Path(os.environ['SystemRoot'])/'System32')
     environment.update(HTTP_PROXY='http://127.0.0.1:9',HTTPS_PROXY='http://127.0.0.1:9',NO_PROXY='127.0.0.1,localhost',PYTHONUTF8='1')
     process=None;log=None;url='';token='';checks=[]
@@ -105,6 +106,10 @@ def run(executable, work):
         for name,digest in release_manifest['sources'].items():
             assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, f'Packaged source is stale: {name}'
         assert release_manifest['worker_sha256']==hashlib.sha256((executable.parent/'_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe').read_bytes()).hexdigest()
+        worker=verify_worker(ROOT,executable.parent/'_internal/assets/deep')
+        assert release_manifest['worker_sources']==worker['worker_sources']
+        if release_manifest.get('piano_model'):
+            assert sha256(executable.parent/'_internal/assets/deep/piano-regression.onnx')==release_manifest['piano_model']['sha256']
         checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),executable_sha256=release_manifest['executable_sha256']))
         expected_prior=hashlib.sha256((ROOT/'assets/pattern-prior.json').read_bytes()).hexdigest()
         bundled_prior=hashlib.sha256((executable.parent/'_internal/assets/pattern-prior.json').read_bytes()).hexdigest()
@@ -176,6 +181,56 @@ def run(executable, work):
         assert candidate['report']['grid']['off_grid']==0 and all(n['voice']!='guitar' for n in candidate['notes'])
         checks.append(dict(check='six_stem_analysis_export',seconds=state['analysis']['elapsed_seconds'],
             voices=[v['voice'] for v in state['analysis']['voices']],notes=len(candidate['notes']),off_grid=0))
+        if piano_audio is not None:
+            assert status['piano']['available'] and not status['piano']['default'],status['piano']
+            piano_audio=piano_audio.resolve();content=piano_audio.read_bytes()
+            imported=request('/api/import',upload=('files','真实钢琴.wav',content))
+            piano_base='/api/projects/'+imported['id']
+            job=wait(request(piano_base+'/provided-stems',upload=('piano','钢琴声轨.wav',content)))
+            assert job['status']=='done',job
+            analysis_payload=dict(engine='provided',piano_engine='specialist',settings={})
+            job=wait(request(piano_base+'/analyze',analysis_payload),timeout=600)
+            assert job['status']=='done',job
+            piano_state=request(piano_base);original=piano_state['analysis']['candidates']
+            assert original and all(n['voice']=='piano' for n in original)
+            summary=piano_state['analysis']['voices'][0]['release_refinement']
+            assert summary['engine']=='piano-onset-offset-regression' and not summary['cached'],summary
+            checks.append(dict(check='piano_cold_inference',input_sha256=hashlib.sha256(content).hexdigest(),
+                model_sha256=summary['identity']['model_sha256'],candidates=len(original),
+                seconds=piano_state['analysis']['elapsed_seconds'],release_reasons=summary['release_reasons']))
+            plan=piano_state['expression']
+            generated={}
+            for mode in ('articulation','sustain'):
+                for section in plan['sections']:
+                    section['voices']['piano']['mode']=mode
+                request(piano_base+'/expression',dict(expression=plan))
+                job=wait(request(piano_base+'/generate',dict(mode='audio',bpm=120,offset=0,division=4,
+                    audio_shift_ms=0,timing_confirmed=True,settings={'keys':10,'density':12,'ln_ratio':1})))
+                assert job['status']=='done',job
+                piano_state=request(piano_base)
+                assert piano_state['analysis']['candidates']==original
+                assert piano_state['expression']['source']=='manual'
+                assert all(s['voices']['piano']['mode']==mode for s in piano_state['expression']['sections'])
+                exported=request(piano_base+'/export/osu')
+                parsed=parse_osu(exported.decode('utf-8'));report=validate(parsed['notes'],10)
+                assert report['valid'] and report['notes']>0,report
+                assert grid_report(parsed['notes'],dict(bpm=120,offset=0,division=4))['off_grid']==0
+                (work/f'piano-{mode}.osu').write_bytes(exported)
+                generated[mode]=dict(notes=report['notes'],ln=report['ln'])
+            checks.append(dict(check='piano_manual_expression',modes=generated,evidence_preserved=True,
+                timing='fixed synthetic grid for export verification, not musical timing acceptance'))
+            saved_piano=piano_state['variants'][piano_state['active']]['notes']
+            stop();start();restored=request(piano_base)
+            assert restored['analysis']['candidates']==original
+            assert restored['variants'][restored['active']]['notes']==saved_piano
+            assert restored['expression']==piano_state['expression']
+            job=wait(request(piano_base+'/analyze',analysis_payload),timeout=600)
+            assert job['status']=='done',job
+            warmed=request(piano_base)
+            assert warmed['analysis']['voices'][0]['release_refinement']['cached']
+            assert warmed['analysis']['candidates']==original
+            checks.append(dict(check='piano_restart_warm_cache',candidates=len(original),identical=True,
+                seconds=warmed['analysis']['elapsed_seconds']))
         # Cancel a fresh separation, then confirm the same server remains usable.
         second=request('/api/import',upload=('files','取消测试.wav',source.read_bytes()+b'\x00\x00'))
         second_base='/api/projects/'+second['id'];job=request(second_base+'/analyze',dict(engine='deep',settings={}))
@@ -202,4 +257,5 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('executable',type=Path)
     parser.add_argument('--work',type=Path,default=ROOT/'test-data/portable-alpha4')
-    args=parser.parse_args();run(args.executable,args.work)
+    parser.add_argument('--piano-audio',type=Path,help='Short real piano WAV for packaged specialist cold/warm and expression checks')
+    args=parser.parse_args();run(args.executable,args.work,args.piano_audio)

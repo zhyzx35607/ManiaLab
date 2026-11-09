@@ -60,12 +60,14 @@ window.renderStructure=()=>{
       for(const [voice,policy] of Object.entries(section.voices)){
         const label=document.createElement('label');label.className='field';label.textContent=sourceNames[voice]||voice;
         const choice=document.createElement('select');choice.dataset.expressionVoice=voice;choice.dataset.expressionSection=index;
-        const items=[['sustain','持续音用 LN，短音用短键'],['onsets','只表示起音'],['omit','本段不采']];
+        const items=[['sustain','持续音用 LN，短音用短键'],['articulation','连续起音优先，组尾可延长'],['onsets','只表示起音'],['omit','本段不采']];
         if(voice==='vocals')items.splice(1,0,['phrase','连续人声乐句（需回听）']);
         options(choice,items);choice.value=policy.mode;
         choice.onchange=()=>policy.mode=choice.value;label.append(choice);choices.append(label);
       }
-      row.append(summary,jump,mainLabel,choices);structureRows.append(row);
+      const reasoning=document.createElement('p');reasoning.className='muted compact';
+      reasoning.textContent=section.reason||'';
+      row.append(summary,jump,mainLabel,choices,reasoning);structureRows.append(row);
     }
   }
   const decisions=variant()?.selection?.decisions;
