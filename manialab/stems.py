@@ -1,4 +1,6 @@
 """Names and separation profiles shared by analysis, storage and the UI API."""
+import hashlib
+import json
 import re
 
 VOICES = {'drums':'鼓 / 打击', 'bass':'贝斯', 'vocals':'人声',
@@ -45,3 +47,19 @@ def separation_voices(separation):
 def separation_label(separation):
     if separation.get('source')=='provided':return '已导入的独立声轨'
     return profile_for(separation.get('profile','four'))['label']
+
+
+def separation_identity(separation):
+    """Include input processing, not just weights, in downstream audio caches.
+
+    Provided stems have their own verified content identity and do not pass
+    through the model's input processing pipeline.
+    """
+    if separation.get('source') == 'provided':
+        identity = dict(source='provided', audio=separation['audio_sha256'],
+                        stems=separation['set_sha256'])
+    else:
+        identity = dict(source='model', audio=separation['audio_sha256'],
+                        model=separation['model_sha256'], profile=separation.get('profile','four'),
+                        input_processing=separation.get('input_processing'))
+    return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()

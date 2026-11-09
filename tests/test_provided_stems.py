@@ -62,6 +62,11 @@ def test_imported_piano_only_analysis_needs_no_separator_and_invalidates_cache_b
         assert result['tempo']['evidence_source']=='mix'
         assert 'drums' not in result['tempo']['comparisons']
         assert 'Beat This' not in result['engine']
+    # These stems never pass through the model decoder; its revision is irrelevant.
+    from manialab import separation
+    monkeypatch.setattr(separation,'INPUT_PROCESSING',{'revision':999})
+    result=audio.analyze_deep(mix,tmp_path,Path('unused.onnx'),parameters(),ProvidedStemSeparator(report))
+    assert len(calls)==1 and result['cached']
     # Changing source content creates a new set, while old analysis stays valid.
     old=stem_path(tmp_path,{'separation':report},'piano')
     wave(piano,shift=100)
@@ -70,6 +75,16 @@ def test_imported_piano_only_analysis_needs_no_separator_and_invalidates_cache_b
     audio.analyze_deep(mix,tmp_path,Path('unused.onnx'),parameters(),ProvidedStemSeparator(changed))
     assert len(calls)==2
     ProvidedStemSeparator(report).separate(mix,tmp_path)
+
+
+def test_imported_float_stem_preserves_overrange_samples_in_analysis(tmp_path):
+    samples=np.zeros(22050,dtype=np.float32)
+    samples[2205:2208]=[1.5,-1.25,.00001]
+    mix=tmp_path/'mix.wav';piano=tmp_path/'piano.wav'
+    wavfile.write(mix,22050,samples);wavfile.write(piano,22050,samples)
+    report=prepare_provided_stems(mix,{'piano':piano},tmp_path)
+    folder,_=ProvidedStemSeparator(report).separate(mix,tmp_path)
+    np.testing.assert_array_equal(np.load(folder/'piano.npy'),samples)
 
 
 def test_provided_upload_keeps_existing_analysis_and_old_set_on_failure(tmp_path):

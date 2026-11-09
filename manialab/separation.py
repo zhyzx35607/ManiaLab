@@ -15,6 +15,9 @@ from .stems import PROFILES, profile_for
 
 MODEL_SHA256 = "a004b2790d73ffeaa535db458a1a79b539dfdbafbccc31f275d07e632ebd7816"
 BEAT_MODEL_SHA256 = "8c328b45f59d8dd3dff219253ff6a8d6482be57d0133a29140e2febbf8eb8331"
+# This is part of the cache identity: older int16 inputs can clip decoded MP3.
+INPUT_PROCESSING = dict(revision=2, codec='pcm_f32le', sample_rate=44100,
+                        channels=2, max_seconds=1201)
 
 
 class Separator:
@@ -54,7 +57,10 @@ class Separator:
         if manifest.is_file():
             try:
                 cached = json.loads(manifest.read_text(encoding="utf-8"))
-                if cached.get("audio_sha256") == digest and cached.get("model_sha256") == self.spec['sha256'] and all((output / f"{s}.npy").is_file() for s in self.spec['voices']):
+                if (cached.get("audio_sha256") == digest
+                        and cached.get("model_sha256") == self.spec['sha256']
+                        and cached.get('input_processing') == INPUT_PROCESSING
+                        and all((output / f"{s}.npy").is_file() for s in self.spec['voices'])):
                     stems_cached = True
                     if not self.beat_model.is_file() or cached.get("beat_evidence", {}).get("model_sha256") == BEAT_MODEL_SHA256:
                         progress(30, "复用所选声部与节拍分析结果")
@@ -65,7 +71,8 @@ class Separator:
         wave = work / "separation-input.wav"
         progress(2, "准备"+self.spec['label']+"分析音频")
         result = run_hidden([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-y", "-i", str(path),
-            "-vn", "-ac", "2", "-ar", "44100", "-t", "1201", "-c:a", "pcm_s16le", str(wave)],
+            "-vn", "-ac", str(INPUT_PROCESSING['channels']), "-ar", str(INPUT_PROCESSING['sample_rate']),
+            "-t", str(INPUT_PROCESSING['max_seconds']), "-c:a", INPUT_PROCESSING['codec'], str(wave)],
             capture_output=True, timeout=180)
         if result.returncode:
             raise ValueError("声部分离无法解码音频")
@@ -119,5 +126,6 @@ class Separator:
             raise ValueError("节拍模型没有完成分析，请重新分析或检查本地日志")
         report["audio_sha256"] = digest
         report['profile'] = self.profile
+        report['input_processing'] = dict(INPUT_PROCESSING)
         manifest.write_text(json.dumps(report, indent=2), encoding="utf-8")
         return output, report | {"cached": stems_cached}

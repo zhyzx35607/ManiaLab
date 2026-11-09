@@ -347,11 +347,12 @@ def reject_source_bleed(notes, stems, mixture_attacks, sample_rate=SR):
 def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: None, cancelled=lambda: False):
     """Separate sources, then run pitch/attack analysis on each isolated voice."""
     from .voices import vocal_phrases
-    from .stems import separation_voices,separation_label
+    from .stems import separation_voices,separation_label,separation_identity
     started = time.perf_counter()
     samples = decode(path, work)
     duration = len(samples) / SR
     stem_root, separation = separator.separate(path, work, progress, cancelled)
+    stem_identity = separation_identity(separation)
     beats_ms = separation.get("beat_evidence", {}).get("beats_ms")
     voices = separation_voices(separation)
     pitch_cached = []
@@ -379,15 +380,15 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
             if cache.is_file():
                 try:
                     with np.load(cache, allow_pickle=False) as d:
-                        if (int(d["version"]) == 2 and str(d["audio_sha256"]) == separation["audio_sha256"]
-                                and str(d['separation_sha256']) == separation['model_sha256']):
+                        if (int(d["version"]) == 3 and str(d["audio_sha256"]) == separation["audio_sha256"]
+                                and str(d['separation_sha256']) == stem_identity):
                             data = d["frames"], d["onsets"], d["times"]
                 except (ValueError, KeyError, OSError, EOFError):
                     pass
             if data is None:
                 data = infer(stem, model, lambda p, s: progress(stage + round(p * .60 / len(voices)), f"{voice} · {s}"), cancelled)
-                np.savez_compressed(cache, frames=data[0], onsets=data[1], times=data[2], version=2,
-                    audio_sha256=separation['audio_sha256'],separation_sha256=separation['model_sha256'])
+                np.savez_compressed(cache, frames=data[0], onsets=data[1], times=data[2], version=3,
+                    audio_sha256=separation['audio_sha256'],separation_sha256=stem_identity)
             else:
                 cached = True
             pitch_cached.append(cached)
