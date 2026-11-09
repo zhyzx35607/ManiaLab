@@ -107,6 +107,11 @@ def decode(activations, *, onset_threshold=.3, offset_threshold=.3, frame_thresh
                 else:
                     end,reason = fade,'frame_decay'
                 shift = release_shift[end,key]
+                # A low frame immediately after an onset is not a decay if
+                # this pitch was never active. Keep the onset and raw endpoint
+                # for review, but do not claim an observed sustain/release.
+                if not np.any(arrays[2][start:fade,key] > frame_threshold):
+                    reason = 'frame_inactive'
             elif next_start <= min(int(start)+600,last):
                 end,reason = next_start-1,'reattack'
             else:

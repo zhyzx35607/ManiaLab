@@ -49,7 +49,7 @@ def test_separated_sustains_and_explicit_manual_mode_keep_original_intervals():
         assert plan['sections'][0]['voices']['piano']['mode']==('onsets' if ratio==0 else 'sustain')
 
 
-@pytest.mark.parametrize('reason',['duration_limit','input_boundary','forced_segment_boundary','unresolved_or_postprocessed'])
+@pytest.mark.parametrize('reason',['duration_limit','input_boundary','forced_segment_boundary','unresolved_or_postprocessed','frame_inactive'])
 def test_unobserved_tails_cannot_change_source_priority_or_trigger_articulation(reason):
     rows=[piano(t,t+9000,reason=reason) for t in (1000,1250,1500)]
     assert not any(v['tap'] for v in articulation_policy(rows).values())

@@ -159,7 +159,7 @@ function inspectNote(n){
   const tail=n.end>n.start&&Number.isFinite(n.evidence_end)?` · 检测音尾 ${n.evidence_end} ms（${movement} ${n.end-n.evidence_end>0?'+':''}${n.end-n.evidence_end} ms）`:'';
   $('inspector').textContent=`${n.end>n.start?'LN / 持续音':'短键 / 瞬态'} · 起点 ${n.start} ms · 终点 ${n.end} ms · 长度 ${n.end-n.start} ms · ${n.source==='import'?'原谱物件':n.source==='pitch'?`检测音高 MIDI ${n.pitch} · 激活强度 ${n.strength}`:'频谱瞬态'}${n.lane>=0?' · 轨道 '+(n.lane+1):''} · 声部 ${n.voice||'mix'}${n.phrase?' · 跨音高持续段 · 支持 '+((n.support_coverage||0)*100).toFixed(0)+'%':''}${shift}`;
   $('inspector').textContent+=tail+(n.phrase?` · 支撑音高候选 ${(n.support||[]).length} 个`:'');
-  if(n.release_reason){const reasons={release_regression:'检测到释放',frame_decay:'持续激活消退',reattack:'同音高重新起音',duration_limit:'达到模型时长上限，未确认音尾',input_boundary:'到达音频边界，未确认音尾'};$('inspector').textContent+=' · 音尾依据：'+(reasons[n.release_reason]||n.release_reason);}
+  if(n.release_reason){const reasons={release_regression:'检测到释放',frame_decay:'持续激活消退',frame_inactive:'仅有起音候选，持续激活未成立，未确认音尾',reattack:'同音高重新起音',duration_limit:'达到模型时长上限，未确认音尾',input_boundary:'到达音频边界，未确认音尾'};$('inspector').textContent+=' · 音尾依据：'+(reasons[n.release_reason]||n.release_reason);}
   draw();
 }
 $('roll').onclick=e=>{const rect=$('roll').getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;const hit=[...hitboxes].reverse().find(b=>x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h);if(hit)inspectNote(hit.n);};

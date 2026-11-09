@@ -39,7 +39,7 @@ def test_piano_decoder_preserves_reattacks_and_distinguishes_forced_release():
     assert notes[0]['offset']<3. and abs(notes[1]['offset']-4.98)<1e-5
 
 
-@pytest.mark.parametrize('reason',['duration_limit','input_boundary','forced_segment_boundary','unresolved_or_postprocessed'])
+@pytest.mark.parametrize('reason',['duration_limit','input_boundary','forced_segment_boundary','unresolved_or_postprocessed','frame_inactive'])
 def test_unobserved_piano_end_keeps_attack_but_is_not_eligible_for_auto_ln(reason):
     from manialab.domain import Note
     from manialab.arrange import parameters,choose_holds
@@ -54,6 +54,21 @@ def test_unobserved_piano_end_keeps_attack_but_is_not_eligible_for_auto_ln(reaso
     assert selected[0].start==1000 and selected[0].end==1000
     assert trace['p']['reason']=='unobserved_release'
     assert analysis['candidates'][0]['end']==7000
+
+
+def test_inactive_frame_is_not_a_detected_decay_or_release():
+    arrays={key:np.zeros((100,88),dtype=np.float32) for key in OUTPUTS}
+    # Three equal onset candidates. The middle pitch really is active for one
+    # frame; the others have no sustained activation, even with an offset peak.
+    arrays['reg_onset_output'][49:52,:3]=np.array([.2,.8,.2])[:,None]
+    arrays['frame_output'][50,1]=.9
+    arrays['reg_offset_output'][50:53,2]=[.2,.8,.2]
+    notes=decode(arrays)
+    assert len(notes)==3
+    assert [n['release_reason'] for n in notes]==['frame_inactive','frame_decay','frame_inactive']
+    assert [n['release_observed'] for n in notes]==[False,True,False]
+    # No minimum-length filter: every attack and original raw interval remains.
+    assert all(n['onset']==.5 and abs(n['offset']-.51)<1e-7 for n in notes)
 
 
 def test_specialist_cache_tracks_input_and_does_not_overwrite_general_activations(tmp_path,monkeypatch):
