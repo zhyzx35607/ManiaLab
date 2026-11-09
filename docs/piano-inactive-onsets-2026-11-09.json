@@ -1,0 +1,633 @@
+{
+  "schema": "piano-inactive-onset-summary-v1",
+  "date": "2026-11-09",
+  "disposition": "research_only_no_default_filter",
+  "identity": {
+    "source_report_sha256": "6b8e3a1e3109b8e39ddd906700e36978820038b3b92f83a468843bd832957d88",
+    "benchmark_manifest_sha256": "f1e7bcffc17e9aa5399aa2e923939748e3c9cc2a29e8e1b0a766e2fbc20e3c6b",
+    "code_sha256": {
+      "runner": "ed35560f61d4e1c0b62bcfd4d467f0170935cedc6637a4145f27bc03ac1aacc4",
+      "scoring": "1f3b4289ce25defac4af9613f5b3a75206d17319434fa475df8c22e552fb929f",
+      "protocol": "e7666fab5f49d242f404eb6d87620f0337d6ccb0c8f39d40d52f8921c4024b2c"
+    },
+    "reference_semantics": "key MIDI onsets only; offsets excluded from matching",
+    "score_onsets_seconds": [
+      0,
+      60
+    ],
+    "input_seconds": 70,
+    "onset_tolerance_seconds": 0.05,
+    "matching": "fixed same-pitch one-to-one; existing maximum-cardinality onset matcher",
+    "ablation": "remove only release_reason == frame_inactive",
+    "exploratory": true,
+    "blind_test": false,
+    "threshold_search": false,
+    "model_loaded": false,
+    "decoder_run": false,
+    "application_enabled": false,
+    "prior_observation": "12/16 delayed-tail changes lacked same-pitch reference onset within 50ms"
+  },
+  "source_report_sha256": "2caa746775a9b53d238b0f0b73fce83a27a3765fcdf0bf0f86268906d699c2fb",
+  "summary": {
+    "pooled": {
+      "original": {
+        "matched": 4766,
+        "reference": 4990,
+        "predicted": 5005,
+        "precision": 0.9522477522477523,
+        "recall": 0.9551102204408818,
+        "f1": 0.9536768384192096
+      },
+      "without_frame_inactive": {
+        "matched": 4756,
+        "reference": 4990,
+        "predicted": 4958,
+        "precision": 0.9592577652279145,
+        "recall": 0.9531062124248497,
+        "f1": 0.9561720948934459
+      }
+    },
+    "cohorts": {
+      "frame_inactive": {
+        "events": 47,
+        "matched": 10,
+        "unmatched": 37,
+        "match_fraction": 0.2127659574468085
+      },
+      "other": {
+        "events": 4958,
+        "matched": 4756,
+        "unmatched": 202,
+        "match_fraction": 0.9592577652279145
+      }
+    },
+    "macro": {
+      "original": {
+        "precision": 0.9541847981633786,
+        "recall": 0.9627469692531935,
+        "f1": 0.9582111130225102
+      },
+      "without_frame_inactive": {
+        "precision": 0.95969722985915,
+        "recall": 0.961192268703055,
+        "f1": 0.9602055803413151
+      }
+    },
+    "true_onset_loss": {
+      "removed_previously_matched": 10,
+      "net_matched_loss": 10,
+      "reference_identity_losses": 10,
+      "reference_identity_gains": 0,
+      "retained_newly_matched": 0
+    },
+    "delta": {
+      "matched": -10,
+      "predicted": -47,
+      "precision": 0.007010012980162239,
+      "recall": -0.002004008016032066,
+      "f1": 0.002495256474236318
+    }
+  },
+  "cases": [
+    {
+      "name": "bach",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 0,
+          "matched": 0,
+          "unmatched": 0,
+          "match_fraction": null
+        },
+        "other": {
+          "events": 279,
+          "matched": 277,
+          "unmatched": 2,
+          "match_fraction": 0.992831541218638
+        }
+      },
+      "original": {
+        "matched": 277,
+        "reference": 279,
+        "predicted": 279,
+        "precision": 0.992831541218638,
+        "recall": 0.992831541218638,
+        "f1": 0.992831541218638
+      },
+      "without_frame_inactive": {
+        "matched": 277,
+        "reference": 279,
+        "predicted": 279,
+        "precision": 0.992831541218638,
+        "recall": 0.992831541218638,
+        "f1": 0.992831541218638
+      },
+      "delta": {
+        "matched": 0,
+        "predicted": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 0,
+        "net_matched_loss": 0,
+        "reference_identity_losses": 0,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "bartok",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 22,
+          "matched": 2,
+          "unmatched": 20,
+          "match_fraction": 0.09090909090909091
+        },
+        "other": {
+          "events": 798,
+          "matched": 717,
+          "unmatched": 81,
+          "match_fraction": 0.8984962406015038
+        }
+      },
+      "original": {
+        "matched": 719,
+        "reference": 815,
+        "predicted": 820,
+        "precision": 0.8768292682926829,
+        "recall": 0.8822085889570552,
+        "f1": 0.8795107033639143
+      },
+      "without_frame_inactive": {
+        "matched": 717,
+        "reference": 815,
+        "predicted": 798,
+        "precision": 0.8984962406015038,
+        "recall": 0.8797546012269939,
+        "f1": 0.889026658400496
+      },
+      "delta": {
+        "matched": -2,
+        "predicted": -22,
+        "precision": 0.021666972308820864,
+        "recall": -0.0024539877300613355,
+        "f1": 0.009515955036581647
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 2,
+        "net_matched_loss": 2,
+        "reference_identity_losses": 2,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "beethoven",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 1,
+          "matched": 0,
+          "unmatched": 1,
+          "match_fraction": 0.0
+        },
+        "other": {
+          "events": 321,
+          "matched": 319,
+          "unmatched": 2,
+          "match_fraction": 0.9937694704049844
+        }
+      },
+      "original": {
+        "matched": 319,
+        "reference": 328,
+        "predicted": 322,
+        "precision": 0.9906832298136646,
+        "recall": 0.9725609756097561,
+        "f1": 0.9815384615384616
+      },
+      "without_frame_inactive": {
+        "matched": 319,
+        "reference": 328,
+        "predicted": 321,
+        "precision": 0.9937694704049844,
+        "recall": 0.9725609756097561,
+        "f1": 0.9830508474576272
+      },
+      "delta": {
+        "matched": 0,
+        "predicted": -1,
+        "precision": 0.003086240591319789,
+        "recall": 0.0,
+        "f1": 0.001512385919165582
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 0,
+        "net_matched_loss": 0,
+        "reference_identity_losses": 0,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "brahms",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 4,
+          "matched": 2,
+          "unmatched": 2,
+          "match_fraction": 0.5
+        },
+        "other": {
+          "events": 472,
+          "matched": 456,
+          "unmatched": 16,
+          "match_fraction": 0.9661016949152542
+        }
+      },
+      "original": {
+        "matched": 458,
+        "reference": 501,
+        "predicted": 476,
+        "precision": 0.9621848739495799,
+        "recall": 0.9141716566866267,
+        "f1": 0.9375639713408394
+      },
+      "without_frame_inactive": {
+        "matched": 456,
+        "reference": 501,
+        "predicted": 472,
+        "precision": 0.9661016949152542,
+        "recall": 0.9101796407185628,
+        "f1": 0.9373072970195272
+      },
+      "delta": {
+        "matched": -2,
+        "predicted": -4,
+        "precision": 0.003916820965674361,
+        "recall": -0.003992015968063867,
+        "f1": -0.00025667432131215584
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 2,
+        "net_matched_loss": 2,
+        "reference_identity_losses": 2,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "chopin",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 0,
+          "matched": 0,
+          "unmatched": 0,
+          "match_fraction": null
+        },
+        "other": {
+          "events": 269,
+          "matched": 247,
+          "unmatched": 22,
+          "match_fraction": 0.9182156133828996
+        }
+      },
+      "original": {
+        "matched": 247,
+        "reference": 257,
+        "predicted": 269,
+        "precision": 0.9182156133828996,
+        "recall": 0.9610894941634242,
+        "f1": 0.9391634980988594
+      },
+      "without_frame_inactive": {
+        "matched": 247,
+        "reference": 257,
+        "predicted": 269,
+        "precision": 0.9182156133828996,
+        "recall": 0.9610894941634242,
+        "f1": 0.9391634980988594
+      },
+      "delta": {
+        "matched": 0,
+        "predicted": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 0,
+        "net_matched_loss": 0,
+        "reference_identity_losses": 0,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "haydn",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 3,
+          "matched": 0,
+          "unmatched": 3,
+          "match_fraction": 0.0
+        },
+        "other": {
+          "events": 686,
+          "matched": 686,
+          "unmatched": 0,
+          "match_fraction": 1.0
+        }
+      },
+      "original": {
+        "matched": 686,
+        "reference": 689,
+        "predicted": 689,
+        "precision": 0.9956458635703919,
+        "recall": 0.9956458635703919,
+        "f1": 0.9956458635703919
+      },
+      "without_frame_inactive": {
+        "matched": 686,
+        "reference": 689,
+        "predicted": 686,
+        "precision": 1.0,
+        "recall": 0.9956458635703919,
+        "f1": 0.9978181818181818
+      },
+      "delta": {
+        "matched": 0,
+        "predicted": -3,
+        "precision": 0.004354136429608135,
+        "recall": 0.0,
+        "f1": 0.0021723182477899616
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 0,
+        "net_matched_loss": 0,
+        "reference_identity_losses": 0,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "liszt",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 2,
+          "matched": 0,
+          "unmatched": 2,
+          "match_fraction": 0.0
+        },
+        "other": {
+          "events": 162,
+          "matched": 150,
+          "unmatched": 12,
+          "match_fraction": 0.9259259259259259
+        }
+      },
+      "original": {
+        "matched": 150,
+        "reference": 153,
+        "predicted": 164,
+        "precision": 0.9146341463414634,
+        "recall": 0.9803921568627451,
+        "f1": 0.9463722397476341
+      },
+      "without_frame_inactive": {
+        "matched": 150,
+        "reference": 153,
+        "predicted": 162,
+        "precision": 0.9259259259259259,
+        "recall": 0.9803921568627451,
+        "f1": 0.9523809523809523
+      },
+      "delta": {
+        "matched": 0,
+        "predicted": -2,
+        "precision": 0.01129177958446248,
+        "recall": 0.0,
+        "f1": 0.006008712633318258
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 0,
+        "net_matched_loss": 0,
+        "reference_identity_losses": 0,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "mozart",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 0,
+          "matched": 0,
+          "unmatched": 0,
+          "match_fraction": null
+        },
+        "other": {
+          "events": 425,
+          "matched": 424,
+          "unmatched": 1,
+          "match_fraction": 0.9976470588235294
+        }
+      },
+      "original": {
+        "matched": 424,
+        "reference": 424,
+        "predicted": 425,
+        "precision": 0.9976470588235294,
+        "recall": 1.0,
+        "f1": 0.9988221436984688
+      },
+      "without_frame_inactive": {
+        "matched": 424,
+        "reference": 424,
+        "predicted": 425,
+        "precision": 0.9976470588235294,
+        "recall": 1.0,
+        "f1": 0.9988221436984688
+      },
+      "delta": {
+        "matched": 0,
+        "predicted": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 0,
+        "net_matched_loss": 0,
+        "reference_identity_losses": 0,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "rachmaninoff",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 9,
+          "matched": 4,
+          "unmatched": 5,
+          "match_fraction": 0.4444444444444444
+        },
+        "other": {
+          "events": 526,
+          "matched": 492,
+          "unmatched": 34,
+          "match_fraction": 0.935361216730038
+        }
+      },
+      "original": {
+        "matched": 496,
+        "reference": 523,
+        "predicted": 535,
+        "precision": 0.9271028037383178,
+        "recall": 0.9483747609942639,
+        "f1": 0.9376181474480151
+      },
+      "without_frame_inactive": {
+        "matched": 492,
+        "reference": 523,
+        "predicted": 526,
+        "precision": 0.935361216730038,
+        "recall": 0.9407265774378585,
+        "f1": 0.9380362249761678
+      },
+      "delta": {
+        "matched": -4,
+        "predicted": -9,
+        "precision": 0.008258412991720254,
+        "recall": -0.007648183556405397,
+        "f1": 0.00041807752815270494
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 4,
+        "net_matched_loss": 4,
+        "reference_identity_losses": 4,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "ravel",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 4,
+          "matched": 2,
+          "unmatched": 2,
+          "match_fraction": 0.5
+        },
+        "other": {
+          "events": 653,
+          "matched": 640,
+          "unmatched": 13,
+          "match_fraction": 0.9800918836140888
+        }
+      },
+      "original": {
+        "matched": 642,
+        "reference": 665,
+        "predicted": 657,
+        "precision": 0.9771689497716894,
+        "recall": 0.9654135338345865,
+        "f1": 0.9712556732223904
+      },
+      "without_frame_inactive": {
+        "matched": 640,
+        "reference": 665,
+        "predicted": 653,
+        "precision": 0.9800918836140888,
+        "recall": 0.9624060150375939,
+        "f1": 0.9711684370257967
+      },
+      "delta": {
+        "matched": -2,
+        "predicted": -4,
+        "precision": 0.002922933842399389,
+        "recall": -0.00300751879699257,
+        "f1": -8.723619659367632e-05
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 2,
+        "net_matched_loss": 2,
+        "reference_identity_losses": 2,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    },
+    {
+      "name": "skryabin",
+      "cohorts": {
+        "frame_inactive": {
+          "events": 2,
+          "matched": 0,
+          "unmatched": 2,
+          "match_fraction": 0.0
+        },
+        "other": {
+          "events": 367,
+          "matched": 348,
+          "unmatched": 19,
+          "match_fraction": 0.9482288828337875
+        }
+      },
+      "original": {
+        "matched": 348,
+        "reference": 356,
+        "predicted": 369,
+        "precision": 0.943089430894309,
+        "recall": 0.9775280898876404,
+        "f1": 0.96
+      },
+      "without_frame_inactive": {
+        "matched": 348,
+        "reference": 356,
+        "predicted": 367,
+        "precision": 0.9482288828337875,
+        "recall": 0.9775280898876404,
+        "f1": 0.9626556016597511
+      },
+      "delta": {
+        "matched": 0,
+        "predicted": -2,
+        "precision": 0.005139451939478512,
+        "recall": 0.0,
+        "f1": 0.0026556016597510945
+      },
+      "true_onset_loss": {
+        "removed_previously_matched": 0,
+        "net_matched_loss": 0,
+        "reference_identity_losses": 0,
+        "reference_identity_gains": 0,
+        "retained_newly_matched": 0
+      }
+    }
+  ],
+  "sakura": {
+    "name": "sakura-nova-piano",
+    "events": 1557,
+    "frame_inactive": 89,
+    "other": 1468,
+    "scored": false,
+    "reference_read": false
+  },
+  "audit": {
+    "artifact_hashes_verified": 16,
+    "input_hashes_verified": 23,
+    "saved_pairs_verified": 9522,
+    "original_scores_equal_previous_report": true,
+    "individual_event_data_published": false
+  },
+  "limitations": [
+    "Exploratory ablation informed by previous inspection, not a blind test.",
+    "Unmatched candidates are defined by one fixed onset/pitch tolerance.",
+    "Higher aggregate precision cannot justify deleting real short onsets.",
+    "Sakura has cohort counts only and no reference scoring."
+  ],
+  "application_enabled": false,
+  "musical_acceptance": false
+}
