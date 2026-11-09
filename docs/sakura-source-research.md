@@ -2,6 +2,12 @@
 
 2026-11-08–09。当前没有达到作者 Reference 与成品 10K 的效果标准。这一轮没有启用新默认权重，也没有发布新 Release。
 
+2026-11-09补充：核验了原音频与试听PCM的差异，见[输入审计](raw-pcm-input-audit.md)；[非负鼓模板](drum-mixture-research.md)和[Nova鼓轨继续分离](larsnet-research.md)均完成实际对照，尚未解决第4列稳定选音，拒绝默认启用。各项新增候选和失败权重未混入此前草稿或成品评分。
+
+[ADT_STR鼓转录检查](adt-str-research.md)全曲运行已结束，但存在重复、未结束和残缺事件，独立审计拒绝评分；长耗时不能当作采音有效的证据。新增[物理鼓起音训练协议](physical-drum-training-protocol.md)，把音色识别与作者选音分开检验。
+
+首轮[物理鼓起音训练与独立测试](physical-drum-research.md)已完成：保留录音kick F1约0.964、snare约0.807，hi-hat真实录音误检仍多；回到《樱花草》仍未解决作者选音，保持研究用途。后续从单独鼓录音学习未出现音色的负标签，不给未知起音编造答案。
+
 ## 作者确认的监督范围
 
 作者 zhyzx35607 确认谱包中六个声轨是制作 Reference 时实际使用的 Nova 输出。Reference 第 1 列主要为 kick，第 2/3 列为 snare（允许双押），第 4 列主要为 hi-hat，也有 tom 等例外；第 5/6 列为钢琴，双 note 表达层叠；第 7–10 列为其他伴奏，包括提琴。Reference 不采人声。

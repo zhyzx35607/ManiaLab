@@ -54,7 +54,7 @@ def timing_comparison(reference, predicted, start, end):
                 notice='Similarity to one human interpretation, not instrument transcription accuracy or playability.')
 
 
-def write_review(output, source, start, end, results, *, labels=None, sources=None, notice=None, keys=10):
+def write_review(output, source, start, end, results, *, labels=None, sources=None, notice=None, keys=10, title=None, intro=None):
     """Local shared-audio timeline; works without osu! or a server."""
     import re
     from manialab.audition import render_audition
@@ -120,6 +120,12 @@ const x=t=>(t-data.start)/(data.end-data.start)*w;g.strokeStyle='#344258';g.fill
 const interval=w<600?2000:1000;for(let t=Math.ceil(data.start/interval)*interval;t<data.end;t+=interval){g.beginPath();g.moveTo(x(t),0);g.lineTo(x(t),bottom);g.stroke();g.fillText((t/1000).toFixed(0)+'s',x(t)+3,c.height-4);}
 for(const n of chart.notes){g.fillStyle=n.end>n.start?'#6bd8b5':'#73aefb';g.fillRect(x(n.start),n.lane*18+4,Math.max(3,x(n.end)-x(n.start)),12);}
 g.fillStyle='#fff';g.fillRect(x(data.start+audio.currentTime*1000),0,2,bottom);}requestAnimationFrame(draw);}draw();</script></html>'''
+    if title is not None or intro is not None:
+        from html import escape
+        if title is not None:
+            html=html.replace('Mapper 原始生成对照',escape(title)).replace('同一音频、同一 Timing：原始生成对照',escape(title))
+        if intro is not None:
+            html=html.replace('绿色为 LN，蓝色为短键。各图共用同一个播放时钟；点击谱图可跳转。保留原始事件，未量化、未重新定轨。',escape(intro))
     (output/'review.html').write_text(html.replace('CHART_DATA', json.dumps(charts).replace('<', '\\u003c')), encoding='utf-8')
 
 
