@@ -14,4 +14,4 @@ STFT hop为44个样本，约2ms，但不能据此声称2ms起音分辨率。2048
 
 可复现入口为`scripts/check_piano_attack_evidence.py`，方法在[固定协议](piano-attack-evidence-protocol.md)。本机细节页面：`test-data/sakura-benchmark/piano-attack-evidence-v2/index.html`，并链接之前的原声/合成回放。原声、图片、逐事件与激活都保留在本地忽略目录，公开JSON只含运行身份和汇总。
 
-下一步需要在有独立起音标签的录音上区分真实八度叠奏、同音重弹和泛音混淆；不能从本曲四个疑点直接推广出删音规则。[此前整类移除inactive的实验](piano-inactive-onsets-2026-11-09.md)已经证明会损失真实起音。
+下一步需要在有独立起音标签的录音上区分真实八度叠奏、同音重弹和泛音混淆；不能从本曲四个疑点直接推广出删音规则。[此前整类移除inactive的实验](piano-inactive-onsets-2026-11-09.md)已经证明会损失真实起音。随后沿同一定义完成的[11段真实录音重合检查](piano-harmonic-coincidence-2026-11-09.md)也发现：12个同时满足inactive与泛音频率重合的候选中，有3个已匹配独立MIDI起音。因此仍未建立可以安全自动删音的规则。

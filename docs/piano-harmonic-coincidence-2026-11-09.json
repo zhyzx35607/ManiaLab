@@ -1,0 +1,220 @@
+{
+  "identity": {
+    "matches_report_sha256": "2caa746775a9b53d238b0f0b73fce83a27a3765fcdf0bf0f86268906d699c2fb",
+    "event_report_sha256": "6b8e3a1e3109b8e39ddd906700e36978820038b3b92f83a468843bd832957d88",
+    "runner_sha256": "1fc0f48e4903a8832db9b28f831e4dc7655cd4d4e70dae521a6707f1e7080af7",
+    "protocol_sha256": "73e051e786bc1e47a1e2eec0fff92c345c54e279a4efa8ce5d0b6dc6f2f125aa"
+  },
+  "input_hashes": {
+    "bach": {
+      "events_sha256": "4bb82b0e0e45753133a8a9cf4a4f7c3cc7202620d99820868b5181cf62eb273f",
+      "matches_sha256": "3787f34c21ac45a5632a093f8c10a159e2a1b0e5074286f4eb86e3df40928391"
+    },
+    "bartok": {
+      "events_sha256": "ffb5b2ad759408b2c6d5bec4fdd3289d0108d078396220dc5fd4b067a60e8c71",
+      "matches_sha256": "ab907707421bf42118ff534a29e8871c0d83e41650a59eda494a75a88e7563a8"
+    },
+    "beethoven": {
+      "events_sha256": "c0d79eaf2a552b2c481ae6884f5ba581f01b39f25b7eaca938536fce41ca6aa9",
+      "matches_sha256": "26fcd06923ccc2e4ee19c380276a1b259e06972e4bb2db76709b60cc63f09549"
+    },
+    "brahms": {
+      "events_sha256": "7911e913fcd5aa0f3f1056651134da6ccf221233dc0d245f5ed521b84f8ac066",
+      "matches_sha256": "ecb12a65c120b2d2e347121e7820161fb93eafd3703247baf53852473fbeb492"
+    },
+    "chopin": {
+      "events_sha256": "31ca967b5b12d299eb292470bfd6abef67a5065da233e2dcefcf13dc0b1cfdb8",
+      "matches_sha256": "91599e65066001bb63b544f64799f2dfb3b1c1f0855856ad21590bcf10ce0e42"
+    },
+    "haydn": {
+      "events_sha256": "07524e88864f130022995289b16d5e06642c4d23ea7b91f3b0133cde1a48ce27",
+      "matches_sha256": "c488742fdcc48c165a869f8ad918702aeb20c44deeec90c83202573c4bf175d8"
+    },
+    "liszt": {
+      "events_sha256": "6c26491b760224df2df330bcec6c7cf85f7c894922fc5c13c1feebf3eeb6714f",
+      "matches_sha256": "cc217f86b724036f8be0398300a9c8f6d5cc19df5edc11e6febfd543fd36ade3"
+    },
+    "mozart": {
+      "events_sha256": "9bf9f73647dba200a7f95bd9981a4bad87e0aaf304cf3e368a33e47fea746930",
+      "matches_sha256": "a16e1c8b6ef28720f5394b31b0e0fec8936fd282a5c81766ad0711e15737c03d"
+    },
+    "rachmaninoff": {
+      "events_sha256": "3c3992265d1c0af1c88a6c8b5b81aab85592f951e807413a430dad419298e54b",
+      "matches_sha256": "6e2fe8412850527128dd281163380c4da89995fc0c6dd9455fa86fe7eece539b"
+    },
+    "ravel": {
+      "events_sha256": "4024a65b0240ad8f9510a16c6093db048ff4b4fb18e7cce1bc2adb87d6948a7d",
+      "matches_sha256": "f1d5b2e1f25d6917ae9fa095620f47d78b0a519fe987c9dec31b85a7c705d7b3"
+    },
+    "skryabin": {
+      "events_sha256": "70f9a743970bc4da807782e657240f5ae9b4496ac961972b17f74955be0a81cf",
+      "matches_sha256": "7ffb506b850e8ad2da82c4d100d222e5bb75e2c2f695b14c31d22a77b30a2ca1"
+    }
+  },
+  "cases": [
+    {
+      "name": "bach",
+      "targets": 279,
+      "counts": {
+        "other_matched_no_coincidence": 267,
+        "other_unmatched_no_coincidence": 1,
+        "other_matched_coincident": 10,
+        "other_unmatched_coincident": 1
+      }
+    },
+    {
+      "name": "bartok",
+      "targets": 820,
+      "counts": {
+        "other_unmatched_no_coincidence": 56,
+        "other_matched_no_coincidence": 525,
+        "inactive_unmatched_no_coincidence": 14,
+        "other_unmatched_coincident": 25,
+        "inactive_matched_no_coincidence": 1,
+        "inactive_unmatched_coincident": 6,
+        "other_matched_coincident": 192,
+        "inactive_matched_coincident": 1
+      }
+    },
+    {
+      "name": "beethoven",
+      "targets": 322,
+      "counts": {
+        "other_matched_no_coincidence": 282,
+        "other_unmatched_no_coincidence": 2,
+        "inactive_unmatched_no_coincidence": 1,
+        "other_matched_coincident": 37
+      }
+    },
+    {
+      "name": "brahms",
+      "targets": 476,
+      "counts": {
+        "other_matched_no_coincidence": 312,
+        "other_unmatched_no_coincidence": 11,
+        "other_matched_coincident": 144,
+        "inactive_unmatched_no_coincidence": 2,
+        "other_unmatched_coincident": 5,
+        "inactive_matched_no_coincidence": 2
+      }
+    },
+    {
+      "name": "chopin",
+      "targets": 269,
+      "counts": {
+        "other_matched_no_coincidence": 209,
+        "other_unmatched_no_coincidence": 18,
+        "other_unmatched_coincident": 4,
+        "other_matched_coincident": 38
+      }
+    },
+    {
+      "name": "haydn",
+      "targets": 689,
+      "counts": {
+        "other_matched_no_coincidence": 614,
+        "other_matched_coincident": 72,
+        "inactive_unmatched_no_coincidence": 3
+      }
+    },
+    {
+      "name": "liszt",
+      "targets": 164,
+      "counts": {
+        "other_matched_no_coincidence": 88,
+        "other_unmatched_no_coincidence": 8,
+        "other_matched_coincident": 62,
+        "inactive_unmatched_coincident": 2,
+        "other_unmatched_coincident": 4
+      }
+    },
+    {
+      "name": "mozart",
+      "targets": 425,
+      "counts": {
+        "other_matched_no_coincidence": 400,
+        "other_unmatched_no_coincidence": 1,
+        "other_matched_coincident": 24
+      }
+    },
+    {
+      "name": "rachmaninoff",
+      "targets": 535,
+      "counts": {
+        "other_matched_no_coincidence": 427,
+        "inactive_unmatched_no_coincidence": 4,
+        "other_matched_coincident": 65,
+        "inactive_matched_no_coincidence": 2,
+        "inactive_matched_coincident": 2,
+        "other_unmatched_no_coincidence": 29,
+        "other_unmatched_coincident": 5,
+        "inactive_unmatched_coincident": 1
+      }
+    },
+    {
+      "name": "ravel",
+      "targets": 657,
+      "counts": {
+        "other_matched_no_coincidence": 620,
+        "inactive_matched_no_coincidence": 2,
+        "inactive_unmatched_no_coincidence": 2,
+        "other_matched_coincident": 20,
+        "other_unmatched_no_coincidence": 9,
+        "other_unmatched_coincident": 4
+      }
+    },
+    {
+      "name": "skryabin",
+      "targets": 369,
+      "counts": {
+        "other_matched_no_coincidence": 276,
+        "other_unmatched_no_coincidence": 5,
+        "inactive_unmatched_no_coincidence": 2,
+        "other_unmatched_coincident": 14,
+        "other_matched_coincident": 72
+      }
+    }
+  ],
+  "counts": {
+    "other_matched_no_coincidence": 4020,
+    "other_unmatched_no_coincidence": 140,
+    "other_matched_coincident": 736,
+    "other_unmatched_coincident": 62,
+    "inactive_unmatched_no_coincidence": 28,
+    "inactive_matched_no_coincidence": 7,
+    "inactive_unmatched_coincident": 9,
+    "inactive_matched_coincident": 3
+  },
+  "parameters": {
+    "onset_distance_seconds": 0.03,
+    "harmonics": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "max_cents": 35
+  },
+  "onset_matching_rerun": false,
+  "model_rerun": false,
+  "notes_changed": false,
+  "application_enabled": false,
+  "musical_acceptance": false,
+  "report_sha256": "67b3470d6243271e12519d06d74b4cf5b06a8cc8d64849fcfe85d43dc4eba529",
+  "date": "2026-11-09",
+  "limitations": [
+    "Frozen prior same-pitch 50ms one-to-one onset matches; not release truth.",
+    "No ablation or rematching: three old matched candidates cannot be reported as net recall loss.",
+    "Harmonic pitch coincidence does not prove a spectral harmonic or common physical source.",
+    "Previously observed development recordings and hypothesis, not a blind test."
+  ],
+  "independent_verification": {
+    "partners_recomputed_without_helper": true,
+    "target_events": 5005,
+    "retained_onset_matches": 4766,
+    "input_hashes": 22
+  }
+}
