@@ -24,7 +24,8 @@ MODES = ('sustain', 'articulation', 'onsets', 'phrase', 'omit')
 
 
 def signature(analysis):
-    payload = [analysis.get('structure'), analysis.get('candidates'), analysis.get('phrase_candidates')]
+    payload = [analysis.get('structure'), analysis.get('candidates'), analysis.get('phrase_candidates'),
+               analysis.get('duration')]
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
@@ -106,15 +107,27 @@ def expression_evidence(analysis, plan, settings):
     validate_expression(plan, analysis)
     p = parameters(settings)
     raw = [note_from(n) for n in analysis['candidates']]
+    if (any(not isinstance(n.id,str) or not n.id for n in raw)
+            or len({n.id for n in raw})!=len(raw)):
+        raise ValueError('采音结果的音符标识缺失或重复，请重新分析音频')
     phrases = sorted([note_from(n) for n in analysis.get('phrase_candidates', [])], key=lambda n: n.start)
     output, trace, metadata = [], {}, {}
+    # Analyse the source's attack context once. Cutting chart sections through
+    # a chord or run must not turn its last local object into a phrase ending.
+    articulation = {}
+    articulation_voices = {voice for section in plan['sections']
+        for voice, policy in section['voices'].items() if policy['mode']=='articulation'}
+    duration = analysis.get('duration')
+    if articulation_voices and (isinstance(duration,bool) or not isinstance(duration,(int,float))
+            or not math.isfinite(duration) or duration<=0):
+        raise ValueError('连续起音表达需要有效的音频时长，请重新分析音频')
+    observed_until = round(duration*1000) if articulation_voices else None
+    for voice in articulation_voices:
+        articulation.update(articulation_policy(
+            [n for n in raw if n.voice==voice and n.strength>=.35], observed_until_ms=observed_until))
     for index, section in enumerate(plan['sections']):
         local = [n for n in raw if section['start_ms'] <= n.start < section['end_ms']]
         by_id = {n.id: n for n in local}
-        articulation={}
-        for voice,policy in section['voices'].items():
-            if policy['mode']=='articulation':
-                articulation.update(articulation_policy([n for n in local if n.voice==voice and n.strength>=.35]))
         replacements, covered = {}, {}
         for phrase in phrases:
             policy = section['voices'].get(phrase.voice, {})
@@ -150,7 +163,7 @@ def expression_evidence(analysis, plan, settings):
             n = replacements.get(original.id, original)
             hold = n.source == 'pitch' and policy['mode'] != 'onsets' and n.end-n.start >= p['min_ln']
             reason = 'supported_sustain' if hold else ('section_onsets' if policy['mode'] == 'onsets' else 'short_duration')
-            gesture=articulation.get(original.id)
+            gesture=articulation.get(original.id) if policy['mode']=='articulation' else None
             if gesture is not None:
                 base['articulation']=gesture
                 if gesture['tap']:

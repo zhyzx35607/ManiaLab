@@ -77,6 +77,52 @@ def test_articulation_does_not_make_group_tail_from_missing_release():
     assert a['candidates'][2]['end']==10000
 
 
+def test_section_cut_does_not_create_a_tail_or_split_a_detected_chord():
+    notes=[piano(t,t+1200,pitch=p,id=f'{t}:{p}') for t in (1000,1250,1500,1750)
+           for p in (60,64)]
+    def apply(cuts):
+        a=analysis(notes)
+        a['structure']['segments']=[dict(start_ms=l,end_ms=r) for l,r in zip(cuts,cuts[1:])]
+        plan=propose_expression(a,parameters())
+        for section in plan['sections']:
+            section['voices']['piano']['mode']='articulation'
+        return expression_evidence(a,plan,parameters())
+    full,_,_=apply([0,10000])
+    split,_,trace=apply([0,1400,1600,10000])
+    assert [n.data() for n in full]==[n.data() for n in split]
+    assert trace['1250:60']['articulation']['continuation']=='next_attack'
+    assert trace['1750:60']['articulation']['continuation']=='observed_gap'
+
+
+def test_full_source_context_does_not_override_explicit_section_modes():
+    notes=[piano(t,t+1200) for t in (1000,1250,1500,1750)]
+    a=analysis(notes)
+    a['structure']['segments']=[dict(start_ms=0,end_ms=1400),dict(start_ms=1400,end_ms=10000)]
+    plan=propose_expression(a,parameters())
+    plan['sections'][0]['voices']['piano']['mode']='articulation'
+    plan['sections'][1]['voices']['piano']['mode']='sustain'
+    selected,_,trace=expression_evidence(a,plan,parameters())
+    assert [n.hold for n in selected]==[False,False,True,True]
+    assert 'articulation' not in trace['1500']
+
+
+def test_observation_boundary_leaves_a_run_open_without_inventing_release():
+    notes=[piano(t,t+1200) for t in (1000,1250,1500)]
+    open_rules=articulation_policy(notes,observed_until_ms=1600)
+    closed_rules=articulation_policy(notes,observed_until_ms=5000)
+    assert open_rules['1500']['tap'] and open_rules['1500']['continuation']=='unknown'
+    assert open_rules['1500']['articulation']=='attack_run_open'
+    assert not closed_rules['1500']['tap'] and closed_rules['1500']['continuation']=='observed_gap'
+
+
+def test_audio_duration_change_invalidates_saved_expression_context():
+    a=analysis([piano(t,t+1200) for t in (1000,1250,1500)])
+    plan=propose_expression(a,parameters())
+    a['duration']=1.6
+    with pytest.raises(ValueError,match='改变'):
+        expression_evidence(a,plan,parameters())
+
+
 def test_saved_articulation_policy_roundtrips_and_exports_through_project_api(tmp_path):
     import io
     import json

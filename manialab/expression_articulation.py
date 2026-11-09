@@ -29,8 +29,13 @@ def attack_runs(notes):
     return runs,pause
 
 
-def articulation_policy(notes):
-    """Return expression choices keyed by original ID; do not mutate notes."""
+def articulation_policy(notes, *, observed_until_ms=None):
+    """Describe attacks with full source context, separately from chart sections.
+
+    An observed gap is absence of another detected attack, not proof of a
+    musical phrase ending. Unknown right context cannot establish a run tail.
+    Callers omitting the observation boundary retain the legacy tap policy.
+    """
     runs,pause=attack_runs(notes)
     result={}
     for run_index,groups in enumerate(runs):
@@ -41,12 +46,22 @@ def articulation_policy(notes):
             overlapping+=bool(ends and median(ends)>next_group[0].start+80)
         articulated=len(groups)>=3 and overlapping*2>=len(groups)-1
         for group_index,group in enumerate(groups):
-            body=articulated and group_index<len(groups)-1
+            if group_index<len(groups)-1:
+                continuation='next_attack'
+            elif run_index<len(runs)-1 or (observed_until_ms is not None
+                    and observed_until_ms-groups[-1][0].start>=pause):
+                continuation='observed_gap'
+            else:
+                continuation='unknown'
+            body=articulated and (group_index<len(groups)-1 or
+                (observed_until_ms is not None and continuation=='unknown'))
             for note in group:
                 result[note.id]=dict(tap=body,run=run_index,run_start=groups[0][0].start,
                     run_end_attack=groups[-1][0].start,attack_groups=len(groups),
                     overlap_pairs=overlapping,pause_threshold_ms=pause,
-                    articulation='attack_run_body' if body else
+                    continuation=continuation,
+                    articulation='attack_run_open' if articulated and body and continuation=='unknown' else
+                        'attack_run_body' if body else
                         'attack_run_tail' if articulated else 'independent_sustain')
     return result
 
