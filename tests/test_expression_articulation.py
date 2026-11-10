@@ -145,7 +145,7 @@ def test_saved_articulation_policy_roundtrips_and_exports_through_project_api(tm
         response=client.post(url+'/expression',json={'action':'automatic'},headers=headers)
         assert response.status_code==200
         plan=response.json['expression']
-        assert plan['sections'][0]['voices']['piano']['mode']=='sustain'
+        assert plan['sections'][0]['voices']['piano']['mode']=='articulation'
         plan['sections'][0]['voices']['piano']['mode']='articulation'
         assert client.post(url+'/expression',json={'expression':plan},headers=headers).status_code==200
         payload=dict(settings={'keys':10,'density':12},bpm=120,offset=0,division=4,audio_shift_ms=0,timing_confirmed=True)

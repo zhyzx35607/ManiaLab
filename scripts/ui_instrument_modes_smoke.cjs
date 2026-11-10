@@ -51,7 +51,22 @@ const fs=require('fs'),path=require('path');
   await instrument(0,48).selectOption('inherit');await save();
   const third=await generate();
   if(third.notes.some(n=>n.id==='strings'))throw Error('Inherit did not restore voice omission');
+  const automatic=page.waitForResponse(r=>r.url().endsWith(`/api/projects/${pid}/expression`)&&r.request().method()==='POST');
+  await page.locator('#expressionAuto').click();
+  if((await automatic).status()!==200)throw Error('Automatic expression failed');
+  await page.waitForFunction(()=>!busy&&state?.expression?.source==='automatic');await openFirst();
+  if(await controls(0).locator('[data-section-main]').inputValue()!=='')throw Error('Multiple sources were given automatic primary priority');
+  const activity=await controls(0).locator('[data-expression-activity="other"]').textContent();
+  if(!activity.includes('2 个候选音组'))throw Error('Activity evidence missing or chord pitches were counted as attacks');
+  await controls(0).locator('[data-section-main]').selectOption('piano');await save();
+  await page.reload();await page.locator('#recent').selectOption(pid);
+  await page.waitForFunction(()=>state?.expression?.source==='manual');await openFirst();
+  if(await controls(0).locator('[data-section-main]').inputValue()!=='piano')throw Error('Explicit main source lost after reload');
+  await page.locator('#structurePanel').screenshot({path:path.join(output,'activity-mobile.png')});
+  const activityOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
+  if(activityOverflow||errors.length)throw Error('Activity UI overflow or JavaScript error');
   const report={passed:true,synthetic_fixture:true,musical_acceptance:false,errors,overflow,
+   activity,automatic_ensemble_priority:false,manual_priority_roundtrip:true,activityOverflow,
    first:first.notes.map(n=>({id:n.id,start:n.start,end:n.end,instrument_id:n.instrument_id})),
    explicit_override:second.notes.map(n=>n.id),restored_inheritance:third.notes.map(n=>n.id)};
   fs.writeFileSync(path.join(output,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));

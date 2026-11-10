@@ -17,7 +17,8 @@ from scipy.sparse import csc_matrix
 
 from .arrange import _solve_binary, parameters, settings_at
 from .domain import UNOBSERVED_RELEASES,note_from
-from .expression_articulation import articulation_policy,source_activity
+from .expression_articulation import articulation_policy
+from .expression_activity import section_activity
 from .structure import detect_structure
 
 MODES = ('sustain', 'articulation', 'onsets', 'phrase', 'omit')
@@ -51,54 +52,43 @@ def propose_expression(analysis, settings):
     p = parameters(settings)
     structure = analysis.get('structure') or detect_structure(analysis)
     notes = analysis.get('candidates', [])
-    sections, previous = [], None
+    sections = []
     voices = sorted({n.get('voice', 'mix') for n in notes})
+    sources = {voice: [note_from(n) for n in notes if n.get('voice', 'mix') == voice and n.get('strength', 0) >= .35]
+               for voice in voices}
     for segment in structure['segments']:
         a, b = segment['start_ms'], segment['end_ms']
-        local = [n for n in notes if a <= n['start'] < b and n.get('strength', 0) >= .35]
-        scores,evidence = {},{}
-        for voice in voices:
-            if p.get(voice+'_weight', 1.) <= 0:
-                continue
-            source = [n for n in local if n.get('voice', 'mix') == voice]
-            evidence[voice]=source_activity([note_from(n) for n in source],a,b)
-            # Keep the established recommendation until the separate activity
-            # and articulation proposals have musical validation. The exact
-            # observed/uncertain diagnostic is not a salience probability.
-            occupied=set()
-            for n in source:
-                occupied.update(range(n['start']//250,(min(b,max(n['end'],n['start']+250))+249)//250))
-            scores[voice]=len(occupied)*250/max(1,b-a)
-        melodic = {v:s for v,s in scores.items() if v != 'drums' and s > .02}
-        if melodic.get('vocals', 0) >= .18:
-            main = 'vocals'
-        elif previous in melodic and melodic[previous] >= max(melodic.values(), default=0)*.85:
-            main = previous
-        else:
-            main = max(melodic, key=melodic.get) if melodic else (max(scores, key=scores.get) if scores else None)
-        previous = main
+        evidence = {voice: section_activity(sources[voice], a, b) for voice in voices}
+        active = [voice for voice in voices if evidence[voice]['present'] and p.get(voice+'_weight', 1.) > 0]
+        melodic = [voice for voice in active if voice != 'drums']
+        # Coverage, attack counts and model classes do not identify a lead.
+        # Only suggest a priority when no other melodic source is present.
+        # In an ensemble the user's explicit choice can still grant priority.
+        main = melodic[0] if len(melodic) == 1 else None
+        status = 'single_melodic_source' if main else 'multiple_melodic_sources' if melodic else 'no_melodic_source'
         policies = {}
         for voice in voices:
-            present = scores.get(voice, 0) > .02
-            if not present:
+            if voice not in active:
                 mode = 'omit'
             elif voice == 'drums' or p['ln_ratio'] == 0:
                 mode = 'onsets'
-            elif voice == main or p['ln_ratio'] >= .75:
-                mode = 'sustain'
+            elif voice in ('piano', 'guitar') and p['ln_ratio'] < .75:
+                mode = 'articulation'
             else:
-                mode = 'onsets'
+                mode = 'sustain'
             policies[voice] = dict(mode=mode, role='primary' if voice == main else 'support',
-                activity=evidence.get(voice,{}))
+                activity=evidence[voice])
         instruments = _section_instruments(notes, a, b)
         sections.append(dict(start_ms=a, end_ms=b, label=segment.get('label', ''),
             similarity_group=segment.get('similarity_group'), main_voice=main,
+            priority_evidence=dict(status=status, eligible_melodic_sources=melodic,
+                                   salience_estimated=False),
             voices=policies,
             instrument_modes={voice: {identity: 'inherit' for identity in sorted(identities)}
                               for voice, identities in sorted(instruments.items())},
-            reason='主声部按检测活动建议，仍需试听确认；长短表达可单独修改。连续起音表达为可选编排方式，不代表手指松键检测。'))
-    return dict(revision=2, source='automatic', evidence_signature=signature(analysis),
-        sections=sections, notice='LN 参数用于选择声部表达方向，不强凑全曲比例。段内策略保持一致；短音、停顿和占轨限制仍会影响实际结果。')
+            reason='多声部同时存在时先不指定主声部，可试听后手动突出；持续时间不等于旋律重要性。各声部的长短表达独立选择，跨段延续沿用起音所在段的方案。'))
+    return dict(revision=3, source='automatic', evidence_signature=signature(analysis),
+        sections=sections, notice='各声部独立选择长短表达，不强凑全曲 LN 比例。倾向为零时只表示起音；低于 0.75 时钢琴和吉他优先连续起音，达到 0.75 时保留完整持续音。短音、未决尾和占轨限制仍会影响实际结果。')
 
 
 def validate_expression(value, analysis):
@@ -443,6 +433,9 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
     reasons = dict(Counter(r['reason'] for r in trace.values() if r['decision'] == 'omitted'))
     return selected, dict(selected=count, candidates=len(trace), omitted=len(trace)-count,
         attack_selection='source_groups', attack_optimal=solved.status == 0,
+        selection_solver=dict(status=int(solved.status), message=str(solved.message),
+            relative_gap=float(solved.mip_gap), objective=float(-solved.fun),
+            objective_bound=float(-solved.mip_dual_bound)),
         expression_revision=2, actual_ln_ratio=round(ln/max(1, count), 4),
         selected_voices=dict(Counter(n.voice for n in selected)), omission_reasons=reasons,
         selected_large_attack_shifts=sum(abs(n.start-n.evidence_start)>30 for n in selected if n.evidence_start is not None),

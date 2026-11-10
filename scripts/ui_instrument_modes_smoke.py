@@ -39,6 +39,7 @@ def main():
     notes=[Note(1000,2500,pitch=60,source='pitch',voice='other',id='strings',instrument_id='yourmt3:program:48'),
            Note(1000,1500,pitch=64,source='pitch',voice='other',id='guitar',instrument_id='yourmt3:program:24'),
            Note(3000,3500,pitch=67,source='pitch',voice='other',id='unknown'),
+           Note(1100,1800,pitch=64,source='pitch',voice='piano',id='piano'),
            Note(8000,9500,pitch=60,source='pitch',voice='other',id='later',instrument_id='yourmt3:program:48')]
     analysis=dict(revision=8,duration=12,candidates=[n.data() for n in notes],phrase_candidates=[],waveform=[],
                   tempo=dict(bpm=120,offset=0,stable=True,division=4))

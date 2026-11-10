@@ -68,7 +68,7 @@ window.renderStructure=()=>{
   structurePanel.classList.toggle('hidden',$('mode').value==='remap');
   structureRows.replaceChildren();expressionAudit.replaceChildren();expressionDraft=null;
   const structure=state?.analysis?.structure;
-  structureInfo.textContent=structure?`${structure.segments.length} 段。${structure.notice||''} 保存声部方案后按段执行；自动方案会随全局偏好更新。LN 数值不强制凑比例。`:
+  structureInfo.textContent=structure?`${structure.segments.length} 段。${structure.notice||''} 保存声部方案后按段执行；自动方案会随全局偏好更新。${state?.expression?.notice||'LN 数值不强制凑比例。'}`:
     '先检测音乐变化，再决定每段采哪些声部。旧项目可以直接检测段落，无需重新运行音高模型。';
   structureBoundaries.value=structure?structure.boundaries.slice(1,-1).map(t=>t/1000).join(', '):'';
   if(state?.expression&&structure){
@@ -78,7 +78,7 @@ window.renderStructure=()=>{
       const summary=document.createElement('summary');summary.textContent=`${section.label||'段 '+(index+1)} · ${fmt(section.start_ms/1000)}–${fmt(section.end_ms/1000)} · ${section.similarity_group||''}`;
       const jump=document.createElement('button');jump.className='quiet';jump.textContent='定位试听';jump.onclick=()=>{seek(section.start_ms/1000);$('auditionStart').value=(section.start_ms/1000).toFixed(2);};
       const main=document.createElement('select');main.dataset.sectionMain=index;
-      options(main,[['','不指定主声部'],...Object.keys(section.voices).map(v=>[v,sourceNames[v]||v])]);
+      options(main,[['','不指定主声部（均衡取舍）'],...Object.keys(section.voices).map(v=>[v,sourceNames[v]||v])]);
       main.value=Object.keys(section.voices).find(v=>section.voices[v].role==='primary')||'';
       main.onchange=()=>{section.main_voice=main.value||null;for(const [v,p] of Object.entries(section.voices))p.role=v===main.value?'primary':'support';};
       const mainLabel=document.createElement('label');mainLabel.className='field';mainLabel.textContent='本段主声部';mainLabel.append(main);
@@ -89,6 +89,16 @@ window.renderStructure=()=>{
         const choice=document.createElement('select');choice.dataset.expressionVoice=voice;choice.dataset.expressionSection=index;
         options(choice,expressionOptions(voice));choice.value=policy.mode;
         choice.onchange=()=>policy.mode=choice.value;label.append(choice);voiceGroup.append(label);
+        const activity=policy.activity;
+        if(activity&&Number.isFinite(activity.local_attack_groups)){
+          const detail=document.createElement('p');detail.className='muted compact';
+          detail.dataset.expressionActivity=voice;
+          detail.textContent=`本段 ${activity.local_attack_groups} 个候选音组；跨段延续 ${activity.carried_candidate_count} 音；可用持续区间覆盖 ${Math.round(activity.observed_interval_coverage*100)}%。`;
+          if(activity.carried_candidate_count)detail.textContent+=' 延续音沿用起音所在段的表达。';
+          if(activity.uncertain_tails)detail.textContent+=` ${activity.uncertain_tails} 个音尾未决。`;
+          detail.title='这些是检测候选的活动统计，不表示声部重要性，也不证明模型音尾准确。';
+          voiceGroup.append(detail);
+        }
         const ids=[...new Set((state.analysis.candidates||[]).filter(n=>n.voice===voice&&n.instrument_id&&section.start_ms<=n.start&&n.start<section.end_ms).map(n=>n.instrument_id))].sort();
         if(ids.length){
           const controls=document.createElement('details');controls.className='instrument-modes';
