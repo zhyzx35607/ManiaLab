@@ -128,7 +128,7 @@ def validate_expression(value, analysis):
     return value
 
 
-def expression_evidence(analysis, plan, settings):
+def expression_evidence(analysis, plan, settings, *, stream_evidence=None):
     """Apply an explicit source policy, without LN quotas or lane decisions."""
     validate_expression(plan, analysis)
     p = parameters(settings)
@@ -152,6 +152,14 @@ def expression_evidence(analysis, plan, settings):
         articulation = articulation_policy(
             [n for n in raw if (n.voice, n.instrument_id) in articulation_streams and n.strength>=.35],
             observed_until_ms=round(duration*1000))
+    if stream_evidence is not None:
+        from .expression_streams import stream_articulation_policy
+        if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not math.isfinite(duration) or duration <= 0:
+            raise ValueError('声音流表达需要有效的音频观测时长')
+        # Research callers may supply fixed grouping evidence. The ordinary
+        # application has no automatic model/grouping switch at this stage.
+        stream_choices = stream_articulation_policy(raw, stream_evidence, observed_until_ms=round(duration*1000))
+        articulation.update(stream_choices)
     for index, section in enumerate(plan['sections']):
         local = [n for n in raw if section['start_ms'] <= n.start < section['end_ms']]
         by_id = {n.id: n for n in local}
