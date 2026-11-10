@@ -20,7 +20,7 @@
 
 **伴奏转录对照**：在原Nova浮点伴奏轨上运行专用转录，完成6–10K全曲选音、定轨及导出比较；补齐强制截断/未决音尾不能自动形成LN的保护，并修正真实弦乐评测漏算跨界长音的问题。钢琴主次和LN表达仍需验证，新伴奏模型尚未进入应用；见[实际编排记录](docs/accompaniment-transcription-research.md)。
 
-**其他乐器采音**：已实际运行 Tsumugi 的贝斯、吉他、人声及其他乐器权重，完整对照继续进行；[候选模型及状态](docs/other-instrument-model-survey-2026-11-10.md)、[35 份弦管乐比较](docs/instrument-extension-results.md)、[人声模型退步结果](docs/vocal-transcription-results.md)均保留。开发代码另修正了[起音校准挤在一起和重弹拖尾](docs/basic-pitch-attack-boundary-fix.md)，但真实人声音尾仍未改善，没有据此发布完成版。
+**其他乐器采音**：已实际运行 Tsumugi 的贝斯、吉他、人声及其他乐器权重；[完整 100 份吉他／人声结果](docs/tsumugi-guitar-vocal-results.md)显示吉他误采减少但漏音增加，人声两套标注结果一升一降。[候选模型及状态](docs/other-instrument-model-survey-2026-11-10.md)、[35 份弦管乐比较](docs/instrument-extension-results.md)、[ROSVOT 人声退步结果](docs/vocal-transcription-results.md)均保留。开发代码另修正了[起音校准挤在一起和重弹拖尾](docs/basic-pitch-attack-boundary-fix.md)，但完整音符区间仍未整体改善，没有据此发布完成版。
 
 **可选连续起音表达**：逐段声部方案可选择“连续起音优先，组尾可延长”，处理钢琴等敲击序列的相互拖尾。自动推荐保持原行为；新主次/长短建议的两轮全曲结果包含鼓取舍退步，详见[表达对照](docs/articulated-expression-research.md)。
 
