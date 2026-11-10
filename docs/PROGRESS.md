@@ -17,6 +17,8 @@
   `0a43911477f7c11eea58a31e57bfdfa88c753e3c`；PR检查 `42847322903` 成功。
 - 鼓组剩余容量补充已通过 PR #3 合入主线，合并提交
   `40e1a061c35caf89ad7b004a858b9619892e1fb5`；PR检查 `42852204830` 成功。
+- Mega53长窗和采音结果已通过 PR #4 合入主线，合并提交
+  `a7b2478c2df09e0f6dc2a3d0dc409ea356dabdac`；PR检查 `42854329970` 成功。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
@@ -30,8 +32,10 @@
   了改动前选择器AST。新比较入口为 `scripts/check_drum_group_fallback.py`。
 - Harmonica 第三方复现的固定对照入口：全部35份已有 URMP 输入及40秒静音。
   安全载入真实权重已通过，116个存储张量逐值核对、679444参数、6个解码
-  控制通过。没有本机声学成绩；不是论文作者权重。未查到源码许可，未打包。
-  见[协议](harmonica-reproduction-protocol.md)。
+  控制通过。原bf16失败后显式FP32完成全部输入及独立复核；独奏起音F1
+  89.32%／区间75.92%，混音56.99%／21.17%，均低于Tsumugi。萨克斯独奏
+  有改善，不作整体替换。不是论文作者权重，未查到源码许可，未打包。
+  见[协议](harmonica-reproduction-protocol.md)及[实测结果](harmonica-reproduction-results.md)。
 - MuScriptor 公开 GGUF small 已下载并核 SHA，逆名称/布局转换为 safetensors；
   正向转换与回读逐值相同。原 Python 模型严格载入122个状态张量通过，
   102441984参数。15个纯符号事件控制和6个计分控制通过；保留完整token、
@@ -44,7 +48,8 @@
 
 原 shell session `69438` 已完成 Mega53 分离及下游采音，但在Harmonica首个
 静音控制的CPU bfloat16 LSTM处报错，已实际exit 1；MuScriptor尚未启动。
-下一步修复显式float32兼容入口，在新目录执行Harmonica，再继续MuScriptor。
+显式float32兼容入口已修复，新串行session `54376`已完成Harmonica全部输入
+及评分，现在运行MuScriptor；已完成40秒静音并进入真实输入。
 session/PID 仅用于本次会话定位，重开后先
 确认命令行和启动时间，不能凭旧PID启动、结束或重复任务。
 
@@ -63,7 +68,11 @@ session/PID 仅用于本次会话定位，重开后先
    日志：`test-data/harmonica-source-review-v1/inference-run.log`。
    错误为 `could not create a primitive descriptor for the LSTM forward propagation primitive`。
    保留原目录，未完成任何输入的完整转录，不能发布声学成绩。
-4. MuScriptor待恢复后执行：应用 `.venv` 运行
+   新运行：`--precision float32 --output test-data/harmonica-urmp-fp32-v1`，
+   日志 `test-data/harmonica-source-review-v1/fp32-inference-run.log`。
+   原源码未改，只在模型forward_spectrogram内禁用autocast，实际四头dtype
+   逐batch保存；详见[精度修订](harmonica-reproduction-protocol.md)。
+4. MuScriptor正在执行：应用 `.venv` 运行
    `scripts/check_muscriptor_urmp.py --weights test-data/muscriptor-recovered-small-v1/muscriptor-small-recovered-f16.safetensors --output test-data/muscriptor-urmp-v1`。
    日志：`test-data/muscriptor-cpp-review-v1/urmp-run.log`。
 
@@ -74,8 +83,8 @@ session/PID 仅用于本次会话定位，重开后先
 唯一活动子代理 `/root/piano_stream_exports` 负责静态审核和完成后的独立复算，
 不运行神经模型。独审目录：`test-data/mega53-long-independent-v1`、
 `test-data/mega53-long-transcription-independent-v1`、
-`test-data/muscriptor-independent-v1`、`test-data/harmonica-independent-v1`。
-Harmonica独审入口已完成纯解码控制，等待真实输出后核对；尚无声学独审结果。
+`test-data/muscriptor-independent-v1`、`test-data/harmonica-fp32-independent-v1`。
+长窗分离、长窗采音、Harmonica FP32独审全部完成；MuScriptor待最终报告。
 
 ## 已知结果与下一步
 
@@ -84,8 +93,7 @@ Harmonica独审入口已完成纯解码控制，等待真实输出后核对；�
 - 鼓组修复后的《樱花草》固定候选10K选择为1499物件/373LN，已完成定轨
   和`.osu`回读，仍不是试听验收。改动前1495/373的诊断留在
   [历史规则重放](expression-current-replay.md)。
-- 修复并恢复Harmonica，然后完成MuScriptor；独立核对各乐器的起音/完整区间、
-  目标缺席误报与人工封口。
+- 完成MuScriptor；独立核对各乐器的起音/完整区间、人工封口和跨窗来源。
   有收益的候选再用真实 Nova 声轨验证，保留失败项；不只凭波形或平均分接入。
 - 下一次提交更新本文件并单独开 PR、检查、合并。已有源码与小阶段记录
   保存在 GitHub；本地 ignored 音频/权重仍需本机保留，GitHub源码不包含它们。

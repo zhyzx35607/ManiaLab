@@ -35,7 +35,8 @@ def read(path):
     return json.loads(Path(path).read_text(encoding='utf-8'))
 
 
-def prepare():
+def prepare(precision='upstream-bfloat16'):
+    assert precision in ('upstream-bfloat16', 'float32')
     assert sha(WEIGHT) == WEIGHT_SHA
     assert sha(BASELINE / 'comparison.json') == BASELINE_SHA and sha(MANIFEST) == MANIFEST_SHA
     git = lambda *args: subprocess.check_output(['git', '-C', str(SOURCE), *args], text=True).strip()
@@ -59,7 +60,10 @@ def prepare():
         context='original frozen clips up to 40 seconds', scoring_seconds=[0, 30],
         model_chunk_seconds=5., model_batch_size=8, thresholds='checkpoint defaults; no sweep',
         normalization=False, sample_rate=16000, thread_counts={'intra': 2, 'inter': 1},
-        amp='upstream CPU bfloat16 autocast; CQT float32', models_parallel=False,
+        precision=precision,
+        amp=('upstream CPU bfloat16 autocast; CQT float32' if precision == 'upstream-bfloat16'
+             else 'disable CPU autocast only inside forward_spectrogram; CQT float32'),
+        compatibility_wrapper=precision == 'float32', models_parallel=False,
         source_license='No license file or pyproject license field found; research asset only.',
         notes_or_chart_labels_read=False, enabled_in_application=False)
 
@@ -128,11 +132,26 @@ def decoder_controls(decode):
     return rows
 
 
-def run(output):
+def configure_precision(model, precision, torch):
+    """Keep upstream windowing/decoding; opt out of CPU AMP explicitly."""
+    if precision == 'upstream-bfloat16':
+        return
+    assert precision == 'float32'
+    original = model.forward_spectrogram
+    def forward_float32(batch):
+        assert batch.dtype == torch.float32 and batch.device.type == 'cpu'
+        with torch.autocast(device_type='cpu', enabled=False):
+            result = original(batch)
+        assert all(value.dtype == torch.float32 for value in result.values())
+        return result
+    model.forward_spectrogram = forward_float32
+
+
+def run(output, precision='upstream-bfloat16'):
     import numpy as np
     from scipy.io import wavfile
     assert not output.exists(), 'Preserve previous complete or partial evidence'
-    plan = prepare()
+    plan = prepare(precision)
     save(output / 'plan.json', plan)
     for folder in (ROOT / 'test-data/rosvot-runtime', ASSETS / 'deps', SOURCE / 'src'):
         sys.path.insert(0, str(folder))
@@ -148,10 +167,12 @@ def run(output):
     assert config.model.cqt.sample_rate == 16000 and config.model.cqt.hop_length == 512
     for key, tensor in stored['model'].items():
         assert torch.equal(tensor, model.state_dict()[key.removeprefix('_orig_mod.')])
+    configure_precision(model, precision, torch)
     thresholds = stored['thresholds']
     assert set(thresholds) == {'onset', 'frame'} and all(0 < v < 1 for v in thresholds.values())
     identity = dict(config=stored['config'], thresholds=thresholds, step=step,
         parameters=sum(p.numel() for p in model.parameters()), safe_tensor_load=True,
+        precision=precision, compatibility_wrapper=precision == 'float32',
         model_tensors_exact=True, cqt_kernels='reconstructed from stored config using nnAudio0.3.4',
         declared_urmp_test_pieces=sorted(URMP_TEST_PIECES),
         all_source_pieces_declared_test=all(c['piece_id'] in URMP_TEST_PIECES for c in plan['cases']),
@@ -161,10 +182,12 @@ def run(output):
     save(output / 'model-identity.json', identity)
     save(output / 'decoder-controls.json', decoder_controls(decode))
     captures = defaultdict(list)
+    captured_dtypes = defaultdict(list)
     handles = []
     for name, head in model.heads.items():
         def capture(module, args, result, label=name):
             assert torch.isfinite(result).all()
+            captured_dtypes[label].append(str(result.dtype))
             captures[label].append(result.detach().float().cpu().clone())
         handles.append(head.register_forward_hook(capture))
     fps = 16000/512
@@ -183,11 +206,14 @@ def run(output):
             assert len(integer) == case['samples']
             pcm = integer.astype(np.float32)/32768.
         captures.clear()
+        captured_dtypes.clear()
         started = time.monotonic()
         probabilities = transcribe_audio(model, pcm, chunk_seconds=5., batch_size=8, device=torch.device('cpu'))
         elapsed = time.monotonic()-started
         frames = len(pcm)//512+1
         assert set(captures) == {'onset', 'sustain', 'offset', 'velocity'}
+        if precision == 'float32':
+            assert all(dtype == 'torch.float32' for dtypes in captured_dtypes.values() for dtype in dtypes)
         raw = {}
         for name, batches in captures.items():
             assert sum(len(b) for b in batches) == (frames+keep-1)//keep
@@ -213,6 +239,7 @@ def run(output):
         save(folder / 'notes.json', predicted)
         save(folder / 'endpoint-evidence.json', evidence)
         receipt = dict(case=case, seconds=elapsed, frames=frames, notes=len(predicted),
+            precision=precision, logits_dtypes=dict(captured_dtypes),
             neural_batches=len(captures['onset']), input_pcm_sha256=hashlib.sha256(pcm.tobytes()).hexdigest(),
             raw_logits=raw, activations_sha256=sha(folder / 'activations.npz'),
             notes_sha256=sha(folder / 'notes.json'), endpoint_evidence_sha256=sha(folder / 'endpoint-evidence.json'),
@@ -271,11 +298,12 @@ if __name__ == '__main__':
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--output', type=Path)
     cli.add_argument('--prepare-only', action='store_true')
+    cli.add_argument('--precision', choices=['upstream-bfloat16', 'float32'], default='upstream-bfloat16')
     args = cli.parse_args()
     if args.prepare_only:
-        print(json.dumps(prepare(), indent=2, ensure_ascii=False))
+        print(json.dumps(prepare(args.precision), indent=2, ensure_ascii=False))
         assert 'torch' not in sys.modules
     elif args.output is None:
         cli.error('--output required')
     else:
-        run(args.output)
+        run(args.output, args.precision)

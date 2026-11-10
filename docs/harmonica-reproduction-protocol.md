@@ -41,3 +41,26 @@ autocast、CQT float32、5秒CQT窗、半窗重叠保留中央半窗，batch8。
 本轮不会读取MAESTRO保留测试，不改变应用默认或谱面表达规则。真实波形、
 逐音资料、模型均留ignored目录。能否接入仍由完整采音对照决定，不能由
 模型大小、论文标题或库中自报分数决定。
+
+## 2026-11-11 CPU兼容修订
+
+原CPU bfloat16路径在首个40秒静音控制的LSTM前向报错：
+`could not create a primitive descriptor for the LSTM forward propagation primitive`。
+原队列实际退出1，没有完成任何输入的转录，也没有读取逐音参考。
+保留 `test-data/harmonica-urmp-v1`、原日志及
+`test-data/harmonica-source-review-v1/failed-bfloat16-runner.py`。
+失败回执为同目录 `bfloat16-failure.json`；不将该失败当作模型声学成绩。
+
+新增显式 `--precision float32`，默认仍为 `upstream-bfloat16`。只为已加载
+模型实例的 `forward_spectrogram` 包一层局部禁用CPU autocast，不修改
+第三方源码、checkpoint、CQT、窗口、拼接、阈值、解码或评分。输入必须是
+float32；四个head的实际输出dtype逐批保存并断言为float32。每个run的
+plan、模型身份、逐输入回执明确保存precision及兼容路径。
+
+这是数值精度不同的新实验，不宣称与原bfloat16输出相同。新输出目录与
+旧失败目录分开，全部35个原输入及静音控制重新执行，仍在全部完成后才评分。
+修订在新声学运行前写入：
+
+```powershell
+.venv-audio/Scripts/python.exe -B scripts/check_harmonica_transcription.py --precision float32 --output test-data/harmonica-urmp-fp32-v1
+```
