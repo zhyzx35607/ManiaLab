@@ -1,5 +1,9 @@
 # 补充模型：音高活动、逐弦重弹与跨窗记忆
 
+另已实际核查并运行 MVSep Mega 53 的8种弦管乐分离控制。32次波形分离中
+相对混音的指标改善，但后续64用途/46任务的Tsumugi采音并未改善整体结果，
+未接入默认。见[分离结果](mega53-separation-results.md)和[完整采音结果](mega53-transcription-results.md)。
+
 2026-11-10继续直接核查作者源码、权重和论文。新增以下三项，不把旧候选重复
 算作新发现，也不以仓库热度替代本地比较。网络快照和源码在ignored
 `test-data/instrument-search-continuation-2026-11-10/`，没有上传用户音频。
