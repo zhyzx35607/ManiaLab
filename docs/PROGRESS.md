@@ -39,14 +39,17 @@
 
 ## 本阶段新增
 
-- 当前正在验证连续起音表达的区间空隙保护；分支`fix/articulation-interval-gaps`。
+- 连续起音表达的区间空隙保护验证完成；分支`fix/articulation-interval-gaps`，
+  PR #11已创建，待最新GitHub检查通过后合并。
   旧实现两个反例失败，修复后20项专项与相关测试共216 passed。按原候选区间
   已结束至少80ms新增分组边界，未知音尾和更早仍持续的音阻止新增边界；
   不改变原起音、音高或音尾。完整协议见
   [区间空隙](articulation-interval-gap-protocol.md)。重放入口
-  `scripts/check_articulation_interval_gaps.py`，运行session `36934`、输出
-  `test-data/articulation-interval-gaps-v3`。此状态不是完成回执，续接先查
-  实际进程和报告。v1因检查脚本直接比较原JSON附加字段与Note失败，未完成
+  `scripts/check_articulation_interval_gaps.py`，session `36934`实际exit 0、输出
+  `test-data/articulation-interval-gaps-v3`。最终6–10K选中音符、导出坐标均精确
+  不变，11份SMD全部6122原候选/6070强候选的表达不变。没有新的音乐收益
+  结论，完整[结果](articulation-interval-gap-results.md)。
+  v1因检查脚本直接比较原JSON附加字段与Note失败，未完成
   生成；改为规范化Note比较后另开v2，不覆盖v1。v2全量重放完成，Beethoven
   9个原持续音被新短键化；增加失败反例后，v3限制只细分旧规则已短键化的组。
   原持续音不能变成新tap。初步《樱花草》表达没有变化，不把最小反例通过
@@ -161,5 +164,9 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 音色分组验证已收束：混奏退步且全部单组，不沿这版默认分组继续调参。
   下一步以原候选和可解释的局部旋律/节奏连续性定位段内表达，避免把模型
   广义类别直接当独立声部；仍需原音和生成结果检查，不以标签稳定度代替。
+- 区间空隙保护已完成固定重放。它解决可复现的分组影响，却没有改变
+  《樱花草》的最长钢琴起音组；未知重弹尾仍使分组缺少完整休止证据。
+  下一步需要结合原声和现有采音上下文定位实际分歧，不把`reattack`直接
+  改成已观测音尾，也不重复跑本次已完成的16份对照。当前无神经推理队列。
 - 下一次提交更新本文件并单独开 PR、检查、合并。已有源码与小阶段记录
   保存在 GitHub；本地 ignored 音频/权重仍需本机保留，GitHub源码不包含它们。
