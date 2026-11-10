@@ -23,11 +23,20 @@
   `28c9a51613d33e991f1b7bb888e6c1940a627cf9`；PR检查 `42856082126` 成功。
 - 当前Nova other原声与落线对照已通过 PR #6 合入主线，合并提交
   `3a1aa6d139d24b41508143e82773973d3789f5f6`；PR检查 `42859344954` 成功。
+- MuScriptor完整结果及独审已通过 PR #7 合入主线，合并提交
+  `2510e103ffe83a38ae3fb4963d35a9fe1b498ecf`；PR检查 `42860878982` 成功。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
 ## 本阶段新增
 
+- 修复同占用、同强度、同表达含义候选的去重顺序偏置，沿用原对齐评分择优，
+  同分按ID；不同尾长、乐句代表和不同表达依据不作等价替换。25项专项及
+  相关检查共114 passed。固定《樱花草》6–10K重放、定轨、导出回读通过：
+  各键数160处候选代表变化，11对实际保留，全部other；物件/LN总数不变。
+  6K/7K/9K分别额外2/1/2处对象取舍，8K/10K对象内容不变；不作音乐收益
+  结论。详见[重复采音选择](expression-duplicate-selection.md)，新比较入口
+  `scripts/check_expression_duplicates.py`，产物`test-data/expression-duplicates-v1`。
 - 原Nova other声轨已完成当前10K的三个固定规则选窗对照：200–208、
   96–104、16–24秒；3图实际查看、9份原声/起音click音频回读通过。
   186个other中65个量化移动超过30ms，62个向后、3个向前；这不是65个
@@ -40,7 +49,8 @@
   回读通过，6K补5鼓、7–10K补4鼓，LN不变。最终产物
   `test-data/drum-group-fallback-v3`，见[结果与边界](drum-group-fallback.md)。
   不再运行旧 `check_expression_current_replay.py` 来生成“当前”基线；它冻结
-  了改动前选择器AST。新比较入口为 `scripts/check_drum_group_fallback.py`。
+  了改动前选择器AST。当时比较入口为 `scripts/check_drum_group_fallback.py`；
+  本轮去重修改后的比较改用 `scripts/check_expression_duplicates.py`。
 - Harmonica 第三方复现的固定对照入口：全部35份已有 URMP 输入及40秒静音。
   安全载入真实权重已通过，116个存储张量逐值核对、679444参数、6个解码
   控制通过。原bf16失败后显式FP32完成全部输入及独立复核；独奏起音F1
@@ -107,10 +117,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 鼓组修复后的《樱花草》固定候选10K选择为1499物件/373LN，已完成定轨
   和`.osu`回读，仍不是试听验收。改动前1495/373的诊断留在
   [历史规则重放](expression-current-replay.md)。
+- 新去重规则的10K仍为1499/373，11对来源代表替换，起止/音高/声部内容
+  不变。6K/7K/9K另有少量全局取舍；保持原候选，不把代表评分提高说成补采音。
 - MuScriptor small本轮结束；八类乐器汇总两项均不及Tsumugi，不继续调参
   或对这版跑Nova。Harmonica萨克斯正例也不支持全局替换。
-- 下一步回到原Nova other的当前三个对照片段，区分原始检测、制谱提前和
-  量化误差，并结合段落中的乐器叠奏定位问题；不能把65个大移动当作65个
-  已确认错音，也不能为减小移动量统一调整Offset或直接重写候选时间。
+- 下一步仍从原Nova other三个固定片段定位实际采音与段落表达问题。
+  已证实的去重偏置已修，不重复模型搜索或继续用其解释全部省略；不能把
+  65个大移动当作65个已确认错音，不能为减小移动量统一调Offset。
 - 下一次提交更新本文件并单独开 PR、检查、合并。已有源码与小阶段记录
   保存在 GitHub；本地 ignored 音频/权重仍需本机保留，GitHub源码不包含它们。

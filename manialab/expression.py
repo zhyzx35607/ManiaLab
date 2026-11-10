@@ -260,6 +260,38 @@ def _attack_value(note, preferences):
     return (.25+note.strength)*preferences.get(note.voice+'_weight', 1.)*alignment
 
 
+def _deduplicate_pitches(notes, trace, settings, segment_preferences):
+    """Prefer better aligned evidence only for interchangeable expressions.
+
+    Keep the former choice for competing lengths, chord ranks and gestures.
+    Raw evidence endpoints may differ; retain the winning Note whole, never
+    combine one detection's attack with another detection's release.
+    """
+    duplicates = defaultdict(list)
+    for note in notes:
+        duplicates[(note.start, note.pitch, note.source)].append(note)
+    phrase_anchors = {row['represented_by'] for row in trace.values()
+                      if row.get('reason') == 'represented_by_phrase'}
+    kept = []
+    for options in duplicates.values():
+        first = options[0]
+        winner = first
+        if len(options) > 1 and not first.phrase and not first.support and first.id not in phrase_anchors:
+            fields = ('end', 'strength', 'lane', 'raw', 'release_reason',
+                      'phrase', 'support', 'support_coverage')
+            compatible = [n for n in options if n.id not in phrase_anchors
+                and all(getattr(n, key) == getattr(first, key) for key in fields)
+                and all(trace[n.id].get(key) == trace[first.id].get(key)
+                        for key in ('mode', 'reason', 'articulation'))]
+            pref = settings_at(settings, first.start, segment_preferences)
+            winner = min(compatible, key=lambda n: (-_attack_value(n, pref), n.id))
+        kept.append(winner)
+        for note in options:
+            if note.id != winner.id:
+                trace[note.id].update(decision='omitted', reason='duplicate_pitch')
+    return kept
+
+
 def drum_group_anchor(notes, settings, segment_preferences):
     """Offer one existing transient when a complete drum figure cannot fit.
 
@@ -345,13 +377,8 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
         families.append((group, indices))
     for (section, voice, instrument_id, role), notes in by_voice.items():
         notes.sort(key=lambda n: (n.start, -n.strength, n.pitch))
-        seen, groups, current = set(), [], []
-        for n in notes:
-            key = (n.start, n.pitch, n.source)
-            if key in seen:
-                trace[n.id].update(decision='omitted', reason='duplicate_pitch')
-                continue
-            seen.add(key)
+        groups, current = [], []
+        for n in _deduplicate_pitches(notes, trace, p, segment_preferences):
             # 2-beat blocks preserve short musical figures. Pauses are split
             # earlier; blocks are source-local, so quiet main notes do not
             # compete individually with loud drums on intervening rows.
