@@ -40,7 +40,8 @@ def synthetic(path, seconds=30):
         stream.setnchannels(1);stream.setsampwidth(2);stream.setframerate(rate);stream.writeframes(data)
 
 
-def run(executable, work, piano_audio=None, instrument_fixtures=None, instruments_only=False):
+def run(executable, work, piano_audio=None, instrument_fixtures=None, instruments_only=False,
+        guitar_probe=None, guitar_only=False):
     executable, work = executable.resolve(), work.resolve()
     work.mkdir(parents=True,exist_ok=True)
     data=work/'独立项目';data.mkdir(exist_ok=True)
@@ -112,6 +113,9 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert release_manifest['worker_sources']==worker['worker_sources']
         if release_manifest.get('piano_model'):
             assert sha256(executable.parent/'_internal/assets/deep/piano-regression.onnx')==release_manifest['piano_model']['sha256']
+        if release_manifest.get('guitar_model'):
+            from scripts.build_provenance import verify_guitar_model
+            assert verify_guitar_model(executable.parent/'_internal')==release_manifest['guitar_model']
         if release_manifest.get('instrument_worker'):
             assert verify_instrument_worker(ROOT,executable.parent/'_internal/assets/instruments')==release_manifest['instrument_worker']
         checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),executable_sha256=release_manifest['executable_sha256']))
@@ -125,6 +129,13 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         start();status=request('/api/status')
         assert status['version']==__version__ and status['separator']['available'],status
         checks.append(dict(check='startup',version=status['version'],separator=status['separator'],prior=status['pattern_prior']))
+        if guitar_only:
+            if guitar_probe is None:
+                raise ValueError('--guitar-only requires --guitar-probe')
+            from scripts.verify_portable_guitar import check_guitar
+            check_guitar(request,wait,start,stop,work,guitar_probe,checks)
+            print(json.dumps(dict(passed=True,scope='guitar_only',checks=checks),ensure_ascii=True),flush=True)
+            return
         if instruments_only:
             if instrument_fixtures is None:
                 raise ValueError('--instruments-only requires --instrument-fixtures')
@@ -245,6 +256,9 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         if instrument_fixtures is not None:
             from scripts.verify_portable_instruments import check_instruments
             check_instruments(request,wait,start,stop,work,instrument_fixtures,checks)
+        if guitar_probe is not None:
+            from scripts.verify_portable_guitar import check_guitar
+            check_guitar(request,wait,start,stop,work,guitar_probe,checks)
         # Cancel a fresh separation, then confirm the same server remains usable.
         second=request('/api/import',upload=('files','取消测试.wav',source.read_bytes()+b'\x00\x00'))
         second_base='/api/projects/'+second['id'];job=request(second_base+'/analyze',dict(engine='deep',settings={}))
@@ -274,4 +288,9 @@ if __name__=='__main__':
     parser.add_argument('--piano-audio',type=Path,help='Short real piano WAV for packaged specialist cold/warm and expression checks')
     parser.add_argument('--instrument-fixtures',type=Path,help='Frozen real bass/other fixtures for packaged HTTP checks')
     parser.add_argument('--instruments-only',action='store_true',help='Only the packaged instrument checks, after component identity checks')
-    args=parser.parse_args();run(args.executable,args.work,args.piano_audio,args.instrument_fixtures,args.instruments_only)
+    parser.add_argument('--guitar-probe',type=Path,help='Completed fixed FL float probe, including both native stems')
+    parser.add_argument('--guitar-only',action='store_true',help='Only guitar HTTP checks, after component identity checks')
+    args=parser.parse_args()
+    if args.guitar_only and args.instruments_only:
+        parser.error('Choose at most one focused check')
+    run(args.executable,args.work,args.piano_audio,args.instrument_fixtures,args.instruments_only,args.guitar_probe,args.guitar_only)

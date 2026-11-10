@@ -1,0 +1,33 @@
+Optional HF guitar FL transcription model — attribution and license evidence
+
+Publisher: Xavier Riley (Hugging Face account: xavriley).
+Model repository: https://huggingface.co/xavriley/midi-transcription-models
+Fixed revision: b7bec65a2b860aca72856b0feef58b5df407b777
+Upstream artifact: guitar-fl.pth
+The unmodified model card at this revision declares "license: mit".
+It is retained byte-for-byte as HFGuitar-Model-Card.md. That declaration is
+the model-license evidence; no standalone upstream copyright/license text
+was present in the reviewed model repository, so no copyright year or
+additional copyright holder is invented here.
+
+The actual network definition used for the export is
+qiuqiangkong/piano_transcription_inference at commit
+0226e74cbc805660e34bbd6a8fed2083890ebb88, model class
+Regress_onset_offset_frame_velocity_CRNN.
+Its setup.py names Qiuqiang Kong as author and declares
+"License :: OSI Approved :: MIT License". The exact pinned setup.py is
+retained as HFGuitar-Source-Setup.py.txt. A standalone LICENSE file was not
+present in the reviewed pinned source. This is a source-license declaration,
+not an invented verbatim upstream MIT notice.
+
+ManiaLab exported the fixed checkpoint to a batch-1, 160000-sample ONNX
+graph at 16000 Hz. No fine-tuning was performed. ManiaLab supplies float
+input handling, overlap stitching, physical-frame masks, event decoding,
+and explicit release provenance. Guitar weights are distinct from the
+optional piano checkpoint; its CC-BY-4.0 license is not assigned to these
+guitar weights. A model-predicted acoustic interval is not a verified chart
+LN target. Model and evidence hashes are in assets/guitar-model.json.
+
+This notice describes optional packaging support. It does not assert that
+the new weights were included in an earlier Release or that pending float,
+application, portable-runtime, or musical checks have passed.

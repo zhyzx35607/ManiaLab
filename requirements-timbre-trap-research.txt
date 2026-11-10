@@ -1,0 +1,10 @@
+# Isolated research environment; do not install over the portable application.
+# CPU Torch/Torchaudio wheels come from the official PyTorch CPU index.
+torch==2.9.1+cpu
+torchaudio==2.9.1+cpu
+numpy==2.3.5
+scipy==1.17.0
+librosa==0.11.0
+einops==0.8.1
+tqdm==4.70.1
+cqt-pytorch==0.0.5

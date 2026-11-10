@@ -4,13 +4,13 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.5 · 实验版。** 已有四／六声部采音、本曲编排建议、跨音高人声长条、LN 协调与放手控制、单音符修正、连续键型搜索和小型轨道偏好模型。尚未完成端到端 10K 制谱模型训练，也没有证据证明音乐性全面超过 Mapperatorinator。当前版本适合生成、检查和修改候选，再到 osu! 试打。
+**0.1.0-alpha.6-dev.4 · 开发测试版。** 加入可选的吉他 FL 专用采音，并包含钢琴、贝斯与其他伴奏的专用入口。仍需检查起音、Timing和逐段表达，再到 osu! 试打；尚无证据证明完整音乐性超过 Mapperatorinator。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，运行验证见[吉他应用结果](docs/hf-guitar-application-results.md)。
 
 **开发测试版 `0.1.0-alpha.6-dev.2`**：在段落与声部表达流程上，加入已有声轨导入、可选钢琴专用采音、和弦减层保留起音，以及手动“连续起音优先”表达；重建音频程序并校验源码与包内模型身份。下载入口为 [开发测试包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.2)。这是对照测试版本，自动对音、复杂鼓音与LN音乐表达仍未完成验收，研究中的YourMT3伴奏模型和未通过对照的训练权重没有启用。常规alpha.5仍保留，原段落流程说明见 [采音与段落表达修订](docs/music-first-revision.md)。
 
 **dev.3 新增[可选贝斯与其他伴奏采音](docs/instrument-worker.md)**：Tsumugi 专用CPU组件随完整包提供，默认关闭；适用于四／六声部分离或已导入的贝斯、其他伴奏轨。另一个开关允许有来源记录的模型预测音尾参与LN，默认只用起音。吉他、人声继续原引擎。已经完成两权重、两种音尾模式的真实便携前向和缓存核对；全曲18份编排结果及仍存在的主次、量化问题见[全曲对照](docs/tsumugi-fullsong-results.md)。自动音色重分组尚未启用，见[真实结果](docs/instrument-refinement-results.md)。这仍是开发测试版，不能视为音乐质量已验收。
 
-**起音来源修复**：曲中窗口开始前就在持续的声音，不再无条件写成新按键；歌曲开头已发声的区间单独保留。完整156份输入重放说明，直接删掉所有无起音标志的事件会伤到真实开头音，因此采用明确的输入边界策略，保留原始预测与排除原因。结果和仍存在的漏采见[完整复核](docs/tsumugi-onset-provenance.md)。dev.3仍处于草稿验证阶段。
+**起音来源修复**：曲中窗口开始前就在持续的声音，不再无条件写成新按键；歌曲开头已发声的区间单独保留。完整156份输入重放说明，直接删掉所有无起音标志的事件会伤到真实开头音，因此采用明确的输入边界策略，保留原始预测与排除原因。结果和仍存在的漏采见[完整复核](docs/tsumugi-onset-provenance.md)。dev.3保留原草稿，相关修复并入dev.4。
 
 **源码研究进展**：已用真实 Mapperatorinator 音频／事件序列完成两轮 6–10K LoRA 实验，修正跨窗 LN 状态、训练／推理条件和模型轨道被覆盖的问题，增加混音／六声部同步试听对照。自由生成尚无稳定收益，10K Hybrid 对照出现 LN 退步，因此未启用研究权重；详见 [音频事件微调记录](docs/mapper-audio-research.md)。
 
@@ -27,6 +27,8 @@
 **其他乐器采音**：已实际运行 Tsumugi 的贝斯、吉他、人声及其他乐器权重；[完整 100 份吉他／人声结果](docs/tsumugi-guitar-vocal-results.md)显示吉他误采减少但漏音增加，人声两套标注结果一升一降。[候选模型及状态](docs/other-instrument-model-survey-2026-11-10.md)、[35 份弦管乐比较](docs/instrument-extension-results.md)、[ROSVOT 人声退步结果](docs/vocal-transcription-results.md)均保留。开发代码另修正了[起音校准挤在一起和重弹拖尾](docs/basic-pitch-attack-boundary-fix.md)，但完整音符区间仍未整体改善，没有据此发布完成版。
 
 **新增专用模型实测**：已下载并比较小提琴STRAdi、贝斯FiloBass、萨克斯FiloSax及PESTO音高辅助；固定录音的结果未支持替换现有方案，见[模型状态与实测依据](docs/specialist-instrument-models-2026-11-10.md)。源码另修复[钢琴重弹截尾误当LN放手](docs/piano-reattack-boundary.md)，保留起音并公开整曲表达的副作用；这项改动尚未进入旧下载包。
+
+**吉他专用模型对照**：两份新权重×60份完整录音和独立复算已完成。FL模型起音F1为89.36%、完整区间68.81%，高于现有管线73.17%／48.74%；区间仅59份可评，训练重叠未认证，见[完整结果及退步项](docs/hf-guitar-specialists-results.md)。dev.4加入默认关闭的[吉他专用入口](docs/guitar-specialist.md)，已完成实际浮点声轨和源码HTTP整链对照；模型预测音尾须另行开启。采音指标不代表最终LN质量。
 
 **弦管乐专用对照**：[Tsumugi 完整 35 输入三方结果](docs/tsumugi-urmp-results.md)显示起音和完整区间整体改善，混音漏采减少；中提琴等局部起音仍不如 YourMT3。继续用原 Nova 全曲声轨检查实际编排，并准备[音色分组模型](docs/instrument-refinement-protocol.md)对照；音符指标不等于 LN 音乐验收。
 
@@ -74,7 +76,7 @@
 
 ## 下载即用
 
-1. 从 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.5-windows-x64.zip`。
+1. 从 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.6-dev.4-windows-x64.zip`。
 2. **完整解压**后双击 `ManiaLab.exe`。程序打开本机浏览器界面，关闭控制台窗口退出。
 3. 导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 选择本曲编排建议或手调参数 → 生成候选 → 下载 `.osz` → 拖入 osu!。
 
@@ -84,7 +86,7 @@
 
 首次全曲深度分析会真实运行多个模型，耗时取决于长度与 CPU；再次调整门槛会复用已完成的模型结果。界面显示实际耗时和缓存状态。`SHA256SUMS.txt` 是校验文件，正常使用只需下载 ZIP。
 
-本轮变化与验证见 [alpha.5 验证记录](docs/alpha5-validation.md)。此前 alpha.4 的公开下载及 20 分钟容量测试见 [历史下载包核验](docs/release-verification.md)，不当作新包成绩。
+本轮使用方式见[乐器采音选择](docs/instrument-choices.md)，新增路径的真实运行见[吉他应用验证](docs/hf-guitar-application-results.md)及同一Release附带的验证JSON。此前[alpha.5](docs/alpha5-validation.md)和[alpha.4](docs/release-verification.md)的检查保留为历史记录。
 
 项目自动保存到 `%LOCALAPPDATA%\ManiaLab\projects`，日志在 `%LOCALAPPDATA%\ManiaLab\ManiaLab.log`。迁移项目可复制项目文件夹。
 

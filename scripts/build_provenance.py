@@ -24,6 +24,45 @@ def verify_worker(root, directory):
     return manifest
 
 
+def verify_guitar_model(root):
+    """Verify an optional graph and its actual upstream license declarations."""
+    from manialab.guitar import CHECKPOINT_SHA256, MODEL_SHA256, OUTPUTS, THRESHOLDS
+    root = Path(root)
+    model = root/'assets/deep/guitar-fl.onnx'
+    if not model.exists():
+        return None
+    manifest = root/'assets/guitar-model.json'
+    if not manifest.is_file():
+        raise ValueError('Guitar model metadata is missing')
+    identity = json.loads(manifest.read_text(encoding='utf-8'))
+    expected = dict(filename='guitar-fl.onnx',sha256=MODEL_SHA256,
+        upstream_checkpoint_sha256=CHECKPOINT_SHA256,license='MIT',
+        model_revision='b7bec65a2b860aca72856b0feef58b5df407b777',
+        source_commit='0226e74cbc805660e34bbd6a8fed2083890ebb88',
+        sample_rate=16000,input_samples=160000,output_names=list(OUTPUTS),thresholds=THRESHOLDS)
+    if any(identity.get(key) != value for key,value in expected.items()):
+        raise ValueError('Guitar model identity differs from the verified runtime contract')
+    if any(identity.get(key) is not False for key in
+           ('default_enabled','predicted_releases_default','normalization')):
+        raise ValueError('Guitar model must preserve explicit opt-in and unchanged input gain')
+    if not model.is_file() or sha256(model) != MODEL_SHA256:
+        raise ValueError('Guitar model checksum differs from the verified export')
+    for field, name in (
+        ('license','HFGuitar-Model-Card.md'),
+        ('source_license_declaration','HFGuitar-Source-Setup.py.txt'),
+        ('notice','HFGuitar-NOTICE.txt')):
+        path = 'licenses/'+name
+        expected_sha = identity.get(field+'_sha256')
+        if (identity.get(field+'_file') != path or not isinstance(expected_sha,str)
+                or len(expected_sha) != 64 or not (root/path).is_file()
+                or sha256(root/path) != expected_sha):
+            raise ValueError('Guitar license/attribution evidence is missing or changed: '+name)
+    if (identity['license_sha256'] != 'e5717f0ce6570ecc9ad961e0ceaf6ab9c56f061eb497650132da7b4ceee3c2d8'
+            or identity['source_license_declaration_sha256'] != '3d6fcb0cace324891df2eac75104d8bedabef9e38ab313eb7ed380b89f10eb7d'):
+        raise ValueError('Guitar upstream license declarations differ from the reviewed revisions')
+    return identity
+
+
 def verify_instrument_worker(root, directory):
     from manialab.instrument_bundle import MODELS, runtime_identity, verify_model, verify_source
     directory = Path(directory)

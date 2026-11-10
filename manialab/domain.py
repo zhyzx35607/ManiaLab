@@ -182,8 +182,9 @@ def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unkno
         slider_multiplier=1.4, slider_tick_rate=1, background_line="",
         timing_points=f"{float(offset):.3f},{60000 / float(bpm):.8f},4,2,0,70,1,0", hit_objects="\n".join(lines))
     content = Template(template_path.read_text(encoding="utf-8")).substitute(substitutions)
-    if bookmarks:
-        content = re.sub(r'(?m)^Bookmarks:.*$', 'Bookmarks: '+','.join(str(t) for t in sorted(set(bookmarks))), content)
+    # New charts must not inherit the template's placeholder bookmark, including
+    # songs with no internal section boundaries. Imported charts return above.
+    content = re.sub(r'(?m)^Bookmarks:.*$', 'Bookmarks: '+','.join(str(t) for t in sorted(set(bookmarks))), content)
     if grid_division is not None:
         from .timing import grid_report
         content = re.sub(r"(?m)^BeatDivisor:.*$", f"BeatDivisor: {grid_division}", content)

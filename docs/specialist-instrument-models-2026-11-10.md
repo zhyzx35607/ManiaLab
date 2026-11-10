@@ -6,7 +6,7 @@ YourMT3、ROSVOT等已有比较，不重新包装为本轮新发现。
 | 项目 | 实际用途 | 当前处理 |
 |---|---|---|
 | STRAdi offline | 独奏小提琴起音、音尾、活动与F0 | 已下载源码及94MB权重，实际完成12条小提琴对照；起音92.85%、完整区间83.15%，低于当前Tsumugi，见[结果](stradi-violin-results.md)。 |
-| xavriley/hf_midi_transcription | 贝斯、萨克斯、吉他的专用CRNN转录 | FiloBass 20K／FiloSax 25K已完成固定17＋2条CPU对照；起音／区间F1分别88.43%／56.37%、44.68%／28.72%，低于对应Tsumugi，见[完整结果](hf-instrument-specialists-results.md)。两份吉他权重已下载，[完整60例对照](hf-guitar-specialists-protocol.md)正在串行执行，尚未完成；不替换默认。 |
+| xavriley/hf_midi_transcription | 贝斯、萨克斯、吉他的专用CRNN转录 | FiloBass 20K／FiloSax 25K已完成固定17＋2条CPU对照；起音／区间F1分别88.43%／56.37%、44.68%／28.72%，低于对应Tsumugi，见[完整结果](hf-instrument-specialists-results.md)。吉他两权重×60份完整推理和独立审核已完成：FL起音89.36%、完整区间68.81%，高于当前管线73.17%／48.74%；GAPS音尾退步。见[四引擎完整结果](hf-guitar-specialists-results.md)。FL进入便携运行研究，尚未替换应用默认。 |
 | Banquet / query-bandit | 用示例音频查询，从混音再提取目标乐器波形 | 两份作者权重、推荐权重共同增益诊断共96次前向全部完成。两权重的8组混音整窗SI-SDR均未胜过原混音；另一权重仅小号中央窗局部改善，见[实测](banquet-separation-results.md)。未接入采音前处理；不是逐音转录。 |
 | PESTO | 单F0音高轨迹及发声活动辅助证据 | 已在全部35个弦管乐输入实际运行；直接筛选音符导致明显退步，见[完整结果](pesto-instrument-support-results.md)，未接默认。 |
 
@@ -42,6 +42,13 @@ HF MIDI来源为`https://github.com/xavriley/hf_midi_transcription`，commit
 `https://arxiv.org/html/2311.02023v1`主要介绍数据集，未确认该20K权重的
 准确训练划分。本轮已按[固定协议](hf-instrument-specialists-protocol.md)完成全部17个贝斯和2个萨克斯输入，安全严格载入后保存原始窗口及物理时钟输出。推理累计347.001秒，复用三条兼容性结果后新增275.142秒；汇总阶段旧URMP缺少`available`字段的问题通过核验原产物后离线重算恢复，没有重跑网络。萨克斯104个漏采的起音头在正确音高附近均未过默认阈值，但对应区间内frame仍有活动，不能归纳为F0全面失败。
 
+吉他作者论文`https://arxiv.org/html/2402.15258v1`中的FL指François Leduc，
+是专业转录乐谱与真实吉他录音对齐所得的数据；第2.2节列明79份乐谱、33位
+吉他手、约4小时音频。论文分别报告FL和GS+FL训练，以及GuitarSet测试划分
+和全GuitarSet零样本实验，不能混为同一训练设置。公开`guitar-fl.pth`为
+100000步，但下载文件没有可逐项核验的完整训练清单，仍不把本机60例称为
+已经认证的盲测；真实分离音轨的残留与失真也必须另行检查。
+
 Banquet来源为`https://github.com/kwatcharasupat/query-bandit`，commit
 `79ed5bb75e5c3a40cd319d9d990cee913fc65c26`，作者权重Zenodo记录13694558。
 代码MIT，权重元数据CC BY-NC-SA4.0。10秒query短了循环、长了截断。
@@ -57,3 +64,7 @@ Banquet来源为`https://github.com/kwatcharasupat/query-bandit`，commit
 全部静态记录和官方响应身份在ignored
 `test-data/instrument-model-extra-search-2026-11-10/notes.md`。
 原始音频、模型、逐音预测均留在ignored目录，公开仓库只保存适配与方法记录。
+
+后续新增Timbre-Trap、FretNet和MR-MT3的源码、作者权重及实现核查见
+[补充模型记录](instrument-model-continuation-2026-11-10.md)。其中Timbre-Trap
+已完成完整弦管乐活动实验，结果未支持接入；逐弦指位或跨窗token记忆不能直接当作LN放手证据。

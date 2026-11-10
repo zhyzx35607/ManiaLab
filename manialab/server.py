@@ -24,6 +24,7 @@ from .audition import grid_events, render_audition, waveform_window
 from .separation import Separator
 from .provided_stems import ProvidedStemSeparator,prepare_provided_stems
 from .piano import PianoDetector
+from .guitar import GuitarDetector
 from .instrument_detector import InstrumentDetector
 from .voices import apply_phrase_evidence
 from .pattern_prior import prior_status
@@ -49,6 +50,7 @@ def create_app(resources, data_root):
     engine = MapperEngine(data_root, resources)
     separator = Separator(resources)
     piano_detector = PianoDetector(resources)
+    guitar_detector = GuitarDetector(resources)
     instrument_detector = InstrumentDetector(resources)
     app.extensions.update(projects=projects, jobs=jobs, executor=executor)
 
@@ -87,7 +89,7 @@ def create_app(resources, data_root):
         return jsonify(version=__version__, defaults=DEFAULTS, projects=projects.recent(),
                        capabilities={"audio": True, "remap": True, "api_planner": True, "trained_10k": False},
                        engine=engine.status(), separator=separator.status(), piano=piano_detector.status(),
-                       instruments=instrument_detector.status(), pattern_prior=prior_status())
+                       guitar=guitar_detector.status(), instruments=instrument_detector.status(), pattern_prior=prior_status())
 
     def busy(pid):
         if any(j["project"] == pid and j["status"] in ("queued", "running") for j in jobs.values()):
@@ -246,12 +248,20 @@ def create_app(resources, data_root):
         prefs = parameters(payload.get("settings", {}))
         analysis_engine = payload.get("engine", "basic")
         piano_engine = payload.get('piano_engine','general')
+        guitar_engine = payload.get('guitar_engine','general')
+        allow_guitar_releases = payload.get('allow_guitar_predicted_releases',False)
         instrument_engine = payload.get('instrument_engine','general')
         allow_releases = payload.get('allow_predicted_releases',False)
         if analysis_engine not in ("basic", "deep", "deep6", "provided"):
             raise ValueError("采音引擎无效")
         if piano_engine not in ('general','specialist'):
             raise ValueError('钢琴采音方式无效')
+        if guitar_engine not in ('general','fl'):
+            raise ValueError('吉他采音方式无效')
+        if type(allow_guitar_releases) is not bool:
+            raise ValueError('吉他模型音尾选项必须是布尔值')
+        if allow_guitar_releases and guitar_engine!='fl':
+            raise ValueError('请先选择吉他专用采音，再启用吉他模型音尾')
         if instrument_engine not in ('general','tsumugi'):
             raise ValueError('贝斯与伴奏采音方式无效')
         if type(allow_releases) is not bool:
@@ -268,6 +278,16 @@ def create_app(resources, data_root):
                     provided=projects.load(pid).get('provided_stems',{})
                     if not any(v in ('bass','other') for v in provided.get('voices',[])):
                         raise ValueError('已导入声轨中没有贝斯或其他伴奏')
+        if guitar_engine=='fl':
+            if analysis_engine not in ('deep6','provided'):
+                raise ValueError('吉他专用采音需要六声部分离或已导入的吉他声轨')
+            if not guitar_detector.status()['available']:
+                raise ValueError('当前安装包未包含吉他专用采音模型')
+            if analysis_engine=='provided':
+                with mutex:
+                    provided=projects.load(pid).get('provided_stems',{})
+                    if 'guitar' not in provided.get('voices',[]):
+                        raise ValueError('已导入声轨中没有吉他')
         if piano_engine=='specialist':
             if analysis_engine not in ('deep6','provided'):
                 raise ValueError('钢琴专用采音需要六声部分离或已导入的钢琴声轨')
@@ -280,13 +300,16 @@ def create_app(resources, data_root):
                 state["analysis"] = analyze_deep(current_audio(state), projects.path(pid), resources / "assets/basic-pitch.onnx",
                     prefs, selected_separator, progress, cancelled,
                     piano_detector=piano_detector if piano_engine=='specialist' else None,
+                    guitar_detector=guitar_detector if guitar_engine=='fl' else None,
+                    allow_guitar_predicted_releases=allow_guitar_releases,
                     instrument_detector=instrument_detector if instrument_engine=='tsumugi' else None,
                     allow_predicted_releases=allow_releases)
             else:
                 state["analysis"] = analyze(current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx", prefs, progress, cancelled)
             state["settings"] = prefs
             state['analysis_options'] = dict(engine=analysis_engine,piano_engine=piano_engine,
-                instrument_engine=instrument_engine,allow_predicted_releases=allow_releases)
+                instrument_engine=instrument_engine,allow_predicted_releases=allow_releases,
+                guitar_engine=guitar_engine,allow_guitar_predicted_releases=allow_guitar_releases)
             state["audio_shift_ms"] = requested_shift(payload, state)
             from .expression import propose_expression
             if state['analysis'].get('structure'):
@@ -301,7 +324,8 @@ def create_app(resources, data_root):
                 state["active"] = -1
             return {"candidates": len(state["analysis"]["candidates"])}
         return submit(pid, operation, identity=dict(engine=analysis_engine,piano_engine=piano_engine,
-            instrument_engine=instrument_engine,allow_predicted_releases=allow_releases))
+            instrument_engine=instrument_engine,allow_predicted_releases=allow_releases,
+            guitar_engine=guitar_engine,allow_guitar_predicted_releases=allow_guitar_releases))
 
     @app.post('/api/projects/<pid>/provided-stems')
     def import_provided_stems(pid):

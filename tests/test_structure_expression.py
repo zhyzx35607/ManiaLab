@@ -169,6 +169,24 @@ def test_export_marks_use_bookmarks_without_invented_green_lines():
     assert len([l for l in sections(text)['TimingPoints'] if l.strip()])==1
 
 
+@pytest.mark.parametrize('bookmarks,expected', [((), ''), ([3000,1000,3000], '1000,3000')])
+def test_new_chart_replaces_template_bookmarks_even_without_sections(bookmarks, expected):
+    from pathlib import Path
+    template=Path(__file__).parents[1]/'vendor/mapperatorinator/template.osu'
+    text=export_osu([Note(1000,1000,0)],10,template,bookmarks=bookmarks)
+    assert values(sections(text)['Editor'])['Bookmarks']==expected
+    assert '-330001' not in text
+
+
+def test_retrack_preserves_imported_bookmarks_without_new_sections():
+    from pathlib import Path
+    template=Path(__file__).parents[1]/'vendor/mapperatorinator/template.osu'
+    notes=[Note(1000,1000,0)]
+    original=export_osu(notes,10,template,bookmarks=[1000,3000])
+    exported=export_osu(notes,6,template,original=original)
+    assert sections(exported)['Editor']==sections(original)['Editor']
+
+
 def test_rejected_phrase_does_not_claim_to_represent_audible_interior_notes():
     notes=[Note(1000,1400,source='pitch',voice='vocals',id='a',strength=.2),
            Note(1400,2000,source='pitch',voice='vocals',id='b',strength=.8)]
