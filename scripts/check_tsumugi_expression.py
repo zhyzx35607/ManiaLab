@@ -58,6 +58,9 @@ def frozen_expression(analysis, settings, reference_plan):
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--input', type=Path, default=Path('test-data/sakura-tsumugi-fullsong-v1'))
+    cli.add_argument('--replay-bridge', action='store_true',
+        help='Re-audit frozen neural predictions with the current bridge; preserve both versions')
+    cli.add_argument('--source', type=Path, default=Path('test-data/other-instrument-model-survey-2026-11-10/tsumugi'))
     cli.add_argument('--output', type=Path, required=True)
     args = cli.parse_args()
     if args.output.exists():
@@ -69,8 +72,16 @@ def main():
     assert completed['plan_sha256'] == sha(root/'execution-plan.json')
     assert completed['parity_sha256'] == sha(root/'parity.json')
     assert sha(root/'application-analysis.json') == plan['application_analysis_sha256']
-    assert sha('scripts/tsumugi_candidate_adapter.py') == plan['bridge_sha256']
-    assert all(sha(path)==digest for path,digest in plan['application_sources'].items()), 'Prepared application sources changed'
+    if not args.replay_bridge:
+        assert sha('scripts/tsumugi_candidate_adapter.py') == plan['bridge_sha256']
+    source_changes = {path:dict(prepared=digest, current=sha(path))
+        for path,digest in plan['application_sources'].items() if sha(path) != digest}
+    if source_changes:
+        # Reviewed diff ff3002e -> 007919f changes only analyze_deep, which this
+        # frozen-evidence comparison never calls. SR/source_evidence are identical.
+        assert args.replay_bridge and source_changes == {'manialab/audio.py':dict(
+            prepared='0e486f926033d7559d972774a7876ce62835a6b4604e7f496d8cdc5d425aa04c',
+            current='2523982a608d5ca34648390acfe96f3a4769e669c731c7dd906a2123121f27bb')}, 'Prepared application sources changed'
     baseline = read(root/'application-analysis.json')
     revised = copy.deepcopy(baseline)
     roles = [row['voice'] for row in plan['sources']]
@@ -79,8 +90,9 @@ def main():
     assert sha(mix_path) == plan['mix_sha256']
     sr, mix = wavfile.read(mix_path)
     assert sr == SR and mix.dtype == np.float32 and mix.ndim == 1
-    replacements, traces, report_hashes = [], {}, {}
+    replacements, traces, report_hashes, original_bridges = [], {}, {}, {}
     onset_replacements, onset_traces = [], {}
+    args.output.mkdir(parents=True)
     for row in plan['sources']:
         voice = row['voice']
         source = Path(row['audio'])
@@ -101,6 +113,24 @@ def main():
         for filename, digest in bridge['evidence_sha256'].items():
             assert sha(model_dir/filename) == digest
         assert bridge['baseline_notes'] == read(model_dir/'notes.json')
+        onset_path = root/(voice+'-onsets-only.json')
+        onset_bridge = read(onset_path)
+        assert onset_bridge['identity']==bridge['identity'] and onset_bridge['evidence_sha256']==bridge['evidence_sha256']
+        assert onset_bridge['allow_predicted_releases'] is False and onset_bridge['recover_filtered_attacks'] is False
+        assert onset_bridge['runner_sha256']==plan['bridge_sha256'] and onset_bridge['baseline_notes']==bridge['baseline_notes']
+        original_bridges[voice] = dict(releases=sha(bridge_path), onsets=sha(onset_path))
+        if args.replay_bridge:
+            from scripts.tsumugi_candidate_adapter import adapt_case
+            old_bridge = bridge
+            bridge = adapt_case(model_dir, args.source, voice=voice, allow_predicted_releases=True)
+            onset_bridge = adapt_case(model_dir, args.source, voice=voice, allow_predicted_releases=False)
+            assert bridge['identity'] == old_bridge['identity'] and bridge['baseline_notes'] == old_bridge['baseline_notes']
+            assert bridge['evidence_sha256'] == old_bridge['evidence_sha256']
+            assert onset_bridge['baseline_notes'] == bridge['baseline_notes']
+            bridge_path, onset_path = args.output/bridge_path.name, args.output/onset_path.name
+            for path, value in ((bridge_path, bridge), (onset_path, onset_bridge)):
+                with path.open('x', encoding='utf-8') as stream:
+                    json.dump(value, stream, ensure_ascii=False, indent=2, allow_nan=False)
         raw = [note_from(n) for n in bridge['candidates']]
         assert all(n.voice==voice and n.end<=round(len(signal)*1000/sr) for n in raw)
         selected, rejected = source_evidence(raw, signal, mix)
@@ -112,11 +142,6 @@ def main():
                 item['decision']='below_source_energy_floor'
         traces[voice] = dict(trace=trace, raw_candidates=len(raw), accepted=len(selected), rejected_low_energy=rejected)
         report_hashes[voice] = sha(bridge_path)
-        onset_path = root/(voice+'-onsets-only.json')
-        onset_bridge = read(onset_path)
-        assert onset_bridge['identity']==bridge['identity'] and onset_bridge['evidence_sha256']==bridge['evidence_sha256']
-        assert onset_bridge['allow_predicted_releases'] is False and onset_bridge['recover_filtered_attacks'] is False
-        assert onset_bridge['runner_sha256']==plan['bridge_sha256'] and onset_bridge['baseline_notes']==bridge['baseline_notes']
         onset_raw = [note_from(n) for n in onset_bridge['candidates']]
         assert [n.id for n in onset_raw]==[n.id for n in raw]
         assert all((a.start,a.end,a.pitch,a.voice,a.strength,a.instrument_id)==
@@ -152,7 +177,6 @@ def main():
         if summary['voice'] in roles:
             summary['release_refinement'] = dict(model_hypotheses=False,
                 bridge_sha256=onset_traces[summary['voice']]['bridge_sha256'])
-    args.output.mkdir(parents=True)
     def save(name, value):
         with (args.output/name).open('x', encoding='utf-8') as stream:
             json.dump(value, stream, ensure_ascii=False, indent=2, allow_nan=False)
@@ -216,6 +240,9 @@ def main():
         for path in chart_paths:
             archive.write(path,path.name)
     save('report.json',dict(cases=cases,source_plan_sha256=sha(root/'execution-plan.json'),
+        replayed_bridge=args.replay_bridge, neural_inference=False, original_bridges=original_bridges,
+        reviewed_unused_function_changes=source_changes,
+        current_bridge_sha256=sha('scripts/tsumugi_candidate_adapter.py'),
         source_completed_sha256=sha(root/'completed.json'),bridges=report_hashes,onset_bridges=onset_traces,runner_sha256=sha(__file__),
         application_sources={p:sha(p) for p in ('manialab/audio.py','manialab/arrange.py','manialab/expression.py',
             'manialab/domain.py','manialab/timing.py')},

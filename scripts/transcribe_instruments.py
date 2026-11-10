@@ -151,6 +151,8 @@ def run(args):
     write('candidate-trace.json',trace)
     write('result.json',dict(identity=identity,source_voice=args.voice,model=model_name,
         allow_predicted_releases=args.allow_predicted_releases,candidates=len(candidates),
+        unobserved_onsets=sum(t['decision']=='unobserved_onset_not_keypress' for t in trace),
+        input_start_active_intervals=sum(t['decision']=='candidate' and t['input_start_active_interval'] for t in trace),
         predicted_release_hypotheses=sum(n.release_reason=='model_predicted_offset' for n in candidates),
         evidence_sha256={name:sha(output/name) for name in ('notes.json','raw-notes.json',
             'window-notes.json','interval-constructions.json','candidates.json','candidate-trace.json','report.json')},

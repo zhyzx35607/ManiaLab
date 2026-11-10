@@ -44,7 +44,8 @@ def create_result(command, mutate=None):
         candidate_start_ms=100, candidate_end_ms=700, release_reason=reason, raw_event=event,
         instrument_id=candidate['instrument_id'], authored_ln_verified=False,
         weight_semantics='unit_weight_not_confidence', allow_predicted_releases=release,
-        model_predicted_release_hypothesis=release, final_endpoint_model_supported=True)
+        model_predicted_release_hypothesis=release, final_endpoint_model_supported=True, final_onset_model_supported=True,
+        input_start_active_interval=False, onset_basis='model_predicted_onset')
     values = {'identity.json':identity, 'notes.json':[event], 'raw-notes.json':[],
         'window-notes.json':[], 'interval-constructions.json':[], 'candidates.json':[candidate],
         'candidate-trace.json':[trace]}
@@ -61,6 +62,7 @@ def create_result(command, mutate=None):
     result = dict(identity=identity, source_voice=expected['voice'], model=expected['model'],
         allow_predicted_releases=release, source_semantics='unit_weight_not_confidence', musical_acceptance=False,
         candidates=1, predicted_release_hypotheses=int(release),
+        unobserved_onsets=0, input_start_active_intervals=0,
         evidence_sha256={name:module.sha(output/name) for name in module.EVIDENCE_FILES})
     write(output/'result.json',result)
     return output
@@ -117,6 +119,38 @@ def test_cache_preserves_unclipped_pcm_and_unknown_raw_tail(setup):
     assert selected and all(not n.hold for n in selected)
 
 
+@pytest.mark.parametrize('tail,reason,accepted', [
+    (14894, 'unresolved_or_postprocessed', True),
+    (14895, 'unresolved_or_postprocessed', False),
+    (14894, 'model_predicted_offset', False),
+])
+def test_ceil_resampling_can_preserve_only_unknown_tail_at_recorded_model_boundary(setup, monkeypatch, tail, reason, accepted):
+    detector, _, cache, _, _ = setup
+    samples = np.full(656803, .1, dtype=np.float32)
+    def launch(command, **kwargs):
+        def mutate(values):
+            values['candidates.json'][0].update(end=tail, release_reason=reason)
+            trace = values['candidate-trace.json'][0]
+            trace.update(candidate_end_ms=tail, release_reason=reason,
+                model_predicted_release_hypothesis=reason == 'model_predicted_offset',
+                final_endpoint_model_supported=reason == 'model_predicted_offset')
+            values['notes.json'][0]['offset'] = 328402 / 22050
+        output = create_result(command, mutate)
+        result = json.loads((output/'result.json').read_text())
+        result['predicted_release_hypotheses'] = int(reason == 'model_predicted_offset')
+        write(output/'result.json', result)
+        return Finished()
+    monkeypatch.setattr(module.subprocess, 'Popen', launch)
+    if accepted:
+        notes, report = detector.analyze(samples, 44100, cache, 'stem', 'bass', allow_predicted_releases=True)
+        assert notes[0].end == 14894 and notes[0].release_reason in module.UNOBSERVED_RELEASES
+        assert report['predicted_release_hypotheses'] == 0
+    else:
+        with pytest.raises(ValueError):
+            detector.analyze(samples, 44100, cache, 'stem', 'bass', allow_predicted_releases=True)
+        assert not list(cache.glob('*/current.json'))
+
+
 @pytest.mark.parametrize('change',['pcm','clock','channels','stem','voice','release','runtime'])
 def test_every_input_or_mode_identity_change_gets_independent_cache(setup,change):
     detector,samples,cache,launches,runtime=setup
@@ -152,7 +186,7 @@ def test_corrupt_cache_is_never_accepted_by_existence_only(setup,damage):
     assert Path(new['evidence_directory'])!=output and output.exists()
 
 
-@pytest.mark.parametrize('damage',['clock','source','release','trace','pitch','semantics','missing_result','nonzero'])
+@pytest.mark.parametrize('damage',['clock','source','release','trace','pitch','semantics','onset','missing_result','nonzero'])
 def test_invalid_fresh_worker_results_never_commit(setup,monkeypatch,damage):
     detector,samples,cache,launches,_=setup
     def launch(command,**kwargs):
@@ -163,6 +197,7 @@ def test_invalid_fresh_worker_results_never_commit(setup,monkeypatch,damage):
             elif damage=='trace':values['candidate-trace.json']=[]
             elif damage=='pitch':values['candidates.json'][0]['pitch']=41
             elif damage=='semantics':values['candidate-trace.json'][0]['weight_semantics']='confidence'
+            elif damage=='onset':values['candidate-trace.json'][0]['final_onset_model_supported']=False
         output=create_result(command,mutate)
         if damage=='missing_result':(output/'result.json').unlink()
         worker=Finished()

@@ -1,7 +1,7 @@
 """Research-only bridge from verified Tsumugi replay to ManiaLab candidates.
 
 No model loading, inference, scoring or application defaults. Raw predictions and
-all non-drum classes survive. Predicted releases require an explicit opt-in and
+all non-drum classes with supported attacks survive. Predicted releases require an explicit opt-in and
 source-level support at the final endpoint; they are not authored LN truth.
 """
 from __future__ import annotations
@@ -106,6 +106,46 @@ def _endpoint_support(item, identity):
     return len(supported) == len(endpoints)
 
 
+def _onset_support(item):
+    sources, onsets = item['sources'], item['onset_sources']
+    require(isinstance(onsets, list) and onsets and len(set(onsets)) == len(onsets)
+        and all(type(i) is int and i in sources for i in onsets), 'Invalid onset source indices')
+    evidence = item['onset_evidence']
+    require(set(evidence) == {str(i) for i in onsets}, 'Onset audit must cover every final-start source')
+    supported, initial_active = [], []
+    for source in onsets:
+        value = evidence[str(source)]
+        raw_start, start, window_start = [value.get(k) for k in
+            ('raw_predicted_start_sample', 'constructed_start_sample', 'window_start_sample')]
+        require(all(type(v) is int and v >= 0 for v in (raw_start, start, window_start))
+            and window_start <= start == item['note']['start_sample'], 'Onset coordinates differ from final start')
+        flag = value.get('boundary_head_onset')
+        require(flag is None or type(flag) is bool, 'Invalid onset boundary-head flag')
+        reasons = []
+        if flag is None:
+            reasons.append('no_boundary_head_fallback')
+        elif not flag:
+            reasons.append('boundary_head_has_no_onset')
+        if raw_start != start:
+            reasons.append('constructor_adjusted_onset')
+        frame = value.get('begin_frame')
+        require(type(frame) is int and frame >= 0, 'Invalid onset frame')
+        initial = flag is False and window_start == 0 and frame == 0 and raw_start == start
+        require(value.get('onset_adjusted') is (raw_start != start)
+            and value.get('at_window_start') is (start == window_start)
+            and value.get('input_start_active_interval') is initial
+            and value.get('unsupported_reasons') == reasons
+            and value.get('model_predicted_onset_support') is (not reasons), 'Inconsistent onset source evidence')
+        if not reasons:
+            supported.append(source)
+        if initial:
+            initial_active.append(source)
+    require(item.get('model_supported_onset_sources') == supported
+        and item.get('model_supported_final_onset') is bool(supported)
+        and item.get('input_start_active_interval') is bool(initial_active), 'Onset support summary differs')
+    return bool(supported), bool(initial_active)
+
+
 def _recovered_events(recovery, audited, baseline, classes):
     """Validate the fixed recovery result; do not implement a second deduplicator."""
     if recovery is None:
@@ -173,11 +213,14 @@ def tsumugi_candidates(audited, baseline, classes, *, voice='other', allow_predi
     namespace = data_sha(identity)[:20]
     notes, trace = [], []
 
-    def append(event, raw_note, origin, index, evidence, supported):
+    def append(event, raw_note, origin, index, evidence, supported, onset_supported, initial_active=False):
         start = round(Fraction(raw_note['start_sample'] * 1000, sr))
         raw_end = round(Fraction(raw_note['end_sample'] * 1000, sr))
         end = start if origin == 'recovered' else raw_end
-        predicted = allow_predicted_releases and supported and end > start and origin == 'baseline' and not event['is_drum']
+        onset_basis = ('model_predicted_onset' if onset_supported else
+                       'input_start_active_interval' if initial_active else 'unobserved_onset')
+        onset_eligible = onset_supported or initial_active
+        predicted = allow_predicted_releases and supported and onset_eligible and end > start and origin == 'baseline' and not event['is_drum']
         reason = PREDICTED_RELEASE if predicted else UNKNOWN_RELEASE
         class_id = event['instrument_class_id']
         instrument = f"{model_scope}:class:{class_id}:{event['instrument_class']}"
@@ -193,19 +236,26 @@ def tsumugi_candidates(audited, baseline, classes, *, voice='other', allow_predi
             verified_replay_sha256=verified, raw_event=copy.deepcopy(event), raw_note=copy.deepcopy(raw_note),
             evidence=copy.deepcopy(evidence), raw_end_ms=raw_end, candidate_start_ms=start, candidate_end_ms=end,
             sample_to_ms_rounding='nearest_integer_ties_to_even', final_endpoint_model_supported=supported,
+            final_onset_model_supported=onset_supported,
+            input_start_active_interval=initial_active, onset_basis=onset_basis,
             allow_predicted_releases=allow_predicted_releases, model_predicted_release_hypothesis=predicted,
             authored_ln_verified=False, release_reason=reason)
         if event['is_drum']:
             row['decision'] = 'incompatible_drum_prediction'
+        elif not onset_eligible:
+            row['decision'] = 'unobserved_onset_not_keypress'
         else:
             row['decision'] = 'candidate'
             notes.append(note)
         trace.append(row)
 
     for index, (event, item) in enumerate(zip(baseline, rows)):
-        append(event, item['note'], 'baseline', index, item, _endpoint_support(item, identity))
+        append(event, item['note'], 'baseline', index, item, _endpoint_support(item, identity), *_onset_support(item))
     for event, raw_note, decision in recovered:
-        append(event, raw_note, 'recovered', event['recovery_source_index'], decision, False)
+        onset = release_audit.source_onset(dict(arguments=decision['arguments'], constructed_note=raw_note,
+            hop_length=identity['model_config']['hop_length']))
+        append(event, raw_note, 'recovered', event['recovery_source_index'], decision, False,
+               onset['model_predicted_onset_support'])
     return notes, trace
 
 
@@ -233,9 +283,13 @@ def adapt_case(input_dir, source, *, voice, allow_predicted_releases=False, reco
         baseline_modified=False, enabled_in_application=False, neural_inference=False, scoring=False,
         counts=dict(baseline=len(baseline), recovered=len(trace)-len(baseline), candidates=len(notes),
             rejected_drums=sum(row['decision'] == 'incompatible_drum_prediction' for row in trace),
+            unobserved_onsets=sum(row['decision'] == 'unobserved_onset_not_keypress' for row in trace),
+            input_start_active_intervals=sum(row['decision'] == 'candidate' and row['input_start_active_interval'] for row in trace),
             predicted_release_hypotheses=sum(row['model_predicted_release_hypothesis'] for row in trace)),
         limits=['Candidate filtering is for arrangement only; do not replace raw evaluation denominators.',
-                'All non-drum classes are retained, including misclassified instruments; slots are trace metadata.',
+                'All non-drum classes with supported onsets are retained, including wrong instrument classes.',
+                'Unsupported attacks stay in raw/trace evidence but do not become new keypresses.',
+                'Initial active intervals at source window zero/frame zero are retained with explicit input-boundary semantics.',
                 'Default raw ends remain unknown and expression_evidence must reduce them to taps.',
                 'Opt-in releases are model duration hypotheses, not acoustic or authored LN truth.'])
 

@@ -7,7 +7,7 @@ from manialab.arrange import parameters
 from manialab.domain import UNOBSERVED_RELEASES, note_from
 from manialab.expression import expression_evidence, propose_expression
 from scripts import tsumugi_candidate_adapter as adapter
-from scripts.audit_tsumugi_releases import classify_endpoints, loss_diagnostics, replay_lineage
+from scripts.audit_tsumugi_releases import classify_endpoints, classify_onsets, loss_diagnostics, replay_lineage
 from scripts.recover_tsumugi_attacks import data_sha, recover_attacks
 from scripts.research_tsumugi_transcription import convert_notes
 
@@ -35,7 +35,7 @@ def fixture(values=None, *, constructions=None, model='guitar_v1_5', total=5000)
     identity = dict(source_commit=adapter.SOURCE_COMMIT, model_revision=adapter.MODEL_REVISION,
         model=model, model_sha256=adapter.MODELS[model], evidence_revision=2,
         original_sample_rate=1000, original_samples=total, resampled_sample_rate=1000, resampled_samples=total,
-        audio_sha256='1'*64, model_config=dict(semi_crf_version='v1', sample_rate=1000,
+        audio_sha256='1'*64, model_config=dict(semi_crf_version='v1', sample_rate=1000, hop_length=10,
             num_pitch_slots=3, num_instrument_classes=len(CLASSES)))
     tracks = {}
     for i, value in enumerate(values):
@@ -44,6 +44,7 @@ def fixture(values=None, *, constructions=None, model='guitar_v1_5', total=5000)
         tracks.setdefault((n['pitch'], n['slot_index']), []).append(dict(source=i, note=n))
     kept, dropped, forced = replay_lineage(tracks, merge_gap_samples=10, merge_onset_samples=50)
     classify_endpoints(kept, rows, identity, forced)
+    classify_onsets(kept, rows)
     audited = dict(identity=identity, notes=kept, filtered_groups=dropped,
         official_finalize_equal=True, saved_raw_notes_equal=True, window_snapshots_equal=True,
         **loss_diagnostics(kept, dropped, rows))
@@ -122,6 +123,11 @@ def test_finalizer_flags_never_unlock_unsupported_endpoints(kind):
     args = fixture(values, constructions=rows)
     assert args[0]['notes'][0]['note']['has_offset'] is True
     notes, trace = bridge(args, allow_predicted_releases=True)
+    if kind == 'fallback':
+        assert notes == []
+        assert trace[0]['decision'] == 'unobserved_onset_not_keypress'
+        assert not trace[0]['final_endpoint_model_supported']
+        return
     assert notes[0].release_reason == adapter.UNKNOWN_RELEASE
     assert not trace[0]['final_endpoint_model_supported']
     assert not trace[0]['model_predicted_release_hypothesis']
@@ -136,6 +142,98 @@ def test_extended_endpoint_is_allowed_only_from_its_supported_final_source():
     notes, trace = bridge(args, allow_predicted_releases=True)
     assert notes[0].end == 1200 and notes[0].release_reason == adapter.PREDICTED_RELEASE
     assert trace[0]['evidence']['merge_extended_endpoint']
+
+
+@pytest.mark.parametrize('releases', [False, True])
+def test_left_censored_sustain_is_evidence_but_never_a_new_keypress(releases):
+    args = fixture([note(onset=False)])
+    before = copy.deepcopy(args)
+    notes, trace = bridge(args, allow_predicted_releases=releases)
+    assert notes == [] and args == before
+    assert trace[0]['decision'] == 'unobserved_onset_not_keypress'
+    assert trace[0]['raw_note']['has_onset'] is False
+    assert trace[0]['raw_end_ms'] == 1000
+    assert not trace[0]['model_predicted_release_hypothesis']
+
+
+def test_later_near_onset_cannot_validate_an_earlier_continuation_start():
+    args = fixture([note(onset=False), note(140, 1100)])
+    item = args[0]['notes'][0]
+    assert item['note']['has_onset'] is True  # Upstream OR is insufficient.
+    assert item['onset_sources'] == [0] and item['sources'] == [0, 1]
+    notes, trace = bridge(args, allow_predicted_releases=True)
+    assert notes == [] and trace[0]['decision'] == 'unobserved_onset_not_keypress'
+    assert trace[0]['candidate_start_ms'] == 100  # Do not silently retime raw evidence.
+
+
+def test_matching_positive_source_can_support_same_start_with_mixed_observations():
+    args = fixture([note(onset=False), note()])
+    assert args[0]['notes'][0]['model_supported_onset_sources'] == [1]
+    notes, trace = bridge(args)
+    assert len(notes) == 1 and notes[0].start == 100
+    assert trace[0]['final_onset_model_supported'] is True
+
+
+def test_another_pitch_or_slot_cannot_lend_onset_support():
+    args = fixture([note(onset=False), note(pitch=61), note(slot=1)])
+    notes, trace = bridge(args)
+    assert len(notes) == 2 and len(trace) == 3
+    assert trace[0]['decision'] == 'unobserved_onset_not_keypress'
+
+
+def test_clamped_onset_is_not_supported_at_its_new_coordinate():
+    value = note()
+    row = construction(value)
+    row['arguments']['begin_frame'] = 11
+    notes, trace = bridge(fixture([value], constructions=[row]))
+    assert notes == []
+    assert trace[0]['evidence']['onset_evidence']['0']['unsupported_reasons'] == ['constructor_adjusted_onset']
+
+
+def test_positive_boundary_at_input_start_is_not_equated_with_negative_continuation():
+    notes, trace = bridge(fixture([note(start=0)]))
+    assert len(notes) == 1 and notes[0].start == 0
+    assert trace[0]['evidence']['onset_evidence']['0']['at_window_start']
+
+
+def test_initial_active_interval_retains_opening_note_without_claiming_attack_prediction():
+    args = fixture([note(start=3, onset=False)])
+    notes, trace = bridge(args, allow_predicted_releases=True)
+    assert len(notes) == 1 and notes[0].start == 3
+    assert trace[0]['onset_basis'] == 'input_start_active_interval'
+    assert trace[0]['input_start_active_interval'] is True
+    assert trace[0]['final_onset_model_supported'] is False
+    assert args[0]['notes'][0]['note']['has_onset'] is False
+    assert notes[0].release_reason == adapter.PREDICTED_RELEASE
+
+
+def test_same_first_frame_of_an_internal_window_cannot_use_input_boundary_exception():
+    value = note(start=1003, end=1500, onset=False)
+    row = construction(value)
+    row['arguments'].update(window_start_frame=1000, begin_frame=0, end_frame=50)
+    notes, trace = bridge(fixture([value], constructions=[row]))
+    assert not notes and trace[0]['decision'] == 'unobserved_onset_not_keypress'
+    assert not trace[0]['input_start_active_interval']
+
+
+def test_input_start_exception_does_not_accept_unobserved_attacks_later_in_first_window():
+    notes, trace = bridge(fixture([note(start=13, onset=False)]))
+    assert not notes and not trace[0]['input_start_active_interval']
+
+
+@pytest.mark.parametrize('change', ['missing', 'coordinate', 'summary', 'flag', 'reason', 'extra_source'])
+def test_onset_evidence_cannot_be_replaced_by_stitched_positive_flag(change):
+    args = fixture()
+    item = args[0]['notes'][0]
+    value = item['onset_evidence']['0']
+    if change == 'missing': item['onset_evidence'] = {}
+    elif change == 'coordinate': value['constructed_start_sample'] += 1
+    elif change == 'summary': item['model_supported_final_onset'] = False
+    elif change == 'flag': value['boundary_head_onset'] = False
+    elif change == 'reason': value['unsupported_reasons'] = ['no_boundary_head_fallback']
+    elif change == 'extra_source': item['onset_sources'].append(1)
+    with pytest.raises(ValueError):
+        bridge(args)
 
 
 def test_forced_shorter_merged_source_cannot_invalidate_separate_supported_final_end():
@@ -325,7 +423,8 @@ def test_adapt_case_calls_verified_audit_and_preserves_baseline_artifact(tmp_pat
     assert calls == [(tmp_path, tmp_path/'upstream')]
     assert result['baseline_notes'] == baseline and json.loads(path.read_text()) == baseline
     assert not result['enabled_in_application'] and not result['scoring'] and not result['neural_inference']
-    assert result['counts'] == dict(baseline=1, recovered=0, candidates=1, rejected_drums=0, predicted_release_hypotheses=0)
+    assert result['counts'] == dict(baseline=1, recovered=0, candidates=1, rejected_drums=0, unobserved_onsets=0,
+                                  input_start_active_intervals=0, predicted_release_hypotheses=0)
 
 
 def test_cli_overwrite_guard_precedes_reading_or_auditing(tmp_path, monkeypatch):

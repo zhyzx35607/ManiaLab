@@ -7,6 +7,7 @@ Unknown raw tails remain evidence and must be made taps by expression policy.
 from __future__ import annotations
 
 import hashlib
+from fractions import Fraction
 import json
 import math
 import os
@@ -185,7 +186,13 @@ class InstrumentDetector:
         _require(len({t['id'] for t in trace}) == len(trace), '来源记录标识重复')
         candidate_trace = {t['id']: t for t in trace if t.get('decision') == 'candidate'}
         _require(set(candidate_trace) == {n.id for n in notes}, '候选来源不完整')
-        end_ms = round(expected['samples'] * 1000 / expected['sample_rate'])
+        onset_counts = dict(unobserved_onsets=sum(t.get('decision') == 'unobserved_onset_not_keypress' for t in trace),
+            input_start_active_intervals=sum(t.get('input_start_active_interval') is True for t in candidate_trace.values()))
+        for key, count in onset_counts.items():
+            _require(type(result.get(key)) is int and result[key] == count, '起音来源计数不符：' + key)
+        original_end_ms = round(Fraction(expected['samples'] * 1000, expected['sample_rate']))
+        resampled_samples = (expected['samples'] * MODEL_RATE + expected['sample_rate'] - 1) // expected['sample_rate']
+        end_ms = round(Fraction(resampled_samples * 1000, MODEL_RATE))
         for n in notes:
             row = candidate_trace[n.id]
             _require(n.id and n.voice == voice and n.source == 'pitch' and n.lane == -1
@@ -193,6 +200,10 @@ class InstrumentDetector:
                 and not n.phrase and not n.support, '候选声部、时间或权重不符')
             predicted = n.release_reason == PREDICTED_RELEASE
             _require(n.release_reason in UNOBSERVED_RELEASES or (release and predicted), '未允许的音尾声明')
+            # A ceil-resampled final sample can cross a millisecond rounding
+            # boundary. Preserve that raw unknown tail without granting a release.
+            _require(n.end <= original_end_ms or n.release_reason in UNOBSERVED_RELEASES,
+                     '超出原输入边界的音尾不能称为模型放手')
             _require(row.get('source_voice') == voice and row.get('candidate_start_ms') == n.start
                 and row.get('candidate_end_ms') == n.end and row.get('release_reason') == n.release_reason
                 and row.get('instrument_id') == n.instrument_id and row.get('authored_ln_verified') is False
@@ -201,6 +212,10 @@ class InstrumentDetector:
                 and row.get('model_predicted_release_hypothesis') is predicted
                 and row.get('raw_event', {}).get('is_drum') is False
                 and row.get('raw_event', {}).get('pitch') == n.pitch, '候选来源属性不符')
+            onset_supported = row.get('final_onset_model_supported') is True
+            initial_active = row.get('input_start_active_interval') is True
+            _require((onset_supported and row.get('onset_basis') == 'model_predicted_onset')
+                or (initial_active and row.get('onset_basis') == 'input_start_active_interval'), '起音缺少来源支持或输入起始区间标记')
             _require(not predicted or (n.end > n.start and row.get('final_endpoint_model_supported') is True), '模型音尾缺少来源支持')
         predicted_count = sum(n.release_reason == PREDICTED_RELEASE for n in notes)
         _require(result.get('predicted_release_hypotheses') == predicted_count, '模型音尾计数不符')
@@ -329,5 +344,7 @@ class InstrumentDetector:
             result_sha256=sha(attempt / 'output/result.json'), source_semantics='unit_weight_not_confidence',
             allow_predicted_releases=identity['allow_predicted_releases'],
             predicted_release_hypotheses=result['predicted_release_hypotheses'], cache_rejection=cache_error,
+            unobserved_onsets=result['unobserved_onsets'], input_start_active_intervals=result['input_start_active_intervals'],
             notice='模型类别是预测音色，权重1不是置信度。未决音尾保留为证据且不能自动生成长条；'
+                   '曲中未观测起音不直接落键，输入开头的持续声单独保留。'
                    '显式启用的模型音尾仍是假设，需要试听确认放手。')

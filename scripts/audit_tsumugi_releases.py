@@ -165,6 +165,44 @@ def source_endpoint(row, identity):
         unsupported_reasons=reasons, model_predicted_offset_support=not reasons)
 
 
+def source_onset(row):
+    """A continuation's left edge is not a newly predicted attack.
+
+    Keep the model's positive boundary prediction distinct from fallback flags
+    and from an OR propagated from a later segment by the upstream stitcher.
+    This establishes model support, not that the attack is acoustically correct.
+    """
+    args, note = row['arguments'], row['constructed_note']
+    require(note is not None, 'Dropped construction cannot provide an onset')
+    flag = args['boundary_flag']
+    fraction = flag[2] if flag is not None else 0.
+    raw_start = args['window_start_frame'] + round((args['begin_frame'] + fraction) * row['hop_length'])
+    start, window_start = note['start_sample'], args['window_start_frame']
+    reasons = []
+    if flag is None:
+        reasons.append('no_boundary_head_fallback')
+    elif not flag[0]:
+        reasons.append('boundary_head_has_no_onset')
+    if raw_start != start:
+        reasons.append('constructor_adjusted_onset')
+    return dict(raw_predicted_start_sample=raw_start, constructed_start_sample=start,
+        window_start_sample=window_start, begin_frame=args['begin_frame'], at_window_start=start == window_start,
+        boundary_head_onset=None if flag is None else flag[0], onset_adjusted=raw_start != start,
+        input_start_active_interval=(flag is not None and flag[0] is False and window_start == 0
+                                     and args['begin_frame'] == 0 and raw_start == start),
+        unsupported_reasons=reasons, model_predicted_onset_support=not reasons)
+
+
+def classify_onsets(kept, constructions):
+    """Only sources at the final start can support a new application keypress."""
+    for item in kept:
+        evidence = {str(source): source_onset(constructions[source]) for source in item['onset_sources']}
+        supported = [int(source) for source, value in evidence.items() if value['model_predicted_onset_support']]
+        item.update(onset_evidence=evidence, model_supported_onset_sources=supported,
+                    model_supported_final_onset=bool(supported),
+                    input_start_active_interval=any(v['input_start_active_interval'] for v in evidence.values()))
+
+
 def classify_endpoints(kept, constructions, identity, forced):
     """Keep predicted endpoint support separate from finalizer/merge history."""
     forced = set(forced)
@@ -291,6 +329,7 @@ def audit_replay(identity, constructions, windows, raw_notes, stats, official_ty
     require(oracle == raw_notes, 'Official replay differs from saved raw notes')
     require(len(raw_notes) == stats['note_count'], 'Final note count differs')
     classify_endpoints(kept,constructions,identity,forced)
+    classify_onsets(kept,constructions)
     losses = loss_diagnostics(kept,dropped,constructions)
     return dict(notes=kept,filtered_groups=dropped,forced_offset_source_indices=forced,
         **losses,
@@ -301,6 +340,8 @@ def audit_replay(identity, constructions, windows, raw_notes, stats, official_ty
             merged_repeated_onset_events=len(losses['merged_repeated_onset_events']),
             same_window_distinct_boundary_onset_merges=len(losses['same_window_distinct_boundary_onset_merge_events']),
             forced_offset_flags=len(forced),unmodified_boundary_head_endpoints=sum(n['unmodified_boundary_head_endpoint'] for n in kept),
+            model_supported_final_onsets=sum(n['model_supported_final_onset'] for n in kept),
+            unsupported_final_onsets=sum(not n['model_supported_final_onset'] for n in kept),
             endpoint_classes=dict(Counter(n['classification'] for n in kept))),
         official_finalize_equal=True,saved_raw_notes_equal=True,window_snapshots_equal=True)
 
