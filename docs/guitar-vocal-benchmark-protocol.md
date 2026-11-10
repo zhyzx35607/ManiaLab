@@ -57,3 +57,33 @@
 
 准备脚本：`scripts/prepare_guitar_vocal_benchmark.py`。
 固定规则、6弦解析及人声原始时钟保留均有小控制测试。
+
+## 评分工具与完整性
+
+运行 `scripts/evaluate_guitar_vocal_benchmark.py --root test-data/guitar-vocal-benchmark-v3 --output <新的结果文件>`。
+默认读取根目录下的 `application`；可用 `--predictions` 指定相同基准输出格式的历史结果。
+评分器只读取已有预测，不启动模型。100例全部完成并通过校验前不会写正常汇总，不覆盖已有评分文件。
+
+校验链由 `completed.json` 的 `plan_sha256`、逐例 `case_reports` 哈希连接至
+`plan.json`、各例 `report.json`、`notes.json` 和 `activations.npz`。
+plan须绑定当前冻结manifest；每个report的输入身份必须与plan和该例音频完全一致，
+原音频与所有标签重新校验SHA256。另核对原始PCM采样率、样本数、单声道int16格式、
+完整输入起止、重采样长度、固定评分区间以及标签总数/区间内数/不可观察尾数。
+模型、运行器及采音代码保留运行时哈希，不要求未来评分时的源码仍等于历史源码。
+
+每例保存标签与预测在评分起音区间内的原列表索引，可据此重查分母。
+`standard` 为50ms起音与相对尾容差；`fixed_40_80` 为40ms起音/80ms音尾，
+后者对于短音不一定更严格。使用最大一对一匹配，相同起音/音高的不同弦仍是独立标签，
+同一预测最多匹配一次；错误鼓音、重复音和跨界音尾不会从预测分母删除。
+
+汇总固定分为 `guitar_strings`、`vocals_A1`、`vocals_A2` 三组。
+micro从可评分案例的matched/reference/predicted总数计算；macro等权平均每例的
+precision/recall/F1。没有分母时单例值按0处理，与现有匹配器一致。
+任何参考尾触及输入终点时，整例完整区间结果为 `available=false`，保留所有参考与预测分母，
+不对剩下的短音单独计算该例完整区间分数；起音分仍正常计算。
+
+组级统计明确标记 `aggregation_scope=available_cases_only`，同时输出
+`full_cohort_available`、全部案例分母、可评分案例分母及逐个不可评分案例/原因。
+因此吉他组可评分子集的完整区间分数不能宣称是完整60例成绩。
+某组全部案例不可评分时，micro/macro为null，不能当零分或通过。
+不合并A1/A2、不择优，也不计算精确GM准确率。
