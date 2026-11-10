@@ -10,3 +10,5 @@
 *.onnx binary
 *.zip binary
 *.png binary
+# These files are retained and verified by their exact upstream/notice bytes.
+licenses/HFGuitar-* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
