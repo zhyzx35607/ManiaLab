@@ -37,6 +37,8 @@
   6K/7K/9K分别额外2/1/2处对象取舍，8K/10K对象内容不变；不作音乐收益
   结论。详见[重复采音选择](expression-duplicate-selection.md)，新比较入口
   `scripts/check_expression_duplicates.py`，产物`test-data/expression-duplicates-v1`。
+  119文件独审通过，回执`test-data/expression-duplicates-independent-v1`；
+  8K/10K导出坐标精确不变，其他键数的重新定轨变化已在文档中列明。
 - 原Nova other声轨已完成当前10K的三个固定规则选窗对照：200–208、
   96–104、16–24秒；3图实际查看、9份原声/起音click音频回读通过。
   186个other中65个量化移动超过30ms，62个向后、3个向前；这不是65个
