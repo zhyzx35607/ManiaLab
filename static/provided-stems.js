@@ -31,7 +31,7 @@
     for(const input of panel.querySelectorAll('input'))if(input.files[0]){data.append(input.dataset.providedVoice,input.files[0]);count++;}
     if(!count)throw Error('至少选择一个声部文件');
     const outcome=await runJob('provided-stems',data,true);
-    if(outcome==='done'){$('analysisEngine').value='provided';panel.querySelectorAll('input').forEach(input=>input.value='');}
+    if(outcome==='done'){$('analysisEngine').value='provided';$('analysisEngine').dispatchEvent(new Event('change'));panel.querySelectorAll('input').forEach(input=>input.value='');}
   });
   window.renderProvidedStems();
 })();

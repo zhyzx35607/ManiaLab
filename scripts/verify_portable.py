@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT))
 from manialab import __version__
 from manialab.domain import parse_osu, validate
 from manialab.timing import grid_report
-from scripts.build_provenance import sha256, verify_worker
+from scripts.build_provenance import sha256, verify_worker, verify_instrument_worker
 
 
 def synthetic(path, seconds=30):
@@ -40,21 +40,23 @@ def synthetic(path, seconds=30):
         stream.setnchannels(1);stream.setsampwidth(2);stream.setframerate(rate);stream.writeframes(data)
 
 
-def run(executable, work, piano_audio=None):
+def run(executable, work, piano_audio=None, instrument_fixtures=None, instruments_only=False):
     executable, work = executable.resolve(), work.resolve()
     work.mkdir(parents=True,exist_ok=True)
     data=work/'独立项目';data.mkdir(exist_ok=True)
     source=work/'音频测试.wav';synthetic(source)
-    environment={k:v for k,v in os.environ.items() if k not in ('PYTHONHOME','PYTHONPATH','VIRTUAL_ENV') and not k.startswith('MANIALAB_DEEP_')}
+    environment={k:v for k,v in os.environ.items() if k not in ('PYTHONHOME','PYTHONPATH','VIRTUAL_ENV')
+                 and not k.startswith(('MANIALAB_DEEP_','MANIALAB_INSTRUMENT_'))}
     environment['PATH']=str(Path(os.environ['SystemRoot'])/'System32')
     environment.update(HTTP_PROXY='http://127.0.0.1:9',HTTPS_PROXY='http://127.0.0.1:9',NO_PROXY='127.0.0.1,localhost',PYTHONUTF8='1')
-    process=None;log=None;url='';token='';checks=[]
+    process=None;log=None;url='';token='';checks=[];launch_number=0
     local_http=urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     def start():
-        nonlocal process,log,url,token
+        nonlocal process,log,url,token,launch_number
         marker=data/'current-url.txt';marker.unlink(missing_ok=True)
-        log=(work/f'launch-{len(checks)}.log').open('w',encoding='utf-8')
+        log=(work/f'launch-{launch_number}.log').open('x',encoding='utf-8')
+        launch_number+=1
         process=subprocess.Popen([str(executable),'--no-browser','--data-dir',str(data)],cwd=work,
             env=environment,stdout=log,stderr=log,creationflags=subprocess.CREATE_NO_WINDOW)
         deadline=time.monotonic()+60
@@ -110,6 +112,8 @@ def run(executable, work, piano_audio=None):
         assert release_manifest['worker_sources']==worker['worker_sources']
         if release_manifest.get('piano_model'):
             assert sha256(executable.parent/'_internal/assets/deep/piano-regression.onnx')==release_manifest['piano_model']['sha256']
+        if release_manifest.get('instrument_worker'):
+            assert verify_instrument_worker(ROOT,executable.parent/'_internal/assets/instruments')==release_manifest['instrument_worker']
         checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),executable_sha256=release_manifest['executable_sha256']))
         expected_prior=hashlib.sha256((ROOT/'assets/pattern-prior.json').read_bytes()).hexdigest()
         bundled_prior=hashlib.sha256((executable.parent/'_internal/assets/pattern-prior.json').read_bytes()).hexdigest()
@@ -121,6 +125,13 @@ def run(executable, work, piano_audio=None):
         start();status=request('/api/status')
         assert status['version']==__version__ and status['separator']['available'],status
         checks.append(dict(check='startup',version=status['version'],separator=status['separator'],prior=status['pattern_prior']))
+        if instruments_only:
+            if instrument_fixtures is None:
+                raise ValueError('--instruments-only requires --instrument-fixtures')
+            from scripts.verify_portable_instruments import check_instruments
+            check_instruments(request,wait,start,stop,work,instrument_fixtures,checks)
+            print(json.dumps(dict(passed=True,scope='instruments_only',checks=checks),ensure_ascii=True),flush=True)
+            return
         state=request('/api/import',upload=('files',source.name,source.read_bytes()));pid=state['id'];base='/api/projects/'+pid
         job=wait(request(base+'/analyze',dict(engine='deep',settings={},audio_shift_ms=22.5)))
         assert job['status']=='done',job
@@ -231,6 +242,9 @@ def run(executable, work, piano_audio=None):
             assert warmed['analysis']['candidates']==original
             checks.append(dict(check='piano_restart_warm_cache',candidates=len(original),identical=True,
                 seconds=warmed['analysis']['elapsed_seconds']))
+        if instrument_fixtures is not None:
+            from scripts.verify_portable_instruments import check_instruments
+            check_instruments(request,wait,start,stop,work,instrument_fixtures,checks)
         # Cancel a fresh separation, then confirm the same server remains usable.
         second=request('/api/import',upload=('files','取消测试.wav',source.read_bytes()+b'\x00\x00'))
         second_base='/api/projects/'+second['id'];job=request(second_base+'/analyze',dict(engine='deep',settings={}))
@@ -258,4 +272,6 @@ if __name__=='__main__':
     parser.add_argument('executable',type=Path)
     parser.add_argument('--work',type=Path,default=ROOT/'test-data/portable-alpha4')
     parser.add_argument('--piano-audio',type=Path,help='Short real piano WAV for packaged specialist cold/warm and expression checks')
-    args=parser.parse_args();run(args.executable,args.work,args.piano_audio)
+    parser.add_argument('--instrument-fixtures',type=Path,help='Frozen real bass/other fixtures for packaged HTTP checks')
+    parser.add_argument('--instruments-only',action='store_true',help='Only the packaged instrument checks, after component identity checks')
+    args=parser.parse_args();run(args.executable,args.work,args.piano_audio,args.instrument_fixtures,args.instruments_only)

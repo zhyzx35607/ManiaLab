@@ -149,7 +149,13 @@ URMP三方比较入口为`scripts/run_tsumugi_urmp_comparison.py`。固定使用
 下载 `best_instrument_refinement.pth`，核验 56225305 字节及 LFS SHA256，
 并通过 `weights_only=True` 读取。原作者 RWC 对照明确包含拨弦弦乐、部分
 弦乐等分类退步，不因它能减少标签切换就认定准确。入口与约定见
-[音色一致性协议](instrument-refinement-protocol.md)，真实前向在现有队列后执行。
+[音色一致性协议](instrument-refinement-protocol.md)。现已完成首个弦乐片段与
+Nova整曲伴奏的真实前向；全曲重分类变化很大，未证明准确，继续不接入应用，
+见[完整记录](instrument-refinement-results.md)。
+
+贝斯与其他伴奏另已做成默认关闭的应用选项，便携CPU程序真实运行两模型、
+两音尾模式，逐音、逐窗与研究输出一致并检查缓存复用。吉他与人声仍不替换。
+全曲18份6–10K与固定表达控制的导出结果见[编排对照](tsumugi-fullsong-results.md)。
 
 ROSVOT首轮在第15例校验处停止：librosa0.11按浮点`N*(24000/orig_sr)`再ceil，
 会把894348个44100Hz样本变为486721个24000Hz样本，而不是整数有理数计算的

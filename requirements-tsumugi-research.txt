@@ -1,4 +1,5 @@
-# Research CPU runtime only; not bundled into the portable application.
+# CPU runtime for research and the optional isolated bass/other worker.
+# The main application environment does not import these packages.
 # Install torch/torchaudio CPU wheels with the official CPU index separately.
 torch==2.9.1+cpu
 torchaudio==2.9.1+cpu

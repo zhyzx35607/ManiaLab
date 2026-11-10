@@ -387,10 +387,12 @@ def reject_source_bleed(notes, stems, mixture_attacks, sample_rate=SR):
 
 
 def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: None, cancelled=lambda: False,
-                 *, piano_detector=None):
+                 *, piano_detector=None, instrument_detector=None, allow_predicted_releases=False):
     """Separate sources, then run pitch/attack analysis on each isolated voice."""
     from .voices import vocal_phrases
     from .stems import separation_voices,separation_label,separation_identity
+    if type(allow_predicted_releases) is not bool or (allow_predicted_releases and instrument_detector is None):
+        raise ValueError('模型音尾选项需要显式选择专用采音')
     started = time.perf_counter()
     samples = decode(path, work)
     duration = len(samples) / SR
@@ -400,6 +402,9 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     voices = separation_voices(separation)
     if piano_detector is not None and 'piano' not in voices:
         raise ValueError('钢琴专用采音需要六声部分离或已导入的钢琴声轨')
+    instrument_voices = set(voices).intersection(('bass','other')) if instrument_detector is not None else set()
+    if instrument_detector is not None and not instrument_voices:
+        raise ValueError('专用采音需要分离或导入的贝斯、其他伴奏声轨')
     pitch_cached = []
     all_candidates, phrases, summaries, drum_attacks, tempos = [], [], [], [], {}
     for index, voice in enumerate(voices):
@@ -417,9 +422,25 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
         cached = False
         articulation = []
         specialized = None
+        instrument_diagnostics = None
         if voice == "drums":
             drum_attacks = attacks
             candidates = attacks
+        elif voice in instrument_voices:
+            pitched,instrument_diagnostics=instrument_detector.analyze(stem,SR,stem_root/('instrument-'+voice),
+                stem_identity,voice,allow_predicted_releases=allow_predicted_releases,
+                progress=lambda p,s:progress(stage+round(p*.60/len(voices)),s),cancelled=cancelled)
+            cached=instrument_diagnostics['cached'];pitch_cached.append(cached)
+            before_source={n.id for n in pitched}
+            pitched,rejected_pitch=source_evidence(pitched,stem,samples)
+            instrument_diagnostics=dict(instrument_diagnostics,source_energy_filter=dict(
+                rejected=rejected_pitch,rejected_ids=sorted(before_source-{n.id for n in pitched})),
+                generic_release_refinement=False,generic_attack_fusion=False,
+                confidence_based_bleed_filter=False)
+            # Unit event weights are not BP activation confidences. Preserve
+            # model clocks/tails and keep unknown tails marked for tap policy.
+            releases=instrument_diagnostics
+            candidates=pitched
         elif voice == 'piano' and piano_detector is not None:
             pitched,specialized=piano_detector.analyze(stem,SR,stem_root/'piano-specialist-activations.npz',
                 stem_identity,lambda p,s:progress(stage+round(p*.60/len(voices)),s),cancelled)
@@ -470,7 +491,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
                               rejected_low_energy_pitch=0 if voice == "drums" else rejected_pitch,
                               articulation_rejections=articulation,
                               release_refinement=None if voice == "drums" else releases,
-                              detector='piano-specialist' if specialized is not None else 'transient' if voice=='drums' else 'basic-pitch',
+                              detector='tsumugi' if instrument_diagnostics is not None else 'piano-specialist' if specialized is not None else 'transient' if voice=='drums' else 'basic-pitch',
                               sustains_over_800ms=sum(n.end - n.start >= 800 for n in candidates)))
         if separation.get('source')!='provided':
             peak = max(float(np.max(np.abs(stem))), 1.)
@@ -478,9 +499,13 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     progress(94, "核对声部与混音拍线，保留持续段证据")
     mix_attacks, mix_tempo = rhythmic_evidence(samples, beats_ms)
     stem_signals = {v:np.load(stem_root/f'{v}.npy',allow_pickle=False,mmap_mode='r') for v in voices if v!='drums'}
-    all_candidates, bleed_rejections = reject_source_bleed(all_candidates,stem_signals,mix_attacks)
+    protected=[n for n in all_candidates if n.voice in instrument_voices]
+    generic=[n for n in all_candidates if n.voice not in instrument_voices]
+    generic, bleed_rejections = reject_source_bleed(generic,stem_signals,mix_attacks)
+    all_candidates=generic+protected
     for summary in summaries:
         summary['rejected_cross_source_bleed'] = sum(r['note']['voice']==summary['voice'] for r in bleed_rejections)
+        summary['cross_source_bleed_checked'] = summary['voice'] not in instrument_voices
         summary['candidates'] = sum(n.voice==summary['voice'] for n in all_candidates)
     drum_tempo = tempos.get("drums",mix_tempo)
     drum_quality, mix_quality = timing_evidence_quality(drum_tempo), timing_evidence_quality(mix_tempo)
@@ -498,10 +523,15 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
         timing_attacks=[n.data() for n in attacks], fused_attacks=0, candidates=[n.data() for n in candidates],
         phrase_candidates=[n.data() for n in phrases], voices=summaries, separation=separation,
         source_bleed_rejections=bleed_rejections,
+        source_bleed_policy=dict(excluded_unit_weight_voices=sorted(instrument_voices),
+            reason='Unit event weights are not calibrated confidence; excluded as both targets and parents.'),
         piano_engine='specialist' if piano_detector is not None else 'general',
+        instrument_engine='tsumugi' if instrument_detector is not None else 'general',
+        allow_predicted_releases=allow_predicted_releases,
         thresholds={k: settings[k] for k in ("onset_threshold", "frame_threshold")},
         engine=separation_label(separation)+" + source-verified Basic Pitch + vocal phrases"+
             (' + piano specialist' if piano_detector is not None else '')+
+            (' + optional Tsumugi bass/other' if instrument_detector is not None else '')+
             (" + Beat This meter" if beats_ms else ''),
         notice="分离可能串音或遗漏乐器；声轨更多不代表采音必然更准。跨音高人声 LN 是编排选择，请用独立声部试听检查。")
     from .structure import detect_structure

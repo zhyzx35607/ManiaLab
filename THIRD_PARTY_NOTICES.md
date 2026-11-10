@@ -16,12 +16,19 @@ The complete Windows ZIP includes a separate CPU PyTorch audio worker for Hybrid
 
 User audio, beatmaps, API credentials, local projects and test downloads are not included in the source repository or Release.
 
-Research-only Tsumugi adapters and offline stitching audit: anime-song, MIT,
+Optional Tsumugi bass/other transcription and offline stitching audit: anime-song, MIT,
 source commit `eba1c7d05e4d6a53cc4e8916d742d9623a3fdc38`,
 https://github.com/anime-song/tsumugi . The lineage replay follows and checks
 the upstream V1 stitcher; attribution is retained in `licenses/Tsumugi-MIT.txt`.
-The four locally evaluated model files are not bundled or enabled by default;
-their identities and evaluation scope are recorded in
+The optional Windows worker includes `bass_v2` and `other_v1_5` from
+`https://huggingface.co/anime-song/instrument_agnostic_amt` at revision
+`c6ee8a22626cd7185031ee71ce7cea27ec862781`, under the author's MIT model license.
+It is disabled by default; predicted releases require a separate opt-in and
+are not verified chart LN targets. The source/model hashes and packaged
+real-audio checks are retained in `assets/instruments/manifest.json` and
+`verification.json`; dependency notices are in `licenses/instrument-runtime/`.
+The guitar, vocal and instrument-refinement models remain local research only
+and are not bundled. Evaluation scope is recorded in
 `docs/other-instrument-model-survey-2026-11-10.md`.
 
 Design reference: Torosu, Copyright (c) 2026 Manolo-dl, MIT, commit b283791f46622b0dd1f47f53afa10bd62d700e66. Its explicit hand layouts and LN release-state costs informed the independently implemented ManiaLab allocator. License retained in licenses/Torosu-MIT.txt. Source: https://github.com/Manolo-dl/Torosu
