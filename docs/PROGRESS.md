@@ -19,11 +19,19 @@
   `40e1a061c35caf89ad7b004a858b9619892e1fb5`；PR检查 `42852204830` 成功。
 - Mega53长窗和采音结果已通过 PR #4 合入主线，合并提交
   `a7b2478c2df09e0f6dc2a3d0dc409ea356dabdac`；PR检查 `42854329970` 成功。
+- Harmonica显式FP32对照及完整结果已通过 PR #5 合入主线，合并提交
+  `28c9a51613d33e991f1b7bb888e6c1940a627cf9`；PR检查 `42856082126` 成功。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
 ## 本阶段新增
 
+- 原Nova other声轨已完成当前10K的三个固定规则选窗对照：200–208、
+  96–104、16–24秒；3图实际查看、9份原声/起音click音频回读通过。
+  186个other中65个量化移动超过30ms，62个向后、3个向前；这不是65个
+  已确认错音。区分原候选、制谱提前、落线三种时间，不统一调Offset。
+  无新推理或生产改动；见[原声对照](other-onset-current-review.md)，入口
+  `scripts/review_current_other_onsets.py`，产物`test-data/sakura-other-onset-current-v3`。
 - 鼓组整体落选时，只在剩余容量内补充一个已有瞬态起音，固定原方案全部
   ID及起止。89项局部检查通过；固定《樱花草》6–10K完整重放、定轨和导出
   回读通过，6K补5鼓、7–10K补4鼓，LN不变。最终产物
