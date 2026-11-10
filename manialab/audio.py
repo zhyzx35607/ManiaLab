@@ -77,6 +77,11 @@ def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):
 
 
 def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_threshold=.3, attacks=None, suppressed=()):
+    # infer() retains frame starts strictly inside the audio. A final frame's
+    # cell can extend past EOF, but observations after EOF are not valid release
+    # evidence (for example when a caller pairs a cache with a shorter source).
+    if np.any(times >= duration):
+        raise ValueError("采音时间戳超出音频时长，请重新分析匹配的音源")
     notes = []
     suppressed = {(r['pitch'], r['time_ms']) for r in suppressed}
     attack_times = np.array([n.start / 1000 for n in attacks]) if attacks is not None else None
@@ -104,6 +109,7 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
         peaks = np.asarray(accepted, dtype=int)
         for j, start in enumerate(peaks):
             stop = int(peaks[j + 1]) if j + 1 < len(peaks) else len(times)
+            release_reason = 'same_pitch_reattack' if j + 1 < len(peaks) else 'input_boundary'
             last, gap = int(start), 0
             for k in range(int(start), stop):
                 if frames[k, pitch] >= frame_threshold:
@@ -111,6 +117,9 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
                 else:
                     gap += 1
                     if gap > 4:
+                        # This is a model activation decay, not a physical
+                        # key release. EOF with only 1–4 low frames is unresolved.
+                        release_reason = 'frame_decay'
                         break
             if last - start < 3:
                 continue
@@ -119,7 +128,8 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
             if b <= a:
                 continue
             strength = float(np.mean(frames[start:last + 1, pitch]))
-            notes.append(Note(a, b, -1, pitch + 21, round(strength, 4), "pitch", f"p{pitch}:{a}"))
+            notes.append(Note(a, b, -1, pitch + 21, round(strength, 4), "pitch", f"p{pitch}:{a}",
+                              release_reason=release_reason))
     return sorted(notes, key=lambda n: (n.start, n.pitch))
 
 
@@ -245,7 +255,7 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     chunks = np.array_split(np.abs(samples), min(2400, len(samples)))
     waveform = [round(float(np.max(x)), 4) for x in chunks]
     candidates = sorted(notes + unmatched, key=lambda n: (n.start, n.pitch))
-    result = {"revision": 5, "duration": duration, "waveform": waveform, "tempo": tempo,
+    result = {"revision": 6, "duration": duration, "waveform": waveform, "tempo": tempo,
             "elapsed_seconds": round(time.perf_counter() - started, 2), "cached": cached is not None,
             "timing_attacks": [n.data() for n in transients], "fused_attacks": fused,
             "release_refinement": releases,
@@ -450,7 +460,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     if use_drums:
         tempo, attacks = cover_missing_timing_windows(tempo,drum_attacks,mix_attacks)
     candidates = sorted(all_candidates, key=lambda n: (n.start, n.pitch, n.voice))
-    result = dict(revision=10, duration=duration, tempo=tempo,
+    result = dict(revision=11, duration=duration, tempo=tempo,
         waveform=[round(float(np.max(x)), 4) for x in np.array_split(np.abs(samples), min(2400, len(samples)))],
         elapsed_seconds=round(time.perf_counter() - started, 2), cached=separation["cached"] and all(pitch_cached),
         timing_attacks=[n.data() for n in attacks], fused_attacks=0, candidates=[n.data() for n in candidates],
