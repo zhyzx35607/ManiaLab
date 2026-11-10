@@ -171,7 +171,9 @@ def expression_evidence(analysis, plan, settings):
             if (anchor is None or phrase.voice != anchor.voice or phrase.instrument_id != anchor.instrument_id):
                 continue
             if (_expression_mode(section, anchor.voice, anchor.instrument_id) != 'phrase' or
-                    phrase.support_coverage < .95 or phrase.end > section['end_ms']):
+                    phrase.support_coverage < .95 or phrase.end > section['end_ms'] or
+                    phrase.release_reason in UNOBSERVED_RELEASES or phrase.source != 'pitch' or
+                    phrase.end-phrase.start < p['min_ln']):
                 continue
             if (phrase.end <= anchor.end or phrase.id in covered or anchor.strength < .35):
                 continue
