@@ -41,6 +41,42 @@ def test_decay_before_a_later_reattack_is_not_reported_as_reattack():
     assert notes[0].end == round(times[30] * 1000) < notes[1].start
 
 
+@pytest.mark.parametrize('second_attack', [142, 143, 284])
+def test_window_seam_tail_cannot_pass_next_same_pitch_attack(second_attack):
+    # Match infer()'s real retained-window clock, including its short seam.
+    times = np.concatenate([(window * (audio.WINDOW - audio.OVERLAP)
+                             + np.arange(142) * audio.FRAME) / audio.SR
+                            for window in range(3)])
+    frames = np.zeros((len(times), 88), dtype=np.float32)
+    onsets = np.zeros_like(frames)
+    first_attack = second_attack - 12
+    frames[first_attack:second_attack + 20, 39] = .8
+    onsets[[first_attack, second_attack], 39] = 1.
+    # A different pitch is allowed to continue across the same boundary.
+    frames[first_attack:second_attack + 20, 40] = .8
+    onsets[first_attack, 40] = 1.
+    notes = audio.pitched_notes(frames, onsets, times, times[-1] + audio.FRAME / audio.SR)
+    same = [n for n in notes if n.pitch == 60]
+    assert len(same) == 2
+    assert same[0].end == same[1].start == round(times[second_attack] * 1000)
+    assert same[0].release_reason == 'same_pitch_reattack'
+    assert next(n for n in notes if n.pitch == 61).end > same[1].start
+
+
+def test_suppressed_seam_attack_does_not_shorten_continuing_note():
+    times = np.concatenate([(window * (audio.WINDOW - audio.OVERLAP)
+                             + np.arange(142) * audio.FRAME) / audio.SR
+                            for window in range(2)])
+    frames = np.zeros((len(times), 88), dtype=np.float32)
+    onsets = np.zeros_like(frames)
+    frames[130:180, 39] = .8
+    onsets[[130, 142], 39] = 1.
+    notes = audio.pitched_notes(frames, onsets, times, times[-1] + audio.FRAME / audio.SR,
+        suppressed=[dict(pitch=60, time_ms=round(times[142] * 1000))])
+    assert len(notes) == 1 and notes[0].end == round(times[180] * 1000)
+    assert notes[0].release_reason == 'frame_decay'
+
+
 @pytest.mark.parametrize('end', [80, 96])
 def test_shorter_audio_cannot_borrow_future_decay_from_a_longer_cache(end):
     frames, onsets, times, _ = activations(end)

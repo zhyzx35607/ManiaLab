@@ -125,6 +125,11 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
                 continue
             a = max(0, round(float(times[start]) * 1000))
             b = min(round(duration * 1000), round((float(times[last]) + FRAME / SR) * 1000))
+            # Retained windows overlap by less than one model frame. The last
+            # cell before that seam must not extend through the next accepted
+            # same-pitch attack, whose actual sample clock takes precedence.
+            if stop < len(times):
+                b = min(b, round(float(times[stop]) * 1000))
             if b <= a:
                 continue
             strength = float(np.mean(frames[start:last + 1, pitch]))
@@ -255,7 +260,7 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     chunks = np.array_split(np.abs(samples), min(2400, len(samples)))
     waveform = [round(float(np.max(x)), 4) for x in chunks]
     candidates = sorted(notes + unmatched, key=lambda n: (n.start, n.pitch))
-    result = {"revision": 6, "duration": duration, "waveform": waveform, "tempo": tempo,
+    result = {"revision": 7, "duration": duration, "waveform": waveform, "tempo": tempo,
             "elapsed_seconds": round(time.perf_counter() - started, 2), "cached": cached is not None,
             "timing_attacks": [n.data() for n in transients], "fused_attacks": fused,
             "release_refinement": releases,
@@ -460,7 +465,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     if use_drums:
         tempo, attacks = cover_missing_timing_windows(tempo,drum_attacks,mix_attacks)
     candidates = sorted(all_candidates, key=lambda n: (n.start, n.pitch, n.voice))
-    result = dict(revision=11, duration=duration, tempo=tempo,
+    result = dict(revision=12, duration=duration, tempo=tempo,
         waveform=[round(float(np.max(x)), 4) for x in np.array_split(np.abs(samples), min(2400, len(samples)))],
         elapsed_seconds=round(time.perf_counter() - started, 2), cached=separation["cached"] and all(pitch_cached),
         timing_attacks=[n.data() for n in attacks], fused_attacks=0, candidates=[n.data() for n in candidates],
