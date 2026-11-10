@@ -352,7 +352,7 @@ def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferen
         existing_notes_fixed=True)
 
 
-def select_expression(candidates, metadata, trace, settings, beat_ms, segment_preferences=()):
+def select_expression(candidates, metadata, trace, settings, beat_ms, segment_preferences=(), *, coherence=0.):
     """Select rhythmic groups and chord depth; retained LNs keep their ends.
 
     A source group can use fewer simultaneous pitch layers while retaining its
@@ -360,7 +360,11 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
     attack cannot fit alone, split the group into attacks before selection.
     After selection, wholly omitted transient drum groups may retain one
     aligned attack in the remaining capacity without changing existing notes.
+    Research callers can request bounded adjacent-group transition costs;
+    the application default remains disabled pending musical evaluation.
     """
+    from .expression_coherence import validate_weight, group_links, add_costs, selection_report
+    validate_weight(coherence, beat_ms)
     p = parameters(settings)
     by_voice = defaultdict(list)
     for n in candidates:
@@ -499,6 +503,9 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
             # cannot lend its evidence score to a selected weaker note.
             constraint({coverage: 1, **{unit: -1 for unit, value in maxima.items() if value >= level}}, 0)
             previous = level
+    links = group_links(families, metadata, beat_ms, coherence,
+        lambda n: _attack_value(n, settings_at(p, n.start, segment_preferences)), boundaries)
+    add_costs(links, families, utility, constraint)
     matrix = csc_matrix((vals, (rows, cols)), shape=(len(upper), len(utility)))
     solved = _solve_binary(-np.asarray(utility), integrality=np.ones(len(utility)), bounds=Bounds(0, 1),
         constraints=LinearConstraint(matrix, -np.inf, np.asarray(upper)), options={'time_limit': 15., 'mip_rel_gap': .005})
@@ -543,7 +550,7 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
     resolve_phrase_decisions(trace)
     count = len(selected); ln = sum(n.hold for n in selected)
     reasons = dict(Counter(r['reason'] for r in trace.values() if r['decision'] == 'omitted'))
-    return selected, dict(selected=count, candidates=len(trace), omitted=len(trace)-count,
+    report = dict(selected=count, candidates=len(trace), omitted=len(trace)-count,
         attack_selection='source_groups_then_drum_anchors',
         attack_optimal=solved.status == 0 and (fallback_solver is None or fallback_solver['status'] == 0),
         drum_fallback_solver=fallback_solver,
@@ -555,3 +562,6 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
         selected_large_attack_shifts=sum(abs(n.start-n.evidence_start)>30 for n in selected if n.evidence_start is not None),
         decisions=list(trace.values()),
         message=f'按段落声部策略保留 {count} 个物件、{ln} 个 LN；不以全曲比例截断音尾。可查看各音的保留和省略原因。')
+    if coherence:
+        report['group_coherence'] = selection_report(links, families, chosen, coherence)
+    return selected, report
