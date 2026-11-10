@@ -26,6 +26,18 @@ function expressionOptions(voice){
   return items;
 }
 function instrumentName(id){
+  const tsumugi=/^tsumugi:[a-z0-9_]+:[a-f0-9]{16}:class:(\d+):([a-z0-9_]+)$/.exec(id);
+  if(tsumugi){
+    const names={accordion_family:'手风琴类',acoustic_bass:'原声低音提琴',acoustic_guitar:'原声吉他',brass:'铜管',choir:'合唱',
+      chromatic_percussion:'有音高打击乐',distorted_guitar:'失真吉他',drums:'鼓',electric_bass:'电贝斯',
+      electric_guitar_clean:'清音电吉他',electric_guitar_muted:'闷音电吉他',electric_piano:'电钢琴',ethnic:'民族乐器',
+      flute_pipe:'笛类',guitar_harmonics:'吉他泛音',harmonica:'口琴',orchestra_hit:'管弦齐奏重音',orchestral_harp:'竖琴',
+      orchestral_woodwind:'管弦木管',organ:'风琴',percussive_fx:'打击音效',piano:'钢琴',pizzicato_strings:'拨奏弦乐',
+      plucked_keyboard:'拨弦键盘',sax:'萨克斯',slap_bass:'击弦贝斯',sound_fx:'音效',strings:'弦乐',synth_bass:'合成贝斯',
+      synth_fx:'合成音效',synth_lead:'合成器主音',synth_pad:'合成器铺底',timpani:'定音鼓',melody:'旋律声部',
+      vocal_harmony:'人声和声',wind_chimes:'风铃'};
+    return `${names[tsumugi[2]]||tsumugi[2].replaceAll('_',' ')} · 模型类别`;
+  }
   const match=/^yourmt3:program:(\d+)$/.exec(id);
   if(!match)return `模型类别 ${id}`;
   const program=Number(match[1]);
