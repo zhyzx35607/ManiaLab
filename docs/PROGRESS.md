@@ -52,20 +52,30 @@
 - 相邻节奏组连贯取舍研究已通过 PR #16 合入主线，合并提交
   `abf8e31547cb71d7cf23330eebb8b8ac278967ad`；PR检查 `42887691860` 成功，
   GitHub检查2005 passed、85 skipped；研究参数仍默认0，没有新Release。
+- 原区间乐器评分恢复入口已通过 PR #17 合入主线，合并提交
+  `2179391207ecaadcd6bb966dd0bdf3ef04533d2d`；PR检查 `42890087106` 成功，
+  GitHub检查2021 passed、85 skipped。后续完整结果另开PR；没有新Release。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
 ## 本阶段新增
 
-- 原AMT乐器评分恢复进行中，分支`research/instrument-score-evidence`。
+- 原AMT乐器评分恢复及完整评价已完成；入口PR #17已合并，结果分支
+  `research/instrument-score-results`。
   [固定协议](instrument-score-evidence-protocol.md)先于本阶段推理/读取逐音标签。
   新入口`scripts/recover_tsumugi_instrument_scores.py`复用原区间，不重解码，
   保存36类logits、边界响应和拼接来源；排名逐项复现、音符不变才继续。
   16项新增控制与相关检查共52 passed。v1因配置tuple/list比较在首次前向前
-  停止，保留目录；JSON规范化修正后v2已完成前三份真实录音，全部排名复现。
-  当前session `54340`串行运行35份，产物`test-data/instrument-score-evidence-v2`；
-  续接必须核对实际状态，勿把本条当全量完成。应用默认未改，无新训练/安装包。
-  全部推理完成后才运行应用环境评价：
+  停止，保留目录；JSON规范化修正后v2全35份完成，session `54340`实际exit 0。
+  315窗/5202区间/4790最终音，完整排名精确复现、边界最大差0；388音有多个
+  来源，8音来源类别不一致。均值改变6音，其中2音在计分区；混奏带类起音
+  F1仅82.44%→82.50%（多1匹配），完整区间69.82%不变，独奏均不变。
+  全部推理完成后才读逐音标签，560组独立计数通过，评价实际exit 0。
+  最高评分档仍有9个混奏唯一对应错类和99个无对应音，不默认平均类别或
+  用分数筛音/指定主旋律。完整[结果](instrument-score-evidence-results.md)。
+  产物`test-data/instrument-score-evidence-v2`及`test-data/instrument-score-evaluation-v1`。
+  当前无运行中推理、研究队列、新训练或安装包。勿重复本批35份前向。
+  已完成的评价命令：
   `.venv/Scripts/python.exe scripts/check_tsumugi_instrument_scores.py --evidence test-data/instrument-score-evidence-v2 --output test-data/instrument-score-evaluation-v1`。
   类别评分不能直接当音存在概率、力度或声部重要性。
 - 相邻节奏组连贯取舍研究完成，分支`research/expression-coherence`。
@@ -241,6 +251,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 ## 已知结果与下一步
 
+- 原AMT分类评分完整对照已结束。跨窗类别本来大多稳定，均值只有极小
+  类别起音收益且不修音尾，不作为声部显著度或LN依据。下一步回到实际
+  Nova声轨的持续层/插奏取舍，特别是已看过的216–224秒持续层退出情况；
+  不继续在本批调置信度阈值，也不追加本版全曲分类推理来替代表达改进。
 - 连贯取舍研究已实跑并保留全部结果。更少切换可能来自省略短插奏，下一步
   要补声源证据与段落角色的依据，不能按模型类别连续性直接给声音重要性。
   原三窗other不变，所有变化other的分箱已看；勿重复本轮8图或重跑6–10K。
