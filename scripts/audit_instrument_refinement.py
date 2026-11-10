@@ -230,7 +230,7 @@ def run(folder, output):
         clustering_partition_recomputed=False, saved_cluster_classification_recomputed=True,
         neural_inference=False, source_or_outputs_modified=False, musical_acceptance=False)
     (output/'report.json').write_text(json.dumps(result, indent=2, allow_nan=False), encoding='utf-8')
-    print(json.dumps({k:v for k,v in result.items() if k not in ('verified_files','cases')}), flush=True)
+    print(json.dumps({k:v for k,v in result.items() if k not in ('verified_files','cases','part_grouping')}), flush=True)
 
 
 if __name__ == '__main__':

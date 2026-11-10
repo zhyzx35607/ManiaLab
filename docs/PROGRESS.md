@@ -28,18 +28,24 @@
 - 等价候选去重修复已通过 PR #8 合入主线，合并提交
   `3b11f6d1b0c513b9e83fa2d3c4bc4c9004018933`；PR检查 `42863989466` 成功，
   GitHub检查1901 passed、85 skipped。
+- 已知乐器音色验证入口已通过 PR #9 合入主线，合并提交
+  `279bf6e1e9cdca9d906301de7b12781481a60d38`；PR检查 `42865447918` 成功，
+  GitHub检查1905 passed、85 skipped。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
 ## 本阶段新增
 
-- 音色分组的已知乐器对照已实际启动，尚无完整成绩。复用原35份URMP检测，
-  对比原类别、逐音分类和聚类后类别；不改原音高和起止。旧12-1-vn核身份
-  后复用，其余34份串行，全部结束后读逐音标签。18项查询/计分控制通过。
-  协议见[instrument-family-validation-protocol.md](instrument-family-validation-protocol.md)，
-  入口`scripts/check_instrument_refinement.py`，输出`test-data/instrument-family-validation-v1`。
-  当前shell session `66272`，续接先核实实时状态与日志，不能仅凭本记录
-  重启；每项日志保存在输出根目录，未完成目录不能覆盖。没有改变应用默认。
+- 音色分组35份已知乐器对照完成，shell session `66272`实际exit 0。旧首份
+  复用，新34份串行耗时902.841秒；全部结束后读取本轮标签。不改原音高/起止。
+  聚类后独奏类别起音/区间F1持平92.44%/87.74%；混奏82.44%/69.82%降至
+  80.25%/67.76%。35份各为1个cluster；混奏唯一对应子集的声部分组成对
+  precision仅27.94%，不能用作自动旋律身份。不接入、不对这版追加Nova
+  全曲或按本批标签调阈值。完整[结果](instrument-family-validation-results.md)。
+  入口`scripts/check_instrument_refinement.py`，产物`test-data/instrument-family-validation-v1`；
+  21项查询/计分/分组测试及5项独立匹配控制通过。独审358文件、4790事件、
+  840组匹配计数通过，回执`test-data/instrument-family-independent-v1`；未重建
+  模型前向、聚类分区或等价匹配的误差均值。没有新默认行为或安装包。
 - 修复同占用、同强度、同表达含义候选的去重顺序偏置，沿用原对齐评分择优，
   同分按ID；不同尾长、乐句代表和不同表达依据不作等价替换。25项专项及
   相关检查共114 passed。固定《樱花草》6–10K重放、定轨、导出回读通过：
@@ -85,7 +91,8 @@
 原 shell session `69438` 已完成 Mega53 分离及下游采音，但在Harmonica首个
 静音控制的CPU bfloat16 LSTM处报错，已实际exit 1；当时MuScriptor尚未启动。
 显式float32兼容入口已修复，新串行session `54376`已完成Harmonica全部输入
-及MuScriptor全部36输入、评分，实际exit 0。本轮另启动音色分组验证，见上。
+及MuScriptor全部36输入、评分，实际exit 0。音色分组session `66272`也完成
+全部35输入及评分，实际exit 0；当前没有待运行的神经推理。
 session/PID 仅用于本次会话定位，重开后先
 确认命令行和启动时间，不能凭旧PID启动、结束或重复任务。
 
@@ -136,7 +143,8 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 下一步仍从原Nova other三个固定片段定位实际采音与段落表达问题。
   已证实的去重偏置已修，不重复模型搜索或继续用其解释全部省略；不能把
   65个大移动当作65个已确认错音，不能为减小移动量统一调Offset。
-- 当前先完成音色分组已知类别对照，判断模型改名是否真的减少错误。
-  它不能补漏音、改起止或证明独立物理声部；不按标签切换减少就启用。
+- 音色分组验证已收束：混奏退步且全部单组，不沿这版默认分组继续调参。
+  下一步以原候选和可解释的局部旋律/节奏连续性定位段内表达，避免把模型
+  广义类别直接当独立声部；仍需原音和生成结果检查，不以标签稳定度代替。
 - 下一次提交更新本文件并单独开 PR、检查、合并。已有源码与小阶段记录
   保存在 GitHub；本地 ignored 音频/权重仍需本机保留，GitHub源码不包含它们。
