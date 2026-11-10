@@ -254,12 +254,76 @@ def chord_layer_options(notes, settings, segment_preferences):
              (row[:min(layers, cap)] if pitched else row)] for layers in range(1, depth+1)]
 
 
+def _attack_value(note, preferences):
+    shift = abs(note.start-note.evidence_start) if note.evidence_start is not None else 0
+    alignment = .4+.6*math.exp(-.5*(shift/20)**2)
+    return (.25+note.strength)*preferences.get(note.voice+'_weight', 1.)*alignment
+
+
+def drum_group_anchor(notes, settings, segment_preferences):
+    """Offer one existing transient when a complete drum figure cannot fit.
+
+    This is an arrangement reduction, not a claim about drum identity or
+    detecting missing attacks. Other attacks remain explicitly omitted.
+    """
+    if len(notes) <= 1 or any(n.voice != 'drums' or n.source != 'transient' or n.hold for n in notes):
+        return None
+    return min(notes, key=lambda n: (-_attack_value(n, settings_at(settings, n.start, segment_preferences)),
+                                    n.start, n.id))
+
+
+def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferences, check_times):
+    """Use residual capacity only; every already selected note stays fixed."""
+    if not anchors:
+        return [], None
+    rows, cols, values, limits = [], [], [], []
+    def constraint(indices, remaining):
+        if remaining < 0:
+            raise ValueError('既有声部方案超过容量，不能补充鼓点')
+        if indices:
+            row = len(limits)
+            limits.append(remaining)
+            for index in indices:
+                rows.append(row); cols.append(index); values.append(1)
+    holds = [(n, settings_at(settings, n.start, segment_preferences)['release_gap'])
+             for n in selected if n.hold]
+    # Original candidate times can carry a tighter section limit even when
+    # the candidate itself was omitted. Keep the original solver's checks.
+    for time in sorted(set(check_times) | {n.start for n in selected+anchors}):
+        pref = settings_at(settings, time, segment_preferences)
+        existing = sum(n.start == time for n in selected)
+        onsets = [i for i, n in enumerate(anchors) if n.start == time]
+        constraint(onsets, pref['chord_size']-existing)
+        occupied = existing+sum(n.start < time < n.end+gap for n, gap in holds)
+        constraint(onsets, settings['keys']-occupied)
+        recent = sum(time-1000 < n.start <= time for n in selected)
+        constraint([i for i, n in enumerate(anchors) if time-1000 < n.start <= time],
+                   math.ceil(pref['density'])-recent)
+    utility = np.asarray([_attack_value(n, settings_at(settings, n.start, segment_preferences))
+                          * (2 if metadata[n.id]['role'] == 'primary' else 1) for n in anchors])
+    matrix = csc_matrix((values, (rows, cols)), shape=(len(limits), len(anchors)))
+    solved = _solve_binary(-utility, integrality=np.ones(len(anchors)), bounds=Bounds(0, 1),
+        constraints=LinearConstraint(matrix, -np.inf, np.asarray(limits)),
+        options={'time_limit': 5., 'mip_rel_gap': .005})
+    if solved.x is None:
+        raise ValueError('剩余容量的鼓点选择没有找到可行方案')
+    chosen = solved.x > .5
+    if np.any(matrix @ chosen.astype(float) > np.asarray(limits)+1e-6):
+        raise ValueError('补充鼓点没有通过占轨和密度约束')
+    return [n for n, keep in zip(anchors, chosen) if keep], dict(
+        candidates=len(anchors), selected=int(chosen.sum()), status=int(solved.status),
+        relative_gap=float(solved.mip_gap), objective=float(-solved.fun),
+        existing_notes_fixed=True)
+
+
 def select_expression(candidates, metadata, trace, settings, beat_ms, segment_preferences=()):
     """Select rhythmic groups and chord depth; retained LNs keep their ends.
 
     A source group can use fewer simultaneous pitch layers while retaining its
     attack sequence. Choose at most one depth per group. If even one layer per
     attack cannot fit alone, split the group into attacks before selection.
+    After selection, wholly omitted transient drum groups may retain one
+    aligned attack in the remaining capacity without changing existing notes.
     """
     p = parameters(settings)
     by_voice = defaultdict(list)
@@ -377,10 +441,8 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
         attack_scores = defaultdict(list)
         for n in group:
             pref = settings_at(p, n.start, segment_preferences)
-            shift = abs(n.start-n.evidence_start) if n.evidence_start is not None else 0
-            alignment = .4+.6*math.exp(-.5*(shift/20)**2)
             key = (metadata[n.id]['section'], n.voice, n.start)
-            value = (.25+n.strength)*pref.get(n.voice+'_weight', 1.)*alignment
+            value = _attack_value(n, pref)
             attack_scores[key].append(value * (2 if role == 'primary' else 1))
             attack_instruments[key].add(n.instrument_id)
         for key, values in attack_scores.items():
@@ -414,12 +476,17 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
     chosen = solved.x > .5
     if np.any(matrix @ chosen.astype(float) > np.asarray(upper)+1e-6):
         raise ValueError('段落取舍没有通过占轨约束')
-    selected = []
+    selected, anchors, anchor_groups = [], [], {}
     for family_index, (group, indices) in enumerate(families):
         active = [index for index in indices if chosen[index]]
         if len(active) > 1:
             raise ValueError('同一音组选择了多个表达层数')
         retained = units[active[0]] if active else []
+        if not retained:
+            anchor = drum_group_anchor(group, p, segment_preferences)
+            if anchor is not None:
+                anchors.append(anchor)
+                anchor_groups[anchor.id] = group
         retained_ids = {n.id for n in retained}
         represented = defaultdict(list)
         for n in retained:
@@ -435,16 +502,24 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
             else:
                 selected.append(n)
                 trace[n.id].update(chart_start=n.start, chart_end=n.end)
+    added_drums, fallback_solver = _select_drum_anchors(selected, anchors, metadata, p, segment_preferences, by_start)
+    for n in added_drums:
+        for member in anchor_groups[n.id]:
+            trace[member.id]['group_simplification'] = 'strongest_drum_attack'
+        trace[n.id].update(decision='selected', reason='drum_group_fallback', chart_start=n.start, chart_end=n.end)
+    selected.extend(added_drums)
     selected.sort(key=lambda n: (n.start, n.pitch, n.id))
     resolve_phrase_decisions(trace)
     count = len(selected); ln = sum(n.hold for n in selected)
     reasons = dict(Counter(r['reason'] for r in trace.values() if r['decision'] == 'omitted'))
     return selected, dict(selected=count, candidates=len(trace), omitted=len(trace)-count,
-        attack_selection='source_groups', attack_optimal=solved.status == 0,
+        attack_selection='source_groups_then_drum_anchors',
+        attack_optimal=solved.status == 0 and (fallback_solver is None or fallback_solver['status'] == 0),
+        drum_fallback_solver=fallback_solver,
         selection_solver=dict(status=int(solved.status), message=str(solved.message),
             relative_gap=float(solved.mip_gap), objective=float(-solved.fun),
             objective_bound=float(-solved.mip_dual_bound)),
-        expression_revision=2, actual_ln_ratio=round(ln/max(1, count), 4),
+        expression_revision=3, actual_ln_ratio=round(ln/max(1, count), 4),
         selected_voices=dict(Counter(n.voice for n in selected)), omission_reasons=reasons,
         selected_large_attack_shifts=sum(abs(n.start-n.evidence_start)>30 for n in selected if n.evidence_start is not None),
         decisions=list(trace.values()),
