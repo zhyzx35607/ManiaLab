@@ -87,7 +87,7 @@ def main():
     from model.ymt3 import YourMT3
     from utils.event2note import merge_zipped_note_events_and_ties_to_notes
     from utils.note2event import mix_notes
-    torch.set_num_threads(args.threads);torch.manual_seed(42)
+    torch.set_num_threads(args.threads);torch.set_num_interop_threads(1);torch.manual_seed(42)
     source=json.loads((args.model/'source.json').read_text())
     checkpoint=args.model/source['path']
     commit=subprocess.check_output(['git','-C',str(args.source),'rev-parse','HEAD'],text=True).strip()

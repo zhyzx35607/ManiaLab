@@ -1,7 +1,7 @@
 """Freeze a small URMP acoustic benchmark from the author's 16kHz archive.
 
-Uses aligned Notes text, never the unaligned score MIDI. The two lowest IDs
-in MT3's published test partition are selected before running any model.
+Uses aligned Notes text, never the unaligned score MIDI. Fixed comparison
+and development selections are chosen before running any model.
 """
 import argparse
 import hashlib
@@ -17,6 +17,7 @@ from scripts.probe_mapper_adapter import sha
 
 TEST_IDS=(1,2,12,13,24,25,31,38,39)
 SELECTED_IDS=(1,2)
+EXTENDED_TEST_IDS=tuple(i for i in TEST_IDS if i not in SELECTED_IDS)
 DEVELOPMENT_IDS=(3,4,5,6)
 PROGRAMS=dict(vn=40,va=41,vc=42,db=43,fl=73,ob=68,cl=71,sax=65,bn=70,tpt=56,hn=60,tbn=57,tba=58)
 
@@ -25,7 +26,7 @@ def main():
     cli=argparse.ArgumentParser(description=__doc__)
     cli.add_argument('--root',type=Path,default=Path('test-data/urmp'))
     cli.add_argument('--seconds',type=int,default=30)
-    cli.add_argument('--selection',choices=('benchmark','release-development'),default='benchmark')
+    cli.add_argument('--selection',choices=('benchmark','release-development','comparison-extension'),default='benchmark')
     args=cli.parse_args();root=args.root.resolve()
     if not 1<=args.seconds<=120:raise ValueError('Use a bounded acoustic interval')
     from scipy.io import wavfile
@@ -33,7 +34,8 @@ def main():
     with archive.open('rb') as stream:md5=hashlib.file_digest(stream,'md5').hexdigest()
     if source['file']['checksum']!='md5:'+md5 or archive.stat().st_size!=source['file']['size']:
         raise ValueError('Archive identity mismatch')
-    selected=SELECTED_IDS if args.selection=='benchmark' else DEVELOPMENT_IDS
+    selected={'benchmark':SELECTED_IDS,'release-development':DEVELOPMENT_IDS,
+              'comparison-extension':EXTENDED_TEST_IDS}[args.selection]
     if args.selection=='release-development' and set(selected)&set(TEST_IDS):
         raise ValueError('Release fitting cannot include the published comparison partition')
     output=root/args.selection
@@ -85,17 +87,20 @@ def main():
         if len(samples)/rate<args.seconds:raise ValueError('Selected piece is shorter than the fixed interval')
         truth_path=output/(case['name']+'-labels.json')
         truth_path.write_text(json.dumps(truth,indent=2),encoding='utf-8')
-        split='comparison' if args.selection=='benchmark' else 'calibration' if case['piece_id']==6 else 'fit'
+        split='calibration' if args.selection=='release-development' and case['piece_id']==6 else (
+            'fit' if args.selection=='release-development' else 'comparison')
         inventory.append(dict(**case,split=split,audio=str(audio),audio_sha256=sha(audio),start_ms=0,seconds=args.seconds,
             labels_path=str(truth_path),labels_sha256=sha(truth_path),annotations={str(p):sha(p) for p in labels}))
-    selection=('Select the two lowest IDs in the fixed MT3 test partition, all isolated parts and original mixtures.'
-        if args.selection=='benchmark' else
-        'Select the four lowest IDs outside the fixed MT3 test partition before inference; fit 3/4/5, calibrate 6; all parts and mixtures.')
+    selection={
+        'benchmark':'Select the two lowest IDs in the fixed MT3 test partition, all isolated parts and original mixtures.',
+        'release-development':'Select the four lowest IDs outside the fixed MT3 test partition before inference; fit 3/4/5, calibrate 6; all parts and mixtures.',
+        'comparison-extension':'Select every remaining published MT3 test ID after 1/2: 12/13/24/25/31/38/39; all isolated parts and original mixtures.',
+    }[args.selection]
     manifest=dict(revision=2,archive=source,selection=args.selection,selected_ids=selected,published_mt3_test_ids=TEST_IDS,cases=inventory,
         protocol=[selection,
             'Predict from original audio only, no transcription labels, MIDI, chart Timing or source program hints.',
             'Evaluate onset and release on the same unshifted physical audio clock; no chart lead or grid snapping.',
-            'The 1/2 comparison partition is also used for upstream validation and has been inspected in development; not new blind data.',
+            'The published comparison partition is also used for upstream validation; 1/2 have already been inspected locally. Do not claim unseen model data.',
             'Aligned Notes annotations can have boundary uncertainty; report strict and duration-relative tolerances.'])
     (output/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     print(json.dumps(dict(cases=len(inventory),names=[c['name'] for c in inventory])),flush=True)
