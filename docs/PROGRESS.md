@@ -46,11 +46,26 @@
 - 钢琴跨窗持续修复已通过 PR #14 合入主线，合并提交
   `ad9c8c05ed69848d5bfc0538c834c7729ee4b2f8`；PR检查 `42882871715` 成功，
   GitHub检查1980 passed、85 skipped；没有新Release。
+- 同权重和弦起音排序已通过 PR #15 合入主线，合并提交
+  `12bb01c01f5daa6cec0a454c7e504071f94b1f80`；PR检查 `42885147076` 成功，
+  GitHub检查1992 passed、85 skipped；没有新Release。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
 ## 本阶段新增
 
+- 相邻节奏组连贯取舍研究完成，分支`research/expression-coherence`。
+  新可选研究参数`select_expression(..., coherence=.25)`惩罚相邻组的选中/
+  落选切换，默认0，不接入应用设置。权重和边界规则先固定，未按结果调整。
+  13项控制与相关检查共151 passed。固定6–10K默认逐音复现，新方案完整
+  选择/定轨/导出回读通过；session `66354`实际exit 0，
+  `test-data/expression-coherence-v1`。10K物件/LN仍1496/382，切换45→36，
+  但10条消失中3条来自整组省略，另新增1条，不能称音乐更清楚。
+  8张原声对照图已实际查看、24音频回读，session `22073`实际exit 0，
+  `test-data/expression-coherence-audio-v1`。216–224秒持续层退出、孤立高音
+  进入，不能凭更少切换启用默认。详见[结果](expression-coherence-results.md)。
+  默认基线仍PR15的`chord-evidence-ties-v1`，勿将研究输出当发布行为。
+  无运行中研究队列、推理、训练或新安装包；不再沿本版只调平滑权重。
 - 同权重和弦起音排序修复完成，分支`fix/chord-evidence-ties`。
   Tsumugi的1.0为统一权重；原降层先按音高排除更贴近拍线的候选。
   现在同强度、有完整起音证据的音高行用原对齐评分打破平局；保留强度优先，
@@ -212,6 +227,9 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 ## 已知结果与下一步
 
+- 连贯取舍研究已实跑并保留全部结果。更少切换可能来自省略短插奏，下一步
+  要补声源证据与段落角色的依据，不能按模型类别连续性直接给声音重要性。
+  原三窗other不变，所有变化other的分箱已看；勿重复本轮8图或重跑6–10K。
 - 同权重排序已在完整固定输入验证。下一步仍检查声部连续表达和取舍；
   先看`chord-evidence-ties-v1/10k/windows.json`的三个原选窗及新旧落选起音。
   候选对齐更好不等于真实主旋律识别，12个鼓起音落选的音乐影响尚未验收。
