@@ -49,11 +49,25 @@
 - 同权重和弦起音排序已通过 PR #15 合入主线，合并提交
   `12bb01c01f5daa6cec0a454c7e504071f94b1f80`；PR检查 `42885147076` 成功，
   GitHub检查1992 passed、85 skipped；没有新Release。
+- 相邻节奏组连贯取舍研究已通过 PR #16 合入主线，合并提交
+  `abf8e31547cb71d7cf23330eebb8b8ac278967ad`；PR检查 `42887691860` 成功，
+  GitHub检查2005 passed、85 skipped；研究参数仍默认0，没有新Release。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
 ## 本阶段新增
 
+- 原AMT乐器评分恢复进行中，分支`research/instrument-score-evidence`。
+  [固定协议](instrument-score-evidence-protocol.md)先于本阶段推理/读取逐音标签。
+  新入口`scripts/recover_tsumugi_instrument_scores.py`复用原区间，不重解码，
+  保存36类logits、边界响应和拼接来源；排名逐项复现、音符不变才继续。
+  16项新增控制与相关检查共52 passed。v1因配置tuple/list比较在首次前向前
+  停止，保留目录；JSON规范化修正后v2已完成前三份真实录音，全部排名复现。
+  当前session `54340`串行运行35份，产物`test-data/instrument-score-evidence-v2`；
+  续接必须核对实际状态，勿把本条当全量完成。应用默认未改，无新训练/安装包。
+  全部推理完成后才运行应用环境评价：
+  `.venv/Scripts/python.exe scripts/check_tsumugi_instrument_scores.py --evidence test-data/instrument-score-evidence-v2 --output test-data/instrument-score-evaluation-v1`。
+  类别评分不能直接当音存在概率、力度或声部重要性。
 - 相邻节奏组连贯取舍研究完成，分支`research/expression-coherence`。
   新可选研究参数`select_expression(..., coherence=.25)`惩罚相邻组的选中/
   落选切换，默认0，不接入应用设置。权重和边界规则先固定，未按结果调整。
