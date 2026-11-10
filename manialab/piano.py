@@ -17,7 +17,9 @@ OUTPUTS = ('reg_onset_output', 'reg_offset_output', 'frame_output', 'velocity_ou
 MODEL_SHA256 = '7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa'
 
 
-def infer(samples, sample_rate, session, progress=lambda p,s:None, cancelled=lambda:False):
+def infer(samples, sample_rate, session, progress=lambda p,s:None, cancelled=lambda:False,
+          continuation_trace=None):
+    from .piano_continuity import continue_overlap
     samples = np.asarray(samples, dtype=np.float32)
     if samples.ndim != 1 or not len(samples) or not np.isfinite(samples).all():
         raise ValueError('钢琴输入必须是有限的单声道采样')
@@ -30,6 +32,7 @@ def infer(samples, sample_rate, session, progress=lambda p,s:None, cancelled=lam
     padded_length = ceil(len(samples)/WINDOW)*WINDOW
     starts = list(range(0, padded_length-WINDOW+1, HOP))
     pieces = {key:[] for key in OUTPUTS}
+    previous = None
     for index,start in enumerate(starts):
         if cancelled():
             raise InterruptedError('已取消钢琴分析')
@@ -37,13 +40,23 @@ def infer(samples, sample_rate, session, progress=lambda p,s:None, cancelled=lam
         available = samples[start:start+WINDOW]
         chunk[:len(available)] = available
         outputs = session.run(list(OUTPUTS),{'audio':chunk[None]})
-        for key,output in zip(OUTPUTS,outputs):
+        for output in outputs:
             if output.shape != (1,1001,88) or not np.isfinite(output).all():
                 raise ValueError('钢琴网络输出形状或数值无效')
+        raw = {key:output[0] for key,output in zip(OUTPUTS,outputs)}
+        if previous is None:
+            current = raw
+        else:
+            current, changes = continue_overlap(previous, raw,
+                owned_left=0 if index == 1 else 250, require_release_regression=True)
+            if continuation_trace is not None:
+                continuation_trace.extend(dict(window_start_seconds=start/RATE, **change) for change in changes)
+        for key,output in current.items():
             # Keep the central five seconds; retain context at the song edges.
             left = 0 if index == 0 else 250
             right = 1001 if len(starts) == 1 else 1000 if index == len(starts)-1 else 750
-            pieces[key].append(output[0,left:right])
+            pieces[key].append(output[left:right])
+        previous = raw
         progress(round((index+1)*100/len(starts)),f'钢琴起音与持续分析 {index+1}/{len(starts)}')
     valid = ceil(duration*FPS)
     return {key:np.concatenate(rows)[:valid] for key,rows in pieces.items()}
@@ -142,29 +155,30 @@ class PianoDetector:
         with self.model.open('rb') as stream:
             if hashlib.file_digest(stream,'sha256').hexdigest()!=MODEL_SHA256:
                 raise ValueError('钢琴专用模型校验失败，请使用完整测试包')
-        identity=dict(revision=1,model_sha256=MODEL_SHA256,stem_identity=stem_identity,
+        identity=dict(revision=2,model_sha256=MODEL_SHA256,stem_identity=stem_identity,
                       pcm_sha256=hashlib.sha256(np.asarray(samples,dtype='<f4').tobytes()).hexdigest(),
                       sample_rate=sample_rate,samples=len(samples))
         signature=json.dumps(identity,sort_keys=True)
-        cache=Path(cache);activations=None
+        cache=Path(cache);activations=None;continuations=[]
         if cache.exists():
             try:
                 with np.load(cache,allow_pickle=False) as data:
                     if str(data['identity'])==signature:
                         activations={key:data[key] for key in OUTPUTS}
+                        continuations=json.loads(str(data['continuations']))
             except (ValueError,KeyError,OSError,EOFError):
-                pass
+                activations=None;continuations=[]
         cached=activations is not None
         if not cached:
             import onnxruntime as ort
             options=ort.SessionOptions();options.intra_op_num_threads=2;options.inter_op_num_threads=1
             session=ort.InferenceSession(str(self.model),sess_options=options,providers=['CPUExecutionProvider'])
-            activations=infer(samples,sample_rate,session,progress,cancelled)
+            activations=infer(samples,sample_rate,session,progress,cancelled,continuations)
             del session
             if cancelled():raise InterruptedError('已取消钢琴分析')
             temporary=cache.with_suffix('.tmp')
             with temporary.open('wb') as stream:
-                np.savez_compressed(stream,identity=signature,**activations)
+                np.savez_compressed(stream,identity=signature,continuations=json.dumps(continuations),**activations)
             temporary.replace(cache)
         if cancelled():raise InterruptedError('已取消钢琴分析')
         events=decode(activations)
@@ -172,6 +186,7 @@ class PianoDetector:
                     pitch=event['pitch'],strength=event['onset_score'],source='pitch',voice='piano',
                     id=f'specialist:{i}',release_reason=event['release_reason']) for i,event in enumerate(events)]
         return notes,dict(identity=identity,cached=cached,engine='piano-onset-offset-regression',
+                          window_context_continuations=continuations,
                           release_reasons={reason:sum(n.release_reason==reason for n in notes)
                               for reason in sorted({n.release_reason for n in notes})},
                           notice='钢琴持续区间包含踏板延音；强制截断的音尾不能自动作为 LN 放手。')
