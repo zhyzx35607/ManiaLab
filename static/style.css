@@ -9,3 +9,9 @@
 #lnDensity{display:flex;gap:4px;overflow-x:auto;padding:6px 0 12px;margin-bottom:4px}.ln-density-part{height:80px;min-width:40px;flex:1;position:relative;border:1px solid var(--line);background:transparent;padding:0;overflow:hidden}.ln-density-part>span{position:absolute;bottom:20px;left:4px;right:4px;max-height:58px;background:#5ccbb2;opacity:.65}.ln-density-part>small{position:absolute;bottom:2px;left:0;right:0;font-size:10px}.ln-density-part:hover{border-color:#5ccbb2}
 
 #recommendationPanel{margin:0 0 16px}#recommendationChoices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px}.recommendation-card{padding:14px;border:1px solid var(--line,#34404b);border-radius:8px}.recommendation-card>button{margin-top:8px}.recommendation-card details{margin:8px 0;padding:10px}.recommendation-card strong{font-size:13px}
+
+.structure-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.structure-section{padding:10px 0;border-top:1px solid var(--line,#ddd)}.structure-voices{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.structure-section>.field{max-width:350px}.structure-section summary{cursor:pointer}#expressionAudit button{display:block;text-align:left;max-width:100%}#structureBoundaries{width:100%;box-sizing:border-box}
+
+#providedStemsPanel{margin:14px 0;min-width:0;overflow-wrap:anywhere}#providedStemsPanel input[type=file]{width:100%;min-width:0;max-width:100%;font-size:11px}
+.structure-voice{min-width:0}.instrument-modes{padding:10px;margin:10px 0 0;overflow-wrap:anywhere}.instrument-modes select{max-width:100%;min-width:0}.instrument-modes .field{margin-top:10px}.instrument-modes summary{font-size:12px}
+@media(max-width:540px){.left{grid-template-columns:minmax(0,1fr)}.left section{min-width:0}}

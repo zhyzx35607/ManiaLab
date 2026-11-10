@@ -1,0 +1,118 @@
+{
+  "identity": {
+    "runner_sha256": "33e04edac9607f5062314450542ca34b71357d5c317e88b5887cfdf78a5e852b",
+    "protocol_sha256": "4c28240bf58a4ad585549024c42fa35abf33e5f46e44d13053afa61bcac977a0",
+    "source_audio_sha256": "8eb46bbdf283028e5f5d4c13169741e734cc57f0bfd2fe3f19dd590f38ad2722",
+    "analysis_sha256": "ef410a5feb747f2503d956c0b2300847b9bcf09acda2ea895785071ba6ba9cc7",
+    "audit_sha256": "e8b6330d3c51100cc5751a7febdc959c8c20eddbe8f8c4de8575ee2b5e1d7ae5",
+    "frozen_report_sha256": "b0dc74f1e0c71414e4418b7d6293d5d54f2a0632ea49ebdea0adc779a4e15680",
+    "matplotlib": "3.10.8",
+    "numpy": "2.5.4"
+  },
+  "report_sha256": "2a28beef4afe65d076bb1f6f26f723e4912c538a6c91597fc02f0fdf281a2165",
+  "summarizer_sha256": "ae6c5fea28ae621f5e78e4d64130abd82867649d4505cfc835bd55cd846cd3b8",
+  "artifacts_verified": 18,
+  "clips": [
+    {
+      "name": "clip-6664",
+      "begin_ms": 6664,
+      "end_ms": 18664,
+      "first_sample": 146941,
+      "stop_sample": 411541,
+      "sample_rate": 22050,
+      "samples": 264600,
+      "candidates_overlapping": 92,
+      "attacks_in_clip": 92,
+      "carried_from_before": 0,
+      "continue_after_clip": 2,
+      "unobserved_ends": 0,
+      "release_reasons": {
+        "frame_decay": 30,
+        "release_regression": 29,
+        "reattack": 33
+      },
+      "synthesis_rms_gain": 0.11071433044979187,
+      "common_playback_gain": 1.0,
+      "source_rms": 0.12830698082287945,
+      "synthesis_rms_before_common_gain": 0.12830698082287945,
+      "upper_register_intervals_at_most_10ms": 2,
+      "pitch69_candidates": 1,
+      "pitch69_ending_reasons": {
+        "frame_decay": 1
+      }
+    },
+    {
+      "name": "clip-215853",
+      "begin_ms": 215853,
+      "end_ms": 227853,
+      "first_sample": 4759559,
+      "stop_sample": 5024159,
+      "sample_rate": 22050,
+      "samples": 264600,
+      "candidates_overlapping": 81,
+      "attacks_in_clip": 81,
+      "carried_from_before": 0,
+      "continue_after_clip": 4,
+      "unobserved_ends": 0,
+      "release_reasons": {
+        "frame_decay": 17,
+        "reattack": 36,
+        "release_regression": 28
+      },
+      "synthesis_rms_gain": 0.144566107843867,
+      "common_playback_gain": 1.0,
+      "source_rms": 0.16158250407760008,
+      "synthesis_rms_before_common_gain": 0.1615825040776001,
+      "upper_register_intervals_at_most_10ms": 4,
+      "pitch69_candidates": 17,
+      "pitch69_ending_reasons": {
+        "reattack": 15,
+        "release_regression": 2
+      }
+    },
+    {
+      "name": "clip-241798",
+      "begin_ms": 241798,
+      "end_ms": 253798,
+      "first_sample": 5331646,
+      "stop_sample": 5596246,
+      "sample_rate": 22050,
+      "samples": 264600,
+      "candidates_overlapping": 88,
+      "attacks_in_clip": 83,
+      "carried_from_before": 5,
+      "continue_after_clip": 6,
+      "unobserved_ends": 0,
+      "release_reasons": {
+        "frame_decay": 22,
+        "release_regression": 27,
+        "reattack": 39
+      },
+      "synthesis_rms_gain": 0.1432154640617961,
+      "common_playback_gain": 1.0,
+      "source_rms": 0.16320635189621358,
+      "synthesis_rms_before_common_gain": 0.16320635189621358,
+      "upper_register_intervals_at_most_10ms": 0,
+      "pitch69_candidates": 21,
+      "pitch69_ending_reasons": {
+        "reattack": 19,
+        "release_regression": 1,
+        "frame_decay": 1
+      }
+    }
+  ],
+  "reused_candidates": 1557,
+  "raw_candidates_preserved": true,
+  "axis_revision_audio_identical": true,
+  "model_rerun": false,
+  "model_listened_to_audio": false,
+  "human_listening_completed": false,
+  "browser_playback_verified": false,
+  "musical_acceptance": false,
+  "limitations": [
+    "Short high-pitch events are review candidates, not proven false positives.",
+    "A repeated pitch ending at a reattack is not a phrase-end or LN-release label.",
+    "Plots and synthesis expose detector output; they do not validate all pitches or releases.",
+    "Browser automation initialization failed: failed to write kernel assets (os error 3)."
+  ]
+}

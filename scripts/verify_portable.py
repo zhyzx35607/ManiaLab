@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 from manialab import __version__
 from manialab.domain import parse_osu, validate
 from manialab.timing import grid_report
+from scripts.build_provenance import sha256, verify_worker, verify_instrument_worker
 
 
 def synthetic(path, seconds=30):
@@ -39,21 +40,24 @@ def synthetic(path, seconds=30):
         stream.setnchannels(1);stream.setsampwidth(2);stream.setframerate(rate);stream.writeframes(data)
 
 
-def run(executable, work):
+def run(executable, work, piano_audio=None, instrument_fixtures=None, instruments_only=False,
+        guitar_probe=None, guitar_only=False):
     executable, work = executable.resolve(), work.resolve()
     work.mkdir(parents=True,exist_ok=True)
     data=work/'独立项目';data.mkdir(exist_ok=True)
     source=work/'音频测试.wav';synthetic(source)
-    environment={k:v for k,v in os.environ.items() if k not in ('PYTHONHOME','PYTHONPATH','VIRTUAL_ENV','MANIALAB_DEEP_PYTHON','MANIALAB_DEEP_MODEL')}
+    environment={k:v for k,v in os.environ.items() if k not in ('PYTHONHOME','PYTHONPATH','VIRTUAL_ENV')
+                 and not k.startswith(('MANIALAB_DEEP_','MANIALAB_INSTRUMENT_'))}
     environment['PATH']=str(Path(os.environ['SystemRoot'])/'System32')
     environment.update(HTTP_PROXY='http://127.0.0.1:9',HTTPS_PROXY='http://127.0.0.1:9',NO_PROXY='127.0.0.1,localhost',PYTHONUTF8='1')
-    process=None;log=None;url='';token='';checks=[]
+    process=None;log=None;url='';token='';checks=[];launch_number=0
     local_http=urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     def start():
-        nonlocal process,log,url,token
+        nonlocal process,log,url,token,launch_number
         marker=data/'current-url.txt';marker.unlink(missing_ok=True)
-        log=(work/f'launch-{len(checks)}.log').open('w',encoding='utf-8')
+        log=(work/f'launch-{launch_number}.log').open('x',encoding='utf-8')
+        launch_number+=1
         process=subprocess.Popen([str(executable),'--no-browser','--data-dir',str(data)],cwd=work,
             env=environment,stdout=log,stderr=log,creationflags=subprocess.CREATE_NO_WINDOW)
         deadline=time.monotonic()+60
@@ -105,6 +109,15 @@ def run(executable, work):
         for name,digest in release_manifest['sources'].items():
             assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, f'Packaged source is stale: {name}'
         assert release_manifest['worker_sha256']==hashlib.sha256((executable.parent/'_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe').read_bytes()).hexdigest()
+        worker=verify_worker(ROOT,executable.parent/'_internal/assets/deep')
+        assert release_manifest['worker_sources']==worker['worker_sources']
+        if release_manifest.get('piano_model'):
+            assert sha256(executable.parent/'_internal/assets/deep/piano-regression.onnx')==release_manifest['piano_model']['sha256']
+        if release_manifest.get('guitar_model'):
+            from scripts.build_provenance import verify_guitar_model
+            assert verify_guitar_model(executable.parent/'_internal')==release_manifest['guitar_model']
+        if release_manifest.get('instrument_worker'):
+            assert verify_instrument_worker(ROOT,executable.parent/'_internal/assets/instruments')==release_manifest['instrument_worker']
         checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),executable_sha256=release_manifest['executable_sha256']))
         expected_prior=hashlib.sha256((ROOT/'assets/pattern-prior.json').read_bytes()).hexdigest()
         bundled_prior=hashlib.sha256((executable.parent/'_internal/assets/pattern-prior.json').read_bytes()).hexdigest()
@@ -116,6 +129,20 @@ def run(executable, work):
         start();status=request('/api/status')
         assert status['version']==__version__ and status['separator']['available'],status
         checks.append(dict(check='startup',version=status['version'],separator=status['separator'],prior=status['pattern_prior']))
+        if guitar_only:
+            if guitar_probe is None:
+                raise ValueError('--guitar-only requires --guitar-probe')
+            from scripts.verify_portable_guitar import check_guitar
+            check_guitar(request,wait,start,stop,work,guitar_probe,checks)
+            print(json.dumps(dict(passed=True,scope='guitar_only',checks=checks),ensure_ascii=True),flush=True)
+            return
+        if instruments_only:
+            if instrument_fixtures is None:
+                raise ValueError('--instruments-only requires --instrument-fixtures')
+            from scripts.verify_portable_instruments import check_instruments
+            check_instruments(request,wait,start,stop,work,instrument_fixtures,checks)
+            print(json.dumps(dict(passed=True,scope='instruments_only',checks=checks),ensure_ascii=True),flush=True)
+            return
         state=request('/api/import',upload=('files',source.name,source.read_bytes()));pid=state['id'];base='/api/projects/'+pid
         job=wait(request(base+'/analyze',dict(engine='deep',settings={},audio_shift_ms=22.5)))
         assert job['status']=='done',job
@@ -129,9 +156,11 @@ def run(executable, work):
             job=wait(request(base+'/generate',payload));assert job['status']=='done',job
             text=request(base+'/export/osu').decode('utf-8');parsed=parse_osu(text)
             report=validate(parsed['notes'],keys)
-            assert report['valid'] and report['notes']==5 and report['ln']==3,report
+            # Every isolated source event is sustained. The section policy
+            # must preserve all five; a global 55% quota used to turn two taps.
+            assert report['valid'] and report['notes']==5 and report['ln']==5,report
             grid=grid_report(parsed['notes'],dict(bpm=120,offset=-22,division=4));assert grid['off_grid']==0,grid
-            checks.append(dict(check='generate_export',keys=keys,notes=5,ln=3,off_grid=0))
+            checks.append(dict(check='generate_export',keys=keys,notes=5,ln=5,off_grid=0))
         with zipfile.ZipFile(io.BytesIO(request(base+'/export/osz'))) as archive:
             assert set(archive.namelist())=={'ManiaLab.osu',source.name},archive.namelist()
         audio=request(base+'/audition',dict(mode='chart',start_ms=0,duration_ms=12000));assert audio[:4]==b'RIFF'
@@ -174,6 +203,62 @@ def run(executable, work):
         assert candidate['report']['grid']['off_grid']==0 and all(n['voice']!='guitar' for n in candidate['notes'])
         checks.append(dict(check='six_stem_analysis_export',seconds=state['analysis']['elapsed_seconds'],
             voices=[v['voice'] for v in state['analysis']['voices']],notes=len(candidate['notes']),off_grid=0))
+        if piano_audio is not None:
+            assert status['piano']['available'] and not status['piano']['default'],status['piano']
+            piano_audio=piano_audio.resolve();content=piano_audio.read_bytes()
+            imported=request('/api/import',upload=('files','真实钢琴.wav',content))
+            piano_base='/api/projects/'+imported['id']
+            job=wait(request(piano_base+'/provided-stems',upload=('piano','钢琴声轨.wav',content)))
+            assert job['status']=='done',job
+            analysis_payload=dict(engine='provided',piano_engine='specialist',settings={})
+            job=wait(request(piano_base+'/analyze',analysis_payload),timeout=600)
+            assert job['status']=='done',job
+            piano_state=request(piano_base);original=piano_state['analysis']['candidates']
+            assert original and all(n['voice']=='piano' for n in original)
+            summary=piano_state['analysis']['voices'][0]['release_refinement']
+            assert summary['engine']=='piano-onset-offset-regression' and not summary['cached'],summary
+            checks.append(dict(check='piano_cold_inference',input_sha256=hashlib.sha256(content).hexdigest(),
+                model_sha256=summary['identity']['model_sha256'],candidates=len(original),
+                seconds=piano_state['analysis']['elapsed_seconds'],release_reasons=summary['release_reasons']))
+            plan=piano_state['expression']
+            generated={}
+            for mode in ('articulation','sustain'):
+                for section in plan['sections']:
+                    section['voices']['piano']['mode']=mode
+                request(piano_base+'/expression',dict(expression=plan))
+                job=wait(request(piano_base+'/generate',dict(mode='audio',bpm=120,offset=0,division=4,
+                    audio_shift_ms=0,timing_confirmed=True,settings={'keys':10,'density':12,'ln_ratio':1})))
+                assert job['status']=='done',job
+                piano_state=request(piano_base)
+                assert piano_state['analysis']['candidates']==original
+                assert piano_state['expression']['source']=='manual'
+                assert all(s['voices']['piano']['mode']==mode for s in piano_state['expression']['sections'])
+                exported=request(piano_base+'/export/osu')
+                parsed=parse_osu(exported.decode('utf-8'));report=validate(parsed['notes'],10)
+                assert report['valid'] and report['notes']>0,report
+                assert grid_report(parsed['notes'],dict(bpm=120,offset=0,division=4))['off_grid']==0
+                (work/f'piano-{mode}.osu').write_bytes(exported)
+                generated[mode]=dict(notes=report['notes'],ln=report['ln'])
+            checks.append(dict(check='piano_manual_expression',modes=generated,evidence_preserved=True,
+                timing='fixed synthetic grid for export verification, not musical timing acceptance'))
+            saved_piano=piano_state['variants'][piano_state['active']]['notes']
+            stop();start();restored=request(piano_base)
+            assert restored['analysis']['candidates']==original
+            assert restored['variants'][restored['active']]['notes']==saved_piano
+            assert restored['expression']==piano_state['expression']
+            job=wait(request(piano_base+'/analyze',analysis_payload),timeout=600)
+            assert job['status']=='done',job
+            warmed=request(piano_base)
+            assert warmed['analysis']['voices'][0]['release_refinement']['cached']
+            assert warmed['analysis']['candidates']==original
+            checks.append(dict(check='piano_restart_warm_cache',candidates=len(original),identical=True,
+                seconds=warmed['analysis']['elapsed_seconds']))
+        if instrument_fixtures is not None:
+            from scripts.verify_portable_instruments import check_instruments
+            check_instruments(request,wait,start,stop,work,instrument_fixtures,checks)
+        if guitar_probe is not None:
+            from scripts.verify_portable_guitar import check_guitar
+            check_guitar(request,wait,start,stop,work,guitar_probe,checks)
         # Cancel a fresh separation, then confirm the same server remains usable.
         second=request('/api/import',upload=('files','取消测试.wav',source.read_bytes()+b'\x00\x00'))
         second_base='/api/projects/'+second['id'];job=request(second_base+'/analyze',dict(engine='deep',settings={}))
@@ -200,4 +285,12 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('executable',type=Path)
     parser.add_argument('--work',type=Path,default=ROOT/'test-data/portable-alpha4')
-    args=parser.parse_args();run(args.executable,args.work)
+    parser.add_argument('--piano-audio',type=Path,help='Short real piano WAV for packaged specialist cold/warm and expression checks')
+    parser.add_argument('--instrument-fixtures',type=Path,help='Frozen real bass/other fixtures for packaged HTTP checks')
+    parser.add_argument('--instruments-only',action='store_true',help='Only the packaged instrument checks, after component identity checks')
+    parser.add_argument('--guitar-probe',type=Path,help='Completed fixed FL float probe, including both native stems')
+    parser.add_argument('--guitar-only',action='store_true',help='Only guitar HTTP checks, after component identity checks')
+    args=parser.parse_args()
+    if args.guitar_only and args.instruments_only:
+        parser.error('Choose at most one focused check')
+    run(args.executable,args.work,args.piano_audio,args.instrument_fixtures,args.instruments_only,args.guitar_probe,args.guitar_only)

@@ -1,0 +1,136 @@
+{
+  "source": "instrument-other",
+  "runner_sha256": "dd6c72670610982b459fbb1b2f0642b55536bd14c5a580410652af46091262c3",
+  "analysis_sha256": "65b9e22e320d7b6d2123c053700a59cfbea904fb0de4be9c3e68c0640e40a02c",
+  "run_report_sha256": "43e304930dfa7fcaaefadc1438d6861fcfbcc43fcc43f284596920e2f5c7cea9",
+  "baseline_report_sha256": "ac0114795a6b24354deceac6900feed66d68bfc7611b414edcb6aafd7b04fb01",
+  "runtime": {
+    "manialab/expression.py": "06e616ae58ac704d69a55c7e826427f5ceb5471d5c33e24ab3746e4d1df0b450",
+    "manialab/expression_articulation.py": "039cebbdc07893384fee74d267107a76ba78284e789f082a7774ab96e3111192",
+    "manialab/timing.py": "6e8bf724db50aafd70af4fee9260d4bdee5ac6917c0063fb29fb6c854cb40e2b"
+  },
+  "generation_clock": {
+    "bpm": 74.0,
+    "offset": 178.0,
+    "division": 4,
+    "audio_shift_ms": 22.5
+  },
+  "settings": {
+    "keys": 10,
+    "density": 7.0,
+    "ln_ratio": 0.55,
+    "min_ln": 240,
+    "max_held": 5,
+    "release_gap": 55,
+    "chord_size": 4,
+    "pitch_follow": 0.55,
+    "balance": 0.8,
+    "jack_avoid": 0.8,
+    "seed": 42,
+    "onset_threshold": 0.45,
+    "frame_threshold": 0.3,
+    "focus": "balanced",
+    "phrase_ln": 0.65,
+    "layout_engine": "beam",
+    "pattern_prior": 0.35,
+    "drums_weight": 1.0,
+    "bass_weight": 1.0,
+    "vocals_weight": 0.0,
+    "other_weight": 1.0,
+    "guitar_weight": 1.0,
+    "piano_weight": 1.0,
+    "ln_coordination": 0.35,
+    "ln_release": 0.65,
+    "ln_inverse": 0.0
+  },
+  "cases": [
+    {
+      "name": "instrument-other-independent-6k",
+      "keys": 6,
+      "selected_drums": 324,
+      "omitted_drums": 202,
+      "individually_feasible": 60,
+      "constraints": {
+        "density": 142
+      },
+      "feasible_within_30ms": 55,
+      "input_hashes": {
+        "instrument-other-independent-6k-plan.json": "196a9b14fb0ed12f0a50afaf17d39e73ea23abdf9727919176574bdd71df8ded",
+        "instrument-other-independent-6k-selection.json": "7a207c984dc2ad47136244100d2e172d398f26465ea3b592557bec8eaf82df69",
+        "instrument-other-independent-6k-notes.json": "37829189e87eef19067001c3442fd4bdd535c6b5b43f1838989c4d7746582f54"
+      }
+    },
+    {
+      "name": "instrument-other-independent-7k",
+      "keys": 7,
+      "selected_drums": 324,
+      "omitted_drums": 202,
+      "individually_feasible": 60,
+      "constraints": {
+        "density": 142
+      },
+      "feasible_within_30ms": 55,
+      "input_hashes": {
+        "instrument-other-independent-7k-plan.json": "196a9b14fb0ed12f0a50afaf17d39e73ea23abdf9727919176574bdd71df8ded",
+        "instrument-other-independent-7k-selection.json": "7a207c984dc2ad47136244100d2e172d398f26465ea3b592557bec8eaf82df69",
+        "instrument-other-independent-7k-notes.json": "8c342d120991b44ba6b83158187960a3cd1150a85da1559a07e6ae8a7acd54a9"
+      }
+    },
+    {
+      "name": "instrument-other-independent-8k",
+      "keys": 8,
+      "selected_drums": 324,
+      "omitted_drums": 202,
+      "individually_feasible": 60,
+      "constraints": {
+        "density": 142
+      },
+      "feasible_within_30ms": 55,
+      "input_hashes": {
+        "instrument-other-independent-8k-plan.json": "196a9b14fb0ed12f0a50afaf17d39e73ea23abdf9727919176574bdd71df8ded",
+        "instrument-other-independent-8k-selection.json": "7a207c984dc2ad47136244100d2e172d398f26465ea3b592557bec8eaf82df69",
+        "instrument-other-independent-8k-notes.json": "b34a6bd3b31e449cacd0ed1d9b9c977c89876c90dca3cd35f98a2463d5474cda"
+      }
+    },
+    {
+      "name": "instrument-other-independent-9k",
+      "keys": 9,
+      "selected_drums": 324,
+      "omitted_drums": 202,
+      "individually_feasible": 60,
+      "constraints": {
+        "density": 142
+      },
+      "feasible_within_30ms": 55,
+      "input_hashes": {
+        "instrument-other-independent-9k-plan.json": "196a9b14fb0ed12f0a50afaf17d39e73ea23abdf9727919176574bdd71df8ded",
+        "instrument-other-independent-9k-selection.json": "7a207c984dc2ad47136244100d2e172d398f26465ea3b592557bec8eaf82df69",
+        "instrument-other-independent-9k-notes.json": "47164eb164605874d85b16d4ebd16ebcaad87b22d01c3a3f9b4838c2fd457f40"
+      }
+    },
+    {
+      "name": "instrument-other-independent-10k",
+      "keys": 10,
+      "selected_drums": 324,
+      "omitted_drums": 202,
+      "individually_feasible": 60,
+      "constraints": {
+        "density": 142
+      },
+      "feasible_within_30ms": 55,
+      "input_hashes": {
+        "instrument-other-independent-10k-plan.json": "196a9b14fb0ed12f0a50afaf17d39e73ea23abdf9727919176574bdd71df8ded",
+        "instrument-other-independent-10k-selection.json": "7a207c984dc2ad47136244100d2e172d398f26465ea3b592557bec8eaf82df69",
+        "instrument-other-independent-10k-notes.json": "b108f57c2a1038fc1cc5d01b77bbaa85813ce7238a44edc937968b3ac5e8c5aa"
+      }
+    }
+  ],
+  "charts_modified": false,
+  "reference_chart_used": false,
+  "musical_acceptance": false,
+  "notice": "Individual additive feasibility only. Feasible attacks may compete with each other; neither feasibility nor counts prove musical value.",
+  "validation": {
+    "independent_exhaustive_checks": 36,
+    "exclusive_one_second_boundary": true
+  }
+}

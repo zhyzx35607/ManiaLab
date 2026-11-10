@@ -1,0 +1,207 @@
+{
+  "code_sha256": {
+    "check_piano_release_semantics.py": "2fec212852ffd61c826079720e886e943c2b0623f791ef107b709c509f8c4370",
+    "piano.py": "57855e0888edef8dcc442aa2baee53fa04b97abea410924aa9d9403c55ba9947",
+    "domain.py": "52175bb4e65e7bb30c7304de7462e1907a6a8f3bfd01a775e7c9160de0e80635"
+  },
+  "cases": [
+    {
+      "name": "bach",
+      "activations_sha256": "27ed5212c72f4d0c7b6bdeb705a3eab981021953ca20e9cb2f35d8010e0fd547",
+      "old_notes_sha256": "9973201715e3ef07577a6b755978a20c0c608f7d885ec5acdb5af0e99bb7ceb1",
+      "events": 321,
+      "inactive_tails": 0,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "frame_decay": 67,
+        "release_regression": 223,
+        "reattack": 30,
+        "input_boundary": 1
+      }
+    },
+    {
+      "name": "bartok",
+      "activations_sha256": "f368ea297e2038be8bc9c908982c477a9a87ebebe3790737bd58f3b89b0aacb6",
+      "old_notes_sha256": "457a0c9a1d215fab0eafb25fac203eace462fe69fa175e63f21cf333b9d38be5",
+      "events": 961,
+      "inactive_tails": 24,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "frame_decay": 176,
+        "frame_inactive": 24,
+        "input_boundary": 15,
+        "release_regression": 634,
+        "reattack": 112
+      }
+    },
+    {
+      "name": "beethoven",
+      "activations_sha256": "f109fd8599703ee408ae0601d1c7f321449123567f5a09bad712efc90e57e450",
+      "old_notes_sha256": "ab461865c68cb7fe895f687271a858ab5eeaaee7adeab8978ef7598973a3c0e9",
+      "events": 427,
+      "inactive_tails": 2,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "frame_decay": 69,
+        "release_regression": 172,
+        "reattack": 180,
+        "input_boundary": 4,
+        "frame_inactive": 2
+      }
+    },
+    {
+      "name": "brahms",
+      "activations_sha256": "9a4e4fa1f40838f12cedc221ad2e603aaa72a7035e837ea1bc30e7d84decf9c3",
+      "old_notes_sha256": "cba49544db483584139636cbe932b8d803250e48dc2940d9e8dc41c5697055c4",
+      "events": 520,
+      "inactive_tails": 4,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "release_regression": 234,
+        "frame_decay": 102,
+        "reattack": 176,
+        "frame_inactive": 4,
+        "input_boundary": 4
+      }
+    },
+    {
+      "name": "chopin",
+      "activations_sha256": "d268023cc26612358fbda4362b020d81448d4c448ed8cbe7ae376f156f232040",
+      "old_notes_sha256": "ecbd52e20acc750cc2caf684b83183f628244a0b76ee1fe7d289d44ea16b6803",
+      "events": 352,
+      "inactive_tails": 1,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "reattack": 190,
+        "frame_decay": 41,
+        "release_regression": 108,
+        "input_boundary": 11,
+        "duration_limit": 1,
+        "frame_inactive": 1
+      }
+    },
+    {
+      "name": "haydn",
+      "activations_sha256": "afca061b904bdd275bb17fa553ad989d3211ced4d62dd637d338aaf30bb465c4",
+      "old_notes_sha256": "93a84a21334d4384ce29f189dd648bd5226aadc7eb4c91641064b11ca3743260",
+      "events": 770,
+      "inactive_tails": 3,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "release_regression": 640,
+        "frame_decay": 85,
+        "reattack": 34,
+        "input_boundary": 8,
+        "frame_inactive": 3
+      }
+    },
+    {
+      "name": "liszt",
+      "activations_sha256": "8be190a44dad66a1faecfa29390292fa9c3b920ba155c53bdd51c8ab6660e2af",
+      "old_notes_sha256": "dadcbd0e663015ff1e30caa8037bd9bed9ce9cf896ef8e011b8c09a58670a269",
+      "events": 332,
+      "inactive_tails": 2,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "reattack": 189,
+        "frame_decay": 57,
+        "release_regression": 67,
+        "input_boundary": 16,
+        "duration_limit": 1,
+        "frame_inactive": 2
+      }
+    },
+    {
+      "name": "mozart",
+      "activations_sha256": "f32df275a95d60bd3ba62de01dd7e523efebd0ce59d1ae543a4231f71af65434",
+      "old_notes_sha256": "b8f10fa7ad6ac0c4f2537d6a846312616412458eb0871f65ca0e6f9989709d44",
+      "events": 522,
+      "inactive_tails": 1,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "release_regression": 422,
+        "frame_decay": 36,
+        "reattack": 61,
+        "input_boundary": 2,
+        "frame_inactive": 1
+      }
+    },
+    {
+      "name": "rachmaninoff",
+      "activations_sha256": "91e89efb41a50c98d7bb36c3d9e8b83f5ce166cf7065d4495782bb030e9a20e4",
+      "old_notes_sha256": "10b24758d79863be2a30cebde682637a6f7b983c9a118f915d25ef987e668c0c",
+      "events": 686,
+      "inactive_tails": 13,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "frame_decay": 85,
+        "frame_inactive": 13,
+        "reattack": 312,
+        "input_boundary": 7,
+        "release_regression": 269
+      }
+    },
+    {
+      "name": "ravel",
+      "activations_sha256": "c4ec8721de5b8aae95e9eaabf3dc157ec33ea46d0a59e233d808288352279997",
+      "old_notes_sha256": "a1fec2051709aeacbfcc2ce673cff50ffed9033ee02d7eb7528ec3af1b4e965c",
+      "events": 791,
+      "inactive_tails": 4,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "frame_decay": 85,
+        "release_regression": 274,
+        "input_boundary": 6,
+        "frame_inactive": 4,
+        "reattack": 420,
+        "duration_limit": 2
+      }
+    },
+    {
+      "name": "skryabin",
+      "activations_sha256": "73af30d9459f1b5b9ae15a11226d0cc357fa0fdb5476f9fa4cc7027e8a7eb6b6",
+      "old_notes_sha256": "e258e5d0761e734e0504f84abd9b876f5b51ca87d26e838647b51380580b386f",
+      "events": 440,
+      "inactive_tails": 2,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "frame_decay": 94,
+        "release_regression": 184,
+        "reattack": 157,
+        "frame_inactive": 2,
+        "input_boundary": 3
+      }
+    },
+    {
+      "name": "sakura-nova-piano",
+      "activations_sha256": "51b6b39ad65390f34f23f38e1b4c9eead43ee90422f8d7eeccb2f4a2c11019ab",
+      "old_notes_sha256": "ceeba61540a821deec5629e7aedfa311d22460310def2122494de1fd542b121e",
+      "events": 1557,
+      "inactive_tails": 89,
+      "physical_events_identical": true,
+      "release_reasons": {
+        "frame_decay": 397,
+        "release_regression": 561,
+        "reattack": 510,
+        "frame_inactive": 89
+      },
+      "original_pcm_verified": true,
+      "application_candidates_identical": true,
+      "reclassified_from": {
+        "frame_decay": 89
+      }
+    }
+  ],
+  "events": 7679,
+  "inactive_tails": 145,
+  "physical_events_identical": true,
+  "frame_threshold": 0.1,
+  "onset_threshold": 0.3,
+  "offset_threshold": 0.3,
+  "model_rerun": false,
+  "reference_labels_read": false,
+  "musical_acceptance": false,
+  "note": "Frame absence is uncertainty, not proof of a false onset. No physical events were removed or moved.",
+  "local_report_sha256": "6b8e3a1e3109b8e39ddd906700e36978820038b3b92f83a468843bd832957d88",
+  "verified_artifacts": 15
+}

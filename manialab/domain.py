@@ -9,6 +9,15 @@ from string import Template
 from vendor.mapperatorinator.event import Event, EventType
 
 
+# These endings describe absent, exhausted or broken model context, not a supported
+# musical release. Preserve attacks and raw ends, but do not auto-create LNs.
+# Kong's bare "reattack" explicitly has release_observed=False: its prior-frame
+# cutoff is not an observed release. Basic Pitch's "same_pitch_reattack" retains
+# its separate, documented musical-boundary policy; do not conflate the labels.
+UNOBSERVED_RELEASES = frozenset(('duration_limit', 'input_boundary',
+    'forced_segment_boundary', 'unresolved_or_postprocessed', 'frame_inactive', 'reattack'))
+
+
 @dataclass
 class Note:
     start: int
@@ -25,6 +34,10 @@ class Note:
     support_coverage: float = 0.0
     evidence_start: int | None = None
     evidence_end: int | None = None
+    release_reason: str = ''
+    # Optional model-predicted instrument class, scoped by model (not a new
+    # isolated track or verified physical instrument). Empty means unknown.
+    instrument_id: str = ''
 
     @property
     def hold(self):
@@ -40,6 +53,9 @@ def note_from(data):
         raise ValueError("音符时间、轨道和音高必须是整数")
     if n.start < 0 or n.end < n.start or n.end > 24 * 3600 * 1000:
         raise ValueError("音符时间无效")
+    if (not isinstance(n.instrument_id, str) or len(n.instrument_id) > 128
+            or any(ord(c) < 32 for c in n.instrument_id)):
+        raise ValueError("音符的乐器标识无效")
     return n
 
 
@@ -134,7 +150,7 @@ def clean_meta(value):
 
 
 def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unknown", audio="audio.ogg",
-               bpm=120.0, offset=0.0, original=None, version="ManiaLab", creator="ManiaLab", grid_division=None):
+               bpm=120.0, offset=0.0, original=None, version="ManiaLab", creator="ManiaLab", grid_division=None, bookmarks=()):
     report = validate(notes, keys)
     if not report["valid"]:
         raise ValueError("谱面未通过结构校验：" + report["issues"][0])
@@ -166,6 +182,9 @@ def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unkno
         slider_multiplier=1.4, slider_tick_rate=1, background_line="",
         timing_points=f"{float(offset):.3f},{60000 / float(bpm):.8f},4,2,0,70,1,0", hit_objects="\n".join(lines))
     content = Template(template_path.read_text(encoding="utf-8")).substitute(substitutions)
+    # New charts must not inherit the template's placeholder bookmark, including
+    # songs with no internal section boundaries. Imported charts return above.
+    content = re.sub(r'(?m)^Bookmarks:.*$', 'Bookmarks: '+','.join(str(t) for t in sorted(set(bookmarks))), content)
     if grid_division is not None:
         from .timing import grid_report
         content = re.sub(r"(?m)^BeatDivisor:.*$", f"BeatDivisor: {grid_division}", content)
@@ -180,4 +199,4 @@ def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unkno
 
 
 def invariant(notes):
-    return Counter((n.id, n.start, n.end, n.raw) for n in notes)
+    return Counter((n.id, n.start, n.end, n.raw, n.instrument_id) for n in notes)

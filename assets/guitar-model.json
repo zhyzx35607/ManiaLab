@@ -1,0 +1,97 @@
+{
+  "name": "HF MIDI guitar FL transcription",
+  "publisher": "Xavier Riley (xavriley)",
+  "model_repository": "https://huggingface.co/xavriley/midi-transcription-models",
+  "model_revision": "b7bec65a2b860aca72856b0feef58b5df407b777",
+  "upstream_filename": "guitar-fl.pth",
+  "upstream_checkpoint_sha256": "50d93dba89bdd3401849bc735614478e83d9f46d21fa3f71d8aca5acc0a52028",
+  "checkpoint_iteration": 100000,
+  "source_repository": "https://github.com/qiuqiangkong/piano_transcription_inference",
+  "source_commit": "0226e74cbc805660e34bbd6a8fed2083890ebb88",
+  "source_model": "Regress_onset_offset_frame_velocity_CRNN",
+  "source_author": "Qiuqiang Kong",
+  "license": "MIT",
+  "license_basis": "Fixed upstream model-card metadata declares MIT; retained verbatim.",
+  "license_file": "licenses/HFGuitar-Model-Card.md",
+  "license_sha256": "e5717f0ce6570ecc9ad961e0ceaf6ab9c56f061eb497650132da7b4ceee3c2d8",
+  "source_license_declaration_file": "licenses/HFGuitar-Source-Setup.py.txt",
+  "source_license_declaration_sha256": "3d6fcb0cace324891df2eac75104d8bedabef9e38ab313eb7ed380b89f10eb7d",
+  "source_license_declaration": "Pinned setup.py declares MIT in its license classifier; no standalone LICENSE was present in the reviewed pinned source.",
+  "notice_file": "licenses/HFGuitar-NOTICE.txt",
+  "notice_sha256": "17227bbcf21a68190e85a263651bca3b54aeff9c6b32b0eadea4a6a8d9ab24f6",
+  "filename": "guitar-fl.onnx",
+  "sha256": "e02ee3b540717bcae07678764847f5e078213be12b1cba98400f091019df73f9",
+  "sample_rate": 16000,
+  "input_samples": 160000,
+  "output_names": [
+    "reg_onset_output",
+    "reg_offset_output",
+    "frame_output",
+    "velocity_output"
+  ],
+  "thresholds": {
+    "onset_threshold": 0.3,
+    "offset_threshold": 0.3,
+    "frame_threshold": 0.1
+  },
+  "modification": "Fixed batch-1, 10-second ONNX graph exported from the verified guitar FL checkpoint; no fine-tuning. ManiaLab provides float input handling, overlap stitching and event release provenance.",
+  "normalization": false,
+  "intended_source": "isolated labelled guitar stem",
+  "default_enabled": false,
+  "predicted_releases_default": false,
+  "research_validation": "docs/hf-guitar-specialists-results.md",
+  "portable_protocol": "docs/hf-guitar-portable-protocol.md",
+  "export_report_sha256": "050343d7b81341c80dad5dca1e560297a7881b314da6f89be07cae50df0dad01",
+  "validation": {
+    "original_int16_cases": 60,
+    "all_physical_activations_preserved": true,
+    "all_physical_events_preserved": true,
+    "all_scoring_counts_and_scopes_preserved": true,
+    "original_all_window_protocol_passed": false,
+    "original_onnx_independent_audit_sha256": "cafde9787d7173a5ddad013e09407050a261f5050ec8c004729da3a600caf117",
+    "float_inputs": {
+      "complete": true,
+      "derived_cases": 60,
+      "native_unlabelled_cases": 2,
+      "sampling_chain_identical_to_original": false,
+      "scoring_count_changed_cases": 2,
+      "report_sha256": "f171a555c81a09fab1e3886677415e6cd31d48ac90e91769fe648b9090222e78",
+      "independent_audit_sha256": "5810aaf83696dd50db0103edf4b32e9cd0ebe9a72556ad72073072fc7a7804d9"
+    },
+    "application_chain": {
+      "source_http": {
+        "completed": true,
+        "report_sha256": "24259b5ea7e2c9638f3d6c813c5e87418fd69bd80e39cc6f4bc5fceeae7de9dd",
+        "independent_audit_sha256": "901d865fa2c9d89078e580eeed5dc8903cc5d5de6caf3926881a0ba3eece855d",
+        "cases": 3,
+        "modes": 4,
+        "exports": 15,
+        "known_issue": "Template bookmark leaked on charts without internal sections; repaired and re-exported separately."
+      },
+      "bookmark_fix": {
+        "passed": true,
+        "report_sha256": "2fb766f0e621c3d0ae98f4e94b3a14d7c48a07278e3bb8c5d1d5a0353bebdbae",
+        "retained_variants": 13,
+        "earliest_two_variants": "Not retained in source project; full EXE check covers all 15 exports separately.",
+        "neural_inference": false
+      },
+      "musical_acceptance": false
+    },
+    "portable_runtime": {
+      "scope": "per executable; see the release validation attachment",
+      "musical_acceptance": false
+    },
+    "musical_acceptance": false,
+    "digital_silence": {
+      "seconds": 4,
+      "raw_events": 0,
+      "report_sha256": "9a058b923d4be9fb87fd3a59fd075714fb807c2b169153830c7b2a50396a3e56"
+    },
+    "browser_controls": {
+      "passed": true,
+      "neural_inference": false,
+      "report_sha256": "3fffa0af0dbfbac7059242e63d333bfb9107dc698580bf7543dcf14581d3fcb6"
+    }
+  },
+  "distribution_status": "Included in complete dev.4 builds; optional and disabled by default. Actual executable verification is recorded in the matching Release validation attachment. Earlier releases do not contain this model."
+}

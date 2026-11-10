@@ -22,12 +22,16 @@ from .timing import DIVISIONS, align_candidates, chart_clock_notes, grid_diagnos
 from .audio import analyze, analyze_deep
 from .audition import grid_events, render_audition, waveform_window
 from .separation import Separator
+from .provided_stems import ProvidedStemSeparator,prepare_provided_stems
+from .piano import PianoDetector
+from .guitar import GuitarDetector
+from .instrument_detector import InstrumentDetector
 from .voices import apply_phrase_evidence
 from .pattern_prior import prior_status
 from .review import review_chart
 from .ln_patterns import analyze_ln_patterns
 from .editing import edit_notes
-from .stems import stem_path
+from .stems import VOICES,stem_path
 from .style import describe_chart
 from .domain import clean_meta, export_osu, note_from, parse_osu, upstream_events, validate
 from .planner import plan
@@ -45,6 +49,9 @@ def create_app(resources, data_root):
     jobs = {}
     engine = MapperEngine(data_root, resources)
     separator = Separator(resources)
+    piano_detector = PianoDetector(resources)
+    guitar_detector = GuitarDetector(resources)
+    instrument_detector = InstrumentDetector(resources)
     app.extensions.update(projects=projects, jobs=jobs, executor=executor)
 
     @app.before_request
@@ -81,7 +88,8 @@ def create_app(resources, data_root):
     def status():
         return jsonify(version=__version__, defaults=DEFAULTS, projects=projects.recent(),
                        capabilities={"audio": True, "remap": True, "api_planner": True, "trained_10k": False},
-                       engine=engine.status(), separator=separator.status(), pattern_prior=prior_status())
+                       engine=engine.status(), separator=separator.status(), piano=piano_detector.status(),
+                       guitar=guitar_detector.status(), instruments=instrument_detector.status(), pattern_prior=prior_status())
 
     def busy(pid):
         if any(j["project"] == pid and j["status"] in ("queued", "running") for j in jobs.values()):
@@ -93,9 +101,14 @@ def create_app(resources, data_root):
         raise ValueError("项目没有音频；请导入包含音频的 .osz，或同时选择 .osu 与音频")
 
     def set_chart(state, relative):
+        previous_audio=state.get('audio')
         base = projects.path(state["id"]) / "files"
         source = safe_path(base, relative)
         parsed = parse_osu(source.read_text(encoding="utf-8-sig"))
+        from .structure import reference_marks
+        state['reference_marks'] = reference_marks(source.read_text(encoding='utf-8-sig'))
+        state.pop('expression', None)
+        state.pop('plan', None)
         state.update(mode="remap", original=relative, input_notes=[n.data() for n in parsed["notes"]],
                      title=parsed["metadata"].get("Title", source.stem), artist=parsed["metadata"].get("Artist", "Unknown"),
                      input_keys=parsed["keys"], input_timing=parsed["timing"], variants=[], active=-1)
@@ -109,6 +122,7 @@ def create_app(resources, data_root):
             pass
         else:
             state["audio"] = None
+        if state.get('audio')!=previous_audio:state.pop('provided_stems',None)
         state.pop("analysis", None)
         for file in ("activations.npz", "preview.wav"):
             (projects.path(state["id"]) / file).unlink(missing_ok=True)
@@ -184,13 +198,15 @@ def create_app(resources, data_root):
             projects.save(state)
             return jsonify(state)
 
-    def submit(pid, operation):
+    def submit(pid, operation, *, identity=None):
         with mutex:
             busy(pid)
             if any(j["status"] in ("queued", "running") for j in jobs.values()):
                 raise ValueError("已有计算任务运行，请完成后再启动新任务")
             jid = secrets.token_hex(10)
             job = dict(id=jid, project=pid, status="queued", progress=0, message="等待运行", cancel=False)
+            if identity is not None:
+                job['identity'] = identity
             jobs[jid] = job
             def progress(p, message):
                 with mutex:
@@ -226,19 +242,80 @@ def create_app(resources, data_root):
 
     @app.post("/api/projects/<pid>/analyze")
     def analyze_audio(pid):
-        prefs = parameters(request.json.get("settings", {}))
         payload = request.json
-        analysis_engine = request.json.get("engine", "basic")
-        if analysis_engine not in ("basic", "deep", "deep6"):
+        if not isinstance(payload,dict):
+            raise ValueError('采音请求必须是对象')
+        prefs = parameters(payload.get("settings", {}))
+        analysis_engine = payload.get("engine", "basic")
+        piano_engine = payload.get('piano_engine','general')
+        guitar_engine = payload.get('guitar_engine','general')
+        allow_guitar_releases = payload.get('allow_guitar_predicted_releases',False)
+        instrument_engine = payload.get('instrument_engine','general')
+        allow_releases = payload.get('allow_predicted_releases',False)
+        if analysis_engine not in ("basic", "deep", "deep6", "provided"):
             raise ValueError("采音引擎无效")
+        if piano_engine not in ('general','specialist'):
+            raise ValueError('钢琴采音方式无效')
+        if guitar_engine not in ('general','fl'):
+            raise ValueError('吉他采音方式无效')
+        if type(allow_guitar_releases) is not bool:
+            raise ValueError('吉他模型音尾选项必须是布尔值')
+        if allow_guitar_releases and guitar_engine!='fl':
+            raise ValueError('请先选择吉他专用采音，再启用吉他模型音尾')
+        if instrument_engine not in ('general','tsumugi'):
+            raise ValueError('贝斯与伴奏采音方式无效')
+        if type(allow_releases) is not bool:
+            raise ValueError('模型音尾选项必须是布尔值')
+        if allow_releases and instrument_engine!='tsumugi':
+            raise ValueError('请先选择贝斯与其他伴奏专用采音，再启用模型音尾')
+        if instrument_engine=='tsumugi':
+            if analysis_engine not in ('deep','deep6','provided'):
+                raise ValueError('专用采音需要分离或导入的贝斯、其他伴奏声轨')
+            if not instrument_detector.status()['available']:
+                raise ValueError('当前安装包未包含贝斯与其他伴奏专用组件')
+            if analysis_engine=='provided':
+                with mutex:
+                    provided=projects.load(pid).get('provided_stems',{})
+                    if not any(v in ('bass','other') for v in provided.get('voices',[])):
+                        raise ValueError('已导入声轨中没有贝斯或其他伴奏')
+        if guitar_engine=='fl':
+            if analysis_engine not in ('deep6','provided'):
+                raise ValueError('吉他专用采音需要六声部分离或已导入的吉他声轨')
+            if not guitar_detector.status()['available']:
+                raise ValueError('当前安装包未包含吉他专用采音模型')
+            if analysis_engine=='provided':
+                with mutex:
+                    provided=projects.load(pid).get('provided_stems',{})
+                    if 'guitar' not in provided.get('voices',[]):
+                        raise ValueError('已导入声轨中没有吉他')
+        if piano_engine=='specialist':
+            if analysis_engine not in ('deep6','provided'):
+                raise ValueError('钢琴专用采音需要六声部分离或已导入的钢琴声轨')
+            if not piano_detector.status()['available']:
+                raise ValueError('当前安装包未包含钢琴专用采音模型')
         def operation(state, progress, cancelled):
-            if analysis_engine in ('deep','deep6'):
+            if analysis_engine in ('deep','deep6','provided'):
+                selected_separator=(ProvidedStemSeparator(state.get('provided_stems')) if analysis_engine=='provided'
+                    else Separator(resources,'six') if analysis_engine=='deep6' else separator)
                 state["analysis"] = analyze_deep(current_audio(state), projects.path(pid), resources / "assets/basic-pitch.onnx",
-                    prefs, Separator(resources,'six') if analysis_engine=='deep6' else separator, progress, cancelled)
+                    prefs, selected_separator, progress, cancelled,
+                    piano_detector=piano_detector if piano_engine=='specialist' else None,
+                    guitar_detector=guitar_detector if guitar_engine=='fl' else None,
+                    allow_guitar_predicted_releases=allow_guitar_releases,
+                    instrument_detector=instrument_detector if instrument_engine=='tsumugi' else None,
+                    allow_predicted_releases=allow_releases)
             else:
                 state["analysis"] = analyze(current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx", prefs, progress, cancelled)
             state["settings"] = prefs
+            state['analysis_options'] = dict(engine=analysis_engine,piano_engine=piano_engine,
+                instrument_engine=instrument_engine,allow_predicted_releases=allow_releases,
+                guitar_engine=guitar_engine,allow_guitar_predicted_releases=allow_guitar_releases)
             state["audio_shift_ms"] = requested_shift(payload, state)
+            from .expression import propose_expression
+            if state['analysis'].get('structure'):
+                state['expression'] = propose_expression(state['analysis'], prefs)
+            else:
+                state.pop('expression', None)
             if state.get('plan',{}).get('source')=='local-audio-recommendation':
                 state.pop('plan',None)
             # Keep old variants selectable, but never mask a fresh timing result
@@ -246,7 +323,34 @@ def create_app(resources, data_root):
             if state["mode"] == "audio":
                 state["active"] = -1
             return {"candidates": len(state["analysis"]["candidates"])}
-        return submit(pid, operation)
+        return submit(pid, operation, identity=dict(engine=analysis_engine,piano_engine=piano_engine,
+            instrument_engine=instrument_engine,allow_predicted_releases=allow_releases,
+            guitar_engine=guitar_engine,allow_guitar_predicted_releases=allow_guitar_releases))
+
+    @app.post('/api/projects/<pid>/provided-stems')
+    def import_provided_stems(pid):
+        with mutex:
+            busy(pid)
+            if any(j['status'] in ('queued','running') for j in jobs.values()):
+                raise ValueError('已有计算任务运行，请完成后再导入声轨')
+            state=projects.load(pid);current_audio(state)
+            if not request.files or set(request.files)-set(VOICES):raise ValueError('请选择并标明声部文件')
+            # Preserve old sets and analyses; each upload has an isolated path.
+            folder=projects.path(pid)/'provided-uploads'/secrets.token_hex(16)
+            sources={}
+            for voice in request.files:
+                uploads=request.files.getlist(voice)
+                if len(uploads)!=1:raise ValueError('每个声部只能选择一个文件')
+                upload=uploads[0]
+                name=Path(upload.filename.replace('\\','/')).name
+                if Path(name).suffix.lower() not in AUDIO:raise ValueError('声部文件必须是音频')
+                target=safe_path(folder/voice,name);target.parent.mkdir(parents=True,exist_ok=True)
+                upload.save(target);sources[voice]=target
+            def operation(state,progress,cancelled):
+                report=prepare_provided_stems(current_audio(state),sources,projects.path(pid),progress,cancelled)
+                state['provided_stems']=report
+                return {'voices':report['voices'],'duration_seconds':report['duration_seconds']}
+            return submit(pid,operation)
 
     def requested_shift(payload, state):
         shift = float(payload.get("audio_shift_ms", state.get("audio_shift_ms", 0)))
@@ -315,12 +419,29 @@ def create_app(resources, data_root):
                 if state["analysis"].get("revision", 1) < 3:
                     raise ValueError("该项目使用旧版采音结果，请先点击「分析音频」更新拍线和 LN 候选；音高缓存会自动复用")
                 detected, phrases, weak_omitted = plan_evidence(state['analysis'],state.get('plan',{}))
-                evidence, phrase_report = apply_phrase_evidence([note_from(n) for n in detected],
-                    [note_from(n) for n in phrases], prefs["phrase_ln"], segment_preferences)
+                expression = None
+                if state['analysis'].get('structure'):
+                    from .expression import propose_expression, validate_expression, expression_evidence, select_expression
+                    expression = state.get('expression')
+                    if not expression or expression.get('source') == 'automatic':
+                        expression = propose_expression(state['analysis'], prefs)
+                    validate_expression(expression, state['analysis'])
+                    evidence, expression_meta, decisions = expression_evidence(state['analysis'], expression, prefs)
+                    phrase_report = dict(used=sum(n.phrase for n in evidence), explanation='由段落声部策略选择连续乐句表达')
+                    state['expression'] = expression
+                else:
+                    evidence, phrase_report = apply_phrase_evidence([note_from(n) for n in detected],
+                        [note_from(n) for n in phrases], prefs["phrase_ln"], segment_preferences)
                 candidates, alignment = align_candidates(chart_clock_notes(evidence, tempo["audio_shift_ms"]),
                     tempo, enabled=payload.get("snap", True) is True, confirmed=payload.get("timing_confirmed", False) is True)
-                progress(25, "比较全曲采音取舍，求解 LN 比例与未来占轨约束")
-                selected, selection = select_notes(candidates, prefs, segment_preferences)
+                progress(25, "按段落声部方案选择音组，检查完整持续音的占轨")
+                if expression:
+                    selected, selection = select_expression(candidates, expression_meta, decisions, prefs,
+                        60000/tempo['bpm'], segment_preferences)
+                    selection['expression'] = expression
+                    selection['structure'] = state['analysis']['structure']
+                else:
+                    selected, selection = select_notes(candidates, prefs, segment_preferences)
                 selection["phrases"] = phrase_report
                 selection['recommendation_weak_candidates_omitted']=weak_omitted
                 selection["alignment"] = alignment
@@ -450,6 +571,59 @@ def create_app(resources, data_root):
             result=recommend(state.get('analysis'),prefs,resources,payload.get('bpm'))
         return jsonify(result)
 
+    @app.post('/api/projects/<pid>/structure')
+    def music_structure(pid):
+        payload = request.get_json() or {}
+        def operation(state, progress, cancelled):
+            from .structure import detect_structure, edit_boundaries
+            from .expression import propose_expression
+            analysis = state.get('analysis')
+            if not analysis or 'duration' not in analysis:
+                raise ValueError('请先分析音频')
+            structure = analysis.get('structure', {})
+            action = payload.get('action', 'detect')
+            if action == 'detect':
+                from .audio import decode, SR
+                progress(10, '读取音频，比较音色、能量与声部活动变化')
+                samples = decode(current_audio(state), projects.path(pid))
+                structure = detect_structure(analysis, samples, SR)
+            elif action == 'bookmarks':
+                marks = state.get('reference_marks', {}).get('bookmarks', [])
+                if not marks:
+                    raise ValueError('当前导入谱面没有书签')
+                # Bookmarks use the chart clock; acoustic sections use audio.
+                shift = requested_shift(payload, state)
+                marks = [round(t+shift) for t in marks if 0 < t+shift < analysis['duration']*1000]
+                structure = edit_boundaries(structure, marks, analysis, 'reference-bookmarks')
+            elif action == 'edit':
+                structure = edit_boundaries(structure, payload.get('boundaries'), analysis)
+            else:
+                raise ValueError('分段操作无效')
+            analysis['structure'] = structure
+            analysis['segments'] = structure['segments']
+            state.pop('plan', None)
+            state['expression'] = propose_expression(analysis, parameters(state['settings'] | payload.get('settings', {})))
+            return dict(sections=len(structure['segments']))
+        return submit(pid, operation)
+
+    @app.post('/api/projects/<pid>/expression')
+    def source_expression(pid):
+        from .expression import validate_expression, propose_expression
+        payload = request.get_json() or {}
+        with mutex:
+            busy(pid)
+            state = projects.load(pid)
+            if not state.get('analysis', {}).get('structure'):
+                raise ValueError('请先检测音乐段落')
+            if payload.get('action') == 'automatic':
+                value = propose_expression(state['analysis'], parameters(state['settings'] | payload.get('settings', {})))
+            else:
+                value = validate_expression(payload.get('expression'), state['analysis'])
+                value = dict(value, source='manual')
+            state['expression'] = value
+            projects.save(state)
+        return jsonify(state)
+
     @app.post('/api/projects/<pid>/apply-recommendation')
     def apply_recommendation(pid):
         from .recommendations import recommend
@@ -462,11 +636,14 @@ def create_app(resources, data_root):
             if payload.get('evidence_signature')!=result['evidence_signature']:
                 raise ValueError('音频分析已经改变，请刷新建议后再选择')
             if payload.get('context_signature')!=result['context_signature']:
-                raise ValueError('建议的键数、BPM 或参考统计已经改变，请刷新建议后再选择')
+                raise ValueError('建议的键数、BPM、参考统计或生成规则已经改变，请刷新建议后再选择')
             option=next((o for o in result['options'] if o['id']==payload.get('choice')),None)
             if option is None:
                 raise ValueError('请选择已有的编排建议')
             state['settings']=parameters(prefs | option['preferences'])
+            if state.get('expression', {}).get('source') == 'automatic':
+                from .expression import propose_expression
+                state['expression'] = propose_expression(state['analysis'], state['settings'])
             state['plan']={k:option[k] for k in ('preferences','segments','explanation')}
             state['plan'].update(source='local-audio-recommendation',choice=option['id'],
                 evidence_signature=result['evidence_signature'],reference=result['reference'],
@@ -534,8 +711,10 @@ def create_app(resources, data_root):
                 text, model_notes, alignment = fixed_timing_output(text, tempo)
             parsed = parse_osu(text)
             selected = model_notes if tempo else parsed['notes']
-            assigned = assign_lanes(selected, prefs, timing_points=parsed["timing"],
-                                    progress=progress, cancelled=cancelled)
+            # This is the model comparison path. Reassigning every column here
+            # erases the learned LN layout before the user can inspect it.
+            # The ordinary remap action remains available after generation.
+            assigned = selected
             name = "Mapperatorinator-" + secrets.token_hex(4) + ".osu"
             (work / "files" / name).write_text(text, encoding="utf-8")
             state.update(original=name, input_notes=[n.data() for n in selected], input_keys=parsed["keys"], input_timing=parsed["timing"], mode="remap", settings=prefs)
@@ -546,7 +725,9 @@ def create_app(resources, data_root):
             report['review']=review_chart(assigned,prefs['keys'],beat,parsed['timing'])
             report['ln_patterns']=analyze_ln_patterns(assigned,prefs['keys'],beat,parsed['timing'])
             warnings = getattr(engine, "last_warnings", [])
-            message = "mania 模型输出已通过 LN 连续搜索重新定轨。此模型尚未进行 10K 专训。"
+            message = "已保留 mania 模型生成的键型。当前应用仍使用原版权重；需要重新定轨时可另行生成候选。"
+            if not report['valid']:
+                message += f" 原始键型存在 {report['issue_count']} 项结构冲突，请先检查或重新定轨。"
             if tempo:
                 report['grid'] = grid_report(assigned, tempo)
                 message += (f" 已按确认的 BPM / Offset 及细分量化模型输出：移动 {alignment['moved']} 个起点、"
@@ -556,7 +737,8 @@ def create_app(resources, data_root):
                 message += "\n原模型警告（可能包含未配对并被上游丢弃的 LN）：\n" + "\n".join(warnings)
             # Source reference is project-level, so discard variants belonging to an older source.
             state["variants"] = [dict(notes=[n.data() for n in assigned], settings=prefs, mode="remap", report=report,
-                selection={"message": message, "upstream_warnings": warnings, 'alignment': alignment},
+                selection={"message": message, "upstream_warnings": warnings, 'alignment': alignment,
+                           'layout_origin': 'mapperatorinator'},
                 bpm=tempo['bpm'] if tempo else 120, offset=tempo['offset'] if tempo else 0,
                 division=tempo.get('division',4) if tempo else 4,
                 audio_shift_ms=tempo.get('audio_shift_ms',0) if tempo else 0,
@@ -630,7 +812,8 @@ def create_app(resources, data_root):
             if not state.get("analysis") and state["active"] < 0:
                 raise ValueError("请先分析音频或生成候选，再下载分析 JSON")
             evidence = {"title": state["title"], "variant": state["variants"][state["active"]] if state["active"] >= 0 else None,
-                        "analysis": state.get("analysis"), "plan": state.get("plan"), "reference_style": state.get("reference_style")}
+                        "analysis": state.get("analysis"), "plan": state.get("plan"), "reference_style": state.get("reference_style"),
+                        "expression": state.get('expression'), "reference_marks": state.get('reference_marks')}
             return send_file(io.BytesIO(json.dumps(evidence, ensure_ascii=False, indent=2).encode()), download_name="ManiaLab-analysis.json", as_attachment=True, mimetype="application/json")
         if state["active"] < 0:
             raise ValueError("请先生成谱面")
@@ -648,7 +831,9 @@ def create_app(resources, data_root):
                              title=state["title"], artist=state["artist"], audio=state.get("audio") or "audio.ogg",
                              bpm=variant["bpm"], offset=variant["offset"], original=original,
                              grid_division=variant["division"] if variant["mode"] == "audio" else None,
-                             version=f'ManiaLab {variant["settings"]["seed"]}')
+                             version=f'ManiaLab {variant["settings"]["seed"]}',
+                             bookmarks=[max(0, round(t-variant.get('audio_shift_ms', 0))) for t in
+                                 variant.get('selection', {}).get('structure', {}).get('boundaries', [])[1:-1]])
         if variant.get('provided_timing'):
             from .upstream import verify_fixed_timing
             verify_fixed_timing(content, variant['provided_timing'])

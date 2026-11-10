@@ -1,0 +1,18 @@
+{
+  "name": "High-resolution Piano Transcription with Pedals by Regressing Onsets and Offsets Times",
+  "authors": ["Qiuqiang Kong", "Bochen Li", "Xuchen Song", "Yuan Wan", "Yuxuan Wang"],
+  "model_record": "https://zenodo.org/records/4034264",
+  "upstream_checkpoint_sha256": "c3fa9730725bf4a762f1c14bc80cd5986eacda01b026f5a4a2525cd607876141",
+  "source_commit": "0226e74cbc805660e34bbd6a8fed2083890ebb88",
+  "source_repository": "https://github.com/qiuqiangkong/piano_transcription_inference",
+  "license": "CC-BY-4.0",
+  "license_file": "licenses/PianoRegression-CC-BY-4.0.txt",
+  "modification": "Fixed batch-1, 10-second ONNX graph exported from the verified original weights; no fine-tuning. ManiaLab provides overlap stitching and release provenance.",
+  "filename": "piano-regression.onnx",
+  "sha256": "7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa",
+  "sample_rate": 16000,
+  "input_samples": 160000,
+  "intended_source": "isolated piano",
+  "default_enabled": false,
+  "research_validation": "docs/piano-acoustic-research.md"
+}

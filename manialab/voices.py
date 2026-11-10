@@ -10,7 +10,7 @@ from dataclasses import replace
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
 
-from .domain import Note
+from .domain import Note, UNOBSERVED_RELEASES
 
 
 def vocal_phrases(frames, times, samples, notes, sample_rate=22050, max_length_ms=6000):
@@ -46,13 +46,14 @@ def vocal_phrases(frames, times, samples, notes, sample_rate=22050, max_length_m
             split = lo + int(np.argmin(gaussian_filter1d(level[lo:hi + 1], 2)))
             if split <= begin:
                 break
-            result.extend(_phrase(begin, split, times, active, strength, notes, frame_ms))
+            result.extend(_phrase(begin, split, times, active, strength, notes, frame_ms,
+                                  release_reason='forced_segment_boundary'))
             begin = split
         result.extend(_phrase(begin, finish, times, active, strength, notes, frame_ms))
     return result
 
 
-def _phrase(begin, finish, times, active, strength, notes, frame_ms):
+def _phrase(begin, finish, times, active, strength, notes, frame_ms, *, release_reason=None):
     start = round(times[begin] * 1000)
     end = round(times[finish - 1] * 1000 + frame_ms)
     if end - start < 650:
@@ -69,8 +70,11 @@ def _phrase(begin, finish, times, active, strength, notes, frame_ms):
     start = anchor.start
     if end - start < 650:
         return []
+    if release_reason is None:
+        release_reason = 'input_boundary' if finish == len(times) else 'vocal_activity_decay'
     return [replace(anchor, end=end, voice="vocals", phrase=True,
                     support=tuple(n.id for n in support), support_coverage=round(coverage, 4),
+                    release_reason=release_reason,
                     strength=round(float(np.mean(strength[begin:finish])), 4))]
 
 
@@ -84,7 +88,8 @@ def apply_phrase_evidence(candidates, phrases, amount, segment_preferences=()):
     # A phrase is useful only when it carries an existing attack beyond its
     # single pitch. A capped phrase must never truncate a longer original LN.
     original = {n.id: n for n in candidates}
-    phrases = [n for n in phrases if n.id in original and n.end > original[n.id].end]
+    phrases = [n for n in phrases if n.id in original and n.end > original[n.id].end
+               and n.release_reason not in UNOBSERVED_RELEASES]
     if (amount <= 0 and not segment_preferences) or not phrases:
         return list(candidates), dict(available=len(phrases), used=0)
     groups = {}

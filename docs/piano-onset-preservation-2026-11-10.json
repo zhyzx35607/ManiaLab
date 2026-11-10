@@ -1,0 +1,701 @@
+{
+  "source_report_sha256": "4ab0ebc54b95860a89de0ff789674ce446c9e4b61b40489d1e4cc82fac4dfdb5",
+  "identity": {
+    "code": {
+      "runner": "006f5f6930e52cfd46c90f1da06c79bd6570ef8d18dc089fe9913869896d75f3",
+      "decoder": "dcb3a6d9289ee243998d1b1caa4bf5dc5cf124a339798007db66257c5e60eeab",
+      "control_matcher": "3c4e0ad970d87547ac8f36a363ea885d6bc6c0de0c3f163a8e58c106a828fa53",
+      "music_matcher": "1f3b4289ce25defac4af9613f5b3a75206d17319434fa475df8c22e552fb929f",
+      "nova_matcher": "f6ced96b677929c6c258fb878cfe440eeff57b627f1ccbabddc6d2ac5113b5dd",
+      "author_matcher": "c98d8cfbfa32a284c193ce8a83128c1930d82f1a10a9e68daa57dc8d242eeee0",
+      "domain": "52175bb4e65e7bb30c7304de7462e1907a6a8f3bfd01a775e7c9160de0e80635",
+      "protocol": "408bd1a0ca324ff2d0d671b7747f5d10404dd08b8587e942aebb638cbf03df42"
+    },
+    "reports": {
+      "controls": "46ec799e1e8e170d6e2cfa1fe0e36009249132d62db9acc886aa17a1328e88c0",
+      "music": "fe56f7006cba5bbe2e51cdcc1672f941f51428af4d3074c746f33adeb5780b9c"
+    },
+    "training_performed": false,
+    "new_inference_performed": false
+  },
+  "summary": {
+    "controls": {
+      "official": {
+        "expected": 170,
+        "predicted": 145,
+        "matched": 145,
+        "missing": 25,
+        "extra": 0
+      },
+      "preserved": {
+        "expected": 170,
+        "predicted": 145,
+        "matched": 145,
+        "missing": 25,
+        "extra": 0
+      }
+    },
+    "music": {
+      "50ms": {
+        "official": {
+          "matched": 4873,
+          "reference": 4990,
+          "predicted": 4886,
+          "precision": 0.9973393368808842,
+          "recall": 0.9765531062124249,
+          "f1": 0.9868367760226813
+        },
+        "preserved": {
+          "matched": 4875,
+          "reference": 4990,
+          "predicted": 4888,
+          "precision": 0.9973404255319149,
+          "recall": 0.9769539078156313,
+          "f1": 0.9870419113180806
+        },
+        "recovered": 2,
+        "new_missing": 0
+      },
+      "40ms": {
+        "official": {
+          "matched": 4873,
+          "reference": 4990,
+          "predicted": 4886,
+          "precision": 0.9973393368808842,
+          "recall": 0.9765531062124249,
+          "f1": 0.9868367760226813
+        },
+        "preserved": {
+          "matched": 4875,
+          "reference": 4990,
+          "predicted": 4888,
+          "precision": 0.9973404255319149,
+          "recall": 0.9769539078156313,
+          "f1": 0.9870419113180806
+        },
+        "recovered": 2,
+        "new_missing": 0
+      }
+    },
+    "additions": {
+      "controls": 0,
+      "music": 4
+    }
+  },
+  "checks": {
+    "known_two_recovered": true,
+    "controls_extra_not_increased": true,
+    "music_extra_not_increased": true
+  },
+  "nova": {
+    "candidates": {
+      "official": 1275,
+      "preserved": 1277
+    },
+    "author_onset_diagnostic": {
+      "official": {
+        "0.0": {
+          "onset_groups": {
+            "reference": 808,
+            "predicted": 817,
+            "matched": 707,
+            "precision": 0.8653610771113831,
+            "recall": 0.875,
+            "f1": 0.8701538461538462,
+            "mean_absolute_error_ms": [
+              30.707612281279694
+            ]
+          },
+          "note_multiplicity": {
+            "reference": 1038,
+            "predicted": 1275,
+            "matched": 865,
+            "precision": 0.6784313725490196,
+            "recall": 0.8333333333333334,
+            "f1": 0.7479463899697363,
+            "mean_absolute_error_ms": [
+              29.615722310994414
+            ]
+          },
+          "duration_notice": "Authored onset/layer diagnostic, not physical pitch or release truth."
+        },
+        "22.5": {
+          "onset_groups": {
+            "reference": 808,
+            "predicted": 817,
+            "matched": 804,
+            "precision": 0.9840881272949816,
+            "recall": 0.995049504950495,
+            "f1": 0.9895384615384616,
+            "mean_absolute_error_ms": [
+              10.252817941703482
+            ]
+          },
+          "note_multiplicity": {
+            "reference": 1038,
+            "predicted": 1275,
+            "matched": 976,
+            "precision": 0.7654901960784314,
+            "recall": 0.9402697495183044,
+            "f1": 0.8439256376999568,
+            "mean_absolute_error_ms": [
+              9.620277986020652
+            ]
+          },
+          "duration_notice": "Authored onset/layer diagnostic, not physical pitch or release truth."
+        }
+      },
+      "preserved": {
+        "0.0": {
+          "onset_groups": {
+            "reference": 808,
+            "predicted": 817,
+            "matched": 707,
+            "precision": 0.8653610771113831,
+            "recall": 0.875,
+            "f1": 0.8701538461538462,
+            "mean_absolute_error_ms": [
+              30.69760406065926
+            ]
+          },
+          "note_multiplicity": {
+            "reference": 1038,
+            "predicted": 1277,
+            "matched": 866,
+            "precision": 0.6781519185591229,
+            "recall": 0.8342967244701349,
+            "f1": 0.7481641468682505,
+            "mean_absolute_error_ms": [
+              29.610473719022607
+            ]
+          },
+          "duration_notice": "Authored onset/layer diagnostic, not physical pitch or release truth."
+        },
+        "22.5": {
+          "onset_groups": {
+            "reference": 808,
+            "predicted": 817,
+            "matched": 804,
+            "precision": 0.9840881272949816,
+            "recall": 0.995049504950495,
+            "f1": 0.9895384615384616,
+            "mean_absolute_error_ms": [
+              10.244017180536009
+            ]
+          },
+          "note_multiplicity": {
+            "reference": 1038,
+            "predicted": 1277,
+            "matched": 977,
+            "precision": 0.7650743931088488,
+            "recall": 0.941233140655106,
+            "f1": 0.844060475161987,
+            "mean_absolute_error_ms": [
+              9.613062186304573
+            ]
+          },
+          "duration_notice": "Authored onset/layer diagnostic, not physical pitch or release truth."
+        }
+      }
+    },
+    "acoustic_pitch_truth_available": false,
+    "acoustic_offset_truth_available": false
+  },
+  "per_recording": [
+    {
+      "scope": "music",
+      "name": "bach",
+      "added": 0,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 277,
+            "reference": 279,
+            "predicted": 277,
+            "precision": 1.0,
+            "recall": 0.992831541218638,
+            "f1": 0.9964028776978417
+          },
+          "preserved": {
+            "matched": 277,
+            "reference": 279,
+            "predicted": 277,
+            "precision": 1.0,
+            "recall": 0.992831541218638,
+            "f1": 0.9964028776978417
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 277,
+            "reference": 279,
+            "predicted": 277,
+            "precision": 1.0,
+            "recall": 0.992831541218638,
+            "f1": 0.9964028776978417
+          },
+          "preserved": {
+            "matched": 277,
+            "reference": 279,
+            "predicted": 277,
+            "precision": 1.0,
+            "recall": 0.992831541218638,
+            "f1": 0.9964028776978417
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "bartok",
+      "added": 0,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 764,
+            "reference": 815,
+            "predicted": 771,
+            "precision": 0.9909208819714657,
+            "recall": 0.9374233128834356,
+            "f1": 0.9634300126103404
+          },
+          "preserved": {
+            "matched": 764,
+            "reference": 815,
+            "predicted": 771,
+            "precision": 0.9909208819714657,
+            "recall": 0.9374233128834356,
+            "f1": 0.9634300126103404
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 764,
+            "reference": 815,
+            "predicted": 771,
+            "precision": 0.9909208819714657,
+            "recall": 0.9374233128834356,
+            "f1": 0.9634300126103404
+          },
+          "preserved": {
+            "matched": 764,
+            "reference": 815,
+            "predicted": 771,
+            "precision": 0.9909208819714657,
+            "recall": 0.9374233128834356,
+            "f1": 0.9634300126103404
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "beethoven",
+      "added": 0,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 323,
+            "reference": 328,
+            "predicted": 324,
+            "precision": 0.9969135802469136,
+            "recall": 0.9847560975609756,
+            "f1": 0.99079754601227
+          },
+          "preserved": {
+            "matched": 323,
+            "reference": 328,
+            "predicted": 324,
+            "precision": 0.9969135802469136,
+            "recall": 0.9847560975609756,
+            "f1": 0.99079754601227
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 323,
+            "reference": 328,
+            "predicted": 324,
+            "precision": 0.9969135802469136,
+            "recall": 0.9847560975609756,
+            "f1": 0.99079754601227
+          },
+          "preserved": {
+            "matched": 323,
+            "reference": 328,
+            "predicted": 324,
+            "precision": 0.9969135802469136,
+            "recall": 0.9847560975609756,
+            "f1": 0.99079754601227
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "brahms",
+      "added": 0,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 481,
+            "reference": 501,
+            "predicted": 482,
+            "precision": 0.9979253112033195,
+            "recall": 0.9600798403193613,
+            "f1": 0.9786368260427264
+          },
+          "preserved": {
+            "matched": 481,
+            "reference": 501,
+            "predicted": 482,
+            "precision": 0.9979253112033195,
+            "recall": 0.9600798403193613,
+            "f1": 0.9786368260427264
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 481,
+            "reference": 501,
+            "predicted": 482,
+            "precision": 0.9979253112033195,
+            "recall": 0.9600798403193613,
+            "f1": 0.9786368260427264
+          },
+          "preserved": {
+            "matched": 481,
+            "reference": 501,
+            "predicted": 482,
+            "precision": 0.9979253112033195,
+            "recall": 0.9600798403193613,
+            "f1": 0.9786368260427264
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "chopin",
+      "added": 0,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 251,
+            "reference": 257,
+            "predicted": 251,
+            "precision": 1.0,
+            "recall": 0.9766536964980544,
+            "f1": 0.9881889763779528
+          },
+          "preserved": {
+            "matched": 251,
+            "reference": 257,
+            "predicted": 251,
+            "precision": 1.0,
+            "recall": 0.9766536964980544,
+            "f1": 0.9881889763779528
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 251,
+            "reference": 257,
+            "predicted": 251,
+            "precision": 1.0,
+            "recall": 0.9766536964980544,
+            "f1": 0.9881889763779528
+          },
+          "preserved": {
+            "matched": 251,
+            "reference": 257,
+            "predicted": 251,
+            "precision": 1.0,
+            "recall": 0.9766536964980544,
+            "f1": 0.9881889763779528
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "haydn",
+      "added": 0,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 689,
+            "reference": 689,
+            "predicted": 689,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "preserved": {
+            "matched": 689,
+            "reference": 689,
+            "predicted": 689,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 689,
+            "reference": 689,
+            "predicted": 689,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "preserved": {
+            "matched": 689,
+            "reference": 689,
+            "predicted": 689,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "liszt",
+      "added": 0,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 152,
+            "reference": 153,
+            "predicted": 152,
+            "precision": 1.0,
+            "recall": 0.9934640522875817,
+            "f1": 0.9967213114754099
+          },
+          "preserved": {
+            "matched": 152,
+            "reference": 153,
+            "predicted": 152,
+            "precision": 1.0,
+            "recall": 0.9934640522875817,
+            "f1": 0.9967213114754099
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 152,
+            "reference": 153,
+            "predicted": 152,
+            "precision": 1.0,
+            "recall": 0.9934640522875817,
+            "f1": 0.9967213114754099
+          },
+          "preserved": {
+            "matched": 152,
+            "reference": 153,
+            "predicted": 152,
+            "precision": 1.0,
+            "recall": 0.9934640522875817,
+            "f1": 0.9967213114754099
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "mozart",
+      "added": 0,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 424,
+            "reference": 424,
+            "predicted": 424,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "preserved": {
+            "matched": 424,
+            "reference": 424,
+            "predicted": 424,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 424,
+            "reference": 424,
+            "predicted": 424,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "preserved": {
+            "matched": 424,
+            "reference": 424,
+            "predicted": 424,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "rachmaninoff",
+      "added": 0,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 505,
+            "reference": 523,
+            "predicted": 506,
+            "precision": 0.9980237154150198,
+            "recall": 0.9655831739961759,
+            "f1": 0.9815354713313897
+          },
+          "preserved": {
+            "matched": 505,
+            "reference": 523,
+            "predicted": 506,
+            "precision": 0.9980237154150198,
+            "recall": 0.9655831739961759,
+            "f1": 0.9815354713313897
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 505,
+            "reference": 523,
+            "predicted": 506,
+            "precision": 0.9980237154150198,
+            "recall": 0.9655831739961759,
+            "f1": 0.9815354713313897
+          },
+          "preserved": {
+            "matched": 505,
+            "reference": 523,
+            "predicted": 506,
+            "precision": 0.9980237154150198,
+            "recall": 0.9655831739961759,
+            "f1": 0.9815354713313897
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "ravel",
+      "added": 1,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 655,
+            "reference": 665,
+            "predicted": 657,
+            "precision": 0.9969558599695586,
+            "recall": 0.9849624060150376,
+            "f1": 0.9909228441754917
+          },
+          "preserved": {
+            "matched": 656,
+            "reference": 665,
+            "predicted": 658,
+            "precision": 0.9969604863221885,
+            "recall": 0.9864661654135338,
+            "f1": 0.9916855631141346
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 655,
+            "reference": 665,
+            "predicted": 657,
+            "precision": 0.9969558599695586,
+            "recall": 0.9849624060150376,
+            "f1": 0.9909228441754917
+          },
+          "preserved": {
+            "matched": 656,
+            "reference": 665,
+            "predicted": 658,
+            "precision": 0.9969604863221885,
+            "recall": 0.9864661654135338,
+            "f1": 0.9916855631141346
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "skryabin",
+      "added": 1,
+      "onset_outside_input": 0,
+      "scores": {
+        "50ms": {
+          "official": {
+            "matched": 352,
+            "reference": 356,
+            "predicted": 353,
+            "precision": 0.9971671388101983,
+            "recall": 0.9887640449438202,
+            "f1": 0.9929478138222849
+          },
+          "preserved": {
+            "matched": 353,
+            "reference": 356,
+            "predicted": 354,
+            "precision": 0.9971751412429378,
+            "recall": 0.9915730337078652,
+            "f1": 0.9943661971830986
+          }
+        },
+        "40ms": {
+          "official": {
+            "matched": 352,
+            "reference": 356,
+            "predicted": 353,
+            "precision": 0.9971671388101983,
+            "recall": 0.9887640449438202,
+            "f1": 0.9929478138222849
+          },
+          "preserved": {
+            "matched": 353,
+            "reference": 356,
+            "predicted": 354,
+            "precision": 0.9971751412429378,
+            "recall": 0.9915730337078652,
+            "f1": 0.9943661971830986
+          }
+        }
+      }
+    },
+    {
+      "scope": "music",
+      "name": "sakura-nova-piano",
+      "added": 2,
+      "onset_outside_input": 0,
+      "scores": {}
+    }
+  ],
+  "application_enabled": false,
+  "training_performed": false,
+  "new_inference_performed": false,
+  "musical_acceptance": false
+}

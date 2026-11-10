@@ -113,6 +113,7 @@ def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_p
             ROOT/'vendor/mapperatorinator/template.osu',bpm=tempo['bpm'],offset=tempo['offset']),encoding='utf-8')
         return target
     monkeypatch.setattr(MapperEngine,'generate',model)
+    monkeypatch.setattr('manialab.server.assign_lanes',lambda *a,**k:pytest.fail('Model layout was overwritten'))
     payload=dict(use_timing=True,bpm=120,offset=93,division=4,audio_shift_ms=22.5,settings={'keys':10})
     try:
         rejected=wait_job(client,client.post(base+'/engine-generate',json=payload,headers=headers).json)
@@ -125,6 +126,8 @@ def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_p
         assert v['report']['grid']['off_grid']==0
         assert v['selection']['alignment']['moved']==2 and v['division']==4
         assert v['notes'][0]['evidence_start']==1092
+        assert [n['lane'] for n in v['notes']]==[0,1]
+        assert v['selection']['layout_origin']=='mapperatorinator'
         exported=parse_osu(client.get(base+'/export/osu').data.decode())
         assert [(n.start,n.end) for n in exported['notes']]==[(1093,2093),(2593,2593)]
         assert '93.000,500.00000000,4,2,0,70,1,0' in exported['timing']
@@ -133,6 +136,31 @@ def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_p
         projects.save(saved)
         response=client.get(base+'/export/osu')
         assert response.status_code==400 and '落线' in response.json['error']
+    finally:app.extensions['executor'].shutdown()
+
+
+def test_original_model_conflicts_are_reported_without_silent_reassignment(tmp_path,monkeypatch):
+    from manialab.upstream import MapperEngine
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    projects=Projects(tmp_path/'projects')
+    state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=state['id'];base=f'/api/projects/{pid}'
+    (projects.path(pid)/'preview.wav').write_bytes(b'placeholder')
+    def model(self,audio,output,prefs,progress,cancelled,seconds,tempo):
+        text=export_osu([Note(1000,4000,0),Note(2000,2000,1)],10,ROOT/'vendor/mapperatorinator/template.osu')
+        text=text.replace('76,192,2000,1,','25,192,2000,1,')
+        output.mkdir();target=output/'generated.osu';target.write_text(text,encoding='utf-8')
+        return target
+    monkeypatch.setattr(MapperEngine,'generate',model)
+    monkeypatch.setattr('manialab.server.assign_lanes',lambda *a,**k:pytest.fail('Model conflict was hidden'))
+    try:
+        result=wait_job(client,client.post(base+'/engine-generate',json={'settings':{'keys':10}},headers=headers).json)
+        assert result['status']=='done',result
+        variant=client.get(base).json['variants'][0]
+        assert not variant['report']['valid']
+        assert [n['lane'] for n in variant['notes']]==[0,0]
+        assert '结构冲突' in variant['selection']['message']
+        assert client.get(base+'/export/osu').status_code==400
     finally:app.extensions['executor'].shutdown()
 
 

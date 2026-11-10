@@ -46,13 +46,83 @@ def test_confirmed_timing_context_is_passed_but_never_returned_as_generated_char
         return ''
     monkeypatch.setattr(engine,'run',run)
     result=engine.generate(tmp_path/'input.wav',output,parameters(),lambda *a:None,lambda:False,
-                           tempo=dict(bpm=210,offset=93))
+                           tempo=dict(bpm=210,offset=93),seconds=12,start_ms=24000)
     assert result.name=='generated.osu'
     assert 'in_context=[TIMING]' in seen and 'output_type=[MAP]' in seen
+    assert 'start_time=24000' in seen and 'end_time=36000' in seen
     ref=sections((output/'timing-context.osu').read_text(encoding='utf-8'))
     assert not any(line.strip() for line in ref.get('HitObjects', []))
     red=next(line for line in ref['TimingPoints'] if line.strip()).split(',')
     assert float(red[0])==93 and abs(float(red[1])-60000/210)<1e-7
+
+
+def test_experimental_adapter_preserves_reference_meter_changes_without_notes(tmp_path,monkeypatch):
+    engine=MapperEngine(tmp_path,ROOT)
+    monkeypatch.setattr(engine,'status',lambda:dict(installed=True,model_downloaded=True))
+    monkeypatch.setattr('manialab.audio.run_hidden',lambda *a,**k:subprocess.CompletedProcess(a,0))
+    reference=tmp_path/'human.osu'
+    original=export_osu([Note(1000,5000,1)],10,ROOT/'vendor/mapperatorinator/template.osu',bpm=70,offset=189)
+    parts=sections(original)
+    timing=['189,857.142857142857,3,2,1,30,1,0','45323,631.578947368421,4,2,1,30,1,1']
+    original=original.replace('\n'.join(parts['TimingPoints']), '\n'.join(timing))
+    reference.write_text(original,encoding='utf-8')
+    adapter=tmp_path/'adapter';adapter.mkdir()
+    for name in ('adapter_config.json','adapter_model.safetensors'):(adapter/name).touch()
+    output=tmp_path/'generated';seen=[]
+    def run(argv,*args):
+        seen.extend(argv)
+        (output/'result.osu').write_text(original,encoding='utf-8')
+        return ''
+    monkeypatch.setattr(engine,'run',run)
+    result=engine.generate(tmp_path/'input.wav',output,parameters(),lambda *a:None,lambda:False,
+                           timing_reference=reference,lora_path=adapter,difficulty=3.75,
+                           conditioning={'add_year_token':False,'add_song_position_token':False})
+    context=sections((output/'timing-context.osu').read_text(encoding='utf-8'))
+    assert [x for x in context['TimingPoints'] if x.strip()]==timing
+    assert not any(x.strip() for x in context.get('HitObjects', []))
+    assert any(str(x).startswith('lora_path=') and adapter.as_posix() in str(x) for x in seen)
+    assert 'difficulty=3.75' in seen
+    assert 'train.data.add_year_token=false' in seen and 'train.data.add_song_position_token=false' in seen
+    assert result.name=='result.osu'
+    with pytest.raises(ValueError,match='不能同时'):
+        engine.generate('',output,parameters(),lambda *a:None,lambda:False,tempo={},timing_reference=reference)
+
+
+def test_arrangement_context_is_explicit_and_never_returned_as_prediction(tmp_path,monkeypatch):
+    engine=MapperEngine(tmp_path,ROOT)
+    monkeypatch.setattr(engine,'status',lambda:dict(installed=True,model_downloaded=True))
+    monkeypatch.setattr('manialab.audio.run_hidden',lambda *a,**k:subprocess.CompletedProcess(a,0))
+    original=export_osu([Note(1000,1000,4),Note(1500,2500,6)],10,
+        ROOT/'vendor/mapperatorinator/template.osu',bookmarks=[1000,5000],creator='private mapper')
+    reference=tmp_path/'sketch.osu';reference.write_text(original,encoding='utf-8')
+    output=tmp_path/'out';seen=[]
+    def run(argv,*args):
+        seen.extend(argv)
+        (output/'prediction.osu').write_text(original,encoding='utf-8')
+        return 'ManiaLab sketch context active: 20 events; map-delimited-sketch-v1\nManiaLab research event constraints active: mania-event-state-v1'
+    monkeypatch.setattr(engine,'run',run)
+    result=engine.generate(tmp_path/'input.wav',output,parameters({'keys':10}),lambda *a:None,lambda:False,
+        arrangement_reference=reference,sketch_codec='map-delimited-sketch-v1')
+    assert result.name=='prediction.osu' and 'in_context=[TIMING,GD]' in seen
+    assert any(str(v).startswith('train.data.context_types=') and '${context_type:gd}' in str(v) for v in seen)
+    content=(output/'arrangement-context.osu').read_text(encoding='utf-8')
+    assert [(n.start,n.end,n.lane) for n in parse_osu(content)['notes']]==[(1000,1000,4),(1500,2500,6)]
+    assert 'Bookmarks: 1000,5000' not in content and 'private mapper' not in content
+    assert '--mania-event-state=mania-event-state-v1' not in seen
+    engine.generate(tmp_path/'input.wav',output,parameters({'keys':10}),lambda *a:None,lambda:False,
+        arrangement_reference=reference,sketch_codec='map-delimited-sketch-v1',state_constraints=True)
+    assert '--mania-event-state=mania-event-state-v1' in seen
+    with pytest.raises(ValueError,match='实验事件约束'):
+        engine.generate('',output,parameters(),lambda *a:None,lambda:False,state_constraints=True)
+    with pytest.raises(ValueError,match='不原生支持'):
+        engine.generate('',output,parameters(),lambda *a:None,lambda:False,arrangement_reference=reference)
+    monkeypatch.setattr(engine,'run',lambda *a:'')
+    with pytest.raises(ValueError,match='拒绝'):
+        engine.generate('',output,parameters(),lambda *a:None,lambda:False,
+            arrangement_reference=reference,sketch_codec='map-delimited-sketch-v1')
+    with pytest.raises(ValueError,match='不能同时'):
+        engine.generate('',output,parameters(),lambda *a:None,lambda:False,
+            arrangement_reference=reference,timing_reference=reference)
 
 
 @pytest.mark.skipif(os.name!='nt',reason='Windows venv process trees')

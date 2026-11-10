@@ -1,0 +1,2120 @@
+{
+  "source": {
+    "controls_report_sha256": "46ec799e1e8e170d6e2cfa1fe0e36009249132d62db9acc886aa17a1328e88c0",
+    "music_report_sha256": "fe56f7006cba5bbe2e51cdcc1672f941f51428af4d3074c746f33adeb5780b9c",
+    "summarizer_sha256": "27239ebcc238ec8d3b63cc4235208b0c30cad7361efbfb2eb5647ac1ac457094",
+    "model": {
+      "commit": "c5cb8370e17b4a1650b5971ba87ee4b0d208e5b6",
+      "model_sha256": "50a80010effc2a59ffcd068a95cd2b29bd7f23a27a3515bc3ccd209c89a3d44c",
+      "acquisition_sha256": "3ebfede9c13ff9237a741f3d0b7d836405f608995a71900c1852fad0aeaf1ad3",
+      "config_sha256": "d3d989214eb148230ee5df476d994dcde6af595904d3f968f1221d2e3bea5ac6",
+      "source_hashes": {
+        ".gitignore": "6e1d6690da0b03d29c7c6fe524a62e633b987f9265e3ba4dd3e6a769d922fe0d",
+        "LICENSE": "7662b6b4acfb7090612b946c1f427d8c7b591cda7d7a16139aed4eb66d20b066",
+        "README.md": "814f9dbf073058f754e3ddd4b1230eaa3951d2748de04aa81bf21a0659143f66",
+        "assets/exampleDev.png": "ef23107e72983be9dff2d49f2388cc34a0003e703c36eba76ae1e288ae6bb935",
+        "requirements.txt": "fbc06363948b420deaab65ed06c05784ab2b74d22bb89ef882bf79d01b110196",
+        "setup.py": "ea7d1858e1eb607eb9d99b19581be65c884a7baf7647fbe701bed0f57c198bbb",
+        "transkun/CRF/NeuralSemiCRFInterval.py": "deedcd96d54dcda0ad7530f99ece006c38385b47b3d7585694f36c1e077b0b63",
+        "transkun/CRF/__init__.py": "5f6c080079be73a235dd44c2ac889d82b72471cd0ebb7630210e92a8e30cd38d",
+        "transkun/Data.py": "ecf8cbcf5fff1f7c09e18b232265ce6348fed91201b3436adfe0a480ba606931",
+        "transkun/Evaluation.py": "1ea60493ebb9012e51191d9d216295ffe40cfeb08961f19319f40993ae83b55c",
+        "transkun/LayersTransformer.py": "e58aaf7d4f35211180223a02221a223bc004ba47b240e7d0d78a282e73453648",
+        "transkun/Layers_ablation.py": "11e3c0746944a6aa3a0033623ed77776ef1ab84e23bf5c2f21381377ceeb23d9",
+        "transkun/ModelTransformer.py": "58470f5764fabde0636a13fda7c42a95129db4d2203c2ea8f818e52b9375cfa8",
+        "transkun/Model_ablation.py": "9a63632708374fbbfadcc2ddd3773e91ace2f0b3b7a54cc27c1f77e4b88dbb97",
+        "transkun/SyncBN.py": "cee23ac1ff26a9af2c8f9d8650eccaef124de7239f345397372a00eae2e702e1",
+        "transkun/TrainUtil.py": "339508507801c54ab4beea9f7f9d61270045d561e23c83742848f855323fa9cc",
+        "transkun/Util.py": "e681ebc8a53dd94bffa430962b7619acff0dd2022d486f70ab313952382f0434",
+        "transkun/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "transkun/computeMetrics.py": "98352091b0890cfd8862e9d9fabeda7df664b373c00c0f8dd2a35ac7829c8e69",
+        "transkun/createDatasetMaestro.py": "f0fe67e46241e7a658bab85383969b1184b1c086ee2f47c0380bea3fb4b8986e",
+        "transkun/crfMinimalExample.py": "9aad26acc91f7267b4a5e2523a995bc828e7284df18ed205fa2c4558deffb427",
+        "transkun/plotDeviation.py": "3a5530303a45676d5aaa5b78984a13c055237f7888583611e5f7f76288091a11",
+        "transkun/pretrained/2.0.conf": "d3d989214eb148230ee5df476d994dcde6af595904d3f968f1221d2e3bea5ac6",
+        "transkun/pretrained/2.0.pt": "50a80010effc2a59ffcd068a95cd2b29bd7f23a27a3515bc3ccd209c89a3d44c",
+        "transkun/pretrained/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "transkun/train.py": "e4f6e537806340d0e0a9b346d18ca316cbfd7328858c3e9a82b5c1d42e8d361a",
+        "transkun/transcribe.py": "d2f2ccddb64ff52cf3eb0e4e99ab0324ac7850a064941d44db794b9c6c1baa89"
+      },
+      "state_key": "state_dict",
+      "state_entries": 184,
+      "parameters": 13613711,
+      "config": {
+        "f_min": 30,
+        "f_max": 8000,
+        "n_mels": 229,
+        "segmentHopSizeInSecond": 8,
+        "segmentSizeInSecond": 16,
+        "hopSize": 1024,
+        "windowSize": 4096,
+        "fs": 44100,
+        "nExtraWins": 5,
+        "baseSize": 64,
+        "downsampleF": true,
+        "posEmbedInitGamma": 1,
+        "nHead": 8,
+        "fourierSize": 64,
+        "nLayers": 6,
+        "enabledAttn": [
+          "F",
+          "T"
+        ],
+        "hiddenFactorAttn": 1,
+        "hiddenFactor": 4,
+        "velocityPredictorHiddenSize": 512,
+        "refinedOFPredictorHiddenSize": 512,
+        "scoringExpansionFactor": 4,
+        "useInnerProductScorer": true,
+        "scoreDropoutProb": 0.1,
+        "contextDropoutProb": 0.0,
+        "velocityDropoutProb": 0.1,
+        "refinedOFDropoutProb": 0.1
+      },
+      "strict_load": true,
+      "environment": {
+        "torch": "2.9.1+cpu",
+        "torchaudio": "2.9.1+cpu",
+        "numpy": "2.3.5",
+        "scipy": "1.17.0",
+        "pretty_midi": "0.2.11",
+        "mir_eval": "0.8.2",
+        "mido": "1.3.3",
+        "six": "1.17.0",
+        "importlib_resources": "6.5.2",
+        "decorator": "5.2.1"
+      },
+      "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+      "intra_op_threads": 2,
+      "inter_op_threads": 1,
+      "device": "cpu"
+    },
+    "protocols": {
+      "controls": "acd1545ce7098e30274f27a3a1f24c9a061d8a223d61f63855564fde446afe68",
+      "music": "adcca4759d6ae9087e077dcc5c00c522b19b9fc242e087e1b56ec10b67c79f4a"
+    }
+  },
+  "controls": {
+    "cases": 91,
+    "totals": {
+      "kong": {
+        "expected": 170,
+        "predicted": 238,
+        "matched": 162,
+        "missing": 8,
+        "extra": 76
+      },
+      "transkun": {
+        "expected": 170,
+        "predicted": 145,
+        "matched": 145,
+        "missing": 25,
+        "extra": 0
+      }
+    },
+    "conditions": {
+      "silence": {
+        "cases": 1,
+        "kong": {
+          "expected": 0,
+          "matched": 0,
+          "missing": 0,
+          "extra": 0
+        },
+        "transkun": {
+          "expected": 0,
+          "matched": 0,
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      "single": {
+        "cases": 18,
+        "kong": {
+          "expected": 18,
+          "matched": 18,
+          "missing": 0,
+          "extra": 11
+        },
+        "transkun": {
+          "expected": 18,
+          "matched": 16,
+          "missing": 2,
+          "extra": 0
+        }
+      },
+      "simultaneous": {
+        "cases": 16,
+        "kong": {
+          "expected": 32,
+          "matched": 32,
+          "missing": 0,
+          "extra": 16
+        },
+        "transkun": {
+          "expected": 32,
+          "matched": 32,
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      "weak_high": {
+        "cases": 16,
+        "kong": {
+          "expected": 32,
+          "matched": 24,
+          "missing": 8,
+          "extra": 16
+        },
+        "transkun": {
+          "expected": 32,
+          "matched": 18,
+          "missing": 14,
+          "extra": 0
+        }
+      },
+      "delayed_high": {
+        "cases": 16,
+        "kong": {
+          "expected": 32,
+          "matched": 32,
+          "missing": 0,
+          "extra": 17
+        },
+        "transkun": {
+          "expected": 32,
+          "matched": 32,
+          "missing": 0,
+          "extra": 0
+        }
+      },
+      "repeated_high": {
+        "cases": 16,
+        "kong": {
+          "expected": 48,
+          "matched": 48,
+          "missing": 0,
+          "extra": 15
+        },
+        "transkun": {
+          "expected": 48,
+          "matched": 40,
+          "missing": 8,
+          "extra": 0
+        }
+      },
+      "quiet_single": {
+        "cases": 8,
+        "kong": {
+          "expected": 8,
+          "matched": 8,
+          "missing": 0,
+          "extra": 1
+        },
+        "transkun": {
+          "expected": 8,
+          "matched": 7,
+          "missing": 1,
+          "extra": 0
+        }
+      }
+    },
+    "new_misses": 17,
+    "recovered": 0,
+    "checks": {
+      "weak_mixture_misses_reduced": false,
+      "no_new_misses": false,
+      "total_extra_not_increased": true,
+      "silence_empty": true
+    },
+    "seconds": 1702.433000000543,
+    "wrapper_verification_passed": true
+  },
+  "music": {
+    "summary": {
+      "recordings": 11,
+      "models": {
+        "50ms": {
+          "kong": {
+            "pooled": {
+              "matched": 4766,
+              "reference": 4990,
+              "predicted": 5005,
+              "precision": 0.9522477522477523,
+              "recall": 0.9551102204408818,
+              "f1": 0.9536768384192096
+            },
+            "macro_f1": 0.9582111130225102,
+            "per_recording_f1": {
+              "bach": 0.992831541218638,
+              "bartok": 0.8795107033639143,
+              "beethoven": 0.9815384615384616,
+              "brahms": 0.9375639713408394,
+              "chopin": 0.9391634980988594,
+              "haydn": 0.9956458635703919,
+              "liszt": 0.9463722397476341,
+              "mozart": 0.9988221436984688,
+              "rachmaninoff": 0.9376181474480151,
+              "ravel": 0.9712556732223904,
+              "skryabin": 0.96
+            }
+          },
+          "transkun": {
+            "pooled": {
+              "matched": 4873,
+              "reference": 4990,
+              "predicted": 4886,
+              "precision": 0.9973393368808842,
+              "recall": 0.9765531062124249,
+              "f1": 0.9868367760226813
+            },
+            "macro_f1": 0.9890530617768825,
+            "per_recording_f1": {
+              "bach": 0.9964028776978417,
+              "bartok": 0.9634300126103404,
+              "beethoven": 0.99079754601227,
+              "brahms": 0.9786368260427264,
+              "chopin": 0.9881889763779528,
+              "haydn": 1.0,
+              "liszt": 0.9967213114754099,
+              "mozart": 1.0,
+              "rachmaninoff": 0.9815354713313897,
+              "ravel": 0.9909228441754917,
+              "skryabin": 0.9929478138222849
+            }
+          }
+        },
+        "40ms": {
+          "kong": {
+            "pooled": {
+              "matched": 4765,
+              "reference": 4990,
+              "predicted": 5005,
+              "precision": 0.952047952047952,
+              "recall": 0.9549098196392786,
+              "f1": 0.9534767383691846
+            },
+            "macro_f1": 0.9580791694943404,
+            "per_recording_f1": {
+              "bach": 0.992831541218638,
+              "bartok": 0.8795107033639143,
+              "beethoven": 0.9815384615384616,
+              "brahms": 0.9375639713408394,
+              "chopin": 0.9391634980988594,
+              "haydn": 0.9941944847605225,
+              "liszt": 0.9463722397476341,
+              "mozart": 0.9988221436984688,
+              "rachmaninoff": 0.9376181474480151,
+              "ravel": 0.9712556732223904,
+              "skryabin": 0.96
+            }
+          },
+          "transkun": {
+            "pooled": {
+              "matched": 4873,
+              "reference": 4990,
+              "predicted": 4886,
+              "precision": 0.9973393368808842,
+              "recall": 0.9765531062124249,
+              "f1": 0.9868367760226813
+            },
+            "macro_f1": 0.9890530617768825,
+            "per_recording_f1": {
+              "bach": 0.9964028776978417,
+              "bartok": 0.9634300126103404,
+              "beethoven": 0.99079754601227,
+              "brahms": 0.9786368260427264,
+              "chopin": 0.9881889763779528,
+              "haydn": 1.0,
+              "liszt": 0.9967213114754099,
+              "mozart": 1.0,
+              "rachmaninoff": 0.9815354713313897,
+              "ravel": 0.9909228441754917,
+              "skryabin": 0.9929478138222849
+            }
+          }
+        }
+      },
+      "recovered": {
+        "50ms": 127,
+        "40ms": 128
+      },
+      "new_missing": {
+        "50ms": 20,
+        "40ms": 20
+      },
+      "bands": {
+        "50ms": {
+          "low": {
+            "recovered": 36,
+            "new_missing": 6,
+            "kong": {
+              "matched": 661,
+              "reference": 731,
+              "predicted": 792,
+              "precision": 0.8345959595959596,
+              "recall": 0.9042407660738714,
+              "f1": 0.8680236375574524
+            },
+            "transkun": {
+              "matched": 691,
+              "reference": 731,
+              "predicted": 699,
+              "precision": 0.9885550786838341,
+              "recall": 0.945280437756498,
+              "f1": 0.9664335664335665
+            }
+          },
+          "middle": {
+            "recovered": 84,
+            "new_missing": 13,
+            "kong": {
+              "matched": 3787,
+              "reference": 3929,
+              "predicted": 3890,
+              "precision": 0.973521850899743,
+              "recall": 0.9638584881649275,
+              "f1": 0.9686660698299016
+            },
+            "transkun": {
+              "matched": 3858,
+              "reference": 3929,
+              "predicted": 3863,
+              "precision": 0.9987056691690396,
+              "recall": 0.9819292440824637,
+              "f1": 0.9902464065708418
+            }
+          },
+          "high": {
+            "recovered": 7,
+            "new_missing": 1,
+            "kong": {
+              "matched": 318,
+              "reference": 330,
+              "predicted": 323,
+              "precision": 0.9845201238390093,
+              "recall": 0.9636363636363636,
+              "f1": 0.9739663093415007
+            },
+            "transkun": {
+              "matched": 324,
+              "reference": 330,
+              "predicted": 324,
+              "precision": 1.0,
+              "recall": 0.9818181818181818,
+              "f1": 0.9908256880733946
+            }
+          }
+        },
+        "40ms": {
+          "low": {
+            "recovered": 36,
+            "new_missing": 6,
+            "kong": {
+              "matched": 661,
+              "reference": 731,
+              "predicted": 792,
+              "precision": 0.8345959595959596,
+              "recall": 0.9042407660738714,
+              "f1": 0.8680236375574524
+            },
+            "transkun": {
+              "matched": 691,
+              "reference": 731,
+              "predicted": 699,
+              "precision": 0.9885550786838341,
+              "recall": 0.945280437756498,
+              "f1": 0.9664335664335665
+            }
+          },
+          "middle": {
+            "recovered": 85,
+            "new_missing": 13,
+            "kong": {
+              "matched": 3786,
+              "reference": 3929,
+              "predicted": 3890,
+              "precision": 0.9732647814910026,
+              "recall": 0.963603970475948,
+              "f1": 0.9684102826448395
+            },
+            "transkun": {
+              "matched": 3858,
+              "reference": 3929,
+              "predicted": 3863,
+              "precision": 0.9987056691690396,
+              "recall": 0.9819292440824637,
+              "f1": 0.9902464065708418
+            }
+          },
+          "high": {
+            "recovered": 7,
+            "new_missing": 1,
+            "kong": {
+              "matched": 318,
+              "reference": 330,
+              "predicted": 323,
+              "precision": 0.9845201238390093,
+              "recall": 0.9636363636363636,
+              "f1": 0.9739663093415007
+            },
+            "transkun": {
+              "matched": 324,
+              "reference": 330,
+              "predicted": 324,
+              "precision": 1.0,
+              "recall": 0.9818181818181818,
+              "f1": 0.9908256880733946
+            }
+          }
+        }
+      }
+    },
+    "intervals": {
+      "kong": {
+        "key": {
+          "50ms": {
+            "matched": 1875,
+            "reference": 4990,
+            "predicted": 5005,
+            "precision": 0.37462537462537465,
+            "recall": 0.375751503006012,
+            "f1": 0.3751875937968984
+          },
+          "40ms": {
+            "matched": 1925,
+            "reference": 4990,
+            "predicted": 5005,
+            "precision": 0.38461538461538464,
+            "recall": 0.38577154308617234,
+            "f1": 0.38519259629814906
+          }
+        },
+        "sustain": {
+          "50ms": {
+            "matched": 4106,
+            "reference": 4990,
+            "predicted": 5005,
+            "precision": 0.8203796203796204,
+            "recall": 0.8228456913827655,
+            "f1": 0.8216108054027014
+          },
+          "40ms": {
+            "matched": 4078,
+            "reference": 4990,
+            "predicted": 5005,
+            "precision": 0.8147852147852148,
+            "recall": 0.8172344689378758,
+            "f1": 0.816008004002001
+          }
+        }
+      },
+      "transkun": {
+        "key": {
+          "50ms": {
+            "matched": 3782,
+            "reference": 4990,
+            "predicted": 4886,
+            "precision": 0.7740483012689316,
+            "recall": 0.7579158316633267,
+            "f1": 0.7658971243418388
+          },
+          "40ms": {
+            "matched": 3899,
+            "reference": 4990,
+            "predicted": 4886,
+            "precision": 0.7979942693409742,
+            "recall": 0.7813627254509018,
+            "f1": 0.7895909275010126
+          }
+        },
+        "sustain": {
+          "50ms": {
+            "matched": 2247,
+            "reference": 4990,
+            "predicted": 4886,
+            "precision": 0.45988538681948427,
+            "recall": 0.4503006012024048,
+            "f1": 0.45504252733900363
+          },
+          "40ms": {
+            "matched": 2265,
+            "reference": 4990,
+            "predicted": 4886,
+            "precision": 0.4635693819074908,
+            "recall": 0.45390781563126253,
+            "f1": 0.45868772782503037
+          }
+        }
+      }
+    },
+    "recordings": [
+      {
+        "name": "bach",
+        "elapsed_seconds": 52.60999999998603,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 277,
+              "reference": 279,
+              "predicted": 279,
+              "precision": 0.992831541218638,
+              "recall": 0.992831541218638,
+              "f1": 0.992831541218638
+            },
+            "transkun": {
+              "matched": 277,
+              "reference": 279,
+              "predicted": 277,
+              "precision": 1.0,
+              "recall": 0.992831541218638,
+              "f1": 0.9964028776978417
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 277,
+              "reference": 279,
+              "predicted": 279,
+              "precision": 0.992831541218638,
+              "recall": 0.992831541218638,
+              "f1": 0.992831541218638
+            },
+            "transkun": {
+              "matched": 277,
+              "reference": 279,
+              "predicted": 277,
+              "precision": 1.0,
+              "recall": 0.992831541218638,
+              "f1": 0.9964028776978417
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 1,
+          "40ms": 1
+        },
+        "new_missing": {
+          "50ms": 1,
+          "40ms": 1
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 166,
+                "reference": 279,
+                "predicted": 279,
+                "precision": 0.5949820788530465,
+                "recall": 0.5949820788530465,
+                "f1": 0.5949820788530465
+              },
+              "40ms": {
+                "matched": 154,
+                "reference": 279,
+                "predicted": 279,
+                "precision": 0.5519713261648745,
+                "recall": 0.5519713261648745,
+                "f1": 0.5519713261648745
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 219,
+                "reference": 279,
+                "predicted": 279,
+                "precision": 0.7849462365591398,
+                "recall": 0.7849462365591398,
+                "f1": 0.7849462365591398
+              },
+              "40ms": {
+                "matched": 211,
+                "reference": 279,
+                "predicted": 279,
+                "precision": 0.7562724014336918,
+                "recall": 0.7562724014336918,
+                "f1": 0.7562724014336918
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 248,
+                "reference": 279,
+                "predicted": 277,
+                "precision": 0.8953068592057761,
+                "recall": 0.8888888888888888,
+                "f1": 0.8920863309352518
+              },
+              "40ms": {
+                "matched": 239,
+                "reference": 279,
+                "predicted": 277,
+                "precision": 0.8628158844765343,
+                "recall": 0.8566308243727598,
+                "f1": 0.8597122302158273
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 218,
+                "reference": 279,
+                "predicted": 277,
+                "precision": 0.7870036101083032,
+                "recall": 0.7813620071684588,
+                "f1": 0.7841726618705036
+              },
+              "40ms": {
+                "matched": 201,
+                "reference": 279,
+                "predicted": 277,
+                "precision": 0.7256317689530686,
+                "recall": 0.7204301075268817,
+                "f1": 0.7230215827338129
+              }
+            }
+          }
+        },
+        "full_piano_events": 319,
+        "pedal_events": 31,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "bartok",
+        "elapsed_seconds": 50.125,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 719,
+              "reference": 815,
+              "predicted": 820,
+              "precision": 0.8768292682926829,
+              "recall": 0.8822085889570552,
+              "f1": 0.8795107033639143
+            },
+            "transkun": {
+              "matched": 764,
+              "reference": 815,
+              "predicted": 771,
+              "precision": 0.9909208819714657,
+              "recall": 0.9374233128834356,
+              "f1": 0.9634300126103404
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 719,
+              "reference": 815,
+              "predicted": 820,
+              "precision": 0.8768292682926829,
+              "recall": 0.8822085889570552,
+              "f1": 0.8795107033639143
+            },
+            "transkun": {
+              "matched": 764,
+              "reference": 815,
+              "predicted": 771,
+              "precision": 0.9909208819714657,
+              "recall": 0.9374233128834356,
+              "f1": 0.9634300126103404
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 53,
+          "40ms": 53
+        },
+        "new_missing": {
+          "50ms": 8,
+          "40ms": 8
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 464,
+                "reference": 815,
+                "predicted": 820,
+                "precision": 0.5658536585365853,
+                "recall": 0.5693251533742332,
+                "f1": 0.5675840978593272
+              },
+              "40ms": {
+                "matched": 492,
+                "reference": 815,
+                "predicted": 820,
+                "precision": 0.6,
+                "recall": 0.603680981595092,
+                "f1": 0.6018348623853211
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 620,
+                "reference": 815,
+                "predicted": 820,
+                "precision": 0.7560975609756098,
+                "recall": 0.7607361963190185,
+                "f1": 0.7584097859327217
+              },
+              "40ms": {
+                "matched": 639,
+                "reference": 815,
+                "predicted": 820,
+                "precision": 0.7792682926829269,
+                "recall": 0.7840490797546013,
+                "f1": 0.781651376146789
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 700,
+                "reference": 815,
+                "predicted": 771,
+                "precision": 0.9079118028534371,
+                "recall": 0.8588957055214724,
+                "f1": 0.8827238335435057
+              },
+              "40ms": {
+                "matched": 722,
+                "reference": 815,
+                "predicted": 771,
+                "precision": 0.9364461738002594,
+                "recall": 0.8858895705521472,
+                "f1": 0.9104665825977302
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 532,
+                "reference": 815,
+                "predicted": 771,
+                "precision": 0.6900129701686122,
+                "recall": 0.652760736196319,
+                "f1": 0.6708701134930644
+              },
+              "40ms": {
+                "matched": 559,
+                "reference": 815,
+                "predicted": 771,
+                "precision": 0.7250324254215305,
+                "recall": 0.6858895705521473,
+                "f1": 0.7049180327868853
+              }
+            }
+          }
+        },
+        "full_piano_events": 908,
+        "pedal_events": 57,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "beethoven",
+        "elapsed_seconds": 50.06299999996554,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 319,
+              "reference": 328,
+              "predicted": 322,
+              "precision": 0.9906832298136646,
+              "recall": 0.9725609756097561,
+              "f1": 0.9815384615384616
+            },
+            "transkun": {
+              "matched": 323,
+              "reference": 328,
+              "predicted": 324,
+              "precision": 0.9969135802469136,
+              "recall": 0.9847560975609756,
+              "f1": 0.99079754601227
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 319,
+              "reference": 328,
+              "predicted": 322,
+              "precision": 0.9906832298136646,
+              "recall": 0.9725609756097561,
+              "f1": 0.9815384615384616
+            },
+            "transkun": {
+              "matched": 323,
+              "reference": 328,
+              "predicted": 324,
+              "precision": 0.9969135802469136,
+              "recall": 0.9847560975609756,
+              "f1": 0.99079754601227
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 6,
+          "40ms": 6
+        },
+        "new_missing": {
+          "50ms": 2,
+          "40ms": 2
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 156,
+                "reference": 328,
+                "predicted": 322,
+                "precision": 0.484472049689441,
+                "recall": 0.47560975609756095,
+                "f1": 0.48
+              },
+              "40ms": {
+                "matched": 140,
+                "reference": 328,
+                "predicted": 322,
+                "precision": 0.43478260869565216,
+                "recall": 0.4268292682926829,
+                "f1": 0.4307692307692308
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 287,
+                "reference": 328,
+                "predicted": 322,
+                "precision": 0.8913043478260869,
+                "recall": 0.875,
+                "f1": 0.8830769230769231
+              },
+              "40ms": {
+                "matched": 273,
+                "reference": 328,
+                "predicted": 322,
+                "precision": 0.8478260869565217,
+                "recall": 0.8323170731707317,
+                "f1": 0.84
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 261,
+                "reference": 328,
+                "predicted": 324,
+                "precision": 0.8055555555555556,
+                "recall": 0.7957317073170732,
+                "f1": 0.8006134969325154
+              },
+              "40ms": {
+                "matched": 252,
+                "reference": 328,
+                "predicted": 324,
+                "precision": 0.7777777777777778,
+                "recall": 0.7682926829268293,
+                "f1": 0.7730061349693251
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 179,
+                "reference": 328,
+                "predicted": 324,
+                "precision": 0.5524691358024691,
+                "recall": 0.5457317073170732,
+                "f1": 0.549079754601227
+              },
+              "40ms": {
+                "matched": 158,
+                "reference": 328,
+                "predicted": 324,
+                "precision": 0.4876543209876543,
+                "recall": 0.4817073170731707,
+                "f1": 0.48466257668711654
+              }
+            }
+          }
+        },
+        "full_piano_events": 432,
+        "pedal_events": 56,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "brahms",
+        "elapsed_seconds": 49.061999999918044,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 458,
+              "reference": 501,
+              "predicted": 476,
+              "precision": 0.9621848739495799,
+              "recall": 0.9141716566866267,
+              "f1": 0.9375639713408394
+            },
+            "transkun": {
+              "matched": 481,
+              "reference": 501,
+              "predicted": 482,
+              "precision": 0.9979253112033195,
+              "recall": 0.9600798403193613,
+              "f1": 0.9786368260427264
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 458,
+              "reference": 501,
+              "predicted": 476,
+              "precision": 0.9621848739495799,
+              "recall": 0.9141716566866267,
+              "f1": 0.9375639713408394
+            },
+            "transkun": {
+              "matched": 481,
+              "reference": 501,
+              "predicted": 482,
+              "precision": 0.9979253112033195,
+              "recall": 0.9600798403193613,
+              "f1": 0.9786368260427264
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 25,
+          "40ms": 25
+        },
+        "new_missing": {
+          "50ms": 2,
+          "40ms": 2
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 65,
+                "reference": 501,
+                "predicted": 476,
+                "precision": 0.13655462184873948,
+                "recall": 0.12974051896207583,
+                "f1": 0.1330603889457523
+              },
+              "40ms": {
+                "matched": 63,
+                "reference": 501,
+                "predicted": 476,
+                "precision": 0.1323529411764706,
+                "recall": 0.12574850299401197,
+                "f1": 0.12896622313203684
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 359,
+                "reference": 501,
+                "predicted": 476,
+                "precision": 0.7542016806722689,
+                "recall": 0.716566866267465,
+                "f1": 0.7349027635619243
+              },
+              "40ms": {
+                "matched": 348,
+                "reference": 501,
+                "predicted": 476,
+                "precision": 0.7310924369747899,
+                "recall": 0.6946107784431138,
+                "f1": 0.7123848515864892
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 329,
+                "reference": 501,
+                "predicted": 482,
+                "precision": 0.6825726141078838,
+                "recall": 0.656686626746507,
+                "f1": 0.669379450661241
+              },
+              "40ms": {
+                "matched": 353,
+                "reference": 501,
+                "predicted": 482,
+                "precision": 0.7323651452282157,
+                "recall": 0.7045908183632734,
+                "f1": 0.7182095625635809
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 94,
+                "reference": 501,
+                "predicted": 482,
+                "precision": 0.1950207468879668,
+                "recall": 0.18762475049900199,
+                "f1": 0.19125127161749747
+              },
+              "40ms": {
+                "matched": 98,
+                "reference": 501,
+                "predicted": 482,
+                "precision": 0.2033195020746888,
+                "recall": 0.19560878243512975,
+                "f1": 0.19938962360122076
+              }
+            }
+          }
+        },
+        "full_piano_events": 526,
+        "pedal_events": 54,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "chopin",
+        "elapsed_seconds": 48.921999999904074,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 247,
+              "reference": 257,
+              "predicted": 269,
+              "precision": 0.9182156133828996,
+              "recall": 0.9610894941634242,
+              "f1": 0.9391634980988594
+            },
+            "transkun": {
+              "matched": 251,
+              "reference": 257,
+              "predicted": 251,
+              "precision": 1.0,
+              "recall": 0.9766536964980544,
+              "f1": 0.9881889763779528
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 247,
+              "reference": 257,
+              "predicted": 269,
+              "precision": 0.9182156133828996,
+              "recall": 0.9610894941634242,
+              "f1": 0.9391634980988594
+            },
+            "transkun": {
+              "matched": 251,
+              "reference": 257,
+              "predicted": 251,
+              "precision": 1.0,
+              "recall": 0.9766536964980544,
+              "f1": 0.9881889763779528
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 4,
+          "40ms": 4
+        },
+        "new_missing": {
+          "50ms": 0,
+          "40ms": 0
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 55,
+                "reference": 257,
+                "predicted": 269,
+                "precision": 0.20446096654275092,
+                "recall": 0.2140077821011673,
+                "f1": 0.20912547528517111
+              },
+              "40ms": {
+                "matched": 36,
+                "reference": 257,
+                "predicted": 269,
+                "precision": 0.13382899628252787,
+                "recall": 0.14007782101167315,
+                "f1": 0.13688212927756654
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 207,
+                "reference": 257,
+                "predicted": 269,
+                "precision": 0.7695167286245354,
+                "recall": 0.8054474708171206,
+                "f1": 0.7870722433460076
+              },
+              "40ms": {
+                "matched": 199,
+                "reference": 257,
+                "predicted": 269,
+                "precision": 0.7397769516728625,
+                "recall": 0.77431906614786,
+                "f1": 0.7566539923954373
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 128,
+                "reference": 257,
+                "predicted": 251,
+                "precision": 0.5099601593625498,
+                "recall": 0.4980544747081712,
+                "f1": 0.5039370078740157
+              },
+              "40ms": {
+                "matched": 86,
+                "reference": 257,
+                "predicted": 251,
+                "precision": 0.3426294820717131,
+                "recall": 0.3346303501945525,
+                "f1": 0.33858267716535434
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 43,
+                "reference": 257,
+                "predicted": 251,
+                "precision": 0.17131474103585656,
+                "recall": 0.16731517509727625,
+                "f1": 0.16929133858267717
+              },
+              "40ms": {
+                "matched": 32,
+                "reference": 257,
+                "predicted": 251,
+                "precision": 0.12749003984063745,
+                "recall": 0.1245136186770428,
+                "f1": 0.12598425196850394
+              }
+            }
+          }
+        },
+        "full_piano_events": 327,
+        "pedal_events": 27,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "haydn",
+        "elapsed_seconds": 50.84400000004098,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 686,
+              "reference": 689,
+              "predicted": 689,
+              "precision": 0.9956458635703919,
+              "recall": 0.9956458635703919,
+              "f1": 0.9956458635703919
+            },
+            "transkun": {
+              "matched": 689,
+              "reference": 689,
+              "predicted": 689,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 685,
+              "reference": 689,
+              "predicted": 689,
+              "precision": 0.9941944847605225,
+              "recall": 0.9941944847605225,
+              "f1": 0.9941944847605225
+            },
+            "transkun": {
+              "matched": 689,
+              "reference": 689,
+              "predicted": 689,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 3,
+          "40ms": 4
+        },
+        "new_missing": {
+          "50ms": 0,
+          "40ms": 0
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 578,
+                "reference": 689,
+                "predicted": 689,
+                "precision": 0.8388969521044993,
+                "recall": 0.8388969521044993,
+                "f1": 0.8388969521044993
+              },
+              "40ms": {
+                "matched": 599,
+                "reference": 689,
+                "predicted": 689,
+                "precision": 0.8693759071117562,
+                "recall": 0.8693759071117562,
+                "f1": 0.8693759071117562
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 624,
+                "reference": 689,
+                "predicted": 689,
+                "precision": 0.9056603773584906,
+                "recall": 0.9056603773584906,
+                "f1": 0.9056603773584906
+              },
+              "40ms": {
+                "matched": 641,
+                "reference": 689,
+                "predicted": 689,
+                "precision": 0.93033381712627,
+                "recall": 0.93033381712627,
+                "f1": 0.93033381712627
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 669,
+                "reference": 689,
+                "predicted": 689,
+                "precision": 0.9709724238026125,
+                "recall": 0.9709724238026125,
+                "f1": 0.9709724238026125
+              },
+              "40ms": {
+                "matched": 677,
+                "reference": 689,
+                "predicted": 689,
+                "precision": 0.9825834542815675,
+                "recall": 0.9825834542815675,
+                "f1": 0.9825834542815675
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 628,
+                "reference": 689,
+                "predicted": 689,
+                "precision": 0.9114658925979681,
+                "recall": 0.9114658925979681,
+                "f1": 0.9114658925979681
+              },
+              "40ms": {
+                "matched": 627,
+                "reference": 689,
+                "predicted": 689,
+                "precision": 0.9100145137880987,
+                "recall": 0.9100145137880987,
+                "f1": 0.9100145137880987
+              }
+            }
+          }
+        },
+        "full_piano_events": 770,
+        "pedal_events": 19,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "liszt",
+        "elapsed_seconds": 48.46899999992456,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 150,
+              "reference": 153,
+              "predicted": 164,
+              "precision": 0.9146341463414634,
+              "recall": 0.9803921568627451,
+              "f1": 0.9463722397476341
+            },
+            "transkun": {
+              "matched": 152,
+              "reference": 153,
+              "predicted": 152,
+              "precision": 1.0,
+              "recall": 0.9934640522875817,
+              "f1": 0.9967213114754099
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 150,
+              "reference": 153,
+              "predicted": 164,
+              "precision": 0.9146341463414634,
+              "recall": 0.9803921568627451,
+              "f1": 0.9463722397476341
+            },
+            "transkun": {
+              "matched": 152,
+              "reference": 153,
+              "predicted": 152,
+              "precision": 1.0,
+              "recall": 0.9934640522875817,
+              "f1": 0.9967213114754099
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 3,
+          "40ms": 3
+        },
+        "new_missing": {
+          "50ms": 1,
+          "40ms": 1
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 29,
+                "reference": 153,
+                "predicted": 164,
+                "precision": 0.17682926829268292,
+                "recall": 0.1895424836601307,
+                "f1": 0.1829652996845426
+              },
+              "40ms": {
+                "matched": 43,
+                "reference": 153,
+                "predicted": 164,
+                "precision": 0.2621951219512195,
+                "recall": 0.28104575163398693,
+                "f1": 0.27129337539432175
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 120,
+                "reference": 153,
+                "predicted": 164,
+                "precision": 0.7317073170731707,
+                "recall": 0.7843137254901961,
+                "f1": 0.7570977917981072
+              },
+              "40ms": {
+                "matched": 115,
+                "reference": 153,
+                "predicted": 164,
+                "precision": 0.7012195121951219,
+                "recall": 0.7516339869281046,
+                "f1": 0.7255520504731862
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 107,
+                "reference": 153,
+                "predicted": 152,
+                "precision": 0.7039473684210527,
+                "recall": 0.6993464052287581,
+                "f1": 0.7016393442622951
+              },
+              "40ms": {
+                "matched": 90,
+                "reference": 153,
+                "predicted": 152,
+                "precision": 0.5921052631578947,
+                "recall": 0.5882352941176471,
+                "f1": 0.5901639344262295
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 52,
+                "reference": 153,
+                "predicted": 152,
+                "precision": 0.34210526315789475,
+                "recall": 0.33986928104575165,
+                "f1": 0.34098360655737703
+              },
+              "40ms": {
+                "matched": 59,
+                "reference": 153,
+                "predicted": 152,
+                "precision": 0.3881578947368421,
+                "recall": 0.38562091503267976,
+                "f1": 0.38688524590163936
+              }
+            }
+          }
+        },
+        "full_piano_events": 306,
+        "pedal_events": 26,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "mozart",
+        "elapsed_seconds": 46.53100000007544,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 424,
+              "reference": 424,
+              "predicted": 425,
+              "precision": 0.9976470588235294,
+              "recall": 1.0,
+              "f1": 0.9988221436984688
+            },
+            "transkun": {
+              "matched": 424,
+              "reference": 424,
+              "predicted": 424,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 424,
+              "reference": 424,
+              "predicted": 425,
+              "precision": 0.9976470588235294,
+              "recall": 1.0,
+              "f1": 0.9988221436984688
+            },
+            "transkun": {
+              "matched": 424,
+              "reference": 424,
+              "predicted": 424,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 0,
+          "40ms": 0
+        },
+        "new_missing": {
+          "50ms": 0,
+          "40ms": 0
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 259,
+                "reference": 424,
+                "predicted": 425,
+                "precision": 0.6094117647058823,
+                "recall": 0.6108490566037735,
+                "f1": 0.6101295641931684
+              },
+              "40ms": {
+                "matched": 274,
+                "reference": 424,
+                "predicted": 425,
+                "precision": 0.6447058823529411,
+                "recall": 0.6462264150943396,
+                "f1": 0.6454652532391049
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 399,
+                "reference": 424,
+                "predicted": 425,
+                "precision": 0.9388235294117647,
+                "recall": 0.9410377358490566,
+                "f1": 0.9399293286219081
+              },
+              "40ms": {
+                "matched": 398,
+                "reference": 424,
+                "predicted": 425,
+                "precision": 0.9364705882352942,
+                "recall": 0.9386792452830188,
+                "f1": 0.9375736160188457
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 378,
+                "reference": 424,
+                "predicted": 424,
+                "precision": 0.8915094339622641,
+                "recall": 0.8915094339622641,
+                "f1": 0.8915094339622641
+              },
+              "40ms": {
+                "matched": 390,
+                "reference": 424,
+                "predicted": 424,
+                "precision": 0.9198113207547169,
+                "recall": 0.9198113207547169,
+                "f1": 0.9198113207547169
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 293,
+                "reference": 424,
+                "predicted": 424,
+                "precision": 0.6910377358490566,
+                "recall": 0.6910377358490566,
+                "f1": 0.6910377358490566
+              },
+              "40ms": {
+                "matched": 305,
+                "reference": 424,
+                "predicted": 424,
+                "precision": 0.7193396226415094,
+                "recall": 0.7193396226415094,
+                "f1": 0.7193396226415094
+              }
+            }
+          }
+        },
+        "full_piano_events": 521,
+        "pedal_events": 67,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "rachmaninoff",
+        "elapsed_seconds": 48.71900000004098,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 496,
+              "reference": 523,
+              "predicted": 535,
+              "precision": 0.9271028037383178,
+              "recall": 0.9483747609942639,
+              "f1": 0.9376181474480151
+            },
+            "transkun": {
+              "matched": 505,
+              "reference": 523,
+              "predicted": 506,
+              "precision": 0.9980237154150198,
+              "recall": 0.9655831739961759,
+              "f1": 0.9815354713313897
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 496,
+              "reference": 523,
+              "predicted": 535,
+              "precision": 0.9271028037383178,
+              "recall": 0.9483747609942639,
+              "f1": 0.9376181474480151
+            },
+            "transkun": {
+              "matched": 505,
+              "reference": 523,
+              "predicted": 506,
+              "precision": 0.9980237154150198,
+              "recall": 0.9655831739961759,
+              "f1": 0.9815354713313897
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 13,
+          "40ms": 13
+        },
+        "new_missing": {
+          "50ms": 4,
+          "40ms": 4
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 28,
+                "reference": 523,
+                "predicted": 535,
+                "precision": 0.052336448598130844,
+                "recall": 0.05353728489483748,
+                "f1": 0.052930056710775046
+              },
+              "40ms": {
+                "matched": 42,
+                "reference": 523,
+                "predicted": 535,
+                "precision": 0.07850467289719626,
+                "recall": 0.08030592734225621,
+                "f1": 0.07939508506616257
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 412,
+                "reference": 523,
+                "predicted": 535,
+                "precision": 0.7700934579439253,
+                "recall": 0.7877629063097514,
+                "f1": 0.77882797731569
+              },
+              "40ms": {
+                "matched": 408,
+                "reference": 523,
+                "predicted": 535,
+                "precision": 0.7626168224299066,
+                "recall": 0.780114722753346,
+                "f1": 0.7712665406427222
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 320,
+                "reference": 523,
+                "predicted": 506,
+                "precision": 0.6324110671936759,
+                "recall": 0.6118546845124283,
+                "f1": 0.6219630709426628
+              },
+              "40ms": {
+                "matched": 366,
+                "reference": 523,
+                "predicted": 506,
+                "precision": 0.7233201581027668,
+                "recall": 0.6998087954110899,
+                "f1": 0.7113702623906706
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 53,
+                "reference": 523,
+                "predicted": 506,
+                "precision": 0.10474308300395258,
+                "recall": 0.10133843212237094,
+                "f1": 0.10301263362487852
+              },
+              "40ms": {
+                "matched": 67,
+                "reference": 523,
+                "predicted": 506,
+                "precision": 0.1324110671936759,
+                "recall": 0.12810707456978968,
+                "f1": 0.13022351797862003
+              }
+            }
+          }
+        },
+        "full_piano_events": 647,
+        "pedal_events": 49,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "ravel",
+        "elapsed_seconds": 47.70299999997951,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 642,
+              "reference": 665,
+              "predicted": 657,
+              "precision": 0.9771689497716894,
+              "recall": 0.9654135338345865,
+              "f1": 0.9712556732223904
+            },
+            "transkun": {
+              "matched": 655,
+              "reference": 665,
+              "predicted": 657,
+              "precision": 0.9969558599695586,
+              "recall": 0.9849624060150376,
+              "f1": 0.9909228441754917
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 642,
+              "reference": 665,
+              "predicted": 657,
+              "precision": 0.9771689497716894,
+              "recall": 0.9654135338345865,
+              "f1": 0.9712556732223904
+            },
+            "transkun": {
+              "matched": 655,
+              "reference": 665,
+              "predicted": 657,
+              "precision": 0.9969558599695586,
+              "recall": 0.9849624060150376,
+              "f1": 0.9909228441754917
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 14,
+          "40ms": 14
+        },
+        "new_missing": {
+          "50ms": 1,
+          "40ms": 1
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 20,
+                "reference": 665,
+                "predicted": 657,
+                "precision": 0.030441400304414,
+                "recall": 0.03007518796992481,
+                "f1": 0.030257186081694403
+              },
+              "40ms": {
+                "matched": 36,
+                "reference": 665,
+                "predicted": 657,
+                "precision": 0.0547945205479452,
+                "recall": 0.05413533834586466,
+                "f1": 0.05446293494704992
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 564,
+                "reference": 665,
+                "predicted": 657,
+                "precision": 0.8584474885844748,
+                "recall": 0.8481203007518797,
+                "f1": 0.8532526475037822
+              },
+              "40ms": {
+                "matched": 556,
+                "reference": 665,
+                "predicted": 657,
+                "precision": 0.8462709284627092,
+                "recall": 0.8360902255639098,
+                "f1": 0.8411497730711044
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 424,
+                "reference": 665,
+                "predicted": 657,
+                "precision": 0.6453576864535768,
+                "recall": 0.637593984962406,
+                "f1": 0.6414523449319214
+              },
+              "40ms": {
+                "matched": 497,
+                "reference": 665,
+                "predicted": 657,
+                "precision": 0.756468797564688,
+                "recall": 0.7473684210526316,
+                "f1": 0.7518910741301059
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 40,
+                "reference": 665,
+                "predicted": 657,
+                "precision": 0.060882800608828,
+                "recall": 0.06015037593984962,
+                "f1": 0.060514372163388806
+              },
+              "40ms": {
+                "matched": 53,
+                "reference": 665,
+                "predicted": 657,
+                "precision": 0.0806697108066971,
+                "recall": 0.07969924812030076,
+                "f1": 0.08018154311649017
+              }
+            }
+          }
+        },
+        "full_piano_events": 788,
+        "pedal_events": 37,
+        "piano_onsets_outside_input": 0
+      },
+      {
+        "name": "skryabin",
+        "elapsed_seconds": 49.76599999994505,
+        "onsets": {
+          "50ms": {
+            "kong": {
+              "matched": 348,
+              "reference": 356,
+              "predicted": 369,
+              "precision": 0.943089430894309,
+              "recall": 0.9775280898876404,
+              "f1": 0.96
+            },
+            "transkun": {
+              "matched": 352,
+              "reference": 356,
+              "predicted": 353,
+              "precision": 0.9971671388101983,
+              "recall": 0.9887640449438202,
+              "f1": 0.9929478138222849
+            }
+          },
+          "40ms": {
+            "kong": {
+              "matched": 348,
+              "reference": 356,
+              "predicted": 369,
+              "precision": 0.943089430894309,
+              "recall": 0.9775280898876404,
+              "f1": 0.96
+            },
+            "transkun": {
+              "matched": 352,
+              "reference": 356,
+              "predicted": 353,
+              "precision": 0.9971671388101983,
+              "recall": 0.9887640449438202,
+              "f1": 0.9929478138222849
+            }
+          }
+        },
+        "recovered": {
+          "50ms": 5,
+          "40ms": 5
+        },
+        "new_missing": {
+          "50ms": 1,
+          "40ms": 1
+        },
+        "interval_metrics": {
+          "kong": {
+            "key": {
+              "50ms": {
+                "matched": 55,
+                "reference": 356,
+                "predicted": 369,
+                "precision": 0.14905149051490515,
+                "recall": 0.1544943820224719,
+                "f1": 0.15172413793103448
+              },
+              "40ms": {
+                "matched": 46,
+                "reference": 356,
+                "predicted": 369,
+                "precision": 0.12466124661246612,
+                "recall": 0.12921348314606743,
+                "f1": 0.12689655172413794
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 295,
+                "reference": 356,
+                "predicted": 369,
+                "precision": 0.7994579945799458,
+                "recall": 0.8286516853932584,
+                "f1": 0.8137931034482758
+              },
+              "40ms": {
+                "matched": 290,
+                "reference": 356,
+                "predicted": 369,
+                "precision": 0.7859078590785907,
+                "recall": 0.8146067415730337,
+                "f1": 0.8
+              }
+            }
+          },
+          "transkun": {
+            "key": {
+              "50ms": {
+                "matched": 218,
+                "reference": 356,
+                "predicted": 353,
+                "precision": 0.6175637393767706,
+                "recall": 0.6123595505617978,
+                "f1": 0.614950634696756
+              },
+              "40ms": {
+                "matched": 227,
+                "reference": 356,
+                "predicted": 353,
+                "precision": 0.6430594900849859,
+                "recall": 0.6376404494382022,
+                "f1": 0.6403385049365303
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "matched": 115,
+                "reference": 356,
+                "predicted": 353,
+                "precision": 0.32577903682719545,
+                "recall": 0.32303370786516855,
+                "f1": 0.3244005641748942
+              },
+              "40ms": {
+                "matched": 106,
+                "reference": 356,
+                "predicted": 353,
+                "precision": 0.3002832861189802,
+                "recall": 0.29775280898876405,
+                "f1": 0.29901269393511987
+              }
+            }
+          }
+        },
+        "full_piano_events": 422,
+        "pedal_events": 95,
+        "piano_onsets_outside_input": 0
+      }
+    ],
+    "seconds": 721.5169999997597
+  },
+  "nova": {
+    "candidates": {
+      "kong": 1557,
+      "transkun": 1275
+    },
+    "same_pitch_50ms": {
+      "matched": 1241,
+      "kong_only": 316,
+      "transkun_only": 34
+    },
+    "author_onset_diagnostic": {
+      "kong": {
+        "0.0": {
+          "onset_groups": {
+            "reference": 808,
+            "predicted": 828,
+            "matched": 725,
+            "precision": 0.8756038647342995,
+            "recall": 0.8972772277227723,
+            "f1": 0.8863080684596577,
+            "mean_absolute_error_ms": [
+              30.959796521417026
+            ]
+          },
+          "note_multiplicity": {
+            "reference": 1038,
+            "predicted": 1557,
+            "matched": 909,
+            "precision": 0.5838150289017341,
+            "recall": 0.8757225433526011,
+            "f1": 0.7005780346820809,
+            "mean_absolute_error_ms": [
+              29.775629582840487
+            ]
+          },
+          "duration_notice": "Authored onset/layer diagnostic, not physical pitch or release truth."
+        },
+        "22.5": {
+          "onset_groups": {
+            "reference": 808,
+            "predicted": 828,
+            "matched": 807,
+            "precision": 0.9746376811594203,
+            "recall": 0.9987623762376238,
+            "f1": 0.9865525672371638,
+            "mean_absolute_error_ms": [
+              10.039540277833241
+            ]
+          },
+          "note_multiplicity": {
+            "reference": 1038,
+            "predicted": 1557,
+            "matched": 999,
+            "precision": 0.6416184971098265,
+            "recall": 0.9624277456647399,
+            "f1": 0.7699421965317919,
+            "mean_absolute_error_ms": [
+              9.05456237105636
+            ]
+          },
+          "duration_notice": "Authored onset/layer diagnostic, not physical pitch or release truth."
+        }
+      },
+      "transkun": {
+        "0.0": {
+          "onset_groups": {
+            "reference": 808,
+            "predicted": 817,
+            "matched": 707,
+            "precision": 0.8653610771113831,
+            "recall": 0.875,
+            "f1": 0.8701538461538462,
+            "mean_absolute_error_ms": [
+              30.707612281279694
+            ]
+          },
+          "note_multiplicity": {
+            "reference": 1038,
+            "predicted": 1275,
+            "matched": 865,
+            "precision": 0.6784313725490196,
+            "recall": 0.8333333333333334,
+            "f1": 0.7479463899697363,
+            "mean_absolute_error_ms": [
+              29.615722310994414
+            ]
+          },
+          "duration_notice": "Authored onset/layer diagnostic, not physical pitch or release truth."
+        },
+        "22.5": {
+          "onset_groups": {
+            "reference": 808,
+            "predicted": 817,
+            "matched": 804,
+            "precision": 0.9840881272949816,
+            "recall": 0.995049504950495,
+            "f1": 0.9895384615384616,
+            "mean_absolute_error_ms": [
+              10.252817941703482
+            ]
+          },
+          "note_multiplicity": {
+            "reference": 1038,
+            "predicted": 1275,
+            "matched": 976,
+            "precision": 0.7654901960784314,
+            "recall": 0.9402697495183044,
+            "f1": 0.8439256376999568,
+            "mean_absolute_error_ms": [
+              9.620277986020652
+            ]
+          },
+          "duration_notice": "Authored onset/layer diagnostic, not physical pitch or release truth."
+        }
+      }
+    },
+    "acoustic_pitch_truth_available": false,
+    "acoustic_offset_truth_available": false
+  },
+  "training_performed": false,
+  "application_enabled": false,
+  "musical_acceptance": false,
+  "direct_listening_performed": false,
+  "interpretation": "Historical real-music comparison and isolated-source controls; no replacement or LN acceptance."
+}

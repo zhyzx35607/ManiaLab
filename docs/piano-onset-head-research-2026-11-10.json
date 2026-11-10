@@ -1,0 +1,2283 @@
+{
+  "source": {
+    "cache_report_sha256": "29a84fe641efbda504cd815dfea777de81ae8452fb6fc3fad1ebb87e36ad0a8f",
+    "training_report_sha256": "5a3383e18a78c0bc677b6135343c5a6a02f2a54bc09e488e2f5d87e8796c22ad",
+    "summarizer_sha256": "efdb6a3ce4491f6a5e74c97ea5ee424913ed6d5d0a97cd34ca710f62432aad1a",
+    "matching_coverage_sha256": "2d2a9dfa515025f73b6e572b7624d89ac2164883de4b3eb24f0eab1c1e545d01",
+    "selection_sha256": "34947943dcf11daf1b68939d005e05fd7331fe40413e575e70140a88248eb1aa",
+    "code": {
+      "runner": "ea1a3155ba8b2078dace3f1b145f0644ff3d19a91e7d67dfd4b6eb1c999d7693",
+      "runtime": "2dec29ebd49e308a8246e5232aee03b00ad154cbe9265b6cf033dbda259ea8cf",
+      "data": "11bd147667ca4c4d3f1317c3cda568e287eed323c303508ae06efcfd603e3e1e",
+      "scoring": "1f3b4289ce25defac4af9613f5b3a75206d17319434fa475df8c22e552fb929f",
+      "protocol": "7ccf2564a2e7f9708bc37eddda7571e4fd0d556e0b388eed60643229355e75d0"
+    },
+    "model": {
+      "model_sha256": "c3fa9730725bf4a762f1c14bc80cd5986eacda01b026f5a4a2525cd607876141",
+      "source_commit": "0226e74cbc805660e34bbd6a8fed2083890ebb88",
+      "source": {
+        "commit": "0226e74cbc805660e34bbd6a8fed2083890ebb88",
+        "archive_sha256": "ac7062720a03feb965ffc9e48e6246497c415d90a60780ea98206fb89cbff7e7",
+        "python_files": {
+          "piano_transcription_inference/__init__.py": "4270b5beeeda9e49ccd51bbec3064201459e608bb5ade3241be1c73528d2fc7e",
+          "piano_transcription_inference/config.py": "a6454d23a3f3736da5d001ad2ce59687d4bea115677b75e8eb0213abd33e4bc3",
+          "piano_transcription_inference/inference.py": "38782eff4b1336c5fe0cf9c3dd3ed80c7e8a70fd03f802292c78aba2a7836772",
+          "piano_transcription_inference/models.py": "0fb600e73c77683bd881a15e8106ea4f5079eb3a89b7f295d805924d726e14b1",
+          "piano_transcription_inference/piano_vad.py": "010201f0804729a6800521bfad8038c910036ef4895405b2f24efdd77d318cd3",
+          "piano_transcription_inference/pytorch_utils.py": "fb898f0dc8b598aad578608bcb6e44c78a408028a7c347e7723c94cbb133fc0f",
+          "piano_transcription_inference/utilities.py": "0b06b1b470ac4ab3f2781538618b2a8af01465d264ffcc50a2e10ddcdc84e2ad"
+        }
+      },
+      "torch": "2.9.1+cpu",
+      "device": "cpu",
+      "intra_threads": 2,
+      "inter_threads": 1
+    }
+  },
+  "configuration": {
+    "seed": 42,
+    "epochs": 2,
+    "batch_windows": 4,
+    "parameters": 45144,
+    "lr": 1e-05,
+    "weight_decay": 0.0001,
+    "clip_norm": 1.0,
+    "train_recordings": 6,
+    "validation_recordings": 4,
+    "train_seconds_per_recording": 180,
+    "validation_input_seconds": 180,
+    "validation_score_seconds": 170,
+    "label": "maximum triangular physical onset distance within 50ms",
+    "loss": "unweighted BCEWithLogits; sum over owned frames and 88 pitches / their count",
+    "test_accessed": false,
+    "application_enabled": false
+  },
+  "feature_preparation": {
+    "recordings": 10,
+    "windows": 350,
+    "seconds": 2383.8709999999264,
+    "seven_output_epoch0_replay_identical": true
+  },
+  "epochs": [
+    {
+      "epoch": 0,
+      "head_sha256": "ac2babdf9f0d50c7565650e7f963e3ca3f534f47be9059a26d51a37b27f71fc1",
+      "training_bce": null,
+      "supervised_cells": 0,
+      "selection": {
+        "checks": {
+          "all_recording_f1_not_lower": true,
+          "pooled_precision_not_lower": true,
+          "pooled_recall_not_lower": true,
+          "extra_not_increased": true,
+          "all_reattack_coverage_not_lower": true,
+          "sustain_interval_f1_not_lower": true
+        },
+        "eligible": true,
+        "pooled_onsets": {
+          "matched": 4377,
+          "reference": 4428,
+          "predicted": 4417,
+          "precision": 0.9909440796920987,
+          "recall": 0.9884823848238482,
+          "f1": 0.9897117015262861
+        }
+      },
+      "differences": {
+        "50ms": {
+          "recovered": 0,
+          "new_missing": 0,
+          "unmatched_predictions": 40,
+          "unavoidable_recovered": 0,
+          "unavoidable_new_missing": 0,
+          "before_ambiguous_coverage": 0,
+          "after_ambiguous_coverage": 0
+        },
+        "40ms": {
+          "recovered": 0,
+          "new_missing": 0,
+          "unmatched_predictions": 40,
+          "unavoidable_recovered": 0,
+          "unavoidable_new_missing": 0,
+          "before_ambiguous_coverage": 0,
+          "after_ambiguous_coverage": 0
+        }
+      },
+      "pooled": {
+        "key": {
+          "50ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4417,
+              "precision": 0.9909440796920987,
+              "recall": 0.9884823848238482,
+              "f1": 0.9897117015262861
+            },
+            "intervals": {
+              "matched": 1080,
+              "reference": 4428,
+              "predicted": 4417,
+              "precision": 0.24450984831333483,
+              "recall": 0.24390243902439024,
+              "f1": 0.24420576596947427
+            }
+          },
+          "40ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4417,
+              "precision": 0.9909440796920987,
+              "recall": 0.9884823848238482,
+              "f1": 0.9897117015262861
+            },
+            "intervals": {
+              "matched": 1088,
+              "reference": 4428,
+              "predicted": 4417,
+              "precision": 0.2463210323749151,
+              "recall": 0.24570912375790424,
+              "f1": 0.24601469756924815
+            }
+          }
+        },
+        "sustain": {
+          "50ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4417,
+              "precision": 0.9909440796920987,
+              "recall": 0.9884823848238482,
+              "f1": 0.9897117015262861
+            },
+            "intervals": {
+              "matched": 3805,
+              "reference": 4428,
+              "predicted": 4417,
+              "precision": 0.8614444192891103,
+              "recall": 0.8593044263775971,
+              "f1": 0.8603730921424534
+            }
+          },
+          "40ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4417,
+              "precision": 0.9909440796920987,
+              "recall": 0.9884823848238482,
+              "f1": 0.9897117015262861
+            },
+            "intervals": {
+              "matched": 3739,
+              "reference": 4428,
+              "predicted": 4417,
+              "precision": 0.8465021507810732,
+              "recall": 0.8443992773261066,
+              "f1": 0.8454494064443189
+            }
+          }
+        }
+      },
+      "recordings": [
+        {
+          "id": "1219",
+          "split": "validation",
+          "predictions_full": 1519,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1425,
+                  "precision": 0.9852631578947368,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9828491424571228
+                },
+                "intervals": {
+                  "matched": 74,
+                  "reference": 1432,
+                  "predicted": 1425,
+                  "precision": 0.051929824561403506,
+                  "recall": 0.051675977653631286,
+                  "f1": 0.05180259012950648
+                },
+                "long_reference": 11,
+                "long_matched": 3,
+                "predicted_long": 140,
+                "mean_onset_error_ms": 4.048844164355254,
+                "median_offset_error_on_matched_onsets_ms": 381.5867106121811,
+                "close_repeats": {
+                  "reference": 28,
+                  "both_onsets_matched": 21,
+                  "bridged_missing_reattack": 6
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1425,
+                  "precision": 0.9852631578947368,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9828491424571228
+                },
+                "intervals": {
+                  "matched": 129,
+                  "reference": 1432,
+                  "predicted": 1425,
+                  "precision": 0.09052631578947369,
+                  "recall": 0.09008379888268156,
+                  "f1": 0.09030451522576129
+                },
+                "long_reference": 11,
+                "long_matched": 0,
+                "predicted_long": 140,
+                "mean_onset_error_ms": 4.048844164355254,
+                "median_offset_error_on_matched_onsets_ms": 381.5867106121811,
+                "close_repeats": {
+                  "reference": 28,
+                  "both_onsets_matched": 21,
+                  "bridged_missing_reattack": 6
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1425,
+                  "precision": 0.9852631578947368,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9828491424571228
+                },
+                "intervals": {
+                  "matched": 1225,
+                  "reference": 1432,
+                  "predicted": 1425,
+                  "precision": 0.8596491228070176,
+                  "recall": 0.8554469273743017,
+                  "f1": 0.8575428771438572
+                },
+                "long_reference": 146,
+                "long_matched": 80,
+                "predicted_long": 140,
+                "mean_onset_error_ms": 4.048844164355254,
+                "median_offset_error_on_matched_onsets_ms": 12.093861897692904,
+                "close_repeats": {
+                  "reference": 932,
+                  "both_onsets_matched": 901,
+                  "bridged_missing_reattack": 15
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1425,
+                  "precision": 0.9852631578947368,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9828491424571228
+                },
+                "intervals": {
+                  "matched": 1209,
+                  "reference": 1432,
+                  "predicted": 1425,
+                  "precision": 0.848421052631579,
+                  "recall": 0.8442737430167597,
+                  "f1": 0.8463423171158558
+                },
+                "long_reference": 146,
+                "long_matched": 60,
+                "predicted_long": 140,
+                "mean_onset_error_ms": 4.048844164355254,
+                "median_offset_error_on_matched_onsets_ms": 12.093861897692904,
+                "close_repeats": {
+                  "reference": 932,
+                  "both_onsets_matched": 901,
+                  "bridged_missing_reattack": 15
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.0,
+            "onset_max_abs": 0.0,
+            "changed_offsets_on_paired_onsets": 0
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 21,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 21,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        },
+        {
+          "id": "628",
+          "split": "validation",
+          "predictions_full": 696,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 41,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.0625,
+                  "recall": 0.06231003039513678,
+                  "f1": 0.0624048706240487
+                },
+                "long_reference": 20,
+                "long_matched": 6,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9327829817569153,
+                "median_offset_error_on_matched_onsets_ms": 681.0798645019247,
+                "close_repeats": {
+                  "reference": 1,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 1
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 28,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.042682926829268296,
+                  "recall": 0.0425531914893617,
+                  "f1": 0.0426179604261796
+                },
+                "long_reference": 20,
+                "long_matched": 4,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9327829817569153,
+                "median_offset_error_on_matched_onsets_ms": 681.0798645019247,
+                "close_repeats": {
+                  "reference": 1,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 1
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 580,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.8841463414634146,
+                  "recall": 0.8814589665653495,
+                  "f1": 0.882800608828006
+                },
+                "long_reference": 205,
+                "long_matched": 160,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9327829817569153,
+                "median_offset_error_on_matched_onsets_ms": 10.209401448584288,
+                "close_repeats": {
+                  "reference": 302,
+                  "both_onsets_matched": 295,
+                  "bridged_missing_reattack": 3
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 573,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.8734756097560976,
+                  "recall": 0.8708206686930091,
+                  "f1": 0.8721461187214612
+                },
+                "long_reference": 205,
+                "long_matched": 154,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9327829817569153,
+                "median_offset_error_on_matched_onsets_ms": 10.209401448584288,
+                "close_repeats": {
+                  "reference": 302,
+                  "both_onsets_matched": 295,
+                  "bridged_missing_reattack": 3
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.0,
+            "onset_max_abs": 0.0,
+            "changed_offsets_on_paired_onsets": 0
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 3,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 3,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        },
+        {
+          "id": "1134",
+          "split": "validation",
+          "predictions_full": 1183,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 95,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.08140531276778064,
+                  "recall": 0.08168529664660361,
+                  "f1": 0.0815450643776824
+                },
+                "long_reference": 11,
+                "long_matched": 7,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.230889561897697,
+                "median_offset_error_on_matched_onsets_ms": 449.3484497069744,
+                "close_repeats": {
+                  "reference": 0,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 0
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 81,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.06940874035989718,
+                  "recall": 0.06964746345657781,
+                  "f1": 0.06952789699570816
+                },
+                "long_reference": 11,
+                "long_matched": 0,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.230889561897697,
+                "median_offset_error_on_matched_onsets_ms": 449.3484497069744,
+                "close_repeats": {
+                  "reference": 0,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 0
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 1060,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.908311910882605,
+                  "recall": 0.9114359415305245,
+                  "f1": 0.9098712446351931
+                },
+                "long_reference": 57,
+                "long_matched": 40,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.230889561897697,
+                "median_offset_error_on_matched_onsets_ms": 9.465535481240295,
+                "close_repeats": {
+                  "reference": 296,
+                  "both_onsets_matched": 290,
+                  "bridged_missing_reattack": 3
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 1036,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.8877463581833762,
+                  "recall": 0.8907996560619088,
+                  "f1": 0.8892703862660944
+                },
+                "long_reference": 57,
+                "long_matched": 25,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.230889561897697,
+                "median_offset_error_on_matched_onsets_ms": 9.465535481240295,
+                "close_repeats": {
+                  "reference": 296,
+                  "both_onsets_matched": 290,
+                  "bridged_missing_reattack": 3
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.0,
+            "onset_max_abs": 0.0,
+            "changed_offsets_on_paired_onsets": 0
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 12,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 12,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        },
+        {
+          "id": "752",
+          "split": "validation",
+          "predictions_full": 1245,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 870,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.7442258340461934,
+                  "recall": 0.7404255319148936,
+                  "f1": 0.742320819112628
+                },
+                "long_reference": 12,
+                "long_matched": 6,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.5645136505631325,
+                "median_offset_error_on_matched_onsets_ms": 16.041437784831913,
+                "close_repeats": {
+                  "reference": 4,
+                  "both_onsets_matched": 3,
+                  "bridged_missing_reattack": 0
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 850,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.7271171941830624,
+                  "recall": 0.723404255319149,
+                  "f1": 0.7252559726962458
+                },
+                "long_reference": 12,
+                "long_matched": 0,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.5645136505631325,
+                "median_offset_error_on_matched_onsets_ms": 16.041437784831913,
+                "close_repeats": {
+                  "reference": 4,
+                  "both_onsets_matched": 3,
+                  "bridged_missing_reattack": 0
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 940,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.8041060735671514,
+                  "recall": 0.8,
+                  "f1": 0.8020477815699659
+                },
+                "long_reference": 12,
+                "long_matched": 6,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.5645136505631325,
+                "median_offset_error_on_matched_onsets_ms": 13.804117838276397,
+                "close_repeats": {
+                  "reference": 19,
+                  "both_onsets_matched": 18,
+                  "bridged_missing_reattack": 0
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 921,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.787852865697177,
+                  "recall": 0.7838297872340425,
+                  "f1": 0.7858361774744027
+                },
+                "long_reference": 12,
+                "long_matched": 1,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.5645136505631325,
+                "median_offset_error_on_matched_onsets_ms": 13.804117838276397,
+                "close_repeats": {
+                  "reference": 19,
+                  "both_onsets_matched": 18,
+                  "bridged_missing_reattack": 0
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.0,
+            "onset_max_abs": 0.0,
+            "changed_offsets_on_paired_onsets": 0
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 4,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 4,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "epoch": 1,
+      "head_sha256": "4cb2ca3d4bbd3e29a164d177b601c3585e9640e25592b3bfe923715dc01fb27a",
+      "training_bce": 0.0063313844827159,
+      "supervised_cells": 9504000,
+      "selection": {
+        "checks": {
+          "all_recording_f1_not_lower": true,
+          "pooled_precision_not_lower": true,
+          "pooled_recall_not_lower": true,
+          "extra_not_increased": true,
+          "all_reattack_coverage_not_lower": true,
+          "sustain_interval_f1_not_lower": true
+        },
+        "eligible": true,
+        "pooled_onsets": {
+          "matched": 4377,
+          "reference": 4428,
+          "predicted": 4416,
+          "precision": 0.9911684782608695,
+          "recall": 0.9884823848238482,
+          "f1": 0.9898236092265943
+        }
+      },
+      "differences": {
+        "50ms": {
+          "recovered": 0,
+          "new_missing": 0,
+          "unmatched_predictions": 39,
+          "unavoidable_recovered": 0,
+          "unavoidable_new_missing": 0,
+          "before_ambiguous_coverage": 0,
+          "after_ambiguous_coverage": 0
+        },
+        "40ms": {
+          "recovered": 0,
+          "new_missing": 0,
+          "unmatched_predictions": 39,
+          "unavoidable_recovered": 0,
+          "unavoidable_new_missing": 0,
+          "before_ambiguous_coverage": 0,
+          "after_ambiguous_coverage": 0
+        }
+      },
+      "pooled": {
+        "key": {
+          "50ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.9911684782608695,
+              "recall": 0.9884823848238482,
+              "f1": 0.9898236092265943
+            },
+            "intervals": {
+              "matched": 1081,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.24479166666666666,
+              "recall": 0.2441282746160795,
+              "f1": 0.24445952057892356
+            }
+          },
+          "40ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.9911684782608695,
+              "recall": 0.9884823848238482,
+              "f1": 0.9898236092265943
+            },
+            "intervals": {
+              "matched": 1090,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.24682971014492755,
+              "recall": 0.24616079494128273,
+              "f1": 0.2464947987336047
+            }
+          }
+        },
+        "sustain": {
+          "50ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.9911684782608695,
+              "recall": 0.9884823848238482,
+              "f1": 0.9898236092265943
+            },
+            "intervals": {
+              "matched": 3805,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.8616394927536232,
+              "recall": 0.8593044263775971,
+              "f1": 0.8604703753957486
+            }
+          },
+          "40ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.9911684782608695,
+              "recall": 0.9884823848238482,
+              "f1": 0.9898236092265943
+            },
+            "intervals": {
+              "matched": 3740,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.8469202898550725,
+              "recall": 0.8446251129177959,
+              "f1": 0.845771144278607
+            }
+          }
+        }
+      },
+      "recordings": [
+        {
+          "id": "1219",
+          "split": "validation",
+          "predictions_full": 1518,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.9859550561797753,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9831932773109243
+                },
+                "intervals": {
+                  "matched": 75,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.05266853932584269,
+                  "recall": 0.052374301675977654,
+                  "f1": 0.052521008403361345
+                },
+                "long_reference": 11,
+                "long_matched": 3,
+                "predicted_long": 141,
+                "mean_onset_error_ms": 4.048703770793716,
+                "median_offset_error_on_matched_onsets_ms": 381.5867106121811,
+                "close_repeats": {
+                  "reference": 28,
+                  "both_onsets_matched": 21,
+                  "bridged_missing_reattack": 6
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.9859550561797753,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9831932773109243
+                },
+                "intervals": {
+                  "matched": 130,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.09129213483146068,
+                  "recall": 0.09078212290502793,
+                  "f1": 0.09103641456582633
+                },
+                "long_reference": 11,
+                "long_matched": 0,
+                "predicted_long": 141,
+                "mean_onset_error_ms": 4.048703770793716,
+                "median_offset_error_on_matched_onsets_ms": 381.5867106121811,
+                "close_repeats": {
+                  "reference": 28,
+                  "both_onsets_matched": 21,
+                  "bridged_missing_reattack": 6
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.9859550561797753,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9831932773109243
+                },
+                "intervals": {
+                  "matched": 1225,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.860252808988764,
+                  "recall": 0.8554469273743017,
+                  "f1": 0.8578431372549019
+                },
+                "long_reference": 146,
+                "long_matched": 81,
+                "predicted_long": 141,
+                "mean_onset_error_ms": 4.048703770793716,
+                "median_offset_error_on_matched_onsets_ms": 12.093861897692904,
+                "close_repeats": {
+                  "reference": 932,
+                  "both_onsets_matched": 901,
+                  "bridged_missing_reattack": 15
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.9859550561797753,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9831932773109243
+                },
+                "intervals": {
+                  "matched": 1209,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.8490168539325843,
+                  "recall": 0.8442737430167597,
+                  "f1": 0.8466386554621849
+                },
+                "long_reference": 146,
+                "long_matched": 60,
+                "predicted_long": 141,
+                "mean_onset_error_ms": 4.048703770793716,
+                "median_offset_error_on_matched_onsets_ms": 12.093861897692904,
+                "close_repeats": {
+                  "reference": 932,
+                  "both_onsets_matched": 901,
+                  "bridged_missing_reattack": 15
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.045215755701065063,
+            "onset_max_abs": 0.015115141868591309,
+            "changed_offsets_on_paired_onsets": 15
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 20,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 20,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        },
+        {
+          "id": "628",
+          "split": "validation",
+          "predictions_full": 696,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 41,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.0625,
+                  "recall": 0.06231003039513678,
+                  "f1": 0.0624048706240487
+                },
+                "long_reference": 20,
+                "long_matched": 6,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9314669331070355,
+                "median_offset_error_on_matched_onsets_ms": 681.0798645019247,
+                "close_repeats": {
+                  "reference": 1,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 1
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 28,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.042682926829268296,
+                  "recall": 0.0425531914893617,
+                  "f1": 0.0426179604261796
+                },
+                "long_reference": 20,
+                "long_matched": 4,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9314669331070355,
+                "median_offset_error_on_matched_onsets_ms": 681.0798645019247,
+                "close_repeats": {
+                  "reference": 1,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 1
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 580,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.8841463414634146,
+                  "recall": 0.8814589665653495,
+                  "f1": 0.882800608828006
+                },
+                "long_reference": 205,
+                "long_matched": 160,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9314669331070355,
+                "median_offset_error_on_matched_onsets_ms": 10.209401448584288,
+                "close_repeats": {
+                  "reference": 302,
+                  "both_onsets_matched": 295,
+                  "bridged_missing_reattack": 3
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 573,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.8734756097560976,
+                  "recall": 0.8708206686930091,
+                  "f1": 0.8721461187214612
+                },
+                "long_reference": 205,
+                "long_matched": 154,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9314669331070355,
+                "median_offset_error_on_matched_onsets_ms": 10.209401448584288,
+                "close_repeats": {
+                  "reference": 302,
+                  "both_onsets_matched": 295,
+                  "bridged_missing_reattack": 3
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.035010188817977905,
+            "onset_max_abs": 0.014598220586776733,
+            "changed_offsets_on_paired_onsets": 8
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 3,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 3,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        },
+        {
+          "id": "1134",
+          "split": "validation",
+          "predictions_full": 1183,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 95,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.08140531276778064,
+                  "recall": 0.08168529664660361,
+                  "f1": 0.0815450643776824
+                },
+                "long_reference": 11,
+                "long_matched": 7,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.2310688402838,
+                "median_offset_error_on_matched_onsets_ms": 449.3484497069744,
+                "close_repeats": {
+                  "reference": 0,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 0
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 82,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.0702656383890317,
+                  "recall": 0.0705073086844368,
+                  "f1": 0.0703862660944206
+                },
+                "long_reference": 11,
+                "long_matched": 0,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.2310688402838,
+                "median_offset_error_on_matched_onsets_ms": 449.3484497069744,
+                "close_repeats": {
+                  "reference": 0,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 0
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 1060,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.908311910882605,
+                  "recall": 0.9114359415305245,
+                  "f1": 0.9098712446351931
+                },
+                "long_reference": 57,
+                "long_matched": 40,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.2310688402838,
+                "median_offset_error_on_matched_onsets_ms": 9.465535481240295,
+                "close_repeats": {
+                  "reference": 296,
+                  "both_onsets_matched": 290,
+                  "bridged_missing_reattack": 3
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 1036,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.8877463581833762,
+                  "recall": 0.8907996560619088,
+                  "f1": 0.8892703862660944
+                },
+                "long_reference": 57,
+                "long_matched": 25,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.2310688402838,
+                "median_offset_error_on_matched_onsets_ms": 9.465535481240295,
+                "close_repeats": {
+                  "reference": 296,
+                  "both_onsets_matched": 290,
+                  "bridged_missing_reattack": 3
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.030575305223464966,
+            "onset_max_abs": 0.015019625425338745,
+            "changed_offsets_on_paired_onsets": 13
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 12,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 12,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        },
+        {
+          "id": "752",
+          "split": "validation",
+          "predictions_full": 1245,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 870,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.7442258340461934,
+                  "recall": 0.7404255319148936,
+                  "f1": 0.742320819112628
+                },
+                "long_reference": 12,
+                "long_matched": 6,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.5646585947336464,
+                "median_offset_error_on_matched_onsets_ms": 16.041437784831913,
+                "close_repeats": {
+                  "reference": 4,
+                  "both_onsets_matched": 3,
+                  "bridged_missing_reattack": 0
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 850,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.7271171941830624,
+                  "recall": 0.723404255319149,
+                  "f1": 0.7252559726962458
+                },
+                "long_reference": 12,
+                "long_matched": 0,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.5646585947336464,
+                "median_offset_error_on_matched_onsets_ms": 16.041437784831913,
+                "close_repeats": {
+                  "reference": 4,
+                  "both_onsets_matched": 3,
+                  "bridged_missing_reattack": 0
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 940,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.8041060735671514,
+                  "recall": 0.8,
+                  "f1": 0.8020477815699659
+                },
+                "long_reference": 12,
+                "long_matched": 6,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.5646585947336464,
+                "median_offset_error_on_matched_onsets_ms": 13.804117838276397,
+                "close_repeats": {
+                  "reference": 19,
+                  "both_onsets_matched": 18,
+                  "bridged_missing_reattack": 0
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 922,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.7887082976903336,
+                  "recall": 0.7846808510638298,
+                  "f1": 0.7866894197952219
+                },
+                "long_reference": 12,
+                "long_matched": 1,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.5646585947336464,
+                "median_offset_error_on_matched_onsets_ms": 13.804117838276397,
+                "close_repeats": {
+                  "reference": 19,
+                  "both_onsets_matched": 18,
+                  "bridged_missing_reattack": 0
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.028367847204208374,
+            "onset_max_abs": 0.014818727970123291,
+            "changed_offsets_on_paired_onsets": 15
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 4,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 4,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "epoch": 2,
+      "head_sha256": "a2c7ef96f3a22166089d0ef6cdabd08de1a064a22e0015df0ed760428dadb6b1",
+      "training_bce": 0.00632909634279915,
+      "supervised_cells": 9504000,
+      "selection": {
+        "checks": {
+          "all_recording_f1_not_lower": true,
+          "pooled_precision_not_lower": true,
+          "pooled_recall_not_lower": true,
+          "extra_not_increased": true,
+          "all_reattack_coverage_not_lower": true,
+          "sustain_interval_f1_not_lower": false
+        },
+        "eligible": false,
+        "pooled_onsets": {
+          "matched": 4377,
+          "reference": 4428,
+          "predicted": 4416,
+          "precision": 0.9911684782608695,
+          "recall": 0.9884823848238482,
+          "f1": 0.9898236092265943
+        }
+      },
+      "differences": {
+        "50ms": {
+          "recovered": 0,
+          "new_missing": 0,
+          "unmatched_predictions": 39,
+          "unavoidable_recovered": 0,
+          "unavoidable_new_missing": 0,
+          "before_ambiguous_coverage": 0,
+          "after_ambiguous_coverage": 0
+        },
+        "40ms": {
+          "recovered": 0,
+          "new_missing": 0,
+          "unmatched_predictions": 39,
+          "unavoidable_recovered": 0,
+          "unavoidable_new_missing": 0,
+          "before_ambiguous_coverage": 0,
+          "after_ambiguous_coverage": 0
+        }
+      },
+      "pooled": {
+        "key": {
+          "50ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.9911684782608695,
+              "recall": 0.9884823848238482,
+              "f1": 0.9898236092265943
+            },
+            "intervals": {
+              "matched": 1079,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.24433876811594202,
+              "recall": 0.243676603432701,
+              "f1": 0.24400723654454998
+            }
+          },
+          "40ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.9911684782608695,
+              "recall": 0.9884823848238482,
+              "f1": 0.9898236092265943
+            },
+            "intervals": {
+              "matched": 1088,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.2463768115942029,
+              "recall": 0.24570912375790424,
+              "f1": 0.2460425146992311
+            }
+          }
+        },
+        "sustain": {
+          "50ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.9911684782608695,
+              "recall": 0.9884823848238482,
+              "f1": 0.9898236092265943
+            },
+            "intervals": {
+              "matched": 3803,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.8611865942028986,
+              "recall": 0.8588527551942186,
+              "f1": 0.860018091361375
+            }
+          },
+          "40ms": {
+            "onsets": {
+              "matched": 4377,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.9911684782608695,
+              "recall": 0.9884823848238482,
+              "f1": 0.9898236092265943
+            },
+            "intervals": {
+              "matched": 3738,
+              "reference": 4428,
+              "predicted": 4416,
+              "precision": 0.8464673913043478,
+              "recall": 0.8441734417344173,
+              "f1": 0.8453188602442334
+            }
+          }
+        }
+      },
+      "recordings": [
+        {
+          "id": "1219",
+          "split": "validation",
+          "predictions_full": 1518,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.9859550561797753,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9831932773109243
+                },
+                "intervals": {
+                  "matched": 75,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.05266853932584269,
+                  "recall": 0.052374301675977654,
+                  "f1": 0.052521008403361345
+                },
+                "long_reference": 11,
+                "long_matched": 3,
+                "predicted_long": 141,
+                "mean_onset_error_ms": 4.048562846564135,
+                "median_offset_error_on_matched_onsets_ms": 382.237752278753,
+                "close_repeats": {
+                  "reference": 28,
+                  "both_onsets_matched": 21,
+                  "bridged_missing_reattack": 6
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.9859550561797753,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9831932773109243
+                },
+                "intervals": {
+                  "matched": 130,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.09129213483146068,
+                  "recall": 0.09078212290502793,
+                  "f1": 0.09103641456582633
+                },
+                "long_reference": 11,
+                "long_matched": 0,
+                "predicted_long": 141,
+                "mean_onset_error_ms": 4.048562846564135,
+                "median_offset_error_on_matched_onsets_ms": 382.237752278753,
+                "close_repeats": {
+                  "reference": 28,
+                  "both_onsets_matched": 21,
+                  "bridged_missing_reattack": 6
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.9859550561797753,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9831932773109243
+                },
+                "intervals": {
+                  "matched": 1224,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.8595505617977528,
+                  "recall": 0.8547486033519553,
+                  "f1": 0.8571428571428571
+                },
+                "long_reference": 146,
+                "long_matched": 80,
+                "predicted_long": 141,
+                "mean_onset_error_ms": 4.048562846564135,
+                "median_offset_error_on_matched_onsets_ms": 12.100219726494998,
+                "close_repeats": {
+                  "reference": 932,
+                  "both_onsets_matched": 901,
+                  "bridged_missing_reattack": 15
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1404,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.9859550561797753,
+                  "recall": 0.9804469273743017,
+                  "f1": 0.9831932773109243
+                },
+                "intervals": {
+                  "matched": 1208,
+                  "reference": 1432,
+                  "predicted": 1424,
+                  "precision": 0.848314606741573,
+                  "recall": 0.8435754189944135,
+                  "f1": 0.84593837535014
+                },
+                "long_reference": 146,
+                "long_matched": 59,
+                "predicted_long": 141,
+                "mean_onset_error_ms": 4.048562846564135,
+                "median_offset_error_on_matched_onsets_ms": 12.100219726494998,
+                "close_repeats": {
+                  "reference": 932,
+                  "both_onsets_matched": 901,
+                  "bridged_missing_reattack": 15
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.06721141934394836,
+            "onset_max_abs": 0.020056068897247314,
+            "changed_offsets_on_paired_onsets": 19
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 20,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 20,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        },
+        {
+          "id": "628",
+          "split": "validation",
+          "predictions_full": 696,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 41,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.0625,
+                  "recall": 0.06231003039513678,
+                  "f1": 0.0624048706240487
+                },
+                "long_reference": 20,
+                "long_matched": 6,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9310788183297234,
+                "median_offset_error_on_matched_onsets_ms": 681.0798645019247,
+                "close_repeats": {
+                  "reference": 1,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 1
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 28,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.042682926829268296,
+                  "recall": 0.0425531914893617,
+                  "f1": 0.0426179604261796
+                },
+                "long_reference": 20,
+                "long_matched": 4,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9310788183297234,
+                "median_offset_error_on_matched_onsets_ms": 681.0798645019247,
+                "close_repeats": {
+                  "reference": 1,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 1
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 580,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.8841463414634146,
+                  "recall": 0.8814589665653495,
+                  "f1": 0.882800608828006
+                },
+                "long_reference": 205,
+                "long_matched": 160,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9310788183297234,
+                "median_offset_error_on_matched_onsets_ms": 10.209401448584288,
+                "close_repeats": {
+                  "reference": 302,
+                  "both_onsets_matched": 295,
+                  "bridged_missing_reattack": 3
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 653,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.9954268292682927,
+                  "recall": 0.9924012158054711,
+                  "f1": 0.9939117199391172
+                },
+                "intervals": {
+                  "matched": 573,
+                  "reference": 658,
+                  "predicted": 656,
+                  "precision": 0.8734756097560976,
+                  "recall": 0.8708206686930091,
+                  "f1": 0.8721461187214612
+                },
+                "long_reference": 205,
+                "long_matched": 154,
+                "predicted_long": 195,
+                "mean_onset_error_ms": 3.9310788183297234,
+                "median_offset_error_on_matched_onsets_ms": 10.209401448584288,
+                "close_repeats": {
+                  "reference": 302,
+                  "both_onsets_matched": 295,
+                  "bridged_missing_reattack": 3
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.05228704214096069,
+            "onset_max_abs": 0.021805107593536377,
+            "changed_offsets_on_paired_onsets": 11
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 3,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 3,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        },
+        {
+          "id": "1134",
+          "split": "validation",
+          "predictions_full": 1183,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 95,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.08140531276778064,
+                  "recall": 0.08168529664660361,
+                  "f1": 0.0815450643776824
+                },
+                "long_reference": 11,
+                "long_matched": 7,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.231292138377258,
+                "median_offset_error_on_matched_onsets_ms": 449.3484497069744,
+                "close_repeats": {
+                  "reference": 0,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 0
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 82,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.0702656383890317,
+                  "recall": 0.0705073086844368,
+                  "f1": 0.0703862660944206
+                },
+                "long_reference": 11,
+                "long_matched": 0,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.231292138377258,
+                "median_offset_error_on_matched_onsets_ms": 449.3484497069744,
+                "close_repeats": {
+                  "reference": 0,
+                  "both_onsets_matched": 0,
+                  "bridged_missing_reattack": 0
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 1060,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.908311910882605,
+                  "recall": 0.9114359415305245,
+                  "f1": 0.9098712446351931
+                },
+                "long_reference": 57,
+                "long_matched": 40,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.231292138377258,
+                "median_offset_error_on_matched_onsets_ms": 9.465535481240295,
+                "close_repeats": {
+                  "reference": 296,
+                  "both_onsets_matched": 290,
+                  "bridged_missing_reattack": 3
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1155,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.9897172236503856,
+                  "recall": 0.9931212381771282,
+                  "f1": 0.9914163090128756
+                },
+                "intervals": {
+                  "matched": 1036,
+                  "reference": 1163,
+                  "predicted": 1167,
+                  "precision": 0.8877463581833762,
+                  "recall": 0.8907996560619088,
+                  "f1": 0.8892703862660944
+                },
+                "long_reference": 57,
+                "long_matched": 25,
+                "predicted_long": 52,
+                "mean_onset_error_ms": 4.231292138377258,
+                "median_offset_error_on_matched_onsets_ms": 9.465535481240295,
+                "close_repeats": {
+                  "reference": 296,
+                  "both_onsets_matched": 290,
+                  "bridged_missing_reattack": 3
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.05146139860153198,
+            "onset_max_abs": 0.022218704223632812,
+            "changed_offsets_on_paired_onsets": 14
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 12,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 12,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        },
+        {
+          "id": "752",
+          "split": "validation",
+          "predictions_full": 1245,
+          "predicted_onsets_outside_input": 0,
+          "unobservable_reference_offsets": {
+            "key": 0,
+            "sustain": 0
+          },
+          "metrics": {
+            "key": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 868,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.7425149700598802,
+                  "recall": 0.7387234042553191,
+                  "f1": 0.7406143344709898
+                },
+                "long_reference": 12,
+                "long_matched": 6,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.564892050522582,
+                "median_offset_error_on_matched_onsets_ms": 16.124725341782664,
+                "close_repeats": {
+                  "reference": 4,
+                  "both_onsets_matched": 3,
+                  "bridged_missing_reattack": 0
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 848,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.7254063301967494,
+                  "recall": 0.7217021276595744,
+                  "f1": 0.7235494880546075
+                },
+                "long_reference": 12,
+                "long_matched": 0,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.564892050522582,
+                "median_offset_error_on_matched_onsets_ms": 16.124725341782664,
+                "close_repeats": {
+                  "reference": 4,
+                  "both_onsets_matched": 3,
+                  "bridged_missing_reattack": 0
+                }
+              }
+            },
+            "sustain": {
+              "50ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 939,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.8032506415739948,
+                  "recall": 0.7991489361702128,
+                  "f1": 0.8011945392491467
+                },
+                "long_reference": 12,
+                "long_matched": 6,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.564892050522582,
+                "median_offset_error_on_matched_onsets_ms": 13.943990071723533,
+                "close_repeats": {
+                  "reference": 19,
+                  "both_onsets_matched": 18,
+                  "bridged_missing_reattack": 0
+                }
+              },
+              "40ms": {
+                "onsets": {
+                  "matched": 1165,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.9965782720273738,
+                  "recall": 0.9914893617021276,
+                  "f1": 0.9940273037542662
+                },
+                "intervals": {
+                  "matched": 921,
+                  "reference": 1175,
+                  "predicted": 1169,
+                  "precision": 0.787852865697177,
+                  "recall": 0.7838297872340425,
+                  "f1": 0.7858361774744027
+                },
+                "long_reference": 12,
+                "long_matched": 1,
+                "predicted_long": 8,
+                "mean_onset_error_ms": 3.564892050522582,
+                "median_offset_error_on_matched_onsets_ms": 13.943990071723533,
+                "close_repeats": {
+                  "reference": 19,
+                  "both_onsets_matched": 18,
+                  "bridged_missing_reattack": 0
+                }
+              }
+            }
+          },
+          "acoustic_output_change": {
+            "frame_max_abs": 0.03628024458885193,
+            "onset_max_abs": 0.02167019248008728,
+            "changed_offsets_on_paired_onsets": 27
+          },
+          "differences": {
+            "50ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 4,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            },
+            "40ms": {
+              "recovered": 0,
+              "new_missing": 0,
+              "unmatched_predictions": 4,
+              "unavoidable_recovered": 0,
+              "unavoidable_new_missing": 0,
+              "before_ambiguous_coverage": 0,
+              "after_ambiguous_coverage": 0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "selected_epoch": 1,
+  "frozen_model_unchanged": true,
+  "test_accessed": false,
+  "training_performed": true,
+  "application_enabled": false,
+  "direct_listening_performed": false,
+  "musical_acceptance": false,
+  "differences_interpretation": "recovered/new_missing are deterministic assignment changes; unavoidable_* holds under every maximum-cardinality onset matching, conservatively ignoring the secondary minimum-time-error objective.",
+  "interpretation": "Small final-head fit on a public development subset; not an unseen-pretraining benchmark or LN acceptance."
+}

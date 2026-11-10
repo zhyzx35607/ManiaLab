@@ -1,0 +1,621 @@
+{
+  "identity": {
+    "audit_report_sha256": "1fbdeb843e237f97396ae7258ec349ca07f9015274f5a296b729fa11f408bb8d",
+    "manifest_sha256": "b8e8e2046fd02acf02dfff1d38969ab4a5de8130f1d32e4a75eaf9659c0da7e1",
+    "runner_sha256": "8ba3de2d29063e1f51fc948ce9df3fc52dcc4f1ebe1767a4222e8f9ccdd72be2",
+    "protocol_sha256": "5d1d21c469d1a8ee22ab1a6fa289312fbeb811bf0b478a3ca308e8d27f98b165",
+    "partitura_version": "1.8.0",
+    "importer_sha256": "22c91c02623a8de6ac3dcb1dd57b799cf3999bce935417329ef9953920aef0ec",
+    "score_code_sha256": "6a3c3af818d5f9cfcf3ffa1e9f1d2c27f690baeaae1ffe8794c35fd031005eb7"
+  },
+  "cases": [
+    {
+      "name": "beethoven_piano_sonatas_05-3",
+      "split": "train",
+      "source_sha256": "4642ed73550c684d7df7b2eeb0fedc878d87acaca3050dc1c0d1c96f5628ffa5",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 2203,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 86,
+        "sound_tie_ordinary_notes": 80,
+        "sound_tie_grace_notes": 6
+      },
+      "endpoint_summary": {
+        "pointer_references": 6,
+        "unique_relations": 6,
+        "unique_outside_endpoints": 6,
+        "endpoint_types": {
+          "GraceNote": 6
+        },
+        "registered_note_subclass_endpoints": 6,
+        "registered_generic_note_endpoints": 6,
+        "registered_anywhere_endpoints": 6,
+        "zero_duration_endpoints": 6
+      },
+      "warning_count": 10
+    },
+    {
+      "name": "chopin_mazurkas_BI115-3op33-3",
+      "split": "train",
+      "source_sha256": "118850a18b6734744423592e68779bb026cf6c9281ce9f4068454e4f66845751",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 594,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 42,
+        "sound_tie_ordinary_notes": 40,
+        "sound_tie_grace_notes": 2
+      },
+      "endpoint_summary": {
+        "pointer_references": 2,
+        "unique_relations": 2,
+        "unique_outside_endpoints": 2,
+        "endpoint_types": {
+          "GraceNote": 2
+        },
+        "registered_note_subclass_endpoints": 2,
+        "registered_generic_note_endpoints": 2,
+        "registered_anywhere_endpoints": 2,
+        "zero_duration_endpoints": 2
+      },
+      "warning_count": 3
+    },
+    {
+      "name": "debussy_corpus_l113-03_childrens_serenade",
+      "split": "train",
+      "source_sha256": "03d8e7ca0f8fbfe74cc57d090b361d2ee61ff960cb33f33e259f7d1d40b5c59b",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 1695,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 65,
+        "sound_tie_grace_notes": 3,
+        "sound_tie_ordinary_notes": 62
+      },
+      "endpoint_summary": {
+        "pointer_references": 3,
+        "unique_relations": 3,
+        "unique_outside_endpoints": 3,
+        "endpoint_types": {
+          "GraceNote": 3
+        },
+        "registered_note_subclass_endpoints": 3,
+        "registered_generic_note_endpoints": 3,
+        "registered_anywhere_endpoints": 3,
+        "zero_duration_endpoints": 3
+      },
+      "warning_count": 15
+    },
+    {
+      "name": "debussy_corpus_l117-02_preludes_voiles",
+      "split": "train",
+      "source_sha256": "db346da5ac775a84db64a569ba1ffe26e80c1f368699c44e0fd11ff920cf7ee3",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 1201,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 229,
+        "sound_tie_ordinary_notes": 211,
+        "sound_tie_grace_notes": 18
+      },
+      "endpoint_summary": {
+        "pointer_references": 18,
+        "unique_relations": 18,
+        "unique_outside_endpoints": 18,
+        "endpoint_types": {
+          "GraceNote": 18
+        },
+        "registered_note_subclass_endpoints": 18,
+        "registered_generic_note_endpoints": 18,
+        "registered_anywhere_endpoints": 18,
+        "zero_duration_endpoints": 18
+      },
+      "warning_count": 62
+    },
+    {
+      "name": "debussy_corpus_l117-08_preludes_fille",
+      "split": "train",
+      "source_sha256": "58ad20000b047a1533a5de004db3b9b2422348b2ae47084b6d916fb0a568f48f",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 709,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 157,
+        "sound_tie_ordinary_notes": 156,
+        "sound_tie_grace_notes": 1
+      },
+      "endpoint_summary": {
+        "pointer_references": 1,
+        "unique_relations": 1,
+        "unique_outside_endpoints": 1,
+        "endpoint_types": {
+          "GraceNote": 1
+        },
+        "registered_note_subclass_endpoints": 1,
+        "registered_generic_note_endpoints": 1,
+        "registered_anywhere_endpoints": 1,
+        "zero_duration_endpoints": 1
+      },
+      "warning_count": 20
+    },
+    {
+      "name": "grieg_lyric_pieces_op43n03",
+      "split": "train",
+      "source_sha256": "49bc71d7764df283653e564beff3ce573cb839c6c996f0a1292a1a898a1492ce",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 577,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 58,
+        "sound_tie_grace_notes": 5,
+        "sound_tie_ordinary_notes": 53
+      },
+      "endpoint_summary": {
+        "pointer_references": 5,
+        "unique_relations": 5,
+        "unique_outside_endpoints": 5,
+        "endpoint_types": {
+          "GraceNote": 5
+        },
+        "registered_note_subclass_endpoints": 5,
+        "registered_generic_note_endpoints": 5,
+        "registered_anywhere_endpoints": 5,
+        "zero_duration_endpoints": 5
+      },
+      "warning_count": 7
+    },
+    {
+      "name": "grieg_lyric_pieces_op54n03",
+      "split": "train",
+      "source_sha256": "529067dffb8e0e4464f3b3d849893fd3230b1286fa1be7dd141ea5f58ad3fb30",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 2367,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 21,
+        "sound_tie_ordinary_notes": 19,
+        "sound_tie_grace_notes": 2
+      },
+      "endpoint_summary": {
+        "pointer_references": 2,
+        "unique_relations": 2,
+        "unique_outside_endpoints": 2,
+        "endpoint_types": {
+          "GraceNote": 2
+        },
+        "registered_note_subclass_endpoints": 2,
+        "registered_generic_note_endpoints": 2,
+        "registered_anywhere_endpoints": 2,
+        "zero_duration_endpoints": 2
+      },
+      "warning_count": 3
+    },
+    {
+      "name": "grieg_lyric_pieces_op54n04",
+      "split": "train",
+      "source_sha256": "61bf5aaa2e009366d26851c7238c4ffd9aa191958985223c4c37c523518fb7f3",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 1720,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 587,
+        "sound_tie_ordinary_notes": 579,
+        "sound_tie_grace_notes": 8
+      },
+      "endpoint_summary": {
+        "pointer_references": 8,
+        "unique_relations": 8,
+        "unique_outside_endpoints": 8,
+        "endpoint_types": {
+          "GraceNote": 8
+        },
+        "registered_note_subclass_endpoints": 8,
+        "registered_generic_note_endpoints": 8,
+        "registered_anywhere_endpoints": 8,
+        "zero_duration_endpoints": 8
+      },
+      "warning_count": 11
+    },
+    {
+      "name": "grieg_lyric_pieces_op54n06",
+      "split": "train",
+      "source_sha256": "3cfa781f91cd7e01c0806d1edee8c6436495172d3efc84db6f2e6e7c9d7e3eb9",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 784,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 192,
+        "sound_tie_ordinary_notes": 190,
+        "sound_tie_grace_notes": 2
+      },
+      "endpoint_summary": {
+        "pointer_references": 2,
+        "unique_relations": 2,
+        "unique_outside_endpoints": 2,
+        "endpoint_types": {
+          "GraceNote": 2
+        },
+        "registered_note_subclass_endpoints": 2,
+        "registered_generic_note_endpoints": 2,
+        "registered_anywhere_endpoints": 2,
+        "zero_duration_endpoints": 2
+      },
+      "warning_count": 5
+    },
+    {
+      "name": "grieg_lyric_pieces_op62n01",
+      "split": "train",
+      "source_sha256": "8920056612ff99c99699eed7bceeafd7d9b1201b952af41a2c89e45e5af8ae5d",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 1121,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 16,
+        "sound_tie_grace_notes": 8,
+        "sound_tie_ordinary_notes": 8
+      },
+      "endpoint_summary": {
+        "pointer_references": 8,
+        "unique_relations": 8,
+        "unique_outside_endpoints": 8,
+        "endpoint_types": {
+          "GraceNote": 8
+        },
+        "registered_note_subclass_endpoints": 8,
+        "registered_generic_note_endpoints": 8,
+        "registered_anywhere_endpoints": 8,
+        "zero_duration_endpoints": 8
+      },
+      "warning_count": 6
+    },
+    {
+      "name": "grieg_lyric_pieces_op62n05",
+      "split": "train",
+      "source_sha256": "0cd1bbb92a3077c9f17b177db2fd34ebe76f8e042c9c37b468b317c1646cadc7",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 742,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 74,
+        "sound_tie_ordinary_notes": 71,
+        "sound_tie_grace_notes": 3
+      },
+      "endpoint_summary": {
+        "pointer_references": 3,
+        "unique_relations": 3,
+        "unique_outside_endpoints": 3,
+        "endpoint_types": {
+          "GraceNote": 3
+        },
+        "registered_note_subclass_endpoints": 3,
+        "registered_generic_note_endpoints": 3,
+        "registered_anywhere_endpoints": 3,
+        "zero_duration_endpoints": 3
+      },
+      "warning_count": 2
+    },
+    {
+      "name": "grieg_lyric_pieces_op71n01",
+      "split": "train",
+      "source_sha256": "6efd632d07f920e6e51c2ea08dbc61039c6937fed616b5bfa538660ddd43d8de",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 1203,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 84,
+        "sound_tie_ordinary_notes": 77,
+        "sound_tie_grace_notes": 7
+      },
+      "endpoint_summary": {
+        "pointer_references": 7,
+        "unique_relations": 7,
+        "unique_outside_endpoints": 7,
+        "endpoint_types": {
+          "GraceNote": 7
+        },
+        "registered_note_subclass_endpoints": 7,
+        "registered_generic_note_endpoints": 7,
+        "registered_anywhere_endpoints": 7,
+        "zero_duration_endpoints": 7
+      },
+      "warning_count": 15
+    },
+    {
+      "name": "grieg_lyric_pieces_op71n04",
+      "split": "train",
+      "source_sha256": "feef3dd5a797f099b85a2b20edd9a2a2eb53bd9caf262aacc0e7a9b50e00b2ab",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 1282,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 96,
+        "sound_tie_grace_notes": 38,
+        "sound_tie_ordinary_notes": 58
+      },
+      "endpoint_summary": {
+        "pointer_references": 38,
+        "unique_relations": 38,
+        "unique_outside_endpoints": 38,
+        "endpoint_types": {
+          "GraceNote": 38
+        },
+        "registered_note_subclass_endpoints": 38,
+        "registered_generic_note_endpoints": 38,
+        "registered_anywhere_endpoints": 38,
+        "zero_duration_endpoints": 38
+      },
+      "warning_count": 13
+    },
+    {
+      "name": "grieg_lyric_pieces_op71n06",
+      "split": "train",
+      "source_sha256": "79e425bea45f73d5ff2ef749a300b074cc259376396627febe417ed2a23fb19a",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 463,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 38,
+        "sound_tie_ordinary_notes": 33,
+        "sound_tie_grace_notes": 5
+      },
+      "endpoint_summary": {
+        "pointer_references": 5,
+        "unique_relations": 5,
+        "unique_outside_endpoints": 5,
+        "endpoint_types": {
+          "GraceNote": 5
+        },
+        "registered_note_subclass_endpoints": 5,
+        "registered_generic_note_endpoints": 5,
+        "registered_anywhere_endpoints": 5,
+        "zero_duration_endpoints": 5
+      },
+      "warning_count": 6
+    },
+    {
+      "name": "liszt_pelerinage_161.07_Apres_une_lecture_du_Dante",
+      "split": "train",
+      "source_sha256": "49fe666840930f86c5aac4d901adda69c0a4cf19dc611936314cbff821e55236",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 14045,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 364,
+        "sound_tie_ordinary_notes": 363,
+        "sound_tie_grace_notes": 1
+      },
+      "endpoint_summary": {
+        "pointer_references": 1,
+        "unique_relations": 1,
+        "unique_outside_endpoints": 1,
+        "endpoint_types": {
+          "GraceNote": 1
+        },
+        "registered_note_subclass_endpoints": 1,
+        "registered_generic_note_endpoints": 1,
+        "registered_anywhere_endpoints": 1,
+        "zero_duration_endpoints": 1
+      },
+      "warning_count": 58
+    },
+    {
+      "name": "medtner_tales_op08n01",
+      "split": "validation",
+      "source_sha256": "a6e0edab2ddb8b37879a4f5e9a294c97b7b718ecd466eeb20ed0cc9a766e9528",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 1697,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 206,
+        "sound_tie_ordinary_notes": 172,
+        "sound_tie_grace_notes": 34
+      },
+      "endpoint_summary": {
+        "pointer_references": 34,
+        "unique_relations": 34,
+        "unique_outside_endpoints": 34,
+        "endpoint_types": {
+          "GraceNote": 34
+        },
+        "registered_note_subclass_endpoints": 34,
+        "registered_generic_note_endpoints": 34,
+        "registered_anywhere_endpoints": 34,
+        "zero_duration_endpoints": 34
+      },
+      "warning_count": 28
+    },
+    {
+      "name": "medtner_tales_op14n01",
+      "split": "train",
+      "source_sha256": "abd7201de4c9c2999ebd9d95578f16458f14e3f7e5dcceefc147eb0e67d102d1",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 1302,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 83,
+        "sound_tie_ordinary_notes": 80,
+        "sound_tie_grace_notes": 3
+      },
+      "endpoint_summary": {
+        "pointer_references": 3,
+        "unique_relations": 3,
+        "unique_outside_endpoints": 3,
+        "endpoint_types": {
+          "GraceNote": 3
+        },
+        "registered_note_subclass_endpoints": 3,
+        "registered_generic_note_endpoints": 3,
+        "registered_anywhere_endpoints": 3,
+        "zero_duration_endpoints": 3
+      },
+      "warning_count": 18
+    },
+    {
+      "name": "medtner_tales_op34n03",
+      "split": "train",
+      "source_sha256": "de9ade7fe7df5d948473496851e351fb3abdb6ab289d04bceb85b91be9dfa3e7",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 2478,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 169,
+        "sound_tie_ordinary_notes": 168,
+        "sound_tie_grace_notes": 1
+      },
+      "endpoint_summary": {
+        "pointer_references": 1,
+        "unique_relations": 1,
+        "unique_outside_endpoints": 1,
+        "endpoint_types": {
+          "GraceNote": 1
+        },
+        "registered_note_subclass_endpoints": 1,
+        "registered_generic_note_endpoints": 1,
+        "registered_anywhere_endpoints": 1,
+        "zero_duration_endpoints": 1
+      },
+      "warning_count": 39
+    },
+    {
+      "name": "medtner_tales_op42n03",
+      "split": "validation",
+      "source_sha256": "e2a810e6b371e13091665b59e2bbc4c35fe439af5f4bc32efd1d56dcd14e7668",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 3272,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 324,
+        "sound_tie_ordinary_notes": 311,
+        "sound_tie_grace_notes": 13
+      },
+      "endpoint_summary": {
+        "pointer_references": 13,
+        "unique_relations": 13,
+        "unique_outside_endpoints": 13,
+        "endpoint_types": {
+          "GraceNote": 13
+        },
+        "registered_note_subclass_endpoints": 13,
+        "registered_generic_note_endpoints": 13,
+        "registered_anywhere_endpoints": 13,
+        "zero_duration_endpoints": 13
+      },
+      "warning_count": 17
+    },
+    {
+      "name": "mozart_sonatas_K281-3",
+      "split": "train",
+      "source_sha256": "eba4587acebb13657ac4d6a590d02481f002f956a643f69d59b0a3446e6b2c43",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 2313,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 34,
+        "sound_tie_ordinary_notes": 32,
+        "sound_tie_grace_notes": 2
+      },
+      "endpoint_summary": {
+        "pointer_references": 2,
+        "unique_relations": 2,
+        "unique_outside_endpoints": 2,
+        "endpoint_types": {
+          "GraceNote": 2
+        },
+        "registered_note_subclass_endpoints": 2,
+        "registered_generic_note_endpoints": 2,
+        "registered_anywhere_endpoints": 2,
+        "zero_duration_endpoints": 2
+      },
+      "warning_count": 15
+    },
+    {
+      "name": "mozart_sonatas_K284-3",
+      "split": "train",
+      "source_sha256": "4ba8727c57d8fb7ab8f06f1f64b928d6521eab15027fb9771c33d349ceefecee",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 4838,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 82,
+        "sound_tie_ordinary_notes": 81,
+        "sound_tie_grace_notes": 1
+      },
+      "endpoint_summary": {
+        "pointer_references": 1,
+        "unique_relations": 1,
+        "unique_outside_endpoints": 1,
+        "endpoint_types": {
+          "GraceNote": 1
+        },
+        "registered_note_subclass_endpoints": 1,
+        "registered_generic_note_endpoints": 1,
+        "registered_anywhere_endpoints": 1,
+        "zero_duration_endpoints": 1
+      },
+      "warning_count": 58
+    },
+    {
+      "name": "mozart_sonatas_K309-2",
+      "split": "train",
+      "source_sha256": "aaa8ac86530ba4982d0dce36bb50ba24f2db0fce19b137e5a5d936bde0d08077",
+      "status": "complete",
+      "source_declaration_counts": {
+        "written_notes": 1657,
+        "explicit_note_ids": 0,
+        "sound_tie_notes": 88,
+        "sound_tie_ordinary_notes": 86,
+        "sound_tie_grace_notes": 2
+      },
+      "endpoint_summary": {
+        "pointer_references": 2,
+        "unique_relations": 2,
+        "unique_outside_endpoints": 2,
+        "endpoint_types": {
+          "GraceNote": 2
+        },
+        "registered_note_subclass_endpoints": 2,
+        "registered_generic_note_endpoints": 2,
+        "registered_anywhere_endpoints": 2,
+        "zero_duration_endpoints": 2
+      },
+      "warning_count": 31
+    }
+  ],
+  "completed": 22,
+  "errors": 0,
+  "elapsed_seconds": 14.754340999992564,
+  "endpoint_totals": {
+    "pointer_references": 165,
+    "unique_relations": 165,
+    "unique_outside_endpoints": 165,
+    "registered_note_subclass_endpoints": 165,
+    "registered_generic_note_endpoints": 165,
+    "registered_anywhere_endpoints": 165,
+    "zero_duration_endpoints": 165
+  },
+  "endpoint_types": {
+    "GraceNote": 165
+  },
+  "source_declaration_totals": {
+    "written_notes": 48263,
+    "explicit_note_ids": 0,
+    "sound_tie_notes": 3095,
+    "sound_tie_ordinary_notes": 2930,
+    "sound_tie_grace_notes": 165
+  },
+  "old_audit_changed": false,
+  "old_cache_read": false,
+  "old_cache_changed": false,
+  "test_scores_read_by_diagnostic": false,
+  "upstream_preprocessing_called": false,
+  "model_loaded": false,
+  "musical_acceptance": false,
+  "limitations": [
+    "Only the 22 earlier audit failures were diagnosed; original audit counts remain frozen.",
+    "Special XML declarations and imported object counts are not asserted to be a one-to-one mapping.",
+    "Registered GraceNote endpoints do not establish correct tie pairing or acoustic timing."
+  ],
+  "report_sha256": "4bac778e70762e0c1d49aebe6e4115c211444120ed3197eba7efff6c1e040193",
+  "local_artifacts_verified": 25
+}

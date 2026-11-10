@@ -1,0 +1,3448 @@
+{
+  "identity": {
+    "source_revision": "1462e7c28d7adaae033150883a7cb00238ee364a",
+    "pretrained_sha256": "1f71ab8b6c7cd271e18adfba5ccbcd634a8530a44e46aabede27e15ce84dbe32",
+    "dataset_sha256": {
+      "clean": "bfd8873a195bf0e4085d72c77cd6a409fbcc01cb3db2a2a9437d0933612b7999",
+      "plus1": "cd81db7696445602fd98adee3304d2a8d0ec65af59a86a0f15f7f60336d02e20",
+      "plus2": "8859f14593d884426117a695973ed6b485328fa442da0a02a0a8c10d8c900beb",
+      "augmentation": "02f8acf9d0e6afb7db162a6c5292f862db5d5c073cf7f020c3087a5af769bffb"
+    },
+    "code_sha256": {
+      "runner": "ee5c8312725f91c21fcc0023970820875bf51fdf65b579f2a4488f2ba15ae9c0",
+      "clean_runner": "ad7b3eba33f470fd9135a31fbe54cbf804f7431901c9f5928301876d4074e497",
+      "base_runner": "5d2a06acd18e7878d249bd17ec92920af4e7bb266c1c217faae10d7ca04d4859",
+      "event_graph": "b4fc8077902c9884b54060e998a1fecc05274dc366304ed858f92e6256957b0c",
+      "overlap": "d87069cbbdb17526aaf0e494800e23de8662301242091aad07e97cad9312ab44",
+      "prepare": "6e4fda9b5375acd5283a6de691eb7ed0afb8296c654e575f321b93f9c9e46ca5",
+      "protocol": "3117d7d976a2156b0e0684f6073a1012eb10ed57b0adeb1766a8ab620940a0b3"
+    },
+    "seed": 42,
+    "epochs": 4,
+    "lr": 0.0001,
+    "weight_decay": 0.0005,
+    "voice_positive_weight": 5.0,
+    "threshold": 0.5,
+    "train_windows_per_epoch": 511,
+    "validation_windows_per_kind": 36,
+    "input_schedule": "kind[(original_window_index + epoch - 1) % 3]; seeded shuffled traversal",
+    "selection": "equal mean of clean/plus1/plus2 per-piece macro voice F1, earliest maximum",
+    "chord_supervision": false,
+    "test_loaded": false,
+    "application_enabled": false
+  },
+  "training_report_sha256": "58f0b3c26767c83cba306843e4fd67c15adde42a367ed101b69649ff65298ee1",
+  "dataset_totals": {
+    "clean": {
+      "train": {
+        "voice_candidates": 1829267,
+        "voice_supervised": 167175,
+        "voice_positives": 27362,
+        "chord_supervised": 0,
+        "staff_supervised": 26178,
+        "carry_in": 89,
+        "carry_out": 148,
+        "open_successors": 0,
+        "windows": 511
+      },
+      "validation": {
+        "voice_candidates": 125880,
+        "voice_supervised": 8004,
+        "voice_positives": 2218,
+        "chord_supervised": 0,
+        "staff_supervised": 1966,
+        "carry_in": 4,
+        "carry_out": 5,
+        "open_successors": 0,
+        "windows": 36
+      }
+    },
+    "plus1": {
+      "train": {
+        "voice_candidates": 1958268,
+        "voice_supervised": 167175,
+        "voice_positives": 27362,
+        "chord_supervised": 0,
+        "staff_supervised": 26178,
+        "carry_in": 1520,
+        "carry_out": 1975,
+        "open_successors": 0,
+        "extended_events": 34073,
+        "added_carry": 1431,
+        "windows": 511
+      },
+      "validation": {
+        "voice_candidates": 136447,
+        "voice_supervised": 8004,
+        "voice_positives": 2218,
+        "chord_supervised": 0,
+        "staff_supervised": 1966,
+        "carry_in": 126,
+        "carry_out": 138,
+        "open_successors": 0,
+        "extended_events": 2125,
+        "added_carry": 122,
+        "windows": 36
+      }
+    },
+    "plus2": {
+      "train": {
+        "voice_candidates": 2022575,
+        "voice_supervised": 167175,
+        "voice_positives": 27362,
+        "chord_supervised": 0,
+        "staff_supervised": 26178,
+        "carry_in": 2195,
+        "carry_out": 2962,
+        "open_successors": 0,
+        "extended_events": 34748,
+        "added_carry": 2106,
+        "windows": 511
+      },
+      "validation": {
+        "voice_candidates": 142198,
+        "voice_supervised": 8004,
+        "voice_positives": 2218,
+        "chord_supervised": 0,
+        "staff_supervised": 1966,
+        "carry_in": 187,
+        "carry_out": 221,
+        "open_successors": 0,
+        "extended_events": 2186,
+        "added_carry": 183,
+        "windows": 36
+      }
+    }
+  },
+  "epochs": [
+    {
+      "epoch": 0,
+      "evaluation_sha256": "8bd9bcf3be2f72b07f49c717eb5848375b39219d8ebdc76050e390af833e565e",
+      "variants": {
+        "clean": {
+          "voice": {
+            "tp": 2111,
+            "fp": 519,
+            "fn": 107,
+            "tn": 5267,
+            "precision": 0.8026615969581748,
+            "recall": 0.9517583408476105,
+            "f1": 0.8708745874587459
+          },
+          "macro_voice_f1": 0.8606392035998808,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 213,
+                "fp": 117,
+                "fn": 1,
+                "tn": 833,
+                "precision": 0.6454545454545455,
+                "recall": 0.9953271028037384,
+                "f1": 0.7830882352941176
+              },
+              "staff_correct": 216,
+              "staff_notes": 268,
+              "candidate_edges": 18258,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8059701492537313
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 110,
+                "fp": 74,
+                "fn": 4,
+                "tn": 100,
+                "precision": 0.5978260869565217,
+                "recall": 0.9649122807017544,
+                "f1": 0.738255033557047
+              },
+              "staff_correct": 161,
+              "staff_notes": 178,
+              "candidate_edges": 7880,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9044943820224719
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 49,
+                "fp": 25,
+                "fn": 0,
+                "tn": 36,
+                "precision": 0.6621621621621622,
+                "recall": 1.0,
+                "f1": 0.7967479674796748
+              },
+              "staff_correct": 79,
+              "staff_notes": 91,
+              "candidate_edges": 2213,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.8681318681318682
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 634,
+                "fp": 147,
+                "fn": 51,
+                "tn": 1896,
+                "precision": 0.8117797695262484,
+                "recall": 0.9255474452554745,
+                "f1": 0.8649386084583902
+              },
+              "staff_correct": 302,
+              "staff_notes": 400,
+              "candidate_edges": 40435,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.755
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 197,
+                "fp": 16,
+                "fn": 1,
+                "tn": 443,
+                "precision": 0.9248826291079812,
+                "recall": 0.9949494949494949,
+                "f1": 0.9586374695863747
+              },
+              "staff_correct": 200,
+              "staff_notes": 203,
+              "candidate_edges": 11586,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.9852216748768473
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 178,
+                "fp": 52,
+                "fn": 0,
+                "tn": 149,
+                "precision": 0.7739130434782608,
+                "recall": 1.0,
+                "f1": 0.8725490196078431
+              },
+              "staff_correct": 174,
+              "staff_notes": 179,
+              "candidate_edges": 8837,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9720670391061452
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 217,
+                "fp": 0,
+                "fn": 28,
+                "tn": 165,
+                "precision": 1.0,
+                "recall": 0.8857142857142857,
+                "f1": 0.9393939393939394
+              },
+              "staff_correct": 186,
+              "staff_notes": 205,
+              "candidate_edges": 11788,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.9073170731707317
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 359,
+                "fp": 56,
+                "fn": 11,
+                "tn": 885,
+                "precision": 0.8650602409638555,
+                "recall": 0.9702702702702702,
+                "f1": 0.9146496815286624
+              },
+              "staff_correct": 224,
+              "staff_notes": 231,
+              "candidate_edges": 13107,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9696969696969697
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 154,
+                "fp": 32,
+                "fn": 11,
+                "tn": 760,
+                "precision": 0.8279569892473119,
+                "recall": 0.9333333333333333,
+                "f1": 0.8774928774928775
+              },
+              "staff_correct": 204,
+              "staff_notes": 211,
+              "candidate_edges": 11776,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.966824644549763
+            }
+          ],
+          "staff_correct": 1746,
+          "staff_notes": 1966,
+          "candidate_edges": 125880,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus1": {
+          "voice": {
+            "tp": 1983,
+            "fp": 2010,
+            "fn": 235,
+            "tn": 3776,
+            "precision": 0.4966190833959429,
+            "recall": 0.89404869251578,
+            "f1": 0.638544517791016
+          },
+          "macro_voice_f1": 0.6225996514058623,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 158,
+                "fp": 487,
+                "fn": 56,
+                "tn": 463,
+                "precision": 0.24496124031007752,
+                "recall": 0.7383177570093458,
+                "f1": 0.3678696158323632
+              },
+              "staff_correct": 222,
+              "staff_notes": 268,
+              "candidate_edges": 20121,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8283582089552238
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 110,
+                "fp": 129,
+                "fn": 4,
+                "tn": 45,
+                "precision": 0.4602510460251046,
+                "recall": 0.9649122807017544,
+                "f1": 0.623229461756374
+              },
+              "staff_correct": 162,
+              "staff_notes": 178,
+              "candidate_edges": 9316,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9101123595505618
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 49,
+                "fp": 59,
+                "fn": 0,
+                "tn": 2,
+                "precision": 0.4537037037037037,
+                "recall": 1.0,
+                "f1": 0.6242038216560509
+              },
+              "staff_correct": 83,
+              "staff_notes": 91,
+              "candidate_edges": 2437,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.9120879120879121
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 607,
+                "fp": 336,
+                "fn": 78,
+                "tn": 1707,
+                "precision": 0.6436903499469777,
+                "recall": 0.8861313868613139,
+                "f1": 0.7457002457002457
+              },
+              "staff_correct": 305,
+              "staff_notes": 400,
+              "candidate_edges": 41843,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.7625
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 160,
+                "fp": 285,
+                "fn": 38,
+                "tn": 174,
+                "precision": 0.3595505617977528,
+                "recall": 0.8080808080808081,
+                "f1": 0.4976671850699845
+              },
+              "staff_correct": 186,
+              "staff_notes": 203,
+              "candidate_edges": 13246,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.916256157635468
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 172,
+                "fp": 161,
+                "fn": 6,
+                "tn": 40,
+                "precision": 0.5165165165165165,
+                "recall": 0.9662921348314607,
+                "f1": 0.6731898238747553
+              },
+              "staff_correct": 174,
+              "staff_notes": 179,
+              "candidate_edges": 10109,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9720670391061452
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 231,
+                "fp": 91,
+                "fn": 14,
+                "tn": 74,
+                "precision": 0.717391304347826,
+                "recall": 0.9428571428571428,
+                "f1": 0.8148148148148148
+              },
+              "staff_correct": 182,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8878048780487805
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 361,
+                "fp": 214,
+                "fn": 9,
+                "tn": 727,
+                "precision": 0.6278260869565218,
+                "recall": 0.9756756756756757,
+                "f1": 0.764021164021164
+              },
+              "staff_correct": 224,
+              "staff_notes": 231,
+              "candidate_edges": 13885,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9696969696969697
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 135,
+                "fp": 248,
+                "fn": 30,
+                "tn": 544,
+                "precision": 0.3524804177545692,
+                "recall": 0.8181818181818182,
+                "f1": 0.4927007299270073
+              },
+              "staff_correct": 197,
+              "staff_notes": 211,
+              "candidate_edges": 12937,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.933649289099526
+            }
+          ],
+          "staff_correct": 1735,
+          "staff_notes": 1966,
+          "candidate_edges": 136447,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus2": {
+          "voice": {
+            "tp": 2031,
+            "fp": 2458,
+            "fn": 187,
+            "tn": 3328,
+            "precision": 0.4524392960570283,
+            "recall": 0.9156898106402164,
+            "f1": 0.6056359027881318
+          },
+          "macro_voice_f1": 0.5960748306093488,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 156,
+                "fp": 536,
+                "fn": 58,
+                "tn": 414,
+                "precision": 0.2254335260115607,
+                "recall": 0.7289719626168224,
+                "f1": 0.3443708609271523
+              },
+              "staff_correct": 220,
+              "staff_notes": 268,
+              "candidate_edges": 21471,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8208955223880597
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 112,
+                "fp": 139,
+                "fn": 2,
+                "tn": 35,
+                "precision": 0.44621513944223107,
+                "recall": 0.9824561403508771,
+                "f1": 0.6136986301369863
+              },
+              "staff_correct": 164,
+              "staff_notes": 178,
+              "candidate_edges": 9932,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9213483146067416
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 47,
+                "fp": 59,
+                "fn": 2,
+                "tn": 2,
+                "precision": 0.44339622641509435,
+                "recall": 0.9591836734693877,
+                "f1": 0.6064516129032258
+              },
+              "staff_correct": 82,
+              "staff_notes": 91,
+              "candidate_edges": 2592,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.9010989010989011
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 638,
+                "fp": 427,
+                "fn": 47,
+                "tn": 1616,
+                "precision": 0.5990610328638498,
+                "recall": 0.9313868613138686,
+                "f1": 0.7291428571428571
+              },
+              "staff_correct": 309,
+              "staff_notes": 400,
+              "candidate_edges": 42652,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.7725
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 159,
+                "fp": 318,
+                "fn": 39,
+                "tn": 141,
+                "precision": 0.3333333333333333,
+                "recall": 0.803030303030303,
+                "f1": 0.4711111111111111
+              },
+              "staff_correct": 177,
+              "staff_notes": 203,
+              "candidate_edges": 14242,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.8719211822660099
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 177,
+                "fp": 162,
+                "fn": 1,
+                "tn": 39,
+                "precision": 0.5221238938053098,
+                "recall": 0.9943820224719101,
+                "f1": 0.6847195357833655
+              },
+              "staff_correct": 177,
+              "staff_notes": 179,
+              "candidate_edges": 10341,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9888268156424581
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 222,
+                "fp": 94,
+                "fn": 23,
+                "tn": 71,
+                "precision": 0.7025316455696202,
+                "recall": 0.9061224489795918,
+                "f1": 0.7914438502673797
+              },
+              "staff_correct": 182,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8878048780487805
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 365,
+                "fp": 291,
+                "fn": 5,
+                "tn": 650,
+                "precision": 0.5564024390243902,
+                "recall": 0.9864864864864865,
+                "f1": 0.7115009746588694
+              },
+              "staff_correct": 219,
+              "staff_notes": 231,
+              "candidate_edges": 14689,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.948051948051948
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 155,
+                "fp": 432,
+                "fn": 10,
+                "tn": 360,
+                "precision": 0.26405451448040884,
+                "recall": 0.9393939393939394,
+                "f1": 0.4122340425531915
+              },
+              "staff_correct": 199,
+              "staff_notes": 211,
+              "candidate_edges": 13726,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.943127962085308
+            }
+          ],
+          "staff_correct": 1729,
+          "staff_notes": 1966,
+          "candidate_edges": 142198,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        }
+      },
+      "selection_score": 0.6931045618716972
+    },
+    {
+      "epoch": 1,
+      "evaluation_sha256": "a3cd0c6962869382e952e8a8ffecb1c51d374be85c08bab8f46b52f74710c156",
+      "variants": {
+        "clean": {
+          "voice": {
+            "tp": 2155,
+            "fp": 350,
+            "fn": 63,
+            "tn": 5436,
+            "precision": 0.8602794411177644,
+            "recall": 0.9715960324616771,
+            "f1": 0.9125555790810925
+          },
+          "macro_voice_f1": 0.9039549030687613,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 213,
+                "fp": 67,
+                "fn": 1,
+                "tn": 883,
+                "precision": 0.7607142857142857,
+                "recall": 0.9953271028037384,
+                "f1": 0.8623481781376519
+              },
+              "staff_correct": 211,
+              "staff_notes": 268,
+              "candidate_edges": 18258,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.7873134328358209
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 111,
+                "fp": 25,
+                "fn": 3,
+                "tn": 149,
+                "precision": 0.8161764705882353,
+                "recall": 0.9736842105263158,
+                "f1": 0.888
+              },
+              "staff_correct": 166,
+              "staff_notes": 178,
+              "candidate_edges": 7880,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9325842696629213
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 49,
+                "fp": 19,
+                "fn": 0,
+                "tn": 42,
+                "precision": 0.7205882352941176,
+                "recall": 1.0,
+                "f1": 0.8376068376068376
+              },
+              "staff_correct": 79,
+              "staff_notes": 91,
+              "candidate_edges": 2213,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.8681318681318682
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 673,
+                "fp": 111,
+                "fn": 12,
+                "tn": 1932,
+                "precision": 0.8584183673469388,
+                "recall": 0.9824817518248176,
+                "f1": 0.9162695711368277
+              },
+              "staff_correct": 301,
+              "staff_notes": 400,
+              "candidate_edges": 40435,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.7525
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 195,
+                "fp": 9,
+                "fn": 3,
+                "tn": 450,
+                "precision": 0.9558823529411765,
+                "recall": 0.9848484848484849,
+                "f1": 0.9701492537313433
+              },
+              "staff_correct": 194,
+              "staff_notes": 203,
+              "candidate_edges": 11586,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.9556650246305419
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 178,
+                "fp": 43,
+                "fn": 0,
+                "tn": 158,
+                "precision": 0.8054298642533937,
+                "recall": 1.0,
+                "f1": 0.8922305764411027
+              },
+              "staff_correct": 174,
+              "staff_notes": 179,
+              "candidate_edges": 8837,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9720670391061452
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 235,
+                "fp": 0,
+                "fn": 10,
+                "tn": 165,
+                "precision": 1.0,
+                "recall": 0.9591836734693877,
+                "f1": 0.9791666666666666
+              },
+              "staff_correct": 184,
+              "staff_notes": 205,
+              "candidate_edges": 11788,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8975609756097561
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 361,
+                "fp": 63,
+                "fn": 9,
+                "tn": 878,
+                "precision": 0.8514150943396226,
+                "recall": 0.9756756756756757,
+                "f1": 0.9093198992443325
+              },
+              "staff_correct": 225,
+              "staff_notes": 231,
+              "candidate_edges": 13107,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.974025974025974
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 140,
+                "fp": 13,
+                "fn": 25,
+                "tn": 779,
+                "precision": 0.9150326797385621,
+                "recall": 0.8484848484848485,
+                "f1": 0.8805031446540881
+              },
+              "staff_correct": 200,
+              "staff_notes": 211,
+              "candidate_edges": 11776,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.9478672985781991
+            }
+          ],
+          "staff_correct": 1734,
+          "staff_notes": 1966,
+          "candidate_edges": 125880,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus1": {
+          "voice": {
+            "tp": 1879,
+            "fp": 1289,
+            "fn": 339,
+            "tn": 4497,
+            "precision": 0.5931186868686869,
+            "recall": 0.8471596032461677,
+            "f1": 0.6977348681767546
+          },
+          "macro_voice_f1": 0.676054651218478,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 151,
+                "fp": 364,
+                "fn": 63,
+                "tn": 586,
+                "precision": 0.29320388349514565,
+                "recall": 0.705607476635514,
+                "f1": 0.41426611796982166
+              },
+              "staff_correct": 219,
+              "staff_notes": 268,
+              "candidate_edges": 20121,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8171641791044776
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 106,
+                "fp": 100,
+                "fn": 8,
+                "tn": 74,
+                "precision": 0.5145631067961165,
+                "recall": 0.9298245614035088,
+                "f1": 0.6625
+              },
+              "staff_correct": 162,
+              "staff_notes": 178,
+              "candidate_edges": 9316,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9101123595505618
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 48,
+                "fp": 31,
+                "fn": 1,
+                "tn": 30,
+                "precision": 0.6075949367088608,
+                "recall": 0.9795918367346939,
+                "f1": 0.75
+              },
+              "staff_correct": 86,
+              "staff_notes": 91,
+              "candidate_edges": 2437,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.945054945054945
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 613,
+                "fp": 183,
+                "fn": 72,
+                "tn": 1860,
+                "precision": 0.7701005025125628,
+                "recall": 0.8948905109489051,
+                "f1": 0.8278190411883862
+              },
+              "staff_correct": 300,
+              "staff_notes": 400,
+              "candidate_edges": 41843,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.75
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 134,
+                "fp": 224,
+                "fn": 64,
+                "tn": 235,
+                "precision": 0.3743016759776536,
+                "recall": 0.6767676767676768,
+                "f1": 0.48201438848920863
+              },
+              "staff_correct": 179,
+              "staff_notes": 203,
+              "candidate_edges": 13246,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.8817733990147784
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 173,
+                "fp": 118,
+                "fn": 5,
+                "tn": 83,
+                "precision": 0.5945017182130584,
+                "recall": 0.9719101123595506,
+                "f1": 0.7377398720682303
+              },
+              "staff_correct": 178,
+              "staff_notes": 179,
+              "candidate_edges": 10109,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.994413407821229
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 184,
+                "fp": 40,
+                "fn": 61,
+                "tn": 125,
+                "precision": 0.8214285714285714,
+                "recall": 0.7510204081632653,
+                "f1": 0.7846481876332623
+              },
+              "staff_correct": 177,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8634146341463415
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 352,
+                "fp": 87,
+                "fn": 18,
+                "tn": 854,
+                "precision": 0.8018223234624146,
+                "recall": 0.9513513513513514,
+                "f1": 0.8702101359703337
+              },
+              "staff_correct": 230,
+              "staff_notes": 231,
+              "candidate_edges": 13885,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9956709956709957
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 118,
+                "fp": 142,
+                "fn": 47,
+                "tn": 650,
+                "precision": 0.45384615384615384,
+                "recall": 0.7151515151515152,
+                "f1": 0.5552941176470588
+              },
+              "staff_correct": 196,
+              "staff_notes": 211,
+              "candidate_edges": 12937,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.9289099526066351
+            }
+          ],
+          "staff_correct": 1727,
+          "staff_notes": 1966,
+          "candidate_edges": 136447,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus2": {
+          "voice": {
+            "tp": 1985,
+            "fp": 1747,
+            "fn": 233,
+            "tn": 4039,
+            "precision": 0.5318863879957128,
+            "recall": 0.8949504057709649,
+            "f1": 0.6672268907563025
+          },
+          "macro_voice_f1": 0.6442009460526286,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 153,
+                "fp": 448,
+                "fn": 61,
+                "tn": 502,
+                "precision": 0.2545757071547421,
+                "recall": 0.7149532710280374,
+                "f1": 0.3754601226993865
+              },
+              "staff_correct": 218,
+              "staff_notes": 268,
+              "candidate_edges": 21471,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8134328358208955
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 113,
+                "fp": 116,
+                "fn": 1,
+                "tn": 58,
+                "precision": 0.49344978165938863,
+                "recall": 0.9912280701754386,
+                "f1": 0.6588921282798834
+              },
+              "staff_correct": 165,
+              "staff_notes": 178,
+              "candidate_edges": 9932,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9269662921348315
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 46,
+                "fp": 51,
+                "fn": 3,
+                "tn": 10,
+                "precision": 0.4742268041237113,
+                "recall": 0.9387755102040817,
+                "f1": 0.6301369863013698
+              },
+              "staff_correct": 85,
+              "staff_notes": 91,
+              "candidate_edges": 2592,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.9340659340659341
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 642,
+                "fp": 249,
+                "fn": 43,
+                "tn": 1794,
+                "precision": 0.7205387205387206,
+                "recall": 0.9372262773722628,
+                "f1": 0.8147208121827412
+              },
+              "staff_correct": 297,
+              "staff_notes": 400,
+              "candidate_edges": 42652,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.7425
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 147,
+                "fp": 284,
+                "fn": 51,
+                "tn": 175,
+                "precision": 0.34106728538283065,
+                "recall": 0.7424242424242424,
+                "f1": 0.46740858505564387
+              },
+              "staff_correct": 176,
+              "staff_notes": 203,
+              "candidate_edges": 14242,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.8669950738916257
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 172,
+                "fp": 135,
+                "fn": 6,
+                "tn": 66,
+                "precision": 0.5602605863192183,
+                "recall": 0.9662921348314607,
+                "f1": 0.709278350515464
+              },
+              "staff_correct": 176,
+              "staff_notes": 179,
+              "candidate_edges": 10341,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9832402234636871
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 202,
+                "fp": 57,
+                "fn": 43,
+                "tn": 108,
+                "precision": 0.7799227799227799,
+                "recall": 0.8244897959183674,
+                "f1": 0.8015873015873016
+              },
+              "staff_correct": 178,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8682926829268293
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 362,
+                "fp": 145,
+                "fn": 8,
+                "tn": 796,
+                "precision": 0.7140039447731755,
+                "recall": 0.9783783783783784,
+                "f1": 0.8255416191562144
+              },
+              "staff_correct": 226,
+              "staff_notes": 231,
+              "candidate_edges": 14689,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9783549783549783
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 148,
+                "fp": 262,
+                "fn": 17,
+                "tn": 530,
+                "precision": 0.36097560975609755,
+                "recall": 0.896969696969697,
+                "f1": 0.5147826086956522
+              },
+              "staff_correct": 199,
+              "staff_notes": 211,
+              "candidate_edges": 13726,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.943127962085308
+            }
+          ],
+          "staff_correct": 1720,
+          "staff_notes": 1966,
+          "candidate_edges": 142198,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        }
+      },
+      "selection_score": 0.7414035001132891
+    },
+    {
+      "epoch": 2,
+      "evaluation_sha256": "7232e034d9be2487d2bc4f59b5a421a4a24fb530bd84da20794106a6e7053816",
+      "variants": {
+        "clean": {
+          "voice": {
+            "tp": 2176,
+            "fp": 342,
+            "fn": 42,
+            "tn": 5444,
+            "precision": 0.8641779189833201,
+            "recall": 0.9810640216411182,
+            "f1": 0.918918918918919
+          },
+          "macro_voice_f1": 0.9095122087163607,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 214,
+                "fp": 62,
+                "fn": 0,
+                "tn": 888,
+                "precision": 0.7753623188405797,
+                "recall": 1.0,
+                "f1": 0.8734693877551021
+              },
+              "staff_correct": 217,
+              "staff_notes": 268,
+              "candidate_edges": 18258,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8097014925373134
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 110,
+                "fp": 22,
+                "fn": 4,
+                "tn": 152,
+                "precision": 0.8333333333333334,
+                "recall": 0.9649122807017544,
+                "f1": 0.8943089430894309
+              },
+              "staff_correct": 163,
+              "staff_notes": 178,
+              "candidate_edges": 7880,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9157303370786517
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 49,
+                "fp": 19,
+                "fn": 0,
+                "tn": 42,
+                "precision": 0.7205882352941176,
+                "recall": 1.0,
+                "f1": 0.8376068376068376
+              },
+              "staff_correct": 82,
+              "staff_notes": 91,
+              "candidate_edges": 2213,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.9010989010989011
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 683,
+                "fp": 110,
+                "fn": 2,
+                "tn": 1933,
+                "precision": 0.8612862547288777,
+                "recall": 0.997080291970803,
+                "f1": 0.9242219215155616
+              },
+              "staff_correct": 299,
+              "staff_notes": 400,
+              "candidate_edges": 40435,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.7475
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 196,
+                "fp": 3,
+                "fn": 2,
+                "tn": 456,
+                "precision": 0.9849246231155779,
+                "recall": 0.98989898989899,
+                "f1": 0.9874055415617129
+              },
+              "staff_correct": 197,
+              "staff_notes": 203,
+              "candidate_edges": 11586,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.9704433497536946
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 178,
+                "fp": 43,
+                "fn": 0,
+                "tn": 158,
+                "precision": 0.8054298642533937,
+                "recall": 1.0,
+                "f1": 0.8922305764411027
+              },
+              "staff_correct": 174,
+              "staff_notes": 179,
+              "candidate_edges": 8837,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9720670391061452
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 232,
+                "fp": 0,
+                "fn": 13,
+                "tn": 165,
+                "precision": 1.0,
+                "recall": 0.9469387755102041,
+                "f1": 0.9727463312368972
+              },
+              "staff_correct": 186,
+              "staff_notes": 205,
+              "candidate_edges": 11788,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.9073170731707317
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 369,
+                "fp": 66,
+                "fn": 1,
+                "tn": 875,
+                "precision": 0.8482758620689655,
+                "recall": 0.9972972972972973,
+                "f1": 0.9167701863354037
+              },
+              "staff_correct": 227,
+              "staff_notes": 231,
+              "candidate_edges": 13107,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9826839826839827
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 145,
+                "fp": 17,
+                "fn": 20,
+                "tn": 775,
+                "precision": 0.8950617283950617,
+                "recall": 0.8787878787878788,
+                "f1": 0.8868501529051988
+              },
+              "staff_correct": 200,
+              "staff_notes": 211,
+              "candidate_edges": 11776,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.9478672985781991
+            }
+          ],
+          "staff_correct": 1745,
+          "staff_notes": 1966,
+          "candidate_edges": 125880,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus1": {
+          "voice": {
+            "tp": 1917,
+            "fp": 1209,
+            "fn": 301,
+            "tn": 4577,
+            "precision": 0.6132437619961613,
+            "recall": 0.8642921550946799,
+            "f1": 0.7174401197604791
+          },
+          "macro_voice_f1": 0.6957435861830579,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 169,
+                "fp": 341,
+                "fn": 45,
+                "tn": 609,
+                "precision": 0.33137254901960783,
+                "recall": 0.7897196261682243,
+                "f1": 0.46685082872928174
+              },
+              "staff_correct": 221,
+              "staff_notes": 268,
+              "candidate_edges": 20121,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8246268656716418
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 101,
+                "fp": 101,
+                "fn": 13,
+                "tn": 73,
+                "precision": 0.5,
+                "recall": 0.8859649122807017,
+                "f1": 0.6392405063291139
+              },
+              "staff_correct": 164,
+              "staff_notes": 178,
+              "candidate_edges": 9316,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9213483146067416
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 48,
+                "fp": 24,
+                "fn": 1,
+                "tn": 37,
+                "precision": 0.6666666666666666,
+                "recall": 0.9795918367346939,
+                "f1": 0.7933884297520661
+              },
+              "staff_correct": 86,
+              "staff_notes": 91,
+              "candidate_edges": 2437,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.945054945054945
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 631,
+                "fp": 206,
+                "fn": 54,
+                "tn": 1837,
+                "precision": 0.7538829151732378,
+                "recall": 0.9211678832116789,
+                "f1": 0.8291721419185283
+              },
+              "staff_correct": 295,
+              "staff_notes": 400,
+              "candidate_edges": 41843,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.7375
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 137,
+                "fp": 198,
+                "fn": 61,
+                "tn": 261,
+                "precision": 0.408955223880597,
+                "recall": 0.6919191919191919,
+                "f1": 0.5140712945590994
+              },
+              "staff_correct": 182,
+              "staff_notes": 203,
+              "candidate_edges": 13246,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.896551724137931
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 177,
+                "fp": 102,
+                "fn": 1,
+                "tn": 99,
+                "precision": 0.6344086021505376,
+                "recall": 0.9943820224719101,
+                "f1": 0.774617067833698
+              },
+              "staff_correct": 179,
+              "staff_notes": 179,
+              "candidate_edges": 10109,
+              "supervised_edges": 379,
+              "staff_accuracy": 1.0
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 185,
+                "fp": 34,
+                "fn": 60,
+                "tn": 131,
+                "precision": 0.8447488584474886,
+                "recall": 0.7551020408163265,
+                "f1": 0.7974137931034483
+              },
+              "staff_correct": 179,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8731707317073171
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 355,
+                "fp": 72,
+                "fn": 15,
+                "tn": 869,
+                "precision": 0.8313817330210773,
+                "recall": 0.9594594594594594,
+                "f1": 0.890840652446675
+              },
+              "staff_correct": 230,
+              "staff_notes": 231,
+              "candidate_edges": 13885,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9956709956709957
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 114,
+                "fp": 131,
+                "fn": 51,
+                "tn": 661,
+                "precision": 0.46530612244897956,
+                "recall": 0.6909090909090909,
+                "f1": 0.5560975609756098
+              },
+              "staff_correct": 194,
+              "staff_notes": 211,
+              "candidate_edges": 12937,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.919431279620853
+            }
+          ],
+          "staff_correct": 1730,
+          "staff_notes": 1966,
+          "candidate_edges": 136447,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus2": {
+          "voice": {
+            "tp": 1995,
+            "fp": 1650,
+            "fn": 223,
+            "tn": 4136,
+            "precision": 0.5473251028806584,
+            "recall": 0.8994589720468891,
+            "f1": 0.6805389732219
+          },
+          "macro_voice_f1": 0.6582711005865833,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 165,
+                "fp": 412,
+                "fn": 49,
+                "tn": 538,
+                "precision": 0.28596187175043325,
+                "recall": 0.7710280373831776,
+                "f1": 0.41719342604298354
+              },
+              "staff_correct": 220,
+              "staff_notes": 268,
+              "candidate_edges": 21471,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8208955223880597
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 106,
+                "fp": 112,
+                "fn": 8,
+                "tn": 62,
+                "precision": 0.48623853211009177,
+                "recall": 0.9298245614035088,
+                "f1": 0.6385542168674698
+              },
+              "staff_correct": 165,
+              "staff_notes": 178,
+              "candidate_edges": 9932,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9269662921348315
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 48,
+                "fp": 42,
+                "fn": 1,
+                "tn": 19,
+                "precision": 0.5333333333333333,
+                "recall": 0.9795918367346939,
+                "f1": 0.6906474820143885
+              },
+              "staff_correct": 84,
+              "staff_notes": 91,
+              "candidate_edges": 2592,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.9230769230769231
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 649,
+                "fp": 273,
+                "fn": 36,
+                "tn": 1770,
+                "precision": 0.7039045553145337,
+                "recall": 0.9474452554744526,
+                "f1": 0.8077162414436839
+              },
+              "staff_correct": 293,
+              "staff_notes": 400,
+              "candidate_edges": 42652,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.7325
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 143,
+                "fp": 267,
+                "fn": 55,
+                "tn": 192,
+                "precision": 0.348780487804878,
+                "recall": 0.7222222222222222,
+                "f1": 0.47039473684210525
+              },
+              "staff_correct": 176,
+              "staff_notes": 203,
+              "candidate_edges": 14242,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.8669950738916257
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 175,
+                "fp": 129,
+                "fn": 3,
+                "tn": 72,
+                "precision": 0.5756578947368421,
+                "recall": 0.9831460674157303,
+                "f1": 0.7261410788381742
+              },
+              "staff_correct": 177,
+              "staff_notes": 179,
+              "candidate_edges": 10341,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9888268156424581
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 199,
+                "fp": 56,
+                "fn": 46,
+                "tn": 109,
+                "precision": 0.7803921568627451,
+                "recall": 0.8122448979591836,
+                "f1": 0.796
+              },
+              "staff_correct": 180,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8780487804878049
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 368,
+                "fp": 125,
+                "fn": 2,
+                "tn": 816,
+                "precision": 0.7464503042596349,
+                "recall": 0.9945945945945946,
+                "f1": 0.8528389339513326
+              },
+              "staff_correct": 229,
+              "staff_notes": 231,
+              "candidate_edges": 14689,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9913419913419913
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 142,
+                "fp": 234,
+                "fn": 23,
+                "tn": 558,
+                "precision": 0.3776595744680851,
+                "recall": 0.8606060606060606,
+                "f1": 0.5249537892791127
+              },
+              "staff_correct": 200,
+              "staff_notes": 211,
+              "candidate_edges": 13726,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.9478672985781991
+            }
+          ],
+          "staff_correct": 1724,
+          "staff_notes": 1966,
+          "candidate_edges": 142198,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        }
+      },
+      "selection_score": 0.7545089651620006
+    },
+    {
+      "epoch": 3,
+      "evaluation_sha256": "c25a55bbd613c84d1d324c1ff46b8ec36dcecc4980dcd32f08fe85a4d6a2b7d7",
+      "variants": {
+        "clean": {
+          "voice": {
+            "tp": 2125,
+            "fp": 297,
+            "fn": 93,
+            "tn": 5489,
+            "precision": 0.8773740710156895,
+            "recall": 0.9580703336339044,
+            "f1": 0.915948275862069
+          },
+          "macro_voice_f1": 0.9075477994012705,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 209,
+                "fp": 56,
+                "fn": 5,
+                "tn": 894,
+                "precision": 0.7886792452830189,
+                "recall": 0.9766355140186916,
+                "f1": 0.872651356993737
+              },
+              "staff_correct": 215,
+              "staff_notes": 268,
+              "candidate_edges": 18258,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8022388059701493
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 109,
+                "fp": 15,
+                "fn": 5,
+                "tn": 159,
+                "precision": 0.8790322580645161,
+                "recall": 0.956140350877193,
+                "f1": 0.9159663865546218
+              },
+              "staff_correct": 163,
+              "staff_notes": 178,
+              "candidate_edges": 7880,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9157303370786517
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 49,
+                "fp": 18,
+                "fn": 0,
+                "tn": 43,
+                "precision": 0.7313432835820896,
+                "recall": 1.0,
+                "f1": 0.8448275862068966
+              },
+              "staff_correct": 79,
+              "staff_notes": 91,
+              "candidate_edges": 2213,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.8681318681318682
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 667,
+                "fp": 106,
+                "fn": 18,
+                "tn": 1937,
+                "precision": 0.8628719275549805,
+                "recall": 0.9737226277372263,
+                "f1": 0.9149519890260631
+              },
+              "staff_correct": 294,
+              "staff_notes": 400,
+              "candidate_edges": 40435,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.735
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 192,
+                "fp": 7,
+                "fn": 6,
+                "tn": 452,
+                "precision": 0.964824120603015,
+                "recall": 0.9696969696969697,
+                "f1": 0.9672544080604534
+              },
+              "staff_correct": 192,
+              "staff_notes": 203,
+              "candidate_edges": 11586,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.9458128078817734
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 178,
+                "fp": 42,
+                "fn": 0,
+                "tn": 159,
+                "precision": 0.8090909090909091,
+                "recall": 1.0,
+                "f1": 0.8944723618090452
+              },
+              "staff_correct": 173,
+              "staff_notes": 179,
+              "candidate_edges": 8837,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9664804469273743
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 211,
+                "fp": 0,
+                "fn": 34,
+                "tn": 165,
+                "precision": 1.0,
+                "recall": 0.8612244897959184,
+                "f1": 0.9254385964912281
+              },
+              "staff_correct": 179,
+              "staff_notes": 205,
+              "candidate_edges": 11788,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8731707317073171
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 370,
+                "fp": 42,
+                "fn": 0,
+                "tn": 899,
+                "precision": 0.8980582524271845,
+                "recall": 1.0,
+                "f1": 0.9462915601023018
+              },
+              "staff_correct": 230,
+              "staff_notes": 231,
+              "candidate_edges": 13107,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9956709956709957
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 140,
+                "fp": 11,
+                "fn": 25,
+                "tn": 781,
+                "precision": 0.9271523178807947,
+                "recall": 0.8484848484848485,
+                "f1": 0.8860759493670886
+              },
+              "staff_correct": 198,
+              "staff_notes": 211,
+              "candidate_edges": 11776,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.9383886255924171
+            }
+          ],
+          "staff_correct": 1723,
+          "staff_notes": 1966,
+          "candidate_edges": 125880,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus1": {
+          "voice": {
+            "tp": 1910,
+            "fp": 1117,
+            "fn": 308,
+            "tn": 4669,
+            "precision": 0.6309877766765775,
+            "recall": 0.8611361587015329,
+            "f1": 0.7283126787416587
+          },
+          "macro_voice_f1": 0.7073096301029111,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 172,
+                "fp": 313,
+                "fn": 42,
+                "tn": 637,
+                "precision": 0.354639175257732,
+                "recall": 0.8037383177570093,
+                "f1": 0.49213161659513593
+              },
+              "staff_correct": 219,
+              "staff_notes": 268,
+              "candidate_edges": 20121,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8171641791044776
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 100,
+                "fp": 87,
+                "fn": 14,
+                "tn": 87,
+                "precision": 0.5347593582887701,
+                "recall": 0.8771929824561403,
+                "f1": 0.6644518272425249
+              },
+              "staff_correct": 157,
+              "staff_notes": 178,
+              "candidate_edges": 9316,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.8820224719101124
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 46,
+                "fp": 26,
+                "fn": 3,
+                "tn": 35,
+                "precision": 0.6388888888888888,
+                "recall": 0.9387755102040817,
+                "f1": 0.7603305785123967
+              },
+              "staff_correct": 84,
+              "staff_notes": 91,
+              "candidate_edges": 2437,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.9230769230769231
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 612,
+                "fp": 203,
+                "fn": 73,
+                "tn": 1840,
+                "precision": 0.750920245398773,
+                "recall": 0.8934306569343066,
+                "f1": 0.816
+              },
+              "staff_correct": 294,
+              "staff_notes": 400,
+              "candidate_edges": 41843,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.735
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 135,
+                "fp": 193,
+                "fn": 63,
+                "tn": 266,
+                "precision": 0.4115853658536585,
+                "recall": 0.6818181818181818,
+                "f1": 0.5133079847908745
+              },
+              "staff_correct": 174,
+              "staff_notes": 203,
+              "candidate_edges": 13246,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.8571428571428571
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 175,
+                "fp": 89,
+                "fn": 3,
+                "tn": 112,
+                "precision": 0.6628787878787878,
+                "recall": 0.9831460674157303,
+                "f1": 0.7918552036199095
+              },
+              "staff_correct": 175,
+              "staff_notes": 179,
+              "candidate_edges": 10109,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9776536312849162
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 190,
+                "fp": 29,
+                "fn": 55,
+                "tn": 136,
+                "precision": 0.867579908675799,
+                "recall": 0.7755102040816326,
+                "f1": 0.8189655172413793
+              },
+              "staff_correct": 171,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8341463414634146
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 360,
+                "fp": 61,
+                "fn": 10,
+                "tn": 880,
+                "precision": 0.8551068883610451,
+                "recall": 0.972972972972973,
+                "f1": 0.9102402022756005
+              },
+              "staff_correct": 229,
+              "staff_notes": 231,
+              "candidate_edges": 13885,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9913419913419913
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 120,
+                "fp": 116,
+                "fn": 45,
+                "tn": 676,
+                "precision": 0.5084745762711864,
+                "recall": 0.7272727272727273,
+                "f1": 0.5985037406483791
+              },
+              "staff_correct": 193,
+              "staff_notes": 211,
+              "candidate_edges": 12937,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.9146919431279621
+            }
+          ],
+          "staff_correct": 1696,
+          "staff_notes": 1966,
+          "candidate_edges": 136447,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus2": {
+          "voice": {
+            "tp": 1996,
+            "fp": 1585,
+            "fn": 222,
+            "tn": 4201,
+            "precision": 0.5573862049706786,
+            "recall": 0.8999098286744815,
+            "f1": 0.6883945507846181
+          },
+          "macro_voice_f1": 0.6648485285122134,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 178,
+                "fp": 396,
+                "fn": 36,
+                "tn": 554,
+                "precision": 0.31010452961672474,
+                "recall": 0.8317757009345794,
+                "f1": 0.4517766497461929
+              },
+              "staff_correct": 219,
+              "staff_notes": 268,
+              "candidate_edges": 21471,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8171641791044776
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 105,
+                "fp": 107,
+                "fn": 9,
+                "tn": 67,
+                "precision": 0.49528301886792453,
+                "recall": 0.9210526315789473,
+                "f1": 0.6441717791411042
+              },
+              "staff_correct": 158,
+              "staff_notes": 178,
+              "candidate_edges": 9932,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.8876404494382022
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 48,
+                "fp": 45,
+                "fn": 1,
+                "tn": 16,
+                "precision": 0.5161290322580645,
+                "recall": 0.9795918367346939,
+                "f1": 0.676056338028169
+              },
+              "staff_correct": 83,
+              "staff_notes": 91,
+              "candidate_edges": 2592,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.9120879120879121
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 636,
+                "fp": 247,
+                "fn": 49,
+                "tn": 1796,
+                "precision": 0.7202718006795017,
+                "recall": 0.9284671532846716,
+                "f1": 0.8112244897959183
+              },
+              "staff_correct": 295,
+              "staff_notes": 400,
+              "candidate_edges": 42652,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.7375
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 144,
+                "fp": 262,
+                "fn": 54,
+                "tn": 197,
+                "precision": 0.35467980295566504,
+                "recall": 0.7272727272727273,
+                "f1": 0.4768211920529801
+              },
+              "staff_correct": 178,
+              "staff_notes": 203,
+              "candidate_edges": 14242,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.8768472906403941
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 173,
+                "fp": 120,
+                "fn": 5,
+                "tn": 81,
+                "precision": 0.590443686006826,
+                "recall": 0.9719101123595506,
+                "f1": 0.7346072186836518
+              },
+              "staff_correct": 175,
+              "staff_notes": 179,
+              "candidate_edges": 10341,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9776536312849162
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 198,
+                "fp": 52,
+                "fn": 47,
+                "tn": 113,
+                "precision": 0.792,
+                "recall": 0.8081632653061225,
+                "f1": 0.8
+              },
+              "staff_correct": 167,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8146341463414634
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 370,
+                "fp": 118,
+                "fn": 0,
+                "tn": 823,
+                "precision": 0.7581967213114754,
+                "recall": 1.0,
+                "f1": 0.8624708624708625
+              },
+              "staff_correct": 230,
+              "staff_notes": 231,
+              "candidate_edges": 14689,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9956709956709957
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 144,
+                "fp": 238,
+                "fn": 21,
+                "tn": 554,
+                "precision": 0.3769633507853403,
+                "recall": 0.8727272727272727,
+                "f1": 0.526508226691042
+              },
+              "staff_correct": 194,
+              "staff_notes": 211,
+              "candidate_edges": 13726,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.919431279620853
+            }
+          ],
+          "staff_correct": 1699,
+          "staff_notes": 1966,
+          "candidate_edges": 142198,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        }
+      },
+      "selection_score": 0.759901986005465
+    },
+    {
+      "epoch": 4,
+      "evaluation_sha256": "357960438bf50def7573a7b025f809a000ae09a1af4e6f269417142e630402a4",
+      "variants": {
+        "clean": {
+          "voice": {
+            "tp": 2160,
+            "fp": 289,
+            "fn": 58,
+            "tn": 5497,
+            "precision": 0.8819926500612495,
+            "recall": 0.9738503155996393,
+            "f1": 0.9256481679880009
+          },
+          "macro_voice_f1": 0.913818062695475,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 210,
+                "fp": 57,
+                "fn": 4,
+                "tn": 893,
+                "precision": 0.7865168539325843,
+                "recall": 0.9813084112149533,
+                "f1": 0.8731808731808732
+              },
+              "staff_correct": 220,
+              "staff_notes": 268,
+              "candidate_edges": 18258,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8208955223880597
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 111,
+                "fp": 13,
+                "fn": 3,
+                "tn": 161,
+                "precision": 0.8951612903225806,
+                "recall": 0.9736842105263158,
+                "f1": 0.9327731092436975
+              },
+              "staff_correct": 165,
+              "staff_notes": 178,
+              "candidate_edges": 7880,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9269662921348315
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 49,
+                "fp": 19,
+                "fn": 0,
+                "tn": 42,
+                "precision": 0.7205882352941176,
+                "recall": 1.0,
+                "f1": 0.8376068376068376
+              },
+              "staff_correct": 81,
+              "staff_notes": 91,
+              "candidate_edges": 2213,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.8901098901098901
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 682,
+                "fp": 74,
+                "fn": 3,
+                "tn": 1969,
+                "precision": 0.9021164021164021,
+                "recall": 0.9956204379562044,
+                "f1": 0.9465648854961832
+              },
+              "staff_correct": 279,
+              "staff_notes": 400,
+              "candidate_edges": 40435,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.6975
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 198,
+                "fp": 2,
+                "fn": 0,
+                "tn": 457,
+                "precision": 0.99,
+                "recall": 1.0,
+                "f1": 0.9949748743718593
+              },
+              "staff_correct": 195,
+              "staff_notes": 203,
+              "candidate_edges": 11586,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.9605911330049262
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 178,
+                "fp": 44,
+                "fn": 0,
+                "tn": 157,
+                "precision": 0.8018018018018018,
+                "recall": 1.0,
+                "f1": 0.89
+              },
+              "staff_correct": 174,
+              "staff_notes": 179,
+              "candidate_edges": 8837,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9720670391061452
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 225,
+                "fp": 0,
+                "fn": 20,
+                "tn": 165,
+                "precision": 1.0,
+                "recall": 0.9183673469387755,
+                "f1": 0.9574468085106383
+              },
+              "staff_correct": 179,
+              "staff_notes": 205,
+              "candidate_edges": 11788,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8731707317073171
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 367,
+                "fp": 66,
+                "fn": 3,
+                "tn": 875,
+                "precision": 0.8475750577367206,
+                "recall": 0.9918918918918919,
+                "f1": 0.9140722291407223
+              },
+              "staff_correct": 225,
+              "staff_notes": 231,
+              "candidate_edges": 13107,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.974025974025974
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 140,
+                "fp": 14,
+                "fn": 25,
+                "tn": 778,
+                "precision": 0.9090909090909091,
+                "recall": 0.8484848484848485,
+                "f1": 0.877742946708464
+              },
+              "staff_correct": 197,
+              "staff_notes": 211,
+              "candidate_edges": 11776,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.933649289099526
+            }
+          ],
+          "staff_correct": 1715,
+          "staff_notes": 1966,
+          "candidate_edges": 125880,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus1": {
+          "voice": {
+            "tp": 1996,
+            "fp": 1163,
+            "fn": 222,
+            "tn": 4623,
+            "precision": 0.6318455207344096,
+            "recall": 0.8999098286744815,
+            "f1": 0.7424214245862005
+          },
+          "macro_voice_f1": 0.7202299858745024,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 181,
+                "fp": 344,
+                "fn": 33,
+                "tn": 606,
+                "precision": 0.34476190476190477,
+                "recall": 0.8457943925233645,
+                "f1": 0.489851150202977
+              },
+              "staff_correct": 225,
+              "staff_notes": 268,
+              "candidate_edges": 20121,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8395522388059702
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 100,
+                "fp": 90,
+                "fn": 14,
+                "tn": 84,
+                "precision": 0.5263157894736842,
+                "recall": 0.8771929824561403,
+                "f1": 0.6578947368421053
+              },
+              "staff_correct": 161,
+              "staff_notes": 178,
+              "candidate_edges": 9316,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.9044943820224719
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 47,
+                "fp": 24,
+                "fn": 2,
+                "tn": 37,
+                "precision": 0.6619718309859155,
+                "recall": 0.9591836734693877,
+                "f1": 0.7833333333333333
+              },
+              "staff_correct": 85,
+              "staff_notes": 91,
+              "candidate_edges": 2437,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.9340659340659341
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 657,
+                "fp": 199,
+                "fn": 28,
+                "tn": 1844,
+                "precision": 0.7675233644859814,
+                "recall": 0.9591240875912409,
+                "f1": 0.8526930564568462
+              },
+              "staff_correct": 273,
+              "staff_notes": 400,
+              "candidate_edges": 41843,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.6825
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 153,
+                "fp": 194,
+                "fn": 45,
+                "tn": 265,
+                "precision": 0.4409221902017291,
+                "recall": 0.7727272727272727,
+                "f1": 0.5614678899082569
+              },
+              "staff_correct": 180,
+              "staff_notes": 203,
+              "candidate_edges": 13246,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.8866995073891626
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 177,
+                "fp": 101,
+                "fn": 1,
+                "tn": 100,
+                "precision": 0.6366906474820144,
+                "recall": 0.9943820224719101,
+                "f1": 0.7763157894736842
+              },
+              "staff_correct": 179,
+              "staff_notes": 179,
+              "candidate_edges": 10109,
+              "supervised_edges": 379,
+              "staff_accuracy": 1.0
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 199,
+                "fp": 27,
+                "fn": 46,
+                "tn": 138,
+                "precision": 0.8805309734513275,
+                "recall": 0.8122448979591836,
+                "f1": 0.8450106157112527
+              },
+              "staff_correct": 178,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8682926829268293
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 356,
+                "fp": 67,
+                "fn": 14,
+                "tn": 874,
+                "precision": 0.8416075650118203,
+                "recall": 0.9621621621621622,
+                "f1": 0.8978562421185372
+              },
+              "staff_correct": 230,
+              "staff_notes": 231,
+              "candidate_edges": 13885,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9956709956709957
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 126,
+                "fp": 117,
+                "fn": 39,
+                "tn": 675,
+                "precision": 0.5185185185185185,
+                "recall": 0.7636363636363637,
+                "f1": 0.6176470588235294
+              },
+              "staff_correct": 194,
+              "staff_notes": 211,
+              "candidate_edges": 12937,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.919431279620853
+            }
+          ],
+          "staff_correct": 1705,
+          "staff_notes": 1966,
+          "candidate_edges": 136447,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        },
+        "plus2": {
+          "voice": {
+            "tp": 2075,
+            "fp": 1594,
+            "fn": 143,
+            "tn": 4192,
+            "precision": 0.5655491959662033,
+            "recall": 0.9355275022542832,
+            "f1": 0.7049430949549855
+          },
+          "macro_voice_f1": 0.6784385059125588,
+          "cases": [
+            {
+              "name": "beethoven_piano_sonatas_08-2",
+              "voice": {
+                "tp": 190,
+                "fp": 420,
+                "fn": 24,
+                "tn": 530,
+                "precision": 0.3114754098360656,
+                "recall": 0.8878504672897196,
+                "f1": 0.46116504854368934
+              },
+              "staff_correct": 221,
+              "staff_notes": 268,
+              "candidate_edges": 21471,
+              "supervised_edges": 1164,
+              "staff_accuracy": 0.8246268656716418
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-1",
+              "voice": {
+                "tp": 108,
+                "fp": 108,
+                "fn": 6,
+                "tn": 66,
+                "precision": 0.5,
+                "recall": 0.9473684210526315,
+                "f1": 0.6545454545454545
+              },
+              "staff_correct": 160,
+              "staff_notes": 178,
+              "candidate_edges": 9932,
+              "supervised_edges": 288,
+              "staff_accuracy": 0.898876404494382
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-2",
+              "voice": {
+                "tp": 48,
+                "fp": 46,
+                "fn": 1,
+                "tn": 15,
+                "precision": 0.5106382978723404,
+                "recall": 0.9795918367346939,
+                "f1": 0.6713286713286714
+              },
+              "staff_correct": 83,
+              "staff_notes": 91,
+              "candidate_edges": 2592,
+              "supervised_edges": 110,
+              "staff_accuracy": 0.9120879120879121
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-3",
+              "voice": {
+                "tp": 668,
+                "fp": 225,
+                "fn": 17,
+                "tn": 1818,
+                "precision": 0.748040313549832,
+                "recall": 0.9751824817518249,
+                "f1": 0.8466413181242078
+              },
+              "staff_correct": 272,
+              "staff_notes": 400,
+              "candidate_edges": 42652,
+              "supervised_edges": 2728,
+              "staff_accuracy": 0.68
+            },
+            {
+              "name": "beethoven_piano_sonatas_12-4",
+              "voice": {
+                "tp": 162,
+                "fp": 266,
+                "fn": 36,
+                "tn": 193,
+                "precision": 0.37850467289719625,
+                "recall": 0.8181818181818182,
+                "f1": 0.5175718849840255
+              },
+              "staff_correct": 179,
+              "staff_notes": 203,
+              "candidate_edges": 14242,
+              "supervised_edges": 657,
+              "staff_accuracy": 0.8817733990147784
+            },
+            {
+              "name": "beethoven_piano_sonatas_32-2",
+              "voice": {
+                "tp": 176,
+                "fp": 126,
+                "fn": 2,
+                "tn": 75,
+                "precision": 0.5827814569536424,
+                "recall": 0.9887640449438202,
+                "f1": 0.7333333333333333
+              },
+              "staff_correct": 176,
+              "staff_notes": 179,
+              "candidate_edges": 10341,
+              "supervised_edges": 379,
+              "staff_accuracy": 0.9832402234636871
+            },
+            {
+              "name": "chopin_mazurkas_BI134",
+              "voice": {
+                "tp": 211,
+                "fp": 55,
+                "fn": 34,
+                "tn": 110,
+                "precision": 0.793233082706767,
+                "recall": 0.8612244897959184,
+                "f1": 0.8258317025440313
+              },
+              "staff_correct": 176,
+              "staff_notes": 205,
+              "candidate_edges": 12553,
+              "supervised_edges": 410,
+              "staff_accuracy": 0.8585365853658536
+            },
+            {
+              "name": "chopin_mazurkas_BI71",
+              "voice": {
+                "tp": 367,
+                "fp": 117,
+                "fn": 3,
+                "tn": 824,
+                "precision": 0.7582644628099173,
+                "recall": 0.9918918918918919,
+                "f1": 0.8594847775175644
+              },
+              "staff_correct": 230,
+              "staff_notes": 231,
+              "candidate_edges": 14689,
+              "supervised_edges": 1311,
+              "staff_accuracy": 0.9956709956709957
+            },
+            {
+              "name": "medtner_tales_op42n02",
+              "voice": {
+                "tp": 145,
+                "fp": 231,
+                "fn": 20,
+                "tn": 561,
+                "precision": 0.38563829787234044,
+                "recall": 0.8787878787878788,
+                "f1": 0.5360443622920518
+              },
+              "staff_correct": 198,
+              "staff_notes": 211,
+              "candidate_edges": 13726,
+              "supervised_edges": 957,
+              "staff_accuracy": 0.9383886255924171
+            }
+          ],
+          "staff_correct": 1695,
+          "staff_notes": 1966,
+          "candidate_edges": 142198,
+          "supervised_edges": 8004,
+          "scope": "masked local notation successors at fixed 0.5; not decoded phrase or LN accuracy"
+        }
+      },
+      "selection_score": 0.7708288514941787
+    }
+  ],
+  "selected_epoch": 4,
+  "selected_sha256": "972a21c07066fbdd4a2d9f299c2d504d44704ee9278de36c6e4c392f96fcfbdd",
+  "selected_piece_changes": {
+    "clean": [
+      {
+        "name": "beethoven_piano_sonatas_08-2",
+        "voice_f1_delta": 0.09009263788675559,
+        "staff_correct_delta": 4
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-1",
+        "voice_f1_delta": 0.19451807568665047,
+        "staff_correct_delta": 4
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-2",
+        "voice_f1_delta": 0.04085887012716283,
+        "staff_correct_delta": 2
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-3",
+        "voice_f1_delta": 0.08162627703779302,
+        "staff_correct_delta": -23
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-4",
+        "voice_f1_delta": 0.03633740478548453,
+        "staff_correct_delta": -5
+      },
+      {
+        "name": "beethoven_piano_sonatas_32-2",
+        "voice_f1_delta": 0.017450980392156867,
+        "staff_correct_delta": 0
+      },
+      {
+        "name": "chopin_mazurkas_BI134",
+        "voice_f1_delta": 0.0180528691166989,
+        "staff_correct_delta": -7
+      },
+      {
+        "name": "chopin_mazurkas_BI71",
+        "voice_f1_delta": -0.0005774523879401583,
+        "staff_correct_delta": 1
+      },
+      {
+        "name": "medtner_tales_op42n02",
+        "voice_f1_delta": 0.000250069215586457,
+        "staff_correct_delta": -7
+      }
+    ],
+    "plus1": [
+      {
+        "name": "beethoven_piano_sonatas_08-2",
+        "voice_f1_delta": 0.12198153437061376,
+        "staff_correct_delta": 3
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-1",
+        "voice_f1_delta": 0.03466527508573136,
+        "staff_correct_delta": -1
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-2",
+        "voice_f1_delta": 0.1591295116772824,
+        "staff_correct_delta": 2
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-3",
+        "voice_f1_delta": 0.1069928107566005,
+        "staff_correct_delta": -32
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-4",
+        "voice_f1_delta": 0.06380070483827244,
+        "staff_correct_delta": -6
+      },
+      {
+        "name": "beethoven_piano_sonatas_32-2",
+        "voice_f1_delta": 0.10312596559892884,
+        "staff_correct_delta": 5
+      },
+      {
+        "name": "chopin_mazurkas_BI134",
+        "voice_f1_delta": 0.03019580089643792,
+        "staff_correct_delta": -4
+      },
+      {
+        "name": "chopin_mazurkas_BI71",
+        "voice_f1_delta": 0.13383507809737316,
+        "staff_correct_delta": 6
+      },
+      {
+        "name": "medtner_tales_op42n02",
+        "voice_f1_delta": 0.12494632889652213,
+        "staff_correct_delta": -3
+      }
+    ],
+    "plus2": [
+      {
+        "name": "beethoven_piano_sonatas_08-2",
+        "voice_f1_delta": 0.11679418761653704,
+        "staff_correct_delta": 1
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-1",
+        "voice_f1_delta": 0.04084682440846821,
+        "staff_correct_delta": -4
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-2",
+        "voice_f1_delta": 0.06487705842544556,
+        "staff_correct_delta": 1
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-3",
+        "voice_f1_delta": 0.11749846098135075,
+        "staff_correct_delta": -37
+      },
+      {
+        "name": "beethoven_piano_sonatas_12-4",
+        "voice_f1_delta": 0.04646077387291442,
+        "staff_correct_delta": 2
+      },
+      {
+        "name": "beethoven_piano_sonatas_32-2",
+        "voice_f1_delta": 0.04861379754996775,
+        "staff_correct_delta": -1
+      },
+      {
+        "name": "chopin_mazurkas_BI134",
+        "voice_f1_delta": 0.03438785227665153,
+        "staff_correct_delta": -6
+      },
+      {
+        "name": "chopin_mazurkas_BI71",
+        "voice_f1_delta": 0.14798380285869495,
+        "staff_correct_delta": 11
+      },
+      {
+        "name": "medtner_tales_op42n02",
+        "voice_f1_delta": 0.12381031973886025,
+        "staff_correct_delta": -1
+      }
+    ]
+  },
+  "controls": [
+    {
+      "model": "original",
+      "control": "lower_hold",
+      "events": 36,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "original",
+      "control": "upper_hold",
+      "events": 36,
+      "voice": {
+        "tp": 28,
+        "fp": 4,
+        "fn": 0,
+        "f1": 0.9333333333333333
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "original",
+      "control": "chord_layers",
+      "events": 112,
+      "voice": {
+        "tp": 268,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 208,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "staff_layer_pairs": {
+        "tp": 1128,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "original",
+      "control": "crossing",
+      "events": 32,
+      "voice": {
+        "tp": 24,
+        "fp": 14,
+        "fn": 0,
+        "f1": 0.7741935483870968
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 16,
+        "fp": 32,
+        "fn": 32,
+        "f1": 0.3333333333333333
+      }
+    },
+    {
+      "model": "original",
+      "control": "wide_arpeggio",
+      "events": 32,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 52,
+        "fp": 0,
+        "fn": 60,
+        "f1": 0.6341463414634146
+      }
+    },
+    {
+      "model": "original",
+      "control": "pedal_overlap",
+      "events": 36,
+      "voice": {
+        "tp": 27,
+        "fp": 40,
+        "fn": 1,
+        "f1": 0.5684210526315789
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "lower_hold",
+      "events": 36,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "upper_hold",
+      "events": 36,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "chord_layers",
+      "events": 112,
+      "voice": {
+        "tp": 268,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 208,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "staff_layer_pairs": {
+        "tp": 1128,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "crossing",
+      "events": 32,
+      "voice": {
+        "tp": 20,
+        "fp": 8,
+        "fn": 4,
+        "f1": 0.7692307692307693
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 16,
+        "fp": 32,
+        "fn": 32,
+        "f1": 0.3333333333333333
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "wide_arpeggio",
+      "events": 32,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 52,
+        "fp": 0,
+        "fn": 60,
+        "f1": 0.6341463414634146
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "pedal_overlap",
+      "events": 36,
+      "voice": {
+        "tp": 28,
+        "fp": 15,
+        "fn": 0,
+        "f1": 0.7887323943661971
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    }
+  ],
+  "clean_adaptation_controls": [
+    {
+      "model": "original",
+      "control": "lower_hold",
+      "events": 36,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "original",
+      "control": "upper_hold",
+      "events": 36,
+      "voice": {
+        "tp": 28,
+        "fp": 4,
+        "fn": 0,
+        "f1": 0.9333333333333333
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "original",
+      "control": "chord_layers",
+      "events": 112,
+      "voice": {
+        "tp": 268,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 208,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "staff_layer_pairs": {
+        "tp": 1128,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "original",
+      "control": "crossing",
+      "events": 32,
+      "voice": {
+        "tp": 24,
+        "fp": 14,
+        "fn": 0,
+        "f1": 0.7741935483870968
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 16,
+        "fp": 32,
+        "fn": 32,
+        "f1": 0.3333333333333333
+      }
+    },
+    {
+      "model": "original",
+      "control": "wide_arpeggio",
+      "events": 32,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 52,
+        "fp": 0,
+        "fn": 60,
+        "f1": 0.6341463414634146
+      }
+    },
+    {
+      "model": "original",
+      "control": "pedal_overlap",
+      "events": 36,
+      "voice": {
+        "tp": 27,
+        "fp": 40,
+        "fn": 1,
+        "f1": 0.5684210526315789
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "lower_hold",
+      "events": 36,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "upper_hold",
+      "events": 36,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "chord_layers",
+      "events": 112,
+      "voice": {
+        "tp": 268,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 208,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "staff_layer_pairs": {
+        "tp": 1128,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "crossing",
+      "events": 32,
+      "voice": {
+        "tp": 20,
+        "fp": 12,
+        "fn": 4,
+        "f1": 0.7142857142857143
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 16,
+        "fp": 32,
+        "fn": 32,
+        "f1": 0.3333333333333333
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "wide_arpeggio",
+      "events": 32,
+      "voice": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 48,
+        "fp": 0,
+        "fn": 64,
+        "f1": 0.6
+      }
+    },
+    {
+      "model": "source_event_adapted",
+      "control": "pedal_overlap",
+      "events": 36,
+      "voice": {
+        "tp": 0,
+        "fp": 20,
+        "fn": 28,
+        "f1": 0.0
+      },
+      "chord": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "f1": 0.0
+      },
+      "staff_layer_pairs": {
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "f1": 1.0
+      }
+    }
+  ],
+  "controls_sha256": "cb3a9486de586dc238cc1ecf3c74345b281f76983cef9f5bf93fd89e5db57400",
+  "clean_controls_sha256": "f87da212283806f629f9db388f3e5f817ecdc33919e1ff6daf09c73446c4ea98",
+  "elapsed_seconds": 800.2179999999935,
+  "summarizer_sha256": "f39af7a34ce2c614e1cd1ed22aa4120458121871d8795dbb75e97417bbc992dd",
+  "model_rerun": false,
+  "test_loaded": false,
+  "application_enabled": false,
+  "musical_acceptance": false,
+  "limitations": [
+    "Controls were already seen and informed augmentation; they are development checks.",
+    "Validation uses three observations of the same nine symbolic pieces, not 27 independent pieces.",
+    "Local masked successors do not establish global melody identity, acoustic precision, or LN quality."
+  ]
+}

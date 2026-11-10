@@ -1,0 +1,258 @@
+{
+  "date": "2026-11-10",
+  "decision": "descriptive_evidence_only_no_filter",
+  "source_report_sha256": "74d9db34c7a0985a3763f1c8e10df59d11b12126a6d6acd64e9ad7fb7497bd76",
+  "independent_review_sha256": "eaf754937641076e4efa959a350ebece26abaa4896d5ce01109c2e4b99d85ff4",
+  "descriptive_counts_sha256": "ef69364bb8aeec9c070cf8782c119bf443244b5052486201d50911fc28dcbbbe",
+  "identity": {
+    "readiness": "f9e8a983055ff6c097fa18b6f78052be2c6c17f5ff035bcb57a2ddf5fcc606d2",
+    "runner": "17a006cdbde7fb61665b3c04bde1cda8006125f051f3efcab3d26284a029d736",
+    "helper": "13e8e13ac0e827778830d568ec575f02755af9e260e6ace2ce2f3f67add971cd",
+    "protocol": "e187af7fee2a51578012147c0ee47203268569110e2c87ace137c1b7ae0c7623"
+  },
+  "environment": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "matplotlib": "3.10.8"
+  },
+  "targets": 47,
+  "matched": 10,
+  "coincident": 12,
+  "groups": {
+    "matched_coincident": {
+      "count": 3,
+      "windows": {
+        "512": {
+          "measurable_attack_pre": 3,
+          "attack_pre_db_quantiles": [
+            1.3966056459042298,
+            3.745869943322302,
+            6.095134240740374,
+            7.2794891259060766,
+            8.463844011071778
+          ],
+          "attack_full_support_frames": 192
+        },
+        "2048": {
+          "measurable_attack_pre": 3,
+          "attack_pre_db_quantiles": [
+            6.45762379401738,
+            8.207211839653253,
+            9.956799885289126,
+            10.961594410826352,
+            11.966388936363579
+          ],
+          "attack_full_support_frames": 87
+        },
+        "8192": {
+          "measurable_attack_pre": 0,
+          "attack_pre_db_quantiles": null,
+          "attack_full_support_frames": 0
+        }
+      }
+    },
+    "matched_no_coincidence": {
+      "count": 7,
+      "windows": {
+        "512": {
+          "measurable_attack_pre": 7,
+          "attack_pre_db_quantiles": [
+            -0.6666520861093073,
+            1.214463172662703,
+            2.014619484864779,
+            9.982486006054444,
+            15.076870404468021
+          ],
+          "attack_full_support_frames": 448
+        },
+        "2048": {
+          "measurable_attack_pre": 7,
+          "attack_pre_db_quantiles": [
+            5.632872302036072,
+            7.05471113418384,
+            10.841153997431574,
+            13.980033705362365,
+            19.500993462619842
+          ],
+          "attack_full_support_frames": 203
+        },
+        "8192": {
+          "measurable_attack_pre": 0,
+          "attack_pre_db_quantiles": null,
+          "attack_full_support_frames": 0
+        }
+      }
+    },
+    "unmatched_coincident": {
+      "count": 9,
+      "windows": {
+        "512": {
+          "measurable_attack_pre": 9,
+          "attack_pre_db_quantiles": [
+            -4.337418603291345,
+            1.546320545607438,
+            2.686391770212486,
+            4.470824286992534,
+            16.939344372681905
+          ],
+          "attack_full_support_frames": 576
+        },
+        "2048": {
+          "measurable_attack_pre": 9,
+          "attack_pre_db_quantiles": [
+            -1.5693558693063547,
+            0.9533362449483818,
+            3.0632656474173636,
+            15.389493616670528,
+            32.82368265729777
+          ],
+          "attack_full_support_frames": 261
+        },
+        "8192": {
+          "measurable_attack_pre": 0,
+          "attack_pre_db_quantiles": null,
+          "attack_full_support_frames": 0
+        }
+      }
+    },
+    "unmatched_no_coincidence": {
+      "count": 28,
+      "windows": {
+        "512": {
+          "measurable_attack_pre": 28,
+          "attack_pre_db_quantiles": [
+            -9.4887207543949,
+            -1.6590150011245042,
+            1.8306902265143044,
+            6.4371982917638295,
+            27.762949798299516
+          ],
+          "attack_full_support_frames": 1792
+        },
+        "2048": {
+          "measurable_attack_pre": 28,
+          "attack_pre_db_quantiles": [
+            -13.570250292450048,
+            -7.792283008425429,
+            1.485192941424196,
+            9.341281114350942,
+            47.571699275787296
+          ],
+          "attack_full_support_frames": 812
+        },
+        "8192": {
+          "measurable_attack_pre": 0,
+          "attack_pre_db_quantiles": null,
+          "attack_full_support_frames": 0
+        }
+      }
+    }
+  },
+  "neighbor_bin_overlap": {
+    "512": {
+      "candidates": 47,
+      "with_frequency_bins": 47,
+      "without_frequency_bins": 0,
+      "candidates_sharing_any_neighbor": 42,
+      "candidates_sharing_both_neighbors": 31,
+      "neighbor_pairs_sharing_bins": 73,
+      "neighbor_pairs_checked": 94
+    },
+    "2048": {
+      "candidates": 47,
+      "with_frequency_bins": 47,
+      "without_frequency_bins": 0,
+      "candidates_sharing_any_neighbor": 24,
+      "candidates_sharing_both_neighbors": 2,
+      "neighbor_pairs_sharing_bins": 26,
+      "neighbor_pairs_checked": 94
+    },
+    "8192": {
+      "candidates": 47,
+      "with_frequency_bins": 47,
+      "without_frequency_bins": 0,
+      "candidates_sharing_any_neighbor": 2,
+      "candidates_sharing_both_neighbors": 0,
+      "neighbor_pairs_sharing_bins": 2,
+      "neighbor_pairs_checked": 94
+    }
+  },
+  "lower_partial_bin_overlap": {
+    "512": {
+      "candidates": 12,
+      "event_partner_pairs": 16,
+      "unique_pitch_partner_pairs": 16,
+      "target_partial_bands": 96,
+      "target_partial_bands_without_bins": 0,
+      "target_partial_bands_with_any_shared_bin": 96,
+      "target_partial_bands_with_all_bins_shared_union": 96,
+      "target_partial_bands_with_some_but_not_all_shared_union": 0,
+      "target_partial_bands_with_no_shared_bins": 0,
+      "target_partial_lower_pair_checks": 128,
+      "target_partial_lower_pair_any_shared": 128,
+      "target_partial_lower_pair_all_bins_shared": 126,
+      "candidates_all_target_partials_share_some_bins": 12,
+      "candidates_all_target_partials_fully_shared_union": 12
+    },
+    "2048": {
+      "candidates": 12,
+      "event_partner_pairs": 16,
+      "unique_pitch_partner_pairs": 16,
+      "target_partial_bands": 96,
+      "target_partial_bands_without_bins": 0,
+      "target_partial_bands_with_any_shared_bin": 96,
+      "target_partial_bands_with_all_bins_shared_union": 92,
+      "target_partial_bands_with_some_but_not_all_shared_union": 4,
+      "target_partial_bands_with_no_shared_bins": 0,
+      "target_partial_lower_pair_checks": 128,
+      "target_partial_lower_pair_any_shared": 128,
+      "target_partial_lower_pair_all_bins_shared": 116,
+      "candidates_all_target_partials_share_some_bins": 12,
+      "candidates_all_target_partials_fully_shared_union": 10
+    },
+    "8192": {
+      "candidates": 12,
+      "event_partner_pairs": 16,
+      "unique_pitch_partner_pairs": 16,
+      "target_partial_bands": 96,
+      "target_partial_bands_without_bins": 0,
+      "target_partial_bands_with_any_shared_bin": 96,
+      "target_partial_bands_with_all_bins_shared_union": 87,
+      "target_partial_bands_with_some_but_not_all_shared_union": 9,
+      "target_partial_bands_with_no_shared_bins": 0,
+      "target_partial_lower_pair_checks": 128,
+      "target_partial_lower_pair_any_shared": 128,
+      "target_partial_lower_pair_all_bins_shared": 101,
+      "candidates_all_target_partials_share_some_bins": 12,
+      "candidates_all_target_partials_fully_shared_union": 10
+    }
+  },
+  "nearby_attack_candidates": {
+    "candidates": 47,
+    "candidates_with_any_other_event": 30,
+    "candidates_with_same_pitch_event": 1,
+    "candidates_with_other_pitch_event": 30,
+    "target_other_event_pairs": 78,
+    "target_same_pitch_event_pairs": 1,
+    "target_other_pitch_event_pairs": 77
+  },
+  "independent_review": {
+    "status": "passed",
+    "helper_called": false,
+    "checks": 27364,
+    "direct_fft_frames": 3159,
+    "direct_fft_max_absolute_error": 5.551115123125783e-17,
+    "wav_clips_verified": 47,
+    "artifact_hashes_verified": 193
+  },
+  "scoped_tests_passed": 72,
+  "gallery_cards": 47,
+  "gallery_asset_links_verified": 141,
+  "gallery_javascript_syntax_passed": true,
+  "direct_listening_performed": false,
+  "model_rerun": false,
+  "notes_changed": false,
+  "application_enabled": false,
+  "musical_acceptance": false
+}

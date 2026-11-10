@@ -76,8 +76,14 @@ def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):
     return np.concatenate(frames)[valid], np.concatenate(onsets)[valid], times[valid]
 
 
-def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_threshold=.3, attacks=None):
+def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_threshold=.3, attacks=None, suppressed=()):
+    # infer() retains frame starts strictly inside the audio. A final frame's
+    # cell can extend past EOF, but observations after EOF are not valid release
+    # evidence (for example when a caller pairs a cache with a shorter source).
+    if np.any(times >= duration):
+        raise ValueError("采音时间戳超出音频时长，请重新分析匹配的音源")
     notes = []
+    suppressed = {(r['pitch'], r['time_ms']) for r in suppressed}
     attack_times = np.array([n.start / 1000 for n in attacks]) if attacks is not None else None
     for pitch in range(88):
         peaks, _ = find_peaks(onsets[:, pitch], height=onset_threshold, distance=3)
@@ -85,6 +91,8 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
             peaks = np.r_[0, peaks]
         accepted = []
         for i in peaks:
+            if (pitch+21, round(float(times[i])*1000)) in suppressed:
+                continue
             before = frames[max(0, i - 6):i, pitch]
             after = frames[i + 3:i + 12, pitch]
             supported = attack_times is None or bool(np.any(np.abs(attack_times - times[i]) <= .045))
@@ -101,6 +109,7 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
         peaks = np.asarray(accepted, dtype=int)
         for j, start in enumerate(peaks):
             stop = int(peaks[j + 1]) if j + 1 < len(peaks) else len(times)
+            release_reason = 'same_pitch_reattack' if j + 1 < len(peaks) else 'input_boundary'
             last, gap = int(start), 0
             for k in range(int(start), stop):
                 if frames[k, pitch] >= frame_threshold:
@@ -108,15 +117,24 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
                 else:
                     gap += 1
                     if gap > 4:
+                        # This is a model activation decay, not a physical
+                        # key release. EOF with only 1–4 low frames is unresolved.
+                        release_reason = 'frame_decay'
                         break
             if last - start < 3:
                 continue
             a = max(0, round(float(times[start]) * 1000))
             b = min(round(duration * 1000), round((float(times[last]) + FRAME / SR) * 1000))
+            # Retained windows overlap by less than one model frame. The last
+            # cell before that seam must not extend through the next accepted
+            # same-pitch attack, whose actual sample clock takes precedence.
+            if stop < len(times):
+                b = min(b, round(float(times[stop]) * 1000))
             if b <= a:
                 continue
             strength = float(np.mean(frames[start:last + 1, pitch]))
-            notes.append(Note(a, b, -1, pitch + 21, round(strength, 4), "pitch", f"p{pitch}:{a}"))
+            notes.append(Note(a, b, -1, pitch + 21, round(strength, 4), "pitch", f"p{pitch}:{a}",
+                              release_reason=release_reason))
     return sorted(notes, key=lambda n: (n.start, n.pitch))
 
 
@@ -162,7 +180,7 @@ def rhythmic_evidence(samples, beats_ms=None, estimate=True):
 
 
 def fuse_attacks(pitched, transients):
-    """Anchor nearby model onsets to measured attacks and avoid duplicate taps."""
+    """Anchor attacks while preserving retriggers and their release bounds."""
     times = np.array([n.start for n in transients])
     if not len(times):
         return pitched, transients, 0
@@ -176,6 +194,33 @@ def fuse_attacks(pitched, transients):
             used.add(j)
             n = replace(n, start=int(times[j]))
         corrected.append(n)
+    tracks = {}
+    for index, note in enumerate(pitched):
+        tracks.setdefault((note.voice, note.instrument_id, note.pitch), []).append(index)
+    for indices in tracks.values():
+        indices.sort(key=lambda i: pitched[i].start)
+        # One broadband transient may support several pitches in a chord, but
+        # must not collapse successive same-pitch attacks onto one timestamp.
+        # Reverting one correction can expose a conflict with its neighbour.
+        while True:
+            reverted = False
+            for left, right in zip(indices, indices[1:]):
+                if (pitched[left].start < pitched[right].start and
+                        corrected[left].start >= corrected[right].start):
+                    for index in (left, right):
+                        if corrected[index].start != pitched[index].start:
+                            corrected[index] = replace(corrected[index], start=pitched[index].start)
+                            reverted = True
+            if not reverted:
+                break
+        for left, right in zip(indices, indices[1:]):
+            note, following = corrected[left], corrected[right]
+            if (note.release_reason == 'same_pitch_reattack' and
+                    note.start < following.start < note.end):
+                # This endpoint was defined by the next attack, not a measured
+                # decay. Carry an earlier corroborated attack into that bound;
+                # a later attack is not evidence to lengthen the old note.
+                corrected[left] = replace(note, end=following.start)
     return corrected, [n for j, n in enumerate(transients) if j not in used], len(used)
 
 
@@ -242,20 +287,19 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     chunks = np.array_split(np.abs(samples), min(2400, len(samples)))
     waveform = [round(float(np.max(x)), 4) for x in chunks]
     candidates = sorted(notes + unmatched, key=lambda n: (n.start, n.pitch))
-    segments = []
-    for start in range(0, int(duration * 1000) + 1, 15000):
-        local = [n for n in candidates if start <= n.start < start + 15000]
-        segments.append({"start_ms": start, "end_ms": min(round(duration * 1000), start + 15000),
-                         "pitched": sum(n.source == "pitch" for n in local),
-                         "transients": sum(n.source == "transient" for n in local),
-                         "sustains_over_800ms": sum(n.end - n.start >= 800 for n in local)})
-    progress(100, "采音候选已准备好")
-    return {"revision": 3, "duration": duration, "waveform": waveform, "tempo": tempo, "segments": segments,
+    result = {"revision": 8, "duration": duration, "waveform": waveform, "tempo": tempo,
             "elapsed_seconds": round(time.perf_counter() - started, 2), "cached": cached is not None,
             "timing_attacks": [n.data() for n in transients], "fused_attacks": fused,
             "release_refinement": releases,
             "candidates": [n.data() for n in candidates], "thresholds": {k: settings[k] for k in ("onset_threshold", "frame_threshold")},
             "engine": "Basic Pitch 0.4.0 ONNX + onset refinement + phase regression", "notice": "音高候选并非乐器分轨；复杂混音、混响和音尾仍可能误判。"}
+    from .structure import detect_structure
+    progress(97, '比较音色与声部变化，建议音乐段落')
+    result['structure'] = detect_structure(result, samples, SR)
+    result['segments'] = result['structure']['segments']
+    result['elapsed_seconds'] = round(time.perf_counter()-started, 2)
+    progress(100, "采音候选与段落已准备好")
+    return result
 
 
 def align_stem_samples(stem, length):
@@ -342,16 +386,31 @@ def reject_source_bleed(notes, stems, mixture_attacks, sample_rate=SR):
     return result, rejected
 
 
-def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: None, cancelled=lambda: False):
+def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: None, cancelled=lambda: False,
+                 *, piano_detector=None, instrument_detector=None, allow_predicted_releases=False,
+                 guitar_detector=None, allow_guitar_predicted_releases=False):
     """Separate sources, then run pitch/attack analysis on each isolated voice."""
     from .voices import vocal_phrases
-    from .stems import profile_for
+    from .stems import separation_voices,separation_label,separation_identity
+    if type(allow_predicted_releases) is not bool or (allow_predicted_releases and instrument_detector is None):
+        raise ValueError('模型音尾选项需要显式选择专用采音')
+    if type(allow_guitar_predicted_releases) is not bool or (allow_guitar_predicted_releases and guitar_detector is None):
+        raise ValueError('吉他模型音尾选项需要显式选择吉他专用采音')
     started = time.perf_counter()
     samples = decode(path, work)
     duration = len(samples) / SR
     stem_root, separation = separator.separate(path, work, progress, cancelled)
+    stem_identity = separation_identity(separation)
     beats_ms = separation.get("beat_evidence", {}).get("beats_ms")
-    voices = profile_for(separation.get('profile','four'))['voices']
+    voices = separation_voices(separation)
+    if piano_detector is not None and 'piano' not in voices:
+        raise ValueError('钢琴专用采音需要六声部分离或已导入的钢琴声轨')
+    if guitar_detector is not None and 'guitar' not in voices:
+        raise ValueError('吉他专用采音需要六声部分离或已导入的吉他声轨')
+    instrument_voices = set(voices).intersection(('bass','other')) if instrument_detector is not None else set()
+    if instrument_detector is not None and not instrument_voices:
+        raise ValueError('专用采音需要分离或导入的贝斯、其他伴奏声轨')
+    unit_weight_voices = instrument_voices | ({'guitar'} if guitar_detector is not None else set())
     pitch_cached = []
     all_candidates, phrases, summaries, drum_attacks, tempos = [], [], [], [], {}
     for index, voice in enumerate(voices):
@@ -367,29 +426,75 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
             tempos[voice] = estimate_timing(attacks, duration, beats_ms)
         attacks = [replace(n, voice=voice, id=f"{voice}:{n.id}") for n in attacks]
         cached = False
+        articulation = []
+        specialized = None
+        instrument_diagnostics = None
+        guitar_diagnostics = None
         if voice == "drums":
             drum_attacks = attacks
             candidates = attacks
+        elif voice == 'guitar' and guitar_detector is not None:
+            pitched,guitar_diagnostics=guitar_detector.analyze(stem,SR,stem_root/'guitar-fl',stem_identity,
+                allow_predicted_releases=allow_guitar_predicted_releases,
+                progress=lambda p,s:progress(stage+round(p*.60/len(voices)),s),cancelled=cancelled)
+            cached=guitar_diagnostics['cached'];pitch_cached.append(cached)
+            before_source={n.id for n in pitched}
+            pitched,rejected_pitch=source_evidence(pitched,stem,samples)
+            guitar_diagnostics=dict(guitar_diagnostics,source_energy_filter=dict(
+                rejected=rejected_pitch,rejected_ids=sorted(before_source-{n.id for n in pitched})),
+                generic_release_refinement=False,generic_attack_fusion=False,
+                confidence_based_bleed_filter=False)
+            releases=guitar_diagnostics
+            candidates=pitched
+        elif voice in instrument_voices:
+            pitched,instrument_diagnostics=instrument_detector.analyze(stem,SR,stem_root/('instrument-'+voice),
+                stem_identity,voice,allow_predicted_releases=allow_predicted_releases,
+                progress=lambda p,s:progress(stage+round(p*.60/len(voices)),s),cancelled=cancelled)
+            cached=instrument_diagnostics['cached'];pitch_cached.append(cached)
+            before_source={n.id for n in pitched}
+            pitched,rejected_pitch=source_evidence(pitched,stem,samples)
+            instrument_diagnostics=dict(instrument_diagnostics,source_energy_filter=dict(
+                rejected=rejected_pitch,rejected_ids=sorted(before_source-{n.id for n in pitched})),
+                generic_release_refinement=False,generic_attack_fusion=False,
+                confidence_based_bleed_filter=False)
+            # Unit event weights are not BP activation confidences. Preserve
+            # model clocks/tails and keep unknown tails marked for tap policy.
+            releases=instrument_diagnostics
+            candidates=pitched
+        elif voice == 'piano' and piano_detector is not None:
+            pitched,specialized=piano_detector.analyze(stem,SR,stem_root/'piano-specialist-activations.npz',
+                stem_identity,lambda p,s:progress(stage+round(p*.60/len(voices)),s),cancelled)
+            cached=specialized['cached'];pitch_cached.append(cached)
+            pitched,rejected_pitch=source_evidence(pitched,stem,samples)
+            # The specialist already estimates onset timing. Generic transient
+            # fusion would shift these events without a validated benefit.
+            releases=specialized
+            candidates=[replace(n,voice=voice,id=f'{voice}:{n.id}') for n in pitched]
         else:
             cache = stem_root / f"{voice}-activations.npz"
             data = None
             if cache.is_file():
                 try:
                     with np.load(cache, allow_pickle=False) as d:
-                        if (int(d["version"]) == 2 and str(d["audio_sha256"]) == separation["audio_sha256"]
-                                and str(d['separation_sha256']) == separation['model_sha256']):
+                        if (int(d["version"]) == 3 and str(d["audio_sha256"]) == separation["audio_sha256"]
+                                and str(d['separation_sha256']) == stem_identity):
                             data = d["frames"], d["onsets"], d["times"]
                 except (ValueError, KeyError, OSError, EOFError):
                     pass
             if data is None:
                 data = infer(stem, model, lambda p, s: progress(stage + round(p * .60 / len(voices)), f"{voice} · {s}"), cancelled)
-                np.savez_compressed(cache, frames=data[0], onsets=data[1], times=data[2], version=2,
-                    audio_sha256=separation['audio_sha256'],separation_sha256=separation['model_sha256'])
+                np.savez_compressed(cache, frames=data[0], onsets=data[1], times=data[2], version=3,
+                    audio_sha256=separation['audio_sha256'],separation_sha256=stem_identity)
             else:
                 cached = True
             pitch_cached.append(cached)
             frames, onsets, times = data
-            pitched = pitched_notes(frames, onsets, times, duration, settings["onset_threshold"], settings["frame_threshold"], attacks)
+            if voice == 'bass':
+                from .articulation import steady_bass_onsets
+                articulation = steady_bass_onsets(frames, onsets, times, stem, SR,
+                    settings['onset_threshold'], settings['frame_threshold'])
+            pitched = pitched_notes(frames, onsets, times, duration, settings["onset_threshold"], settings["frame_threshold"], attacks,
+                                    suppressed=articulation)
             pitched, rejected_pitch = source_evidence(pitched, stem, samples)
             pitched, releases = refine_releases(pitched, stem)
             pitched, unmatched, _ = fuse_attacks(pitched, attacks)
@@ -404,42 +509,58 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
                               end_padding_samples=end_padding,
                               rejected_low_energy_attacks=rejected_attacks,
                               rejected_low_energy_pitch=0 if voice == "drums" else rejected_pitch,
+                              articulation_rejections=articulation,
                               release_refinement=None if voice == "drums" else releases,
+                              detector='guitar-fl' if guitar_diagnostics is not None else 'tsumugi' if instrument_diagnostics is not None else 'piano-specialist' if specialized is not None else 'transient' if voice=='drums' else 'basic-pitch',
                               sustains_over_800ms=sum(n.end - n.start >= 800 for n in candidates)))
-        peak = max(float(np.max(np.abs(stem))), 1.)
-        wavfile.write(stem_root / f"{voice}.wav", SR, (np.clip(stem / peak, -1, 1) * 32767).astype(np.int16))
-    progress(94, "比较鼓声与混音拍线，保留人声持续段证据")
+        if separation.get('source')!='provided':
+            peak = max(float(np.max(np.abs(stem))), 1.)
+            wavfile.write(stem_root / f"{voice}.wav", SR, (np.clip(stem / peak, -1, 1) * 32767).astype(np.int16))
+    progress(94, "核对声部与混音拍线，保留持续段证据")
     mix_attacks, mix_tempo = rhythmic_evidence(samples, beats_ms)
     stem_signals = {v:np.load(stem_root/f'{v}.npy',allow_pickle=False,mmap_mode='r') for v in voices if v!='drums'}
-    all_candidates, bleed_rejections = reject_source_bleed(all_candidates,stem_signals,mix_attacks)
+    protected=[n for n in all_candidates if n.voice in unit_weight_voices]
+    generic=[n for n in all_candidates if n.voice not in unit_weight_voices]
+    generic, bleed_rejections = reject_source_bleed(generic,stem_signals,mix_attacks)
+    all_candidates=generic+protected
     for summary in summaries:
         summary['rejected_cross_source_bleed'] = sum(r['note']['voice']==summary['voice'] for r in bleed_rejections)
+        summary['cross_source_bleed_checked'] = summary['voice'] not in unit_weight_voices
         summary['candidates'] = sum(n.voice==summary['voice'] for n in all_candidates)
-    drum_tempo = tempos["drums"]
+    drum_tempo = tempos.get("drums",mix_tempo)
     drum_quality, mix_quality = timing_evidence_quality(drum_tempo), timing_evidence_quality(mix_tempo)
     use_drums = len(drum_attacks) >= 24 and drum_quality.get("coverage", 0) >= .7 and drum_quality.get("score", 0) >= mix_quality.get("score", 0) * .9
     tempo = dict(drum_tempo if use_drums else mix_tempo)
     attacks = drum_attacks if use_drums else mix_attacks
     tempo["evidence_source"] = "drums" if use_drums else "mix"
-    tempo["comparisons"] = {"drums": drum_tempo, "mix": mix_tempo}
+    tempo["comparisons"] = ({"drums": drum_tempo, "mix": mix_tempo} if 'drums' in tempos else {"mix":mix_tempo})
     if use_drums:
         tempo, attacks = cover_missing_timing_windows(tempo,drum_attacks,mix_attacks)
     candidates = sorted(all_candidates, key=lambda n: (n.start, n.pitch, n.voice))
-    segments = []
-    for start in range(0, round(duration * 1000), 15000):
-        local = [n for n in candidates if start <= n.start < start + 15000]
-        segments.append(dict(start_ms=start, end_ms=min(round(duration * 1000), start + 15000),
-            pitched=sum(n.source == "pitch" for n in local), transients=sum(n.source == "transient" for n in local),
-            sustains_over_800ms=sum(n.end - n.start >= 800 for n in local),
-            voices={v: sum(n.voice == v for n in local) for v in voices},
-            vocal_phrases=sum(start <= n.start < start + 15000 for n in phrases)))
-    progress(100, "多声部采音与持续段已准备好")
-    return dict(revision=8, duration=duration, tempo=tempo, segments=segments,
+    result = dict(revision=14, duration=duration, tempo=tempo,
         waveform=[round(float(np.max(x)), 4) for x in np.array_split(np.abs(samples), min(2400, len(samples)))],
         elapsed_seconds=round(time.perf_counter() - started, 2), cached=separation["cached"] and all(pitch_cached),
         timing_attacks=[n.data() for n in attacks], fused_attacks=0, candidates=[n.data() for n in candidates],
         phrase_candidates=[n.data() for n in phrases], voices=summaries, separation=separation,
         source_bleed_rejections=bleed_rejections,
+        source_bleed_policy=dict(excluded_unit_weight_voices=sorted(unit_weight_voices),
+            reason='Unit event weights are not calibrated confidence; excluded as both targets and parents.'),
+        piano_engine='specialist' if piano_detector is not None else 'general',
+        instrument_engine='tsumugi' if instrument_detector is not None else 'general',
+        guitar_engine='fl' if guitar_detector is not None else 'general',
+        allow_predicted_releases=allow_predicted_releases,
+        allow_guitar_predicted_releases=allow_guitar_predicted_releases,
         thresholds={k: settings[k] for k in ("onset_threshold", "frame_threshold")},
-        engine=profile_for(separation.get('profile','four'))['label']+" + source-verified Basic Pitch + vocal phrases + Beat This meter",
+        engine=separation_label(separation)+" + source-verified Basic Pitch + vocal phrases"+
+            (' + piano specialist' if piano_detector is not None else '')+
+            (' + optional Tsumugi bass/other' if instrument_detector is not None else '')+
+            (' + optional FL guitar' if guitar_detector is not None else '')+
+            (" + Beat This meter" if beats_ms else ''),
         notice="分离可能串音或遗漏乐器；声轨更多不代表采音必然更准。跨音高人声 LN 是编排选择，请用独立声部试听检查。")
+    from .structure import detect_structure
+    progress(97, '比较音色与声部变化，建议音乐段落')
+    result['structure'] = detect_structure(result, samples, SR)
+    result['segments'] = result['structure']['segments']
+    result['elapsed_seconds'] = round(time.perf_counter()-started, 2)
+    progress(100, "多声部采音、持续段与音乐分段已准备好")
+    return result

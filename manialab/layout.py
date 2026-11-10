@@ -70,7 +70,7 @@ class State:
 
 def source_key(note):
     voice = getattr(note, "voice", "mix")
-    return (voice, note.pitch) if note.source == "pitch" else (note.source, note.lane)
+    return (voice, note.instrument_id, note.pitch) if note.source == "pitch" else (note.source, note.lane)
 
 
 def _conflicts(a, b):

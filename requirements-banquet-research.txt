@@ -1,0 +1,30 @@
+# Optional, isolated local research only. Not imported by ManiaLab itself.
+# CPU Torch family wheels come from https://download.pytorch.org/whl/cpu.
+# Actual runtime of the fixed Banquet experiments; not upstream's original env.
+torch==2.9.1+cpu
+torchaudio==2.9.1+cpu
+torchvision==0.24.1+cpu
+hear21passt==0.0.26
+timm==0.4.12
+pytorch-lightning==2.5.6
+torchmetrics==1.8.2
+lightning-utilities==0.15.2
+numpy==2.3.5
+scipy==1.17.0
+librosa==0.11.0
+soundfile==0.14.0
+numba==0.68.1
+llvmlite==0.50.0
+soxr==1.1.0
+audioread==3.1.0
+scikit-learn==1.9.1
+decorator==5.3.1
+pooch==1.9.0
+joblib==1.6.0
+lazy-loader==0.6
+msgpack==1.2.4
+Pillow==13.0.0
+tqdm==4.70.1
+fsspec==2026.9.0
+packaging==26.3
+PyYAML==6.0.3

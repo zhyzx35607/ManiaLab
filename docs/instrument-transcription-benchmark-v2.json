@@ -1,0 +1,1364 @@
+{
+  "revision": 2,
+  "runner_sha256": "e5723d8d3da394568a90759b338013d99bd0c8aa8ba93cd78e3fa875ac0d900f",
+  "manifest_sha256": "c6a0b9d848c1733c244fce902feb308155391cdd615b2e5dce12ed36c99e2973",
+  "rows": [
+    {
+      "name": "01-1-vn",
+      "piece_id": 1,
+      "kind": "isolated",
+      "instrument": "vn",
+      "identity": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+        "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+        "sources": {
+          "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\AuSep_1_vn_01_Jupiter.wav": "cdb6b667405796944a5876f640fac10b467d665f5014086e5d5fa1d394ba628f"
+        },
+        "start_ms": 0,
+        "seconds": 30.0,
+        "context_seconds": 2.1,
+        "task": "mc13_full_plus_256",
+        "decoder_channels": 13,
+        "strict_weights": true
+      },
+      "annotation_hashes": {
+        "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\Notes_1_vn_01_Jupiter.txt": "285772ef718ffc29e6c1fda995f9b377688cac85e84915e4d7a77031fc6669b8"
+      },
+      "metrics": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 40,
+            "precision": 0.975609756097561,
+            "recall": 0.9302325581395349,
+            "f1": 0.9523809523809523,
+            "mean_onset_error_ms": 11.674999999999791,
+            "mean_release_error_ms": 27.467187499999614
+          },
+          "complete_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 38,
+            "precision": 0.926829268292683,
+            "recall": 0.8837209302325582,
+            "f1": 0.9047619047619048,
+            "mean_onset_error_ms": 11.868421052631405,
+            "mean_release_error_ms": 9.697368421052305
+          },
+          "instrument_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 37,
+            "precision": 0.9024390243902439,
+            "recall": 0.8604651162790697,
+            "f1": 0.8809523809523809,
+            "mean_onset_error_ms": 12.270270270270048,
+            "mean_release_error_ms": 18.932432432431973
+          },
+          "complete_instrument_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 36,
+            "precision": 0.8780487804878049,
+            "recall": 0.8372093023255814,
+            "f1": 0.8571428571428571,
+            "mean_onset_error_ms": 12.444444444444258,
+            "mean_release_error_ms": 9.76388888888851
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 38,
+            "precision": 0.926829268292683,
+            "recall": 0.8837209302325582,
+            "f1": 0.9047619047619048,
+            "mean_onset_error_ms": 9.815789473684006,
+            "mean_release_error_ms": 28.333881578947004
+          },
+          "complete_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 35,
+            "precision": 0.8536585365853658,
+            "recall": 0.813953488372093,
+            "f1": 0.8333333333333334,
+            "mean_onset_error_ms": 9.62857142857127,
+            "mean_release_error_ms": 7.157142857142545
+          },
+          "instrument_onsets": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 35,
+            "precision": 0.8536585365853658,
+            "recall": 0.813953488372093,
+            "f1": 0.8333333333333334,
+            "mean_onset_error_ms": 10.285714285714066,
+            "mean_release_error_ms": 19.385714285713846
+          },
+          "complete_instrument_intervals": {
+            "reference": 43,
+            "predicted": 41,
+            "matched": 33,
+            "precision": 0.8048780487804879,
+            "recall": 0.7674418604651163,
+            "f1": 0.7857142857142857,
+            "mean_onset_error_ms": 10.121212121211949,
+            "mean_release_error_ms": 7.0757575757572075
+          }
+        }
+      },
+      "decoding_errors": {
+        "Err/onset not found": 15.0,
+        "Err/merging segment tie": 15
+      },
+      "programs": {
+        "41": 3,
+        "40": 42
+      },
+      "interval_scope": {
+        "begin_seconds": 0.0,
+        "end_seconds": 30.0,
+        "context_start_seconds": 0.0,
+        "context_end_seconds": 32.1,
+        "unobservable_reference_offsets": 0,
+        "reference_crosses_end": 1,
+        "predicted_crosses_end": 1,
+        "predicted_crosses_context_end": 0,
+        "crossing_predictions_retained": true
+      },
+      "evidence": {
+        "report_sha256": "cb01df9bf1752de2947048a068298bde787ade5d6566dcad97e223475352979a",
+        "notes_sha256": "4f3e7d9d2aae0a6f5b94d79495e40154adc2bb29921da032a002564fc161c29c",
+        "labels_sha256": "3a4e1bd43a1067ad15841357a0627bd5d4a697dfdc7e571d6e892f95833f73d7"
+      },
+      "release_audit": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "tokens_sha256": "fadef460acb2708d47143fdeac17e9250209ecd95f998dcf4605e29b6a7e576e",
+        "notes_sha256": "4f3e7d9d2aae0a6f5b94d79495e40154adc2bb29921da032a002564fc161c29c",
+        "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+        "decoded_notes_equal": true,
+        "notes": 45,
+        "endpoint_counts": {
+          "explicit_model_note_off": 41,
+          "forced_segment_boundary": 3,
+          "same_pitch_reattack": 5,
+          "unresolved_or_postprocessed": 1
+        },
+        "limits": [
+          "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+          "Flags can overlap; ambiguous endpoints remain ambiguous.",
+          "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+        ]
+      },
+      "application_detector": {
+        "identity": {
+          "sources": {
+            "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\AuSep_1_vn_01_Jupiter.wav": "cdb6b667405796944a5876f640fac10b467d665f5014086e5d5fa1d394ba628f"
+          },
+          "model_sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+          "audio_code_sha256": "0f83472aa4dbaa1156a990984cf5aa87bcea6c535e76c6f5a574fd91fefe51e1",
+          "runner_sha256": "169696b793a7c8f8a8b66282c03d6c1c107ab5546d51a5715cd8b6cdc723f078",
+          "start_ms": 0,
+          "seconds": 30,
+          "context_seconds": 2.1
+        },
+        "interval_scope": {
+          "begin_seconds": 0.0,
+          "end_seconds": 30.0,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "notes_sha256": "e0268b24c1e98ed099e2d320e90e8ec9129b3908f349922e991063008b559da6",
+        "report_sha256": "f94292614683ef83aa04caeedc83577c055e2bcfed9716ecf4755302730884c8",
+        "metrics": {
+          "standard": {
+            "pitched_onsets": {
+              "reference": 43,
+              "predicted": 61,
+              "matched": 40,
+              "precision": 0.6557377049180327,
+              "recall": 0.9302325581395349,
+              "f1": 0.7692307692307693,
+              "mean_onset_error_ms": 14.099999999999824,
+              "mean_release_error_ms": 174.04999999999998
+            },
+            "complete_intervals": {
+              "reference": 43,
+              "predicted": 61,
+              "matched": 32,
+              "precision": 0.5245901639344263,
+              "recall": 0.7441860465116279,
+              "f1": 0.6153846153846154,
+              "mean_onset_error_ms": 14.406249999999954,
+              "mean_release_error_ms": 27.468750000000124
+            }
+          },
+          "strict": {
+            "pitched_onsets": {
+              "reference": 43,
+              "predicted": 61,
+              "matched": 40,
+              "precision": 0.6557377049180327,
+              "recall": 0.9302325581395349,
+              "f1": 0.7692307692307693,
+              "mean_onset_error_ms": 14.099999999999824,
+              "mean_release_error_ms": 174.04999999999998
+            },
+            "complete_intervals": {
+              "reference": 43,
+              "predicted": 61,
+              "matched": 31,
+              "precision": 0.5081967213114754,
+              "recall": 0.7209302325581395,
+              "f1": 0.5961538461538461,
+              "mean_onset_error_ms": 13.838709677419308,
+              "mean_release_error_ms": 23.22580645161295
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "01-2-vc",
+      "piece_id": 1,
+      "kind": "isolated",
+      "instrument": "vc",
+      "identity": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+        "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+        "sources": {
+          "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\AuSep_2_vc_01_Jupiter.wav": "18e4fbe7eba4d7ac9ee58d7f2e69e422649445111366b727a37708468bd292ce"
+        },
+        "start_ms": 0,
+        "seconds": 30.0,
+        "context_seconds": 2.1,
+        "task": "mc13_full_plus_256",
+        "decoder_channels": 13,
+        "strict_weights": true
+      },
+      "annotation_hashes": {
+        "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\Notes_2_vc_01_Jupiter.txt": "c58ed961b94d5861a6a078a128972a09f12acb2dddfef75c1149176c5acf5512"
+      },
+      "metrics": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          },
+          "instrument_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_instrument_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          },
+          "instrument_onsets": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.6818181818181818,
+            "f1": 0.6976744186046512,
+            "mean_onset_error_ms": 13.66666666666679,
+            "mean_release_error_ms": 49.06666666666636
+          },
+          "complete_instrument_intervals": {
+            "reference": 22,
+            "predicted": 21,
+            "matched": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.6363636363636364,
+            "f1": 0.6511627906976745,
+            "mean_onset_error_ms": 14.285714285714235,
+            "mean_release_error_ms": 23.357142857142602
+          }
+        }
+      },
+      "decoding_errors": {
+        "Err/onset not found": 4.0,
+        "Err/merging segment tie": 4
+      },
+      "programs": {
+        "42": 24
+      },
+      "interval_scope": {
+        "begin_seconds": 0.0,
+        "end_seconds": 30.0,
+        "context_start_seconds": 0.0,
+        "context_end_seconds": 32.1,
+        "unobservable_reference_offsets": 0,
+        "reference_crosses_end": 1,
+        "predicted_crosses_end": 1,
+        "predicted_crosses_context_end": 0,
+        "crossing_predictions_retained": true
+      },
+      "evidence": {
+        "report_sha256": "b05819b9c5a9cf4b575ade692282b84a31022ccf93faba6a9d035038a2e9ab28",
+        "notes_sha256": "8b499783a3f0ce41ef28675660d47399e122f273dc3a305820082c33c6131458",
+        "labels_sha256": "85c4eef85c371e70256a3c3e22adfc55b07a0f85ad77e1ca47d328ca5a997e87"
+      },
+      "release_audit": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "tokens_sha256": "b3379b7d0aadaa6972a1e183d592fab0051b3228f7f84e4f8807722ba0270978",
+        "notes_sha256": "8b499783a3f0ce41ef28675660d47399e122f273dc3a305820082c33c6131458",
+        "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+        "decoded_notes_equal": true,
+        "notes": 24,
+        "endpoint_counts": {
+          "explicit_model_note_off": 24
+        },
+        "limits": [
+          "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+          "Flags can overlap; ambiguous endpoints remain ambiguous.",
+          "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+        ]
+      },
+      "application_detector": {
+        "identity": {
+          "sources": {
+            "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\AuSep_2_vc_01_Jupiter.wav": "18e4fbe7eba4d7ac9ee58d7f2e69e422649445111366b727a37708468bd292ce"
+          },
+          "model_sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+          "audio_code_sha256": "0f83472aa4dbaa1156a990984cf5aa87bcea6c535e76c6f5a574fd91fefe51e1",
+          "runner_sha256": "169696b793a7c8f8a8b66282c03d6c1c107ab5546d51a5715cd8b6cdc723f078",
+          "start_ms": 0,
+          "seconds": 30,
+          "context_seconds": 2.1
+        },
+        "interval_scope": {
+          "begin_seconds": 0.0,
+          "end_seconds": 30.0,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "notes_sha256": "f229a8bdff4285049841756fb3b8a4d6bc05c23e0247fe71d367d420469a11b1",
+        "report_sha256": "95ca9665cfdf044885a554bac5fddd47f88c42f055d2ac7da268b98de70948a0",
+        "metrics": {
+          "standard": {
+            "pitched_onsets": {
+              "reference": 22,
+              "predicted": 83,
+              "matched": 18,
+              "precision": 0.21686746987951808,
+              "recall": 0.8181818181818182,
+              "f1": 0.34285714285714286,
+              "mean_onset_error_ms": 19.05555555555506,
+              "mean_release_error_ms": 667.7777777777779
+            },
+            "complete_intervals": {
+              "reference": 22,
+              "predicted": 83,
+              "matched": 5,
+              "precision": 0.060240963855421686,
+              "recall": 0.22727272727272727,
+              "f1": 0.09523809523809523,
+              "mean_onset_error_ms": 22.399999999999665,
+              "mean_release_error_ms": 96.00000000000009
+            }
+          },
+          "strict": {
+            "pitched_onsets": {
+              "reference": 22,
+              "predicted": 83,
+              "matched": 16,
+              "precision": 0.1927710843373494,
+              "recall": 0.7272727272727273,
+              "f1": 0.3047619047619048,
+              "mean_onset_error_ms": 15.687499999999632,
+              "mean_release_error_ms": 671.8750000000003
+            },
+            "complete_intervals": {
+              "reference": 22,
+              "predicted": 83,
+              "matched": 2,
+              "precision": 0.024096385542168676,
+              "recall": 0.09090909090909091,
+              "f1": 0.0380952380952381,
+              "mean_onset_error_ms": 22.999999999999687,
+              "mean_release_error_ms": 19.999999999999574
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "01-mix",
+      "piece_id": 1,
+      "kind": "mixture",
+      "instrument": null,
+      "identity": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+        "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+        "sources": {
+          "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\AuMix_01_Jupiter_vn_vc.wav": "ae5845c47e7fa4b7f0b7bafcff3e37e2c6a4d3675d56f1b6beeceb7791a9d2ae"
+        },
+        "start_ms": 0,
+        "seconds": 30.0,
+        "context_seconds": 2.1,
+        "task": "mc13_full_plus_256",
+        "decoder_channels": 13,
+        "strict_weights": true
+      },
+      "annotation_hashes": {
+        "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\Notes_1_vn_01_Jupiter.txt": "285772ef718ffc29e6c1fda995f9b377688cac85e84915e4d7a77031fc6669b8",
+        "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\Notes_2_vc_01_Jupiter.txt": "c58ed961b94d5861a6a078a128972a09f12acb2dddfef75c1149176c5acf5512"
+      },
+      "metrics": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 50,
+            "precision": 0.819672131147541,
+            "recall": 0.7692307692307693,
+            "f1": 0.7936507936507936,
+            "mean_onset_error_ms": 11.83999999999969,
+            "mean_release_error_ms": 73.92625000000002
+          },
+          "complete_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 46,
+            "precision": 0.7540983606557377,
+            "recall": 0.7076923076923077,
+            "f1": 0.7301587301587301,
+            "mean_onset_error_ms": 10.934782608695308,
+            "mean_release_error_ms": 29.907608695652232
+          },
+          "instrument_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 39,
+            "precision": 0.639344262295082,
+            "recall": 0.6,
+            "f1": 0.6190476190476191,
+            "mean_onset_error_ms": 11.743589743589476,
+            "mean_release_error_ms": 62.878205128205195
+          },
+          "complete_instrument_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 37,
+            "precision": 0.6065573770491803,
+            "recall": 0.5692307692307692,
+            "f1": 0.5873015873015873,
+            "mean_onset_error_ms": 10.486486486486196,
+            "mean_release_error_ms": 33.52027027027041
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 49,
+            "precision": 0.8032786885245902,
+            "recall": 0.7538461538461538,
+            "f1": 0.7777777777777778,
+            "mean_onset_error_ms": 11.14285714285684,
+            "mean_release_error_ms": 59.108418367346985
+          },
+          "complete_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 43,
+            "precision": 0.7049180327868853,
+            "recall": 0.6615384615384615,
+            "f1": 0.6825396825396826,
+            "mean_onset_error_ms": 10.720930232557734,
+            "mean_release_error_ms": 19.1235465116279
+          },
+          "instrument_onsets": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 38,
+            "precision": 0.6229508196721312,
+            "recall": 0.5846153846153846,
+            "f1": 0.6031746031746031,
+            "mean_onset_error_ms": 10.842105263157636,
+            "mean_release_error_ms": 43.480263157894846
+          },
+          "complete_instrument_intervals": {
+            "reference": 65,
+            "predicted": 61,
+            "matched": 34,
+            "precision": 0.5573770491803278,
+            "recall": 0.5230769230769231,
+            "f1": 0.5396825396825397,
+            "mean_onset_error_ms": 10.176470588234931,
+            "mean_release_error_ms": 20.200367647058883
+          }
+        }
+      },
+      "decoding_errors": {
+        "Err/onset not found": 28.0,
+        "Err/merging segment tie": 25
+      },
+      "programs": {
+        "41": 10,
+        "40": 33,
+        "42": 25
+      },
+      "interval_scope": {
+        "begin_seconds": 0.0,
+        "end_seconds": 30.0,
+        "context_start_seconds": 0.0,
+        "context_end_seconds": 32.1,
+        "unobservable_reference_offsets": 0,
+        "reference_crosses_end": 2,
+        "predicted_crosses_end": 2,
+        "predicted_crosses_context_end": 0,
+        "crossing_predictions_retained": true
+      },
+      "evidence": {
+        "report_sha256": "5fb0a1f5d0bd71434dc2ed86a84b266b1c0d8a788b133e72a2c962dadc491809",
+        "notes_sha256": "c1d4f858bda1ea7cf05c813247cfb2b6a4eb09205d9e76f646c51ee859b4d4bc",
+        "labels_sha256": "f6c3e1c1549e878a8c7af464265acff1340ec67a7d85e815e7e6ea4fa1a070ec"
+      },
+      "release_audit": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "tokens_sha256": "9d641fa7e3be8919c7f510f69aa4aed55ed14972e350997af4a5537343d02fae",
+        "notes_sha256": "c1d4f858bda1ea7cf05c813247cfb2b6a4eb09205d9e76f646c51ee859b4d4bc",
+        "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+        "decoded_notes_equal": true,
+        "notes": 68,
+        "endpoint_counts": {
+          "explicit_model_note_off": 58,
+          "forced_segment_boundary": 10,
+          "same_pitch_reattack": 4
+        },
+        "limits": [
+          "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+          "Flags can overlap; ambiguous endpoints remain ambiguous.",
+          "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+        ]
+      },
+      "application_detector": {
+        "identity": {
+          "sources": {
+            "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\01_Jupiter_vn_vc\\AuMix_01_Jupiter_vn_vc.wav": "ae5845c47e7fa4b7f0b7bafcff3e37e2c6a4d3675d56f1b6beeceb7791a9d2ae"
+          },
+          "model_sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+          "audio_code_sha256": "0f83472aa4dbaa1156a990984cf5aa87bcea6c535e76c6f5a574fd91fefe51e1",
+          "runner_sha256": "169696b793a7c8f8a8b66282c03d6c1c107ab5546d51a5715cd8b6cdc723f078",
+          "start_ms": 0,
+          "seconds": 30,
+          "context_seconds": 2.1
+        },
+        "interval_scope": {
+          "begin_seconds": 0.0,
+          "end_seconds": 30.0,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "notes_sha256": "b739a328c337310e00767db55673ba79ebd40c9227e73330db712552a347b49e",
+        "report_sha256": "c64e4fc7e4a943af163c8d2eba7a43ee418d0184681f75452705fdc084a2e01b",
+        "metrics": {
+          "standard": {
+            "pitched_onsets": {
+              "reference": 65,
+              "predicted": 128,
+              "matched": 47,
+              "precision": 0.3671875,
+              "recall": 0.7230769230769231,
+              "f1": 0.48704663212435234,
+              "mean_onset_error_ms": 17.553191489361897,
+              "mean_release_error_ms": 302.89361702127655
+            },
+            "complete_intervals": {
+              "reference": 65,
+              "predicted": 128,
+              "matched": 30,
+              "precision": 0.234375,
+              "recall": 0.46153846153846156,
+              "f1": 0.31088082901554404,
+              "mean_onset_error_ms": 18.63333333333369,
+              "mean_release_error_ms": 20.199999999999758
+            }
+          },
+          "strict": {
+            "pitched_onsets": {
+              "reference": 65,
+              "predicted": 128,
+              "matched": 46,
+              "precision": 0.359375,
+              "recall": 0.7076923076923077,
+              "f1": 0.47668393782383417,
+              "mean_onset_error_ms": 17.021739130434945,
+              "mean_release_error_ms": 309.4782608695651
+            },
+            "complete_intervals": {
+              "reference": 65,
+              "predicted": 128,
+              "matched": 29,
+              "precision": 0.2265625,
+              "recall": 0.4461538461538462,
+              "f1": 0.3005181347150259,
+              "mean_onset_error_ms": 17.827586206896868,
+              "mean_release_error_ms": 20.89655172413756
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "02-1-vn",
+      "piece_id": 2,
+      "kind": "isolated",
+      "instrument": "vn",
+      "identity": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+        "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+        "sources": {
+          "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\AuSep_1_vn_02_Sonata.wav": "cbc6cc6db8d0df2ac64dc947c8098642fcc6dc718f33b0e8d5e8591e5a97a0af"
+        },
+        "start_ms": 0,
+        "seconds": 30.0,
+        "context_seconds": 2.1,
+        "task": "mc13_full_plus_256",
+        "decoder_channels": 13,
+        "strict_weights": true
+      },
+      "annotation_hashes": {
+        "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\Notes_1_vn_02_Sonata.txt": "5f532727a6015e37dc3ca99f3f30036c72492d3cd5a0ab90aeab0bfb2fabd20a"
+      },
+      "metrics": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          },
+          "complete_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          },
+          "instrument_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          },
+          "complete_instrument_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 53,
+            "precision": 0.9814814814814815,
+            "recall": 0.9464285714285714,
+            "f1": 0.9636363636363636,
+            "mean_onset_error_ms": 12.075471698113354,
+            "mean_release_error_ms": 14.382075471698595
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 52,
+            "precision": 0.9629629629629629,
+            "recall": 0.9285714285714286,
+            "f1": 0.9454545454545454,
+            "mean_onset_error_ms": 11.538461538461686,
+            "mean_release_error_ms": 14.158653846154342
+          },
+          "complete_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 50,
+            "precision": 0.9259259259259259,
+            "recall": 0.8928571428571429,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 11.540000000000123,
+            "mean_release_error_ms": 10.725000000000495
+          },
+          "instrument_onsets": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 52,
+            "precision": 0.9629629629629629,
+            "recall": 0.9285714285714286,
+            "f1": 0.9454545454545454,
+            "mean_onset_error_ms": 11.538461538461686,
+            "mean_release_error_ms": 14.158653846154342
+          },
+          "complete_instrument_intervals": {
+            "reference": 56,
+            "predicted": 54,
+            "matched": 50,
+            "precision": 0.9259259259259259,
+            "recall": 0.8928571428571429,
+            "f1": 0.9090909090909091,
+            "mean_onset_error_ms": 11.540000000000123,
+            "mean_release_error_ms": 10.725000000000495
+          }
+        }
+      },
+      "decoding_errors": {
+        "Err/onset not found": 7.0,
+        "Err/merging segment tie": 6
+      },
+      "programs": {
+        "40": 59
+      },
+      "interval_scope": {
+        "begin_seconds": 0.0,
+        "end_seconds": 30.0,
+        "context_start_seconds": 0.0,
+        "context_end_seconds": 32.1,
+        "unobservable_reference_offsets": 0,
+        "reference_crosses_end": 1,
+        "predicted_crosses_end": 1,
+        "predicted_crosses_context_end": 0,
+        "crossing_predictions_retained": true
+      },
+      "evidence": {
+        "report_sha256": "2ae4de3b2de6035360ade16292fc8c367965f47ec0d3aa0314631d58d23230b0",
+        "notes_sha256": "097232ff125566d110dd6bc358334ea9d65b837e55e0c0e2df43a05f117a0ec7",
+        "labels_sha256": "b1d46e839d63f3600acc87e0cf1442219ce1c8ff1567e0242f1a061d9941d679"
+      },
+      "release_audit": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "tokens_sha256": "ac42cf6e661aa96061344f04c69e86dec533c24720e9b711cf648257ded6e07c",
+        "notes_sha256": "097232ff125566d110dd6bc358334ea9d65b837e55e0c0e2df43a05f117a0ec7",
+        "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+        "decoded_notes_equal": true,
+        "notes": 59,
+        "endpoint_counts": {
+          "explicit_model_note_off": 58,
+          "same_pitch_reattack": 6,
+          "forced_segment_boundary": 1
+        },
+        "limits": [
+          "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+          "Flags can overlap; ambiguous endpoints remain ambiguous.",
+          "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+        ]
+      },
+      "application_detector": {
+        "identity": {
+          "sources": {
+            "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\AuSep_1_vn_02_Sonata.wav": "cbc6cc6db8d0df2ac64dc947c8098642fcc6dc718f33b0e8d5e8591e5a97a0af"
+          },
+          "model_sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+          "audio_code_sha256": "0f83472aa4dbaa1156a990984cf5aa87bcea6c535e76c6f5a574fd91fefe51e1",
+          "runner_sha256": "169696b793a7c8f8a8b66282c03d6c1c107ab5546d51a5715cd8b6cdc723f078",
+          "start_ms": 0,
+          "seconds": 30,
+          "context_seconds": 2.1
+        },
+        "interval_scope": {
+          "begin_seconds": 0.0,
+          "end_seconds": 30.0,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "notes_sha256": "b930dcd29e14e9c38c41a9a527243220b9acf6df7b9641aa84118c09a34fc129",
+        "report_sha256": "1c98e5576f53a72335944bd95b3725bf1c75be108079609dc171a60cb373b1d3",
+        "metrics": {
+          "standard": {
+            "pitched_onsets": {
+              "reference": 56,
+              "predicted": 71,
+              "matched": 53,
+              "precision": 0.7464788732394366,
+              "recall": 0.9464285714285714,
+              "f1": 0.8346456692913385,
+              "mean_onset_error_ms": 13.396226415094372,
+              "mean_release_error_ms": 81.03773584905642
+            },
+            "complete_intervals": {
+              "reference": 56,
+              "predicted": 71,
+              "matched": 45,
+              "precision": 0.6338028169014085,
+              "recall": 0.8035714285714286,
+              "f1": 0.7086614173228346,
+              "mean_onset_error_ms": 16.71111111111091,
+              "mean_release_error_ms": 22.28888888888852
+            }
+          },
+          "strict": {
+            "pitched_onsets": {
+              "reference": 56,
+              "predicted": 71,
+              "matched": 53,
+              "precision": 0.7464788732394366,
+              "recall": 0.9464285714285714,
+              "f1": 0.8346456692913385,
+              "mean_onset_error_ms": 13.396226415094372,
+              "mean_release_error_ms": 81.03773584905642
+            },
+            "complete_intervals": {
+              "reference": 56,
+              "predicted": 71,
+              "matched": 44,
+              "precision": 0.6197183098591549,
+              "recall": 0.7857142857142857,
+              "f1": 0.6929133858267716,
+              "mean_onset_error_ms": 14.431818181818056,
+              "mean_release_error_ms": 22.681818181817945
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "02-2-vn",
+      "piece_id": 2,
+      "kind": "isolated",
+      "instrument": "vn",
+      "identity": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+        "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+        "sources": {
+          "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\AuSep_2_vn_02_Sonata.wav": "642cdcb8c2898784e82740204af4e9c7b6d5a8db6951cedfb2b573cbe288e9c8"
+        },
+        "start_ms": 0,
+        "seconds": 30.0,
+        "context_seconds": 2.1,
+        "task": "mc13_full_plus_256",
+        "decoder_channels": 13,
+        "strict_weights": true
+      },
+      "annotation_hashes": {
+        "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\Notes_2_vn_02_Sonata.txt": "fcf826ad8206566f30e63472c5db45a3d2ebaf7c16f429decb958fa90a4ecca9"
+      },
+      "metrics": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          },
+          "complete_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          },
+          "instrument_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          },
+          "complete_instrument_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 30,
+            "precision": 0.9375,
+            "recall": 0.9375,
+            "f1": 0.9375,
+            "mean_onset_error_ms": 16.433333333333405,
+            "mean_release_error_ms": 12.533333333333255
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          },
+          "complete_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          },
+          "instrument_onsets": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          },
+          "complete_instrument_intervals": {
+            "reference": 32,
+            "predicted": 32,
+            "matched": 29,
+            "precision": 0.90625,
+            "recall": 0.90625,
+            "f1": 0.90625,
+            "mean_onset_error_ms": 15.44827586206904,
+            "mean_release_error_ms": 12.758620689655144
+          }
+        }
+      },
+      "decoding_errors": {
+        "Err/onset not found": 12.0,
+        "Err/merging segment tie": 12
+      },
+      "programs": {
+        "40": 34
+      },
+      "interval_scope": {
+        "begin_seconds": 0.0,
+        "end_seconds": 30.0,
+        "context_start_seconds": 0.0,
+        "context_end_seconds": 32.1,
+        "unobservable_reference_offsets": 0,
+        "reference_crosses_end": 1,
+        "predicted_crosses_end": 1,
+        "predicted_crosses_context_end": 0,
+        "crossing_predictions_retained": true
+      },
+      "evidence": {
+        "report_sha256": "65e5900cc8b5379fd27f29be7bc4827343a49e11c1e411970b7643046c57caa8",
+        "notes_sha256": "596044dbcad3197c99b5ff8810cb372d07706cf8819dba42a2a6ac3fa5a17e93",
+        "labels_sha256": "df1346bb9f93a666dc8f78e1e4552d9d1ac8496f13fc89c982b68c981f9891e1"
+      },
+      "release_audit": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "tokens_sha256": "b47ad65564cceaa6492835e63c2808934e43eff22e8812ef82b2fe1d0ef27187",
+        "notes_sha256": "596044dbcad3197c99b5ff8810cb372d07706cf8819dba42a2a6ac3fa5a17e93",
+        "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+        "decoded_notes_equal": true,
+        "notes": 34,
+        "endpoint_counts": {
+          "explicit_model_note_off": 33,
+          "same_pitch_reattack": 1,
+          "unresolved_or_postprocessed": 1
+        },
+        "limits": [
+          "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+          "Flags can overlap; ambiguous endpoints remain ambiguous.",
+          "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+        ]
+      },
+      "application_detector": {
+        "identity": {
+          "sources": {
+            "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\AuSep_2_vn_02_Sonata.wav": "642cdcb8c2898784e82740204af4e9c7b6d5a8db6951cedfb2b573cbe288e9c8"
+          },
+          "model_sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+          "audio_code_sha256": "0f83472aa4dbaa1156a990984cf5aa87bcea6c535e76c6f5a574fd91fefe51e1",
+          "runner_sha256": "169696b793a7c8f8a8b66282c03d6c1c107ab5546d51a5715cd8b6cdc723f078",
+          "start_ms": 0,
+          "seconds": 30,
+          "context_seconds": 2.1
+        },
+        "interval_scope": {
+          "begin_seconds": 0.0,
+          "end_seconds": 30.0,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 1,
+          "predicted_crosses_end": 1,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "notes_sha256": "7ad3b04c1e05acce0213da39e7f5dd9671e15c2eff9458e45876c5cbec8872de",
+        "report_sha256": "9e20c6a0b8f4d8b3981fcd7469cbc65c5564e6d5b2b256f2ed940bce57a91c6d",
+        "metrics": {
+          "standard": {
+            "pitched_onsets": {
+              "reference": 32,
+              "predicted": 61,
+              "matched": 31,
+              "precision": 0.5081967213114754,
+              "recall": 0.96875,
+              "f1": 0.6666666666666666,
+              "mean_onset_error_ms": 14.96774193548377,
+              "mean_release_error_ms": 321.90322580645204
+            },
+            "complete_intervals": {
+              "reference": 32,
+              "predicted": 61,
+              "matched": 16,
+              "precision": 0.26229508196721313,
+              "recall": 0.5,
+              "f1": 0.34408602150537637,
+              "mean_onset_error_ms": 15.062499999999812,
+              "mean_release_error_ms": 25.50000000000019
+            }
+          },
+          "strict": {
+            "pitched_onsets": {
+              "reference": 32,
+              "predicted": 61,
+              "matched": 30,
+              "precision": 0.4918032786885246,
+              "recall": 0.9375,
+              "f1": 0.6451612903225806,
+              "mean_onset_error_ms": 14.099999999999882,
+              "mean_release_error_ms": 327.20000000000044
+            },
+            "complete_intervals": {
+              "reference": 32,
+              "predicted": 61,
+              "matched": 15,
+              "precision": 0.2459016393442623,
+              "recall": 0.46875,
+              "f1": 0.3225806451612903,
+              "mean_onset_error_ms": 13.066666666666352,
+              "mean_release_error_ms": 25.733333333333402
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "02-mix",
+      "piece_id": 2,
+      "kind": "mixture",
+      "instrument": null,
+      "identity": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "checkpoint_sha256": "ae38e415c79efd5592dcb9b658cdb99ddb11d4c4e1eaa364cab04a052473fc25",
+        "runner_sha256": "d395d097592233435b4cb5d890baf37738ee479b2349ca111f46136745c3c919",
+        "sources": {
+          "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\AuMix_02_Sonata_vn_vn.wav": "32818f4a77cbf1e0fddc6171bb656df14a2048e20392fa75b1fceb408d37bafd"
+        },
+        "start_ms": 0,
+        "seconds": 30.0,
+        "context_seconds": 2.1,
+        "task": "mc13_full_plus_256",
+        "decoder_channels": 13,
+        "strict_weights": true
+      },
+      "annotation_hashes": {
+        "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\Notes_1_vn_02_Sonata.txt": "5f532727a6015e37dc3ca99f3f30036c72492d3cd5a0ab90aeab0bfb2fabd20a",
+        "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\Notes_2_vn_02_Sonata.txt": "fcf826ad8206566f30e63472c5db45a3d2ebaf7c16f429decb958fa90a4ecca9"
+      },
+      "metrics": {
+        "standard": {
+          "pitched_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 81,
+            "precision": 0.9310344827586207,
+            "recall": 0.9204545454545454,
+            "f1": 0.9257142857142857,
+            "mean_onset_error_ms": 15.86419753086431,
+            "mean_release_error_ms": 34.77237654321004
+          },
+          "complete_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 77,
+            "precision": 0.8850574712643678,
+            "recall": 0.875,
+            "f1": 0.88,
+            "mean_onset_error_ms": 15.155844155844257,
+            "mean_release_error_ms": 18.55275974025989
+          },
+          "instrument_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 81,
+            "precision": 0.9310344827586207,
+            "recall": 0.9204545454545454,
+            "f1": 0.9257142857142857,
+            "mean_onset_error_ms": 15.86419753086431,
+            "mean_release_error_ms": 34.77237654321004
+          },
+          "complete_instrument_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 77,
+            "precision": 0.8850574712643678,
+            "recall": 0.875,
+            "f1": 0.88,
+            "mean_onset_error_ms": 15.155844155844257,
+            "mean_release_error_ms": 18.55275974025989
+          }
+        },
+        "strict": {
+          "pitched_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 74,
+            "precision": 0.8505747126436781,
+            "recall": 0.8409090909090909,
+            "f1": 0.8457142857142858,
+            "mean_onset_error_ms": 13.081081081081189,
+            "mean_release_error_ms": 30.696790540540793
+          },
+          "complete_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 68,
+            "precision": 0.7816091954022989,
+            "recall": 0.7727272727272727,
+            "f1": 0.7771428571428571,
+            "mean_onset_error_ms": 12.750000000000078,
+            "mean_release_error_ms": 15.478860294117798
+          },
+          "instrument_onsets": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 74,
+            "precision": 0.8505747126436781,
+            "recall": 0.8409090909090909,
+            "f1": 0.8457142857142858,
+            "mean_onset_error_ms": 13.081081081081189,
+            "mean_release_error_ms": 30.696790540540793
+          },
+          "complete_instrument_intervals": {
+            "reference": 88,
+            "predicted": 87,
+            "matched": 68,
+            "precision": 0.7816091954022989,
+            "recall": 0.7727272727272727,
+            "f1": 0.7771428571428571,
+            "mean_onset_error_ms": 12.750000000000078,
+            "mean_release_error_ms": 15.478860294117798
+          }
+        }
+      },
+      "decoding_errors": {
+        "Err/onset not found": 6.0,
+        "Err/merging segment tie": 6
+      },
+      "programs": {
+        "40": 94
+      },
+      "interval_scope": {
+        "begin_seconds": 0.0,
+        "end_seconds": 30.0,
+        "context_start_seconds": 0.0,
+        "context_end_seconds": 32.1,
+        "unobservable_reference_offsets": 0,
+        "reference_crosses_end": 2,
+        "predicted_crosses_end": 2,
+        "predicted_crosses_context_end": 0,
+        "crossing_predictions_retained": true
+      },
+      "evidence": {
+        "report_sha256": "1df9ae8167f972a52ba4183a27077b6adb46bee18e0925d6be10aa1a57081757",
+        "notes_sha256": "f343db74fb618893d1d7dc96d11d8af1fb45a079c3d970a1732795fe3e34a61a",
+        "labels_sha256": "e5d31cdce1b5467c173580df766c89bd1e02c988ca8476a68626c7b6906cfc6f"
+      },
+      "release_audit": {
+        "source_commit": "bd69fbac7da881df0dfb67d8f4068a3d473df347",
+        "tokens_sha256": "72306fe6a7ee0a4bffdfc449c8d3038fa4c2ae1643d40bf76c2a9e86938e4c2f",
+        "notes_sha256": "f343db74fb618893d1d7dc96d11d8af1fb45a079c3d970a1732795fe3e34a61a",
+        "runner_sha256": "6bc14426fca4bcf0da22ec1e2da6d0475721772d1d76d3ac5210bb764f329da4",
+        "decoded_notes_equal": true,
+        "notes": 94,
+        "endpoint_counts": {
+          "explicit_model_note_off": 91,
+          "same_pitch_reattack": 15,
+          "forced_segment_boundary": 1,
+          "unresolved_or_postprocessed": 2
+        },
+        "limits": [
+          "Endpoint evidence is from model tokens, not acoustic or authored-LN truth.",
+          "Flags can overlap; ambiguous endpoints remain ambiguous.",
+          "Forced segment ends and unresolved/postprocessed ends are not supported sustain releases."
+        ]
+      },
+      "application_detector": {
+        "identity": {
+          "sources": {
+            "D:\\project\\ManiaLab\\test-data\\urmp\\audio-and-labels\\02_Sonata_vn_vn\\AuMix_02_Sonata_vn_vn.wav": "32818f4a77cbf1e0fddc6171bb656df14a2048e20392fa75b1fceb408d37bafd"
+          },
+          "model_sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+          "audio_code_sha256": "0f83472aa4dbaa1156a990984cf5aa87bcea6c535e76c6f5a574fd91fefe51e1",
+          "runner_sha256": "169696b793a7c8f8a8b66282c03d6c1c107ab5546d51a5715cd8b6cdc723f078",
+          "start_ms": 0,
+          "seconds": 30,
+          "context_seconds": 2.1
+        },
+        "interval_scope": {
+          "begin_seconds": 0.0,
+          "end_seconds": 30.0,
+          "context_start_seconds": 0.0,
+          "context_end_seconds": 32.1,
+          "unobservable_reference_offsets": 0,
+          "reference_crosses_end": 2,
+          "predicted_crosses_end": 2,
+          "predicted_crosses_context_end": 0,
+          "crossing_predictions_retained": true
+        },
+        "notes_sha256": "ec52dadf57143d08fb3b2bec377d5adbef6f8804bbde1ceae61457b15fb857a6",
+        "report_sha256": "2a8fa4e3acfe55f9caf8c25f3bbf58f35c439220b03f9adbfc9694763730338c",
+        "metrics": {
+          "standard": {
+            "pitched_onsets": {
+              "reference": 88,
+              "predicted": 129,
+              "matched": 71,
+              "precision": 0.5503875968992248,
+              "recall": 0.8068181818181818,
+              "f1": 0.6543778801843319,
+              "mean_onset_error_ms": 18.070422535211122,
+              "mean_release_error_ms": 237.6338028169016
+            },
+            "complete_intervals": {
+              "reference": 88,
+              "predicted": 129,
+              "matched": 41,
+              "precision": 0.3178294573643411,
+              "recall": 0.4659090909090909,
+              "f1": 0.3778801843317972,
+              "mean_onset_error_ms": 20.9999999999998,
+              "mean_release_error_ms": 20.70731707317091
+            }
+          },
+          "strict": {
+            "pitched_onsets": {
+              "reference": 88,
+              "predicted": 129,
+              "matched": 66,
+              "precision": 0.5116279069767442,
+              "recall": 0.75,
+              "f1": 0.6082949308755761,
+              "mean_onset_error_ms": 16.21212121212107,
+              "mean_release_error_ms": 236.0000000000002
+            },
+            "complete_intervals": {
+              "reference": 88,
+              "predicted": 129,
+              "matched": 37,
+              "precision": 0.2868217054263566,
+              "recall": 0.42045454545454547,
+              "f1": 0.34101382488479265,
+              "mean_onset_error_ms": 19.54054054054032,
+              "mean_release_error_ms": 17.54054054054071
+            }
+          }
+        }
+      }
+    }
+  ],
+  "protocol": [
+    "Select the two lowest IDs in the fixed MT3 test partition, all isolated parts and original mixtures.",
+    "Predict from original audio only, no transcription labels, MIDI, chart Timing or source program hints.",
+    "Evaluate onset and release on the same unshifted physical audio clock; no chart lead or grid snapping.",
+    "This partition is also used for upstream validation; it is not a newly held-out model test set.",
+    "Aligned Notes annotations can have boundary uncertainty; report strict and duration-relative tolerances."
+  ],
+  "enabled_in_application": false,
+  "tolerances": {
+    "standard": "50ms onset; offset max(50ms,20% reference duration); exact semitone",
+    "strict": "40ms onset; 80ms offset; exact semitone"
+  },
+  "limits": [
+    "All predictions retained, including incorrect instrument families and spurious drum events.",
+    "All attacks in the scoring window enter interval denominators, even if predicted tails exceed the window or context.",
+    "Reference tails must be observable in inference context; no end-based prediction filtering.",
+    "The legacy strict key means fixed 40/80ms, not universally stricter: 80ms is wider than 50ms for short tails.",
+    "Instrument metrics require exact program; sax subtype labels in upstream preprocessing are uncertain.",
+    "Physical audio endpoints are not authored LN-release choices."
+  ]
+}

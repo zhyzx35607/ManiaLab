@@ -4,7 +4,7 @@ import pytest
 
 from manialab.audio import rhythmic_evidence, SR, fuse_attacks
 from manialab.domain import Note
-from manialab.timing import BeatClock, chart_clock_notes, estimate_timing, align_candidates, normalize_bpm, refit_offset, grid_report, cover_missing_timing_windows
+from manialab.timing import BeatClock, chart_clock_notes, estimate_timing, align_candidates, normalize_bpm, refit_offset, grid_report, cover_missing_timing_windows, _score
 
 
 def test_original_red_lines_change_period_and_ignore_inherited_velocity():
@@ -68,6 +68,27 @@ def test_variable_tempo_does_not_claim_safe_grid():
     assert any(s['suspect'] for s in result['sections'])
     with pytest.raises(ValueError, match='Timing'):
         align_candidates(notes, result)
+
+
+def test_triplet_grid_does_not_claim_support_from_unrepresentable_half_beats():
+    times = np.arange(100, 40100, 250, dtype=float)
+    weights = np.ones(len(times))
+    straight = _score(times, weights, 120, 100, 4)
+    triplet = _score(times, weights, 120, 100, 3)
+    sixths = _score(times, weights, 120, 100, 6)
+    assert straight['coverage'] == sixths['coverage'] == 1
+    assert triplet['coverage'] == .5
+    assert triplet['score'] < straight['score'] - .2
+    assert sixths['score'] == straight['score']
+
+
+def test_real_triplets_keep_more_support_than_a_straight_grid():
+    times = 100 + np.arange(240) * (500 / 3)
+    weights = np.ones(len(times))
+    triplet = _score(times, weights, 120, 100, 3)
+    straight = _score(times, weights, 120, 100, 4)
+    assert triplet['coverage'] == 1
+    assert triplet['score'] > straight['score'] + .2
 
 
 def test_all_endpoints_snap_including_far_attacks_and_releases():

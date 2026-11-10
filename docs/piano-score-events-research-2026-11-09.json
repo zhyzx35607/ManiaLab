@@ -1,0 +1,198 @@
+{
+  "date": "2026-11-09",
+  "summarizer_sha256": "9330db4d67924236f06d27fd72e5f55278cbebc505b3da7216adeb40cde553cc",
+  "report_sha256": "196c4351e3f7754fda4bc5d0cae0d74bef8120b8925a8c0e5c05484ed854666e",
+  "identity": {
+    "runner_sha256": "c03b82ed2739463836de03a333cba0d42465d399a1cf590f6d4f75faa55f096f",
+    "interface_sha256": "78bfab4dc9c428324547ac22fcab0d0059b4ef6bf338ab510ef28d885b7f7e03",
+    "protocol_sha256": "7f72274e5c4780d8682fec0657a24c9272f1a12485ed7b93e64cbdff6c5caa59",
+    "source_report_sha256": "be6b8d92d91653ae369d2a95ae090752bb6ea3a1ec3f183f7c3726b54558d1d9",
+    "source_artifacts_verified": 23,
+    "python_version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "source": "Seven self-authored XML controls and authored tie manifest"
+  },
+  "verification": {
+    "local_artifacts": 11,
+    "original_artifacts": 23,
+    "detail_counts_reproduced": true,
+    "cases": 7,
+    "passed_checks": 91
+  },
+  "cases": [
+    {
+      "name": "within_measure",
+      "written_count": 2,
+      "tie_count": 1,
+      "event_count": 1,
+      "attack_count": 1,
+      "continuation_count": 1,
+      "checks": {
+        "event_count": true,
+        "event_intervals": true,
+        "all_known_eligible": true,
+        "all_written_fields_preserved": true,
+        "one_owner_per_written_note": true,
+        "continuation_count": true,
+        "attack_count": true,
+        "roles_follow_source_declarations": true,
+        "source_not_mutated": true,
+        "declared_edge_identity_preserved": true,
+        "chain_coverage": true,
+        "all_unknown_masked": true,
+        "one_unknown_masks_only_its_event": true
+      }
+    },
+    {
+      "name": "within_measure_chain",
+      "written_count": 3,
+      "tie_count": 2,
+      "event_count": 1,
+      "attack_count": 1,
+      "continuation_count": 2,
+      "checks": {
+        "event_count": true,
+        "event_intervals": true,
+        "all_known_eligible": true,
+        "all_written_fields_preserved": true,
+        "one_owner_per_written_note": true,
+        "continuation_count": true,
+        "attack_count": true,
+        "roles_follow_source_declarations": true,
+        "source_not_mutated": true,
+        "declared_edge_identity_preserved": true,
+        "chain_coverage": true,
+        "all_unknown_masked": true,
+        "one_unknown_masks_only_its_event": true
+      }
+    },
+    {
+      "name": "across_measure",
+      "written_count": 2,
+      "tie_count": 1,
+      "event_count": 1,
+      "attack_count": 1,
+      "continuation_count": 1,
+      "checks": {
+        "event_count": true,
+        "event_intervals": true,
+        "all_known_eligible": true,
+        "all_written_fields_preserved": true,
+        "one_owner_per_written_note": true,
+        "continuation_count": true,
+        "attack_count": true,
+        "roles_follow_source_declarations": true,
+        "source_not_mutated": true,
+        "declared_edge_identity_preserved": true,
+        "chain_coverage": true,
+        "all_unknown_masked": true,
+        "one_unknown_masks_only_its_event": true
+      }
+    },
+    {
+      "name": "repeated_pitch",
+      "written_count": 2,
+      "tie_count": 0,
+      "event_count": 2,
+      "attack_count": 2,
+      "continuation_count": 0,
+      "checks": {
+        "event_count": true,
+        "event_intervals": true,
+        "all_known_eligible": true,
+        "all_written_fields_preserved": true,
+        "one_owner_per_written_note": true,
+        "continuation_count": true,
+        "attack_count": true,
+        "roles_follow_source_declarations": true,
+        "source_not_mutated": true,
+        "declared_edge_identity_preserved": true,
+        "chain_coverage": true,
+        "all_unknown_masked": true,
+        "one_unknown_masks_only_its_event": true
+      }
+    },
+    {
+      "name": "cross_staff",
+      "written_count": 2,
+      "tie_count": 1,
+      "event_count": 1,
+      "attack_count": 1,
+      "continuation_count": 1,
+      "checks": {
+        "event_count": true,
+        "event_intervals": true,
+        "all_known_eligible": true,
+        "all_written_fields_preserved": true,
+        "one_owner_per_written_note": true,
+        "continuation_count": true,
+        "attack_count": true,
+        "roles_follow_source_declarations": true,
+        "source_not_mutated": true,
+        "declared_edge_identity_preserved": true,
+        "chain_coverage": true,
+        "all_unknown_masked": true,
+        "one_unknown_masks_only_its_event": true
+      }
+    },
+    {
+      "name": "single_note",
+      "written_count": 1,
+      "tie_count": 0,
+      "event_count": 1,
+      "attack_count": 1,
+      "continuation_count": 0,
+      "checks": {
+        "event_count": true,
+        "event_intervals": true,
+        "all_known_eligible": true,
+        "all_written_fields_preserved": true,
+        "one_owner_per_written_note": true,
+        "continuation_count": true,
+        "attack_count": true,
+        "roles_follow_source_declarations": true,
+        "source_not_mutated": true,
+        "declared_edge_identity_preserved": true,
+        "chain_coverage": true,
+        "all_unknown_masked": true,
+        "one_unknown_masks_only_its_event": true
+      }
+    },
+    {
+      "name": "parallel_unison_ties",
+      "written_count": 4,
+      "tie_count": 2,
+      "event_count": 2,
+      "attack_count": 2,
+      "continuation_count": 2,
+      "checks": {
+        "event_count": true,
+        "event_intervals": true,
+        "all_known_eligible": true,
+        "all_written_fields_preserved": true,
+        "one_owner_per_written_note": true,
+        "continuation_count": true,
+        "attack_count": true,
+        "roles_follow_source_declarations": true,
+        "source_not_mutated": true,
+        "declared_edge_identity_preserved": true,
+        "chain_coverage": true,
+        "all_unknown_masked": true,
+        "one_unknown_masks_only_its_event": true
+      }
+    }
+  ],
+  "elapsed_seconds": 0.051089800079353154,
+  "limitations": [
+    "Only authored tie edges were supplied; arbitrary XML tie ambiguity remains unresolved.",
+    "Notated ends do not measure physical or acoustic release.",
+    "This is a data representation check, not model or musical acceptance.",
+    "Written staff, voice and measure fields do not establish global melody identity.",
+    "Only summary counts and identities are published; note arrays and event IDs remain local."
+  ],
+  "model_loaded": false,
+  "training_cache_read": false,
+  "training_cache_changed": false,
+  "weights_changed": false,
+  "enabled_in_application": false,
+  "musical_acceptance": false
+}

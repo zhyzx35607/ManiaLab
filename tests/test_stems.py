@@ -21,6 +21,10 @@ def test_six_source_pitch_cache_depends_on_separation_model(tmp_path,monkeypatch
     for voice in ('drums','bass','vocals','other','guitar','piano'):
         np.save(directory/f'{voice}.npy',np.zeros(audio.SR*2,dtype=np.float32))
     report=dict(profile='six',audio_sha256='same-audio',model_sha256='model-a',cached=True)
+    for voice in ('bass','vocals','other','guitar','piano'):
+        np.savez_compressed(directory/f'{voice}-activations.npz',version=2,
+            audio_sha256='same-audio',separation_sha256='model-a',
+            frames=np.ones((10,88)),onsets=np.ones((10,88)),times=np.arange(10)/86)
     class Cached:
         def separate(self,*args):return directory,report
     calls=[]
@@ -36,6 +40,13 @@ def test_six_source_pitch_cache_depends_on_separation_model(tmp_path,monkeypatch
     report['model_sha256']='model-b'
     result=audio.analyze_deep(Path('same.wav'),tmp_path,Path('model.onnx'),parameters(),Cached())
     assert len(calls)==10 and not result['cached']
+    report['input_processing']={'revision':2,'codec':'pcm_f32le'}
+    result=audio.analyze_deep(Path('same.wav'),tmp_path,Path('model.onnx'),parameters(),Cached())
+    assert len(calls)==15 and not result['cached']
+    # Volatile progress/beat metadata is not part of the separated audio identity.
+    report['elapsed_seconds']=500
+    result=audio.analyze_deep(Path('same.wav'),tmp_path,Path('model.onnx'),parameters(),Cached())
+    assert len(calls)==15 and result['cached']
 
 
 def test_six_instrument_weights_control_only_the_requested_voice():

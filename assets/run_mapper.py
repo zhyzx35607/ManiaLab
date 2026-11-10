@@ -32,4 +32,16 @@ if __name__=='__main__':
     watch_owner(owner)
     sys.argv=[str(script),*sys.argv[3:]]
     sys.path.insert(0,str(script.parent))
+    codec_flags=[arg for arg in sys.argv[1:] if arg.startswith('--mania-sketch-context=')]
+    if codec_flags:
+        from mapper_sketch_context import CODEC,install_runtime
+        if codec_flags!=['--mania-sketch-context='+CODEC]:
+            raise ValueError('Unsupported experimental sketch codec')
+        sys.argv.remove(codec_flags[0])
+        install_runtime()
+    state_flags=[arg for arg in sys.argv[1:] if arg.startswith('--mania-event-state=')]
+    if state_flags:
+        from mania_event_constraints import CODEC,install_runtime
+        if state_flags!=['--mania-event-state='+CODEC]:raise ValueError('Unsupported event-state constraint')
+        sys.argv.remove(state_flags[0]);install_runtime()
     runpy.run_path(str(script),run_name='__main__')

@@ -10,6 +10,8 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+from build_provenance import sha256, worker_sources
+
 os.chdir(ROOT)
 if os.name != "nt":
     raise SystemExit("Build the Windows worker on Windows")
@@ -20,6 +22,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output', type=Path, default=ROOT/'assets/deep')
 output = parser.parse_args().output.resolve()
 output.mkdir(parents=True, exist_ok=True)
+build_sources = worker_sources(ROOT)
 source_model = Path(os.environ.get("MANIALAB_DEEP_MODEL", ROOT / "assets/deep/hdemucs_high_trained.pt"))
 expected = "a004b2790d73ffeaa535db458a1a79b539dfdbafbccc31f275d07e632ebd7816"
 if hashlib.sha256(source_model.read_bytes()).hexdigest() != expected:
@@ -45,6 +48,8 @@ for module in ("transformers", "matplotlib", "librosa", "pandas", "pytest", "ten
     args += ["--exclude-module", module]
 args += ["scripts/separate_audio.py"]
 subprocess.run(args, check=True)
+if worker_sources(ROOT) != build_sources:
+    raise SystemExit('Audio worker sources changed during the build; rebuild before publishing.')
 licenses = ROOT / "licenses/deep-runtime"
 licenses.mkdir(parents=True, exist_ok=True)
 inventory = []
@@ -72,6 +77,7 @@ manifest = dict(model="Hybrid Demucs MUSDB+", model_sha256=expected,
     beat_model="Beat This! final0", beat_model_sha256=beat_expected,
     beat_model_url="https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/final0.ckpt",
     sources=["drums", "bass", "other", "vocals"], sample_rate=44100,
-    profiles=['four','six'],six_source_model_sha256=six_expected)
+    profiles=['four','six'],six_source_model_sha256=six_expected,
+    worker_sources=build_sources,worker_sha256=sha256(output/'ManiaLabAudio/ManiaLabAudio.exe'))
 (output / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 print(json.dumps(manifest), flush=True)
