@@ -2,7 +2,7 @@ from dataclasses import asdict, dataclass
 
 import pytest
 
-from scripts.research_tsumugi_transcription import convert_notes
+from scripts.research_tsumugi_transcription import convert_notes, trace_interval_construction
 
 
 @dataclass
@@ -49,3 +49,28 @@ def test_wrong_drum_is_preserved_and_broad_class_does_not_claim_exact_program():
 def test_invalid_model_clock_or_labels_fail_instead_of_silent_filtering(note):
     with pytest.raises(ValueError):
         convert([note])
+
+
+def test_construction_observer_preserves_object_and_restores_method_on_failure():
+    expected = Note(has_offset=False)
+    calls = []
+    class Builder:
+        hop_length = 512
+        total_audio_frames = 1000
+        def _build_interval_note(self, **kwargs):
+            calls.append(kwargs)
+            return expected
+    original = Builder._build_interval_note
+    arguments = dict(boundary_flag=[True, False, .25, .75], end_frame=8)
+    with pytest.raises(RuntimeError):
+        with trace_interval_construction(Builder) as (rows, objects):
+            result = Builder()._build_interval_note(**arguments)
+            assert result is expected
+            assert objects[id(result)] == 0
+            result.has_offset = True
+            arguments['boundary_flag'][1] = True
+            assert rows[0]['constructed_note']['has_offset'] is False
+            assert rows[0]['arguments']['boundary_flag'][1] is False
+            raise RuntimeError('decoder failed')
+    assert Builder._build_interval_note is original
+    assert len(calls) == 1

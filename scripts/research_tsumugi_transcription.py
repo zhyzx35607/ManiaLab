@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from contextlib import contextmanager
+import copy
 from dataclasses import asdict, replace
 import hashlib
 import importlib.metadata
@@ -43,6 +45,28 @@ def verify_source(source):
     if git('rev-parse', 'HEAD') != SOURCE_COMMIT or git('diff', 'HEAD', '--name-only'):
         raise ValueError('Tsumugi source differs from reviewed commit')
     return {name: sha(source/name) for name in git('ls-files', '*.py', '*.json').splitlines()}
+
+
+@contextmanager
+def trace_interval_construction(stitcher_type):
+    """Observe V1 construction without changing arguments, output or decoder state."""
+    original = stitcher_type._build_interval_note
+    rows, object_rows = [], {}
+    def observed(stitcher, **kwargs):
+        note = original(stitcher, **kwargs)
+        row = dict(arguments=copy.deepcopy(kwargs), hop_length=stitcher.hop_length,
+            total_audio_samples=stitcher.total_audio_frames,
+            constructed_note=None if note is None else asdict(note),
+            v1_slot_index=None)
+        rows.append(row)
+        if note is not None:
+            object_rows[id(note)] = len(rows)-1
+        return note
+    stitcher_type._build_interval_note = observed
+    try:
+        yield rows, object_rows
+    finally:
+        stitcher_type._build_interval_note = original
 
 
 def convert_notes(raw, *, sample_rate, total_samples, classes):
@@ -99,7 +123,7 @@ def main():
     import torch
     from instrument_agnostic_amt.amt.cli.infer import resolve_inference_settings
     from instrument_agnostic_amt.amt.inference.audio import load_audio
-    from instrument_agnostic_amt.amt.inference.windowed import decode_notes
+    from instrument_agnostic_amt.amt.inference.windowed import decode_notes, WindowNoteStitcher
     from instrument_agnostic_amt.amt.inference.instruments import resolve_stem_instrument_class_ids, filter_supported_instrument_class_ids
     from instrument_agnostic_amt.amt.modeling.checkpoints import coerce_model_config, extract_model_config, extract_training_args, load_compatible_weights
     from instrument_agnostic_amt.amt.modeling.model import AudioSemiCRFTransformer
@@ -146,7 +170,7 @@ def main():
         resampler='torchaudio.functional.resample/default', normalization=False,
         mono_policy='duplicate_to_stereo', inference_scope='full_original_audio',
         intra_threads=2, inter_threads=1, amp=False, compile=False, seed=42,
-        stem_filter=args.stem, settings=asdict(settings), model_config=asdict(config),
+        stem_filter=args.stem, evidence_revision=2, settings=asdict(settings), model_config=asdict(config),
         versions=runtime_versions(), weight_load=asdict(loaded))
     output.mkdir(parents=True)
     def write(name, data):
@@ -154,27 +178,40 @@ def main():
     write('identity.json', identity)
     windows = []
     def record_window(stitcher, start):
+        for notes in stitcher.notes_by_pair.values():
+            for note in notes:
+                # V1 fills slot_index after construction; capture it without
+                # treating the earlier default zero as the model's pitch slot.
+                constructions[object_rows[id(note)]]['v1_slot_index'] = note.slot_index
         windows.append(dict(window_start_sample=start,
             instrument_id_semantics='v1_stitch_placeholder_use_instrument_candidates_for_predictions',
             tracks={str(track):[asdict(n) for n in notes] for track, notes in stitcher.notes_by_pair.items()}))
         print(json.dumps(dict(stage='window', start_sample=start, windows=len(windows))), flush=True)
     print(json.dumps(dict(stage='loaded', model=args.model, duration_seconds=duration)), flush=True)
     started = time.monotonic()
-    with torch.inference_mode():
-        decoded, stats = decode_notes(model, config, wave, instrument_filter_id=None,
-            device=torch.device('cpu'), amp_enabled=False, amp_dtype=torch.float32, settings=settings,
-            velocity=100, on_window_consumed=record_window)
+    with trace_interval_construction(WindowNoteStitcher) as (constructions, object_rows):
+        with torch.inference_mode():
+            decoded, stats = decode_notes(model, config, wave, instrument_filter_id=None,
+                device=torch.device('cpu'), amp_enabled=False, amp_dtype=torch.float32, settings=settings,
+                velocity=100, on_window_consumed=record_window)
+    if len(constructions) != stats['decoded_interval_count'] or any(
+            row['constructed_note'] is not None and
+            (type(row['v1_slot_index']) is not int or not 0 <= row['v1_slot_index'] < config.num_pitch_slots)
+            for row in constructions):
+        raise ValueError('Construction trace lost a decoded interval or pitch slot')
     raw = [asdict(note) for note in decoded]
     events = convert_notes(raw, sample_rate=config.sample_rate, total_samples=wave.shape[-1], classes=INSTRUMENT_CLASSES)
     write('raw-notes.json', raw)
     write('window-notes.json', windows)
+    write('interval-constructions.json', constructions)
     write('notes.json', events)
     report = dict(identity=identity, context_start_seconds=0., context_end_seconds=duration,
         elapsed_seconds=time.monotonic()-started, notes=len(events), stats=stats,
         instrument_classes=dict(Counter(n['instrument_class'] for n in events)),
         release_reasons=dict(Counter(n['release_reason'] for n in events)),
         notes_sha256=sha(output/'notes.json'), raw_notes_sha256=sha(output/'raw-notes.json'),
-        window_notes_sha256=sha(output/'window-notes.json'), enabled_in_application=False,
+        window_notes_sha256=sha(output/'window-notes.json'),
+        interval_constructions_sha256=sha(output/'interval-constructions.json'), enabled_in_application=False,
         limitations=['Finalizer can force offset flags; all stitched tails remain unverified for LN use.',
             'Raw model class is not calibrated confidence or exact GM instrument truth.',
             'CPU uses installed Torch 2.9.1, not upstream pinned accelerator runtime.',

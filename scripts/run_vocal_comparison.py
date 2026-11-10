@@ -1,14 +1,22 @@
 """Compare fixed ROSVOT against the completed generic baseline on all 40 vocals."""
 import argparse
 import json
+import math
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.evaluate_guitar_vocal_benchmark import evaluate, window_metrics, aggregate, read_json, require, verified_hash
 from scripts.research_vocal_transcription import SOURCE_COMMIT, FILES, sha, verify_source
+
+
+def librosa_output_samples(samples, sample_rate):
+    # librosa 0.11 uses float(target_sr)/orig_sr, then ceil(N*ratio).
+    # Integer-rational ceil differs by one sample at some exact ratios.
+    return math.ceil(samples * (24000.0 / sample_rate))
 
 
 def main():
@@ -18,6 +26,7 @@ def main():
     cli.add_argument('--python', type=Path, default=Path('.venv-audio/Scripts/python.exe'))
     cli.add_argument('--source', type=Path, default=Path('test-data/other-instrument-model-survey-2026-11-10/ROSVOT'))
     cli.add_argument('--dependencies', type=Path, default=Path('test-data/rosvot-runtime'))
+    cli.add_argument('--reuse-from', type=Path, help='Verify and copy completed case evidence from an earlier run')
     args = cli.parse_args()
     require(not (args.output/'completed.json').exists(), 'Comparison already completed; preserve it')
     # Verify the complete 100-recording baseline and both vocal annotators first.
@@ -37,7 +46,9 @@ def main():
         evaluator_sha256=sha('scripts/evaluate_guitar_vocal_benchmark.py'),
         matcher_sha256=sha('scripts/evaluate_instrument_benchmark.py'),
         note_threshold=.85, word_threshold=.5, intra_threads=2, inter_threads=1,
-        inference_scope='full_original_audio', normalization=False, runtime=runtime)
+        inference_scope='full_original_audio', normalization=False, runtime=runtime,
+        reuse_from=None if args.reuse_from is None else dict(path=str(args.reuse_from.resolve()),
+            plan_sha256=sha(args.reuse_from/'plan.json')))
     args.output.mkdir(parents=True, exist_ok=True)
     plan = args.output/'plan.json'
     if plan.exists():
@@ -50,9 +61,16 @@ def main():
     groups = {engine: {'A1': [], 'A2': []} for engine in ('application', 'rosvot')}
     for index, case in enumerate(cases):
         folder = args.output/case['name']
+        destination = folder
         report_path = folder/'report.json'
+        reused = False
         verified_hash(case['audio'], case['audio_sha256'])
         print(json.dumps(dict(stage='vocal_comparison', case=case['name'], index=index+1, total=40)), flush=True)
+        if not report_path.exists() and args.reuse_from is not None:
+            cached = args.reuse_from/case['name']
+            if (cached/'report.json').exists():
+                require(not folder.exists(), 'Inspect partial output before reusing: '+case['name'])
+                folder, report_path, reused = cached, cached/'report.json', True
         if not report_path.exists():
             require(not folder.exists(), 'Inspect partial ROSVOT inference before retrying: '+case['name'])
             command = [str(args.python), 'scripts/research_vocal_transcription.py', '--audio', case['audio'],
@@ -71,7 +89,7 @@ def main():
             strict_weights=True, rmvpe_mode='get_pitch_batch/min_gap=6',
             versions=runtime, resampler='librosa/soxr_hq/fix=True/scale=False',
             resampled_sample_rate=24000,
-            resampled_samples=(case['samples']*24000+case['sample_rate']-1)//case['sample_rate'])
+            resampled_samples=librosa_output_samples(case['samples'], case['sample_rate']))
         require(all(candidate_identity.get(k) == v for k, v in expected.items()), 'ROSVOT prediction identity changed')
         require(report['context_start_seconds'] == 0 and
             abs(report['context_end_seconds']-case['duration_seconds']) < 1e-10, 'ROSVOT physical input clock differs')
@@ -90,6 +108,10 @@ def main():
             references[annotator] = dict(rosvot=dict(metrics=metrics, interval_scope=scope), application=old)
             for engine, values in (('application', old['metrics']), ('rosvot', metrics)):
                 groups[engine][annotator].append(dict(name=case['name'], metrics=values))
+        if reused:
+            # Copy only after the source/model/runtime, audio, predictions,
+            # activations and both annotation streams have passed validation.
+            shutil.copytree(folder, destination)
         rows.append(dict(name=case['name'], report_sha256=sha(report_path), notes_sha256=report['notes_sha256'],
             references=references, release_reasons=report['release_reasons'],
             output_reasons=report['output_reasons'], elapsed_seconds=report['elapsed_seconds']))

@@ -1,6 +1,7 @@
 import pytest
 
 from scripts.research_vocal_transcription import decode_intervals
+from scripts.run_vocal_comparison import librosa_output_samples
 
 
 def test_vocal_decode_preserves_repeated_same_pitch_and_labels_artificial_final_tail():
@@ -24,3 +25,11 @@ def test_vocal_decode_preserves_rest_intervals_in_raw_evidence():
 def test_vocal_decoder_rejects_misaligned_outputs_instead_of_dropping_intervals(bd, pitches, duration):
     with pytest.raises(ValueError):
         decode_intervals(bd, pitches, sample_rate=100, hop_size=10, duration=duration)
+
+
+def test_librosa_clock_uses_its_actual_float_ratio_before_ceil():
+    # vocadito_15 is exactly 20.28 seconds, but the official librosa path
+    # fixes its waveform to 486721 samples, not rational-ceil 486720.
+    assert librosa_output_samples(894348, 44100) == 486721
+    assert librosa_output_samples(44100, 44100) == 24001
+    assert librosa_output_samples(16000, 16000) == 24000

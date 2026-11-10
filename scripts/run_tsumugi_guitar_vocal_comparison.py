@@ -73,11 +73,11 @@ def main():
             resampled_sample_rate=22050,resampled_samples=(case['samples']*22050+case['sample_rate']-1)//case['sample_rate'],
             resampler='torchaudio.functional.resample/default',mono_policy='duplicate_to_stereo',
             normalization=False,inference_scope='full_original_audio',intra_threads=2,inter_threads=1,
-            amp=False,compile=False,stem_filter='all',versions=runtime,seed=42)
+            amp=False,compile=False,stem_filter='all',versions=runtime,seed=42,evidence_revision=2)
         require(all(report['identity'].get(k)==v for k,v in expected.items()),'Tsumugi prediction identity changed')
         require(report['context_start_seconds']==0 and
                 abs(report['context_end_seconds']-case['duration_seconds'])<1e-10,'Physical input clock changed')
-        for name in ('notes','raw_notes','window_notes'):
+        for name in ('notes','raw_notes','window_notes','interval_constructions'):
             verified_hash(folder/(name.replace('_','-')+'.json'),report[name+'_sha256'])
         predicted = read_json(folder/'notes.json')
         require(len(predicted)==report['notes'],'Event count changed')
