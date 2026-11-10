@@ -582,7 +582,7 @@ def create_app(resources, data_root):
             if payload.get('evidence_signature')!=result['evidence_signature']:
                 raise ValueError('音频分析已经改变，请刷新建议后再选择')
             if payload.get('context_signature')!=result['context_signature']:
-                raise ValueError('建议的键数、BPM 或参考统计已经改变，请刷新建议后再选择')
+                raise ValueError('建议的键数、BPM、参考统计或生成规则已经改变，请刷新建议后再选择')
             option=next((o for o in result['options'] if o['id']==payload.get('choice')),None)
             if option is None:
                 raise ValueError('请选择已有的编排建议')
