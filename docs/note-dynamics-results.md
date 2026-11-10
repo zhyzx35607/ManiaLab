@@ -53,6 +53,9 @@
 各自复制同一个声轨RMS并冒充独立乐器测量。当前未替换自动主声部策略，
 未重新拉长LN，也未宣称解决音乐表达问题。
 
+后续已按另一个事前固定协议完成两组真实乐器的五条件混合对照，发现来自其他
+声部的干扰，见[真实弦乐与铜管结果](velocity-interference-results.md)。
+
 ## 可复查记录
 
 - 入口：`scripts/research_tsumugi_velocity.py`、`scripts/summarize_note_dynamics.py`。
