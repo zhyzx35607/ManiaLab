@@ -31,11 +31,26 @@
 - 已知乐器音色验证入口已通过 PR #9 合入主线，合并提交
   `279bf6e1e9cdca9d906301de7b12781481a60d38`；PR检查 `42865447918` 成功，
   GitHub检查1905 passed、85 skipped。
+- 音色分类与声部分组完整结果已通过 PR #10 合入主线，合并提交
+  `cc3e82817a9940008c0e2703e34cda777c776430`；PR检查 `42868880993` 成功，
+  GitHub检查1908 passed、85 skipped。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
 ## 本阶段新增
 
+- 当前正在验证连续起音表达的区间空隙保护；分支`fix/articulation-interval-gaps`。
+  旧实现两个反例失败，修复后20项专项与相关测试共216 passed。按原候选区间
+  已结束至少80ms新增分组边界，未知音尾和更早仍持续的音阻止新增边界；
+  不改变原起音、音高或音尾。完整协议见
+  [区间空隙](articulation-interval-gap-protocol.md)。重放入口
+  `scripts/check_articulation_interval_gaps.py`，运行session `36934`、输出
+  `test-data/articulation-interval-gaps-v3`。此状态不是完成回执，续接先查
+  实际进程和报告。v1因检查脚本直接比较原JSON附加字段与Note失败，未完成
+  生成；改为规范化Note比较后另开v2，不覆盖v1。v2全量重放完成，Beethoven
+  9个原持续音被新短键化；增加失败反例后，v3限制只细分旧规则已短键化的组。
+  原持续音不能变成新tap。初步《樱花草》表达没有变化，不把最小反例通过
+  说成该曲LN改善。
 - 音色分组35份已知乐器对照完成，shell session `66272`实际exit 0。旧首份
   复用，新34份串行耗时902.841秒；全部结束后读取本轮标签。不改原音高/起止。
   聚类后独奏类别起音/区间F1持平92.44%/87.74%；混奏82.44%/69.82%降至
