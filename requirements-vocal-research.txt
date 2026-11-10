@@ -1,0 +1,10 @@
+# Additional packages in test-data/rosvot-runtime; the existing isolated CPU
+# runtime supplies torch==2.9.1+cpu, torchaudio==2.9.1+cpu, einops and PyYAML.
+# This is a research dependency set, not the portable application's runtime.
+librosa==0.11.0
+pyworld==0.3.5
+pretty-midi==0.2.10
+numpy==2.3.5
+scipy==1.17.0
+# pretty-midi 0.2.10 imports pkg_resources, removed by newer setuptools.
+setuptools==80.9.0
