@@ -236,6 +236,8 @@ def chord_layer_options(notes, settings, segment_preferences):
 
     These express one source's pitches at the same quantized attack, not claims
     that omitted pitches are false positives. Retained notes keep their ends.
+    Equal source weights use the existing attack-alignment score before pitch;
+    a unit-weight detector must not always lose its clearer higher chord tones.
     """
     attacks = defaultdict(list)
     for note in notes:
@@ -243,10 +245,12 @@ def chord_layer_options(notes, settings, segment_preferences):
     rows = []
     depth = 1
     for time, row in sorted(attacks.items()):
-        row.sort(key=lambda n: (-n.strength, n.pitch, n.id))
         pref = settings_at(settings, time, segment_preferences)
         cap = min(pref['chord_size'], math.ceil(pref['density']))
         pitched = all(n.source == 'pitch' for n in row)
+        aligned = pitched and all(n.evidence_start is not None for n in row)
+        row.sort(key=lambda n: (-n.strength, -_attack_value(n, pref) if aligned else 0,
+                                n.pitch, n.id))
         if pitched:
             depth = max(depth, min(len(row), cap))
         rows.append((row, cap, pitched))
