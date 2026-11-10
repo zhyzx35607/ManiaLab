@@ -16,6 +16,7 @@
 | BS-RoFormer SW六声部，`https://huggingface.co/FractalSurfer/BS-RoFormer-SW-6stem` | bass/drums/other/vocals/guitar/piano 分离 | 已读取模型卡；它是镜像，声明上游许可 unknown。699MB权重尚未下载/推理/打包；不能声称它就是 Nova 的专用权重。其六声部仍未独立分出弦乐或合成器。 |
 | SAM-Audio，`https://github.com/facebookresearch/sam-audio` | 文字/时间提示提取指定声音 | 已读官方README。需受控权重访问，作者推荐CUDA；本机只有Intel核显。保留为指定乐器分离候选，尚未下载权重或推理。 |
 | MIROS，`https://github.com/amt-os/ai4m-miros` | 在YourMT3基础上引入预训练编码器 | 已读仓库列表与转录入口。本次未找到README、Release权重或许可文件，不能当成已就绪引擎。 |
+| Tsumugi，`https://github.com/anime-song/tsumugi` | Transkun式Neural Semi-CRF泛乐器转录，含贝斯、吉他、人声及其他乐器专用权重 | 已下载源码和四组作者权重，准备CPU研究入口。源码和模型卡均标MIT。原README列出长音过度切分、失真吉他表现差及分类混淆；这些必须在实际音频上验证。 |
 
 已有 YourMT3 的固定35输入比较继续覆盖弦乐、管乐、低音乐器及混音，并保留
 模型乐器标签。它是先前接入的研究候选，不是本轮新下载的模型。合成器、失真
@@ -29,6 +30,7 @@
 | MuScriptor | `8a1ef88672cc23c26619adaff37ec48d82c0b906` |
 | BassUNet | `b16ce8b7a6d0ff3ab4430bd95150543fe062e697` |
 | MSST | `10b47380c0941226a7f1d5ba0cda63957429b7c2` |
+| Tsumugi | `eba1c7d05e4d6a53cc4e8916d742d9623a3fdc38` |
 
 本地资料：`test-data/other-instrument-model-survey-2026-11-10/`。
 ROSVOT作者原归档为584407709字节，SHA256
@@ -62,3 +64,67 @@ ROSVOT每区间只输出一个人声音高，不足以代表多声部合唱。
 准备阶段已通过源码/配置/权重身份校验、三个checkpoint的安全张量读取、
 CPU依赖导入及端点纯函数控制。未以这些工程检查代替实际音频模型成绩；
 声学推理在前一组URMP对照结束后依次执行。没有修改默认采音或发布新Release。
+
+## Tsumugi的实际接入范围
+
+正确作者仓库是`anime-song/tsumugi`；搜索过程中出现的
+`guangyu-liu/Tsumugi`地址经GitHub API核查为404，不作为来源。
+权重来自`https://huggingface.co/anime-song/instrument_agnostic_amt`，固定
+revision `c6ee8a22626cd7185031ee71ce7cea27ec862781`，无需受控访问。
+
+| 模型 | 大小（字节） | SHA256 |
+|---|---:|---|
+| bass_v2 | 57169753 | `807eedb409c77a710357d57c9e47d17821c4518db3b09c78d8dabd205a2b604a` |
+| guitar_v1_5 | 57152017 | `59c8335517d1faf7d735fef29e061181d87b96385f2e9a08332791e2b64affd4` |
+| other_v1_5 | 57151027 | `e836d5b30a29ad2301726aedb9ae348db927fbb4813359cdfb2e304ba3084501` |
+| vocal_harmony_v1_5 | 57150903 | `9f068d21313039810c82ede5f01e30bf8bc25fe2ba42f2cad16f57a2095b5e97` |
+
+四个文件均已验证实际长度和作者LFS哈希，并用`weights_only=True`读取配置。
+不能把文件名中的bass_v2误认为Semi-CRF V2架构：这四组实际都进入V1解码。
+other_v1_5有三个pitch slots，其余一个。这限制同音高的重叠容量；一个slot
+仍能同时输出不同音高，不等于整个输入只能是单音。
+
+`scripts/research_tsumugi_transcription.py`复用上游特征、模型和窗口解码。
+原CLI使用`weights_only=False`并允许缺失权重；本入口使用安全张量读取，
+任何缺失、额外或形状不符的权重都要求先检查。现有CPU运行时Torch2.9.1
+不等于作者锁定的Torch2.13环境。
+
+默认不限制乐器类别；只有输入为已知分离声轨时才显式提供`--stem`。
+“其他”候选可含弦乐、管乐、合成器等，但类别标签不代表已得到独立音轨。
+原始mono复制成双声道，按官方torchaudio默认路径重采样，不归一化，
+不用歌词、谱面、节拍或标注修正时间。模型输出的代表GM音色不作识别真值；
+本入口保存原始类别，`program=-1`。统计权重1不解释为置信度。
+对照保留官方默认静音门控：先把立体声平均再算RMS，反相左右声道可能被
+判为静音。因此本入口还不保证任意立体声相位情况下的召回。
+
+审查发现上游`WindowNoteStitcher.finalize()`会强制设置每轨最后音的
+`has_offset=True`；合并、裁切也可能改动边界。因此保留每窗拼接前快照及
+全部最终原始note，最终音尾统一标`unverified_stitched_boundary`，不可直接
+供LN放手使用。不经过MIDI导出的短音删除、重叠裁切和乐器数上限处理。
+
+BassUNet仓库内两个h5另经文件头核对，分别1694696与9433912字节，均为
+真实HDF5文件而非LFS指针。此检查不代表已完成TensorFlow1.15迁移或推理。
+
+### CPU真实音频兼容性
+
+四个权重已各完成一次实际前向，无缺失权重、额外权重或形状不符。
+输入先按固定规则准备：BassUNet仓库附带片段、GuitarSet固定清单第一项、
+URMP扩展清单第一项、vocadito第一项，均从0取最多20秒，保留原始PCM。
+这是运行兼容性检查，不是挑选后的准确率比较，也不能代表整曲制谱效果。
+
+| 权重 | 音频秒数 | 解码窗口 | 输出音符 | 前向与解码秒数 |
+|---|---:|---:|---:|---:|
+| bass_v2 | 7.7092 | 1 | 42 | 4.844 |
+| guitar_v1_5 | 20 | 4 | 102 | 15.313 |
+| other_v1_5 | 20 | 4 | 69 | 17.515 |
+| vocal_harmony_v1_5 | 20 | 4 | 39 | 21.078 |
+
+上述时间不含首次模型加载；机器为当前CPU，不能承诺其他电脑相同耗时。
+逐窗与最终逐音证据在`test-data/tsumugi-smoke-v1/`。
+
+完整吉他/人声比较入口为`scripts/run_tsumugi_guitar_vocal_comparison.py`。
+须先核验60份GuitarSet和40份vocadito通用基线，再分别用固定guitar_v1_5、
+vocal_harmony_v1_5权重处理同样的完整原音频。专用权重按已知输入乐器家族
+选定，属于已知分轨类型的测试；不把逐音标签、歌词或GM类别交给模型，
+`--stem all`保留所有分类输出及错误鼓音。A1/A2不择优；包含未知参考尾的
+吉他案例继续保留起音、明确整例音尾不可评分。当前尚未获得该完整比较结果。
