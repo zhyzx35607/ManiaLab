@@ -16,7 +16,7 @@
 | BS-RoFormer SW六声部，`https://huggingface.co/FractalSurfer/BS-RoFormer-SW-6stem` | bass/drums/other/vocals/guitar/piano 分离 | 已读取模型卡；它是镜像，声明上游许可 unknown。699MB权重尚未下载/推理/打包；不能声称它就是 Nova 的专用权重。其六声部仍未独立分出弦乐或合成器。 |
 | SAM-Audio，`https://github.com/facebookresearch/sam-audio` | 文字/时间提示提取指定声音 | 已读官方README。需受控权重访问，作者推荐CUDA；本机只有Intel核显。保留为指定乐器分离候选，尚未下载权重或推理。 |
 | MIROS，`https://github.com/amt-os/ai4m-miros` | 在YourMT3基础上引入预训练编码器 | 已读仓库列表与转录入口。本次未找到README、Release权重或许可文件，不能当成已就绪引擎。 |
-| Tsumugi，`https://github.com/anime-song/tsumugi` | Transkun式Neural Semi-CRF泛乐器转录，含贝斯、吉他、人声及其他乐器专用权重 | 已下载源码和四组作者权重，准备CPU研究入口。源码和模型卡均标MIT。原README列出长音过度切分、失真吉他表现差及分类混淆；这些必须在实际音频上验证。 |
+| Tsumugi，`https://github.com/anime-song/tsumugi` | Transkun式Neural Semi-CRF泛乐器转录，含贝斯、吉他、人声及其他乐器专用权重 | 已实际运行四组作者权重，完成100份吉他／人声及35份弦管乐对照。源码和模型卡均标MIT。吉他、人声和弦管乐效果不同，未全局替换默认。另下载同源的音色分组权重，准备独立检查音色一致性。 |
 
 已有 YourMT3 的固定35输入比较继续覆盖弦乐、管乐、低音乐器及混音，并保留
 模型乐器标签。它是先前接入的研究候选，不是本轮新下载的模型。合成器、失真
@@ -141,6 +141,15 @@ URMP三方比较入口为`scripts/run_tsumugi_urmp_comparison.py`。固定使用
 对全部35输入处理与已完成基线完全相同的0–40秒原始PCM，评分0–30秒起音。
 保存裁取前后文件身份与真实样本数，不传乐器答案、不按乐器分数换权重。
 完整起止区间的评分与前两方一致，不把端点不可信的预测从分母删除。
+完整运行现已结束，见[三方结果](tsumugi-urmp-results.md)：独奏与混音的整体
+起音、完整区间均提高，但中提琴等局部起音仍不如 YourMT3。所有预测仍保留。
+
+作者的 `instrument_refinement` 使用既有音符查询原始音频，按音色 embedding
+聚类后修正类别；不会补音或产生新的分离波形。已从相同固定模型 revision
+下载 `best_instrument_refinement.pth`，核验 56225305 字节及 LFS SHA256，
+并通过 `weights_only=True` 读取。原作者 RWC 对照明确包含拨弦弦乐、部分
+弦乐等分类退步，不因它能减少标签切换就认定准确。入口与约定见
+[音色一致性协议](instrument-refinement-protocol.md)，真实前向在现有队列后执行。
 
 ROSVOT首轮在第15例校验处停止：librosa0.11按浮点`N*(24000/orig_sr)`再ceil，
 会把894348个44100Hz样本变为486721个24000Hz样本，而不是整数有理数计算的
