@@ -6,6 +6,7 @@ melody/hand separation. Never infer new attacks or fabricate a release time.
 from __future__ import annotations
 
 from statistics import median
+from collections import defaultdict
 
 from .domain import UNOBSERVED_RELEASES
 
@@ -36,7 +37,15 @@ def articulation_policy(notes, *, observed_until_ms=None):
     musical phrase ending. Unknown right context cannot establish a run tail.
     Callers omitting the observation boundary retain the legacy tap policy.
     """
-    runs,pause=attack_runs(notes)
+    streams=defaultdict(list)
+    for note in notes:
+        streams[(note.voice,note.instrument_id)].append(note)
+    if len(streams)>1:
+        result={}
+        for stream in streams.values():
+            result.update(articulation_policy(stream,observed_until_ms=observed_until_ms))
+        return result
+    runs,pause=attack_runs(next(iter(streams.values()), ()))
     result={}
     for run_index,groups in enumerate(runs):
         overlapping=0

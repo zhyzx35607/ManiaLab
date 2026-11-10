@@ -200,7 +200,7 @@ def _assign_once(notes, settings=None, locked=(), beat_ms=500, cancelled=lambda:
                 follow = abs(lane - preferred) / keys
                 if last_pitch[lane] == n.pitch and n.source == "pitch":
                     follow *= .35
-                source = (n.source, n.pitch if n.source == "pitch" else n.lane)
+                source = (n.source, n.voice, n.instrument_id, n.pitch if n.source == "pitch" else n.lane)
                 continuity = .3 if source in source_lane and source_lane[source] != lane else 0
                 jack_window = min(220, max(90, beat_ms * .4))
                 costs[i, lane] = (follow * local["pitch_follow"] * 2 + load[lane] / total_load * local["balance"] * 5 +
@@ -215,7 +215,7 @@ def _assign_once(notes, settings=None, locked=(), beat_ms=500, cancelled=lambda:
             result.append(n)
             occupied[lane], last[lane], last_pitch[lane] = n.end, n.start, n.pitch
             load[lane] += 1 + min(5, (n.end - n.start) / 1000)
-            source_lane[(n.source, n.pitch if n.source == "pitch" else chord[i].lane)] = int(lane)
+            source_lane[(n.source, n.voice, n.instrument_id, n.pitch if n.source == "pitch" else chord[i].lane)] = int(lane)
     if invariant(notes) != invariant(result):
         raise AssertionError("定轨改变了原始物件")
     combined = sorted(fixed + result, key=lambda n: (n.start, n.lane))
@@ -258,12 +258,12 @@ def select_notes(candidates, settings=None, segment_preferences=()):
             if local.get(n.voice + "_weight", 1.) <= 0:
                 muted += 1
                 continue
-            if (n.pitch, n.source, n.voice) in used_pitches:
+            if (n.pitch, n.source, n.voice, n.instrument_id) in used_pitches:
                 continue
             pool.append(n)
             preferences.append(local)
             scores.append(priority(n))
-            used_pitches.add((n.pitch, n.source, n.voice))
+            used_pitches.add((n.pitch, n.source, n.voice, n.instrument_id))
         chord_ranges.append((first, len(pool), min(local["chord_size"], p["keys"])))
     if not pool:
         result, local_preferences, attack_report = [], [], {"attack_selection": "global", "attack_optimal": True}

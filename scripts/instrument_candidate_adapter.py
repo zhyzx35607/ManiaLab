@@ -16,6 +16,7 @@ def accompaniment_candidates(events, provenance, duration_ms, voice='other'):
     for index,event in enumerate(events):
         if (not all(math.isfinite(event[k]) for k in ('onset','offset','pitch','program')) or
             event['offset']<=event['onset'] or not 0<=event['pitch']<=127 or
+            isinstance(event['program'],bool) or int(event['program'])!=event['program'] or
             not 0<=event['program']<=(128 if event['is_drum'] else 127)):
             raise ValueError('Invalid model event must be audited before integration')
         evidence=flags[index]
@@ -41,8 +42,10 @@ def accompaniment_candidates(events, provenance, duration_ms, voice='other'):
                 'same_pitch_reattack' if 'same_pitch_reattack' in evidence else None)
             if reason is None:raise ValueError('Non-drum has no interpretable release audit')
             note=Note(round(event['onset']*1000),round(event['offset']*1000),pitch=int(event['pitch']),
-                strength=1.,source='pitch',voice=voice,id=identifier,release_reason=reason)
+                strength=1.,source='pitch',voice=voice,id=identifier,release_reason=reason,
+                instrument_id=f'yourmt3:program:{int(event["program"])}')
             notes.append(note)
-            row.update(decision='candidate',release_reason=reason,weight_semantics='unit_weight_not_confidence')
+            row.update(decision='candidate',release_reason=reason,instrument_id=note.instrument_id,
+                       weight_semantics='unit_weight_not_confidence')
         trace.append(row)
     return notes,trace

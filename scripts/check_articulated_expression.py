@@ -131,7 +131,7 @@ def main():
             source_attacks=dict(Counter(v for v,t in grouped)),
             source_holds=dict(Counter(n.voice for n in placed if n.hold)),
             expressed_source_attacks=dict(Counter(v for v,t in {(n.voice,n.start) for n in evidence})),
-            articulation_runs=len({(r['section'],r['voice'],r['articulation']['run']) for r in decision_snapshot.values()
+            articulation_runs=len({(r['section'],r['voice'],r.get('instrument_id',''),r['articulation']['run']) for r in decision_snapshot.values()
                 if r.get('articulation',{}).get('tap')}),
             expression_reasons=dict(Counter(r['reason'] for r in decision_snapshot.values())),
             retained_large_attack_shifts=dict(Counter(n.voice for n in placed if abs(n.start-n.evidence_start)>30)),

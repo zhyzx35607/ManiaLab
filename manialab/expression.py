@@ -134,7 +134,8 @@ def expression_evidence(analysis, plan, settings):
             if (phrase.id not in by_id or policy.get('mode') != 'phrase' or
                     phrase.support_coverage < .95 or phrase.end > section['end_ms']):
                 continue
-            if (phrase.end <= by_id[phrase.id].end or phrase.id in covered or
+            if (phrase.instrument_id != by_id[phrase.id].instrument_id or
+                    phrase.end <= by_id[phrase.id].end or phrase.id in covered or
                     by_id[phrase.id].strength < .35):
                 continue
             replacements[phrase.id] = phrase
@@ -142,13 +143,14 @@ def expression_evidence(analysis, plan, settings):
             # gesture. Never swallow a new attack at its end or another voice.
             for identity in phrase.support:
                 n = by_id.get(identity)
-                if (n and n.voice == phrase.voice and phrase.start < n.start < phrase.end
+                if (n and n.voice == phrase.voice and n.instrument_id == phrase.instrument_id
+                        and phrase.start < n.start < phrase.end
                         and n.end <= phrase.end):
                     covered[identity] = phrase.id
         for original in local:
             policy = section['voices'][original.voice]
             base = dict(id=original.id, voice=original.voice, start=original.start, end=original.end,
-                        section=index, mode=policy['mode'], role=policy['role'])
+                        instrument_id=original.instrument_id, section=index, mode=policy['mode'], role=policy['role'])
             reason = None
             if policy['mode'] == 'omit' or p.get(original.voice+'_weight', 1.) <= 0:
                 reason = 'voice_not_selected'
@@ -174,7 +176,7 @@ def expression_evidence(analysis, plan, settings):
                 reason='unobserved_release'
             n = replace(n, end=n.end if hold else n.start, phrase=n.phrase and hold)
             output.append(n)
-            metadata[n.id] = dict(section=index, role=policy['role'], voice=n.voice)
+            metadata[n.id] = dict(section=index, role=policy['role'], voice=n.voice, instrument_id=n.instrument_id)
             trace[n.id] = dict(base, decision='candidate', reason=reason, expression_end=n.end)
     return output, metadata, trace
 
@@ -228,7 +230,7 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
             continue
         if trace[n.id].get('expression_end', n.end) > trace[n.id]['start'] and not n.hold:
             trace[n.id]['reason'] = 'duration_collapsed_on_grid'
-        by_voice[(meta['section'], n.voice, meta['role'])].append(n)
+        by_voice[(meta['section'], n.voice, n.instrument_id, meta['role'])].append(n)
     units, roles, families = [], [], []
     def family(group, role):
         indices = []
@@ -237,7 +239,7 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
             units.append(option)
             roles.append(role)
         families.append((group, indices))
-    for (section, voice, role), notes in by_voice.items():
+    for (section, voice, instrument_id, role), notes in by_voice.items():
         notes.sort(key=lambda n: (n.start, -n.strength, n.pitch))
         seen, groups, current = set(), [], []
         for n in notes:
@@ -329,22 +331,43 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
         while pos < added and total[pos][0] <= t-1000:
             recent[total[pos][1]] -= 1; pos += 1
         constraint(recent, math.ceil(pref['density']))
-    matrix = csc_matrix((vals, (rows, cols)), shape=(len(upper), len(units)))
-    utility = []
-    for role, group in zip(roles, units):
+    utility = [0.] * len(units)
+    attack_units, attack_instruments = defaultdict(dict), defaultdict(set)
+    for unit, (role, group) in enumerate(zip(roles, units)):
         attack_scores = defaultdict(list)
         for n in group:
             pref = settings_at(p, n.start, segment_preferences)
             shift = abs(n.start-n.evidence_start) if n.evidence_start is not None else 0
             alignment = .4+.6*math.exp(-.5*(shift/20)**2)
-            attack_scores[n.start].append((.25+n.strength)*pref.get(n.voice+'_weight', 1.)*alignment)
-        # Prioritize distinct source attacks over extra pitches of one chord.
-        # Extra layers still have positive value when the budget permits them.
-        score = sum(max(values)+.15*(sum(values)-max(values)) for values in attack_scores.values())
-        # A main-source preference must not overwhelm timing/source evidence:
-        # clearly aligned support may beat an uncertain, far-moved main note.
-        utility.append(score*(2 if role == 'primary' else 1))
-    solved = _solve_binary(-np.asarray(utility), integrality=np.ones(len(units)), bounds=Bounds(0, 1),
+            key = (metadata[n.id]['section'], n.voice, n.start)
+            value = (.25+n.strength)*pref.get(n.voice+'_weight', 1.)*alignment
+            attack_scores[key].append(value * (2 if role == 'primary' else 1))
+            attack_instruments[key].add(n.instrument_id)
+        for key, values in attack_scores.items():
+            attack_units[key][unit] = values
+    for key, options in attack_units.items():
+        if len(attack_instruments[key]) == 1:
+            # Alternatives within one instrument family are mutually exclusive.
+            for unit, values in options.items():
+                utility[unit] += max(values)+.15*(sum(values)-max(values))
+            continue
+        # Distinct instruments retain separate phrases, but the source's attack
+        # reward is paid once. Otherwise splitting a label makes every chord
+        # pitch a full-value attack and can displace an unrelated melody.
+        maxima = {unit: max(values) for unit, values in options.items()}
+        for unit, values in options.items():
+            utility[unit] += .15*sum(values)
+        previous = 0.
+        for level in sorted(set(maxima.values())):
+            coverage = len(utility)
+            utility.append(.85*(level-previous))
+            # Each positive threshold reward requires a selected option that
+            # actually contains a note of that quality. An omitted strong note
+            # cannot lend its evidence score to a selected weaker note.
+            constraint({coverage: 1, **{unit: -1 for unit, value in maxima.items() if value >= level}}, 0)
+            previous = level
+    matrix = csc_matrix((vals, (rows, cols)), shape=(len(upper), len(utility)))
+    solved = _solve_binary(-np.asarray(utility), integrality=np.ones(len(utility)), bounds=Bounds(0, 1),
         constraints=LinearConstraint(matrix, -np.inf, np.asarray(upper)), options={'time_limit': 15., 'mip_rel_gap': .005})
     if solved.x is None:
         raise ValueError('段落取舍未找到可行方案，请降低主声部层数或提高密度上限')

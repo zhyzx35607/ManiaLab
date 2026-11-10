@@ -32,6 +32,9 @@ class Note:
     evidence_start: int | None = None
     evidence_end: int | None = None
     release_reason: str = ''
+    # Optional model-predicted instrument class, scoped by model (not a new
+    # isolated track or verified physical instrument). Empty means unknown.
+    instrument_id: str = ''
 
     @property
     def hold(self):
@@ -47,6 +50,9 @@ def note_from(data):
         raise ValueError("音符时间、轨道和音高必须是整数")
     if n.start < 0 or n.end < n.start or n.end > 24 * 3600 * 1000:
         raise ValueError("音符时间无效")
+    if (not isinstance(n.instrument_id, str) or len(n.instrument_id) > 128
+            or any(ord(c) < 32 for c in n.instrument_id)):
+        raise ValueError("音符的乐器标识无效")
     return n
 
 
@@ -189,4 +195,4 @@ def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unkno
 
 
 def invariant(notes):
-    return Counter((n.id, n.start, n.end, n.raw) for n in notes)
+    return Counter((n.id, n.start, n.end, n.raw, n.instrument_id) for n in notes)

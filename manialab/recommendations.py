@@ -113,8 +113,10 @@ def pattern_opportunities(notes, beat):
         add('共同收尾','多个检测持续区间在约 40ms 内结束；只采用拍线量化后本来同尾的组')
     if any(max(n['start'] for n in g)-min(n['start'] for n in g)>beat*.25 for g in groups):
         add('分次进入、共同放手','存在不同起音而尾端接近的持续层，可保留起音差异组织放手')
-    for voice in sorted({n.get('voice','mix') for n in notes}):
-        row=[n for n in notes if n.get('voice','mix')==voice and n.get('source')=='pitch']
+    streams=sorted({(n.get('voice','mix'),n.get('instrument_id','')) for n in notes})
+    for voice,instrument_id in streams:
+        row=[n for n in notes if n.get('voice','mix')==voice
+             and n.get('instrument_id','')==instrument_id and n.get('source')=='pitch']
         if len(row)<4:continue
         times=np.array([n['start'] for n in row]);gaps=np.diff(times)
         intervals=gaps[gaps>40]

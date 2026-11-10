@@ -110,6 +110,15 @@ def test_motifs_require_supported_intervals_and_preserve_them():
     assert '旋律方向' not in {r['name'] for r in pattern_opportunities(chord,500)}
 
 
+def test_other_instrument_interleaving_does_not_invent_a_melodic_line_or_rhythm():
+    notes=[dict(start=i*500,end=i*500+100,pitch=60+i,source='pitch',voice='other',
+                instrument_id=f'yourmt3:program:{40 if i%2 else 0}') for i in range(6)]
+    names={r['name'] for r in pattern_opportunities(notes,500)}
+    assert not {'旋律方向','重复节奏动机'} & names
+    same_instrument=[dict(n,instrument_id='yourmt3:program:40') for n in notes]
+    assert {'旋律方向','重复节奏动机'} <= {r['name'] for r in pattern_opportunities(same_instrument,500)}
+
+
 def test_changed_tempo_keys_and_evidence_require_reselection():
     analysis=evidence()
     plan=dict(source='local-audio-recommendation',keys=10,bpm=120,
