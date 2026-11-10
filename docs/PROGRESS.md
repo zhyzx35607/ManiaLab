@@ -15,6 +15,8 @@
   `9b11b10d913acb19070f228397bb7cbf8bc5233c`；PR检查 `42846636872` 成功。
 - 模型恢复、比较入口和续接说明已通过 PR #2 合入主线，合并提交
   `0a43911477f7c11eea58a31e57bfdfa88c753e3c`；PR检查 `42847322903` 成功。
+- 鼓组剩余容量补充已通过 PR #3 合入主线，合并提交
+  `40e1a061c35caf89ad7b004a858b9619892e1fb5`；PR检查 `42852204830` 成功。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
@@ -40,21 +42,28 @@
 
 ## 正在执行的固定队列
 
-当前任务的 shell session `69438` 等待 Mega53 分离进程退出，然后依次运行
-以下三项。任何步骤失败即停止。session/PID 仅用于本次会话定位，重开后先
+原 shell session `69438` 已完成 Mega53 分离及下游采音，但在Harmonica首个
+静音控制的CPU bfloat16 LSTM处报错，已实际exit 1；MuScriptor尚未启动。
+下一步修复显式float32兼容入口，在新目录执行Harmonica，再继续MuScriptor。
+session/PID 仅用于本次会话定位，重开后先
 确认命令行和启动时间，不能凭旧PID启动、结束或重复任务。
 
-1. 分离任务本身：session `42354`，观察到的 Python PID `15668`。
+1. 分离已完成：原session `42354`、Python PID `15668`已退出。
    `scripts/check_mega53_long_context.py --output test-data/mega53-long-context-v1`
    使用作者20秒窗和拼接规则，共22份PCM、44次前向。日志：
-   `test-data/mega53-source-review-v1/long-context-run.log`。
-2. 下游采音：应用 `.venv` 运行
+   `test-data/mega53-source-review-v1/long-context-run.log`。独立波形复核通过，
+   见[长窗结果](mega53-long-context-results.md)；不能据波形启用默认分离。
+2. 下游采音已完成：应用 `.venv` 运行
    `scripts/check_mega53_transcription.py --separation test-data/mega53-long-context-v1 --output test-data/mega53-long-transcription-v1`。
    日志：`test-data/mega53-source-review-v1/long-transcription-run.log`。
-3. Harmonica：音频 `.venv-audio` 运行
+   46个转录流程/64用途完成，两个完整来源的整体起音/区间仍低于原混音；
+   铜管起音比旧短窗恢复但完整区间进一步下降。结果见上述长窗报告。
+3. Harmonica原精度失败记录：音频 `.venv-audio` 运行
    `scripts/check_harmonica_transcription.py --output test-data/harmonica-urmp-v1`。
    日志：`test-data/harmonica-source-review-v1/inference-run.log`。
-4. MuScriptor：应用 `.venv` 运行
+   错误为 `could not create a primitive descriptor for the LSTM forward propagation primitive`。
+   保留原目录，未完成任何输入的完整转录，不能发布声学成绩。
+4. MuScriptor待恢复后执行：应用 `.venv` 运行
    `scripts/check_muscriptor_urmp.py --weights test-data/muscriptor-recovered-small-v1/muscriptor-small-recovered-f16.safetensors --output test-data/muscriptor-urmp-v1`。
    日志：`test-data/muscriptor-cpp-review-v1/urmp-run.log`。
 
@@ -70,12 +79,13 @@ Harmonica独审入口已完成纯解码控制，等待真实输出后核对；�
 
 ## 已知结果与下一步
 
-- Mega53旧6秒短窗的波形改善没有转成整体采音改善，不能直接接默认；
-  长窗是对同一来源的补充验证。见[旧结果](mega53-transcription-results.md)。
+- Mega53旧6秒与作者长窗均未支持默认接入；长窗44次分离前向及46个下游
+  转录流程已完成，两个完整来源仍不及原混音。见[长窗结果](mega53-long-context-results.md)。
 - 鼓组修复后的《樱花草》固定候选10K选择为1499物件/373LN，已完成定轨
   和`.osu`回读，仍不是试听验收。改动前1495/373的诊断留在
   [历史规则重放](expression-current-replay.md)。
-- 等队列完成，独立核对各乐器的起音/完整区间、目标缺席误报与人工封口。
+- 修复并恢复Harmonica，然后完成MuScriptor；独立核对各乐器的起音/完整区间、
+  目标缺席误报与人工封口。
   有收益的候选再用真实 Nova 声轨验证，保留失败项；不只凭波形或平均分接入。
 - 下一次提交更新本文件并单独开 PR、检查、合并。已有源码与小阶段记录
   保存在 GitHub；本地 ignored 音频/权重仍需本机保留，GitHub源码不包含它们。
