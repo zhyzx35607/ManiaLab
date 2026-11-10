@@ -11,8 +11,11 @@ from vendor.mapperatorinator.event import Event, EventType
 
 # These endings describe absent, exhausted or broken model context, not a supported
 # musical release. Preserve attacks and raw ends, but do not auto-create LNs.
+# Kong's bare "reattack" explicitly has release_observed=False: its prior-frame
+# cutoff is not an observed release. Basic Pitch's "same_pitch_reattack" retains
+# its separate, documented musical-boundary policy; do not conflate the labels.
 UNOBSERVED_RELEASES = frozenset(('duration_limit', 'input_boundary',
-    'forced_segment_boundary', 'unresolved_or_postprocessed', 'frame_inactive'))
+    'forced_segment_boundary', 'unresolved_or_postprocessed', 'frame_inactive', 'reattack'))
 
 
 @dataclass

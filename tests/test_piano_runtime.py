@@ -39,7 +39,7 @@ def test_piano_decoder_preserves_reattacks_and_distinguishes_forced_release():
     assert notes[0]['offset']<3. and abs(notes[1]['offset']-4.98)<1e-5
 
 
-@pytest.mark.parametrize('reason',['duration_limit','input_boundary','forced_segment_boundary','unresolved_or_postprocessed','frame_inactive'])
+@pytest.mark.parametrize('reason',['duration_limit','input_boundary','forced_segment_boundary','unresolved_or_postprocessed','frame_inactive','reattack'])
 def test_unobserved_piano_end_keeps_attack_but_is_not_eligible_for_auto_ln(reason):
     from manialab.domain import Note
     from manialab.arrange import parameters,choose_holds
