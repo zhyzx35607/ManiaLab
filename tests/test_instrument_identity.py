@@ -1,13 +1,15 @@
 from dataclasses import replace
+import copy
 import json
 
 import pytest
 
 from manialab.arrange import assign_lanes, parameters, select_notes
 from manialab.domain import Note, note_from, validate
-from manialab.expression import propose_expression, expression_evidence, select_expression
+from manialab.expression import propose_expression, expression_evidence, select_expression, validate_expression
 from manialab.expression_articulation import articulation_policy
 from manialab.layout import source_key
+from manialab.structure import edit_boundaries
 from scripts.instrument_candidate_adapter import accompaniment_candidates
 from tests.test_structure_expression import analysis
 
@@ -120,6 +122,138 @@ def test_phrase_cannot_claim_another_instruments_interior_attack():
     evidence,_,trace=expression_evidence(a,plan,p)
     assert notes[1].id in {n.id for n in evidence}
     assert trace[notes[2].id]['reason']=='represented_by_phrase'
+
+
+def test_proposed_instrument_controls_are_local_and_default_to_inherit():
+    notes=[Note(1000,1400,voice='other',id='a',instrument_id='known'),
+           Note(2000,2400,voice='other',id='weak',instrument_id='quiet',strength=.1),
+           Note(3000,3400,voice='other',id='unknown'),
+           Note(7000,7400,voice='bass',id='b',instrument_id='later')]
+    a=analysis(notes);a['structure']=edit_boundaries(a['structure'],[6000],a)
+    original=copy.deepcopy(a)
+    plan=propose_expression(a,parameters())
+    assert [s['instrument_modes'] for s in plan['sections']]==[
+        {'other':{'known':'inherit','quiet':'inherit'}},{'bass':{'later':'inherit'}}]
+    assert validate_expression(plan,a)==plan and a==original
+
+
+@pytest.mark.parametrize('representation',['missing','empty','voice_empty','inherit'])
+def test_old_and_empty_instrument_controls_inherit_identical_voice_expression(representation):
+    notes=bridge([candidate(48,1,3),candidate(24,1.5,2.5)])
+    a=analysis(notes);p=parameters(dict(ln_ratio=1))
+    plan=propose_expression(a,p)
+    expected=expression_evidence(a,plan,p)
+    if representation=='missing':plan['sections'][0].pop('instrument_modes')
+    elif representation=='empty':plan['sections'][0]['instrument_modes']={}
+    elif representation=='voice_empty':plan['sections'][0]['instrument_modes']={'other':{}}
+    assert expression_evidence(a,plan,p)==expected
+
+
+def test_instruments_can_choose_distinct_modes_while_inheriting_voice_roles():
+    notes=bridge([candidate(48,1,3),candidate(24,1,2),candidate(88,1,2)])
+    notes.append(Note(1000,2000,voice='other',source='pitch',id='unknown'))
+    a=analysis(notes);p=parameters(dict(ln_ratio=1))
+    plan=propose_expression(a,p);section=plan['sections'][0]
+    section['voices']['other'].update(mode='onsets',role='support')
+    section['instrument_modes']['other'].update({'yourmt3:program:48':'sustain','yourmt3:program:88':'omit'})
+    original=copy.deepcopy((a,plan))
+    evidence,meta,trace=expression_evidence(a,plan,p)
+    assert {n.instrument_id:(n.start,n.end) for n in evidence}=={
+        'yourmt3:program:48':(1000,3000),'yourmt3:program:24':(1000,1000),'':(1000,1000)}
+    assert trace[notes[0].id]['mode']=='sustain' and trace[notes[0].id]['voice_mode']=='onsets'
+    assert trace[notes[1].id]['instrument_mode']=='inherit'
+    assert trace[notes[2].id]['mode']=='omit' and trace[notes[2].id]['decision']=='omitted'
+    assert all(row['role']=='support' for row in meta.values())
+    assert (a,plan)==original
+
+
+@pytest.mark.parametrize('weight',[0,1])
+def test_explicit_instrument_mode_can_open_omitted_voice_but_not_global_mute(weight):
+    notes=bridge([candidate(48,1,3),candidate(24,1.5,2.5)])
+    a=analysis(notes);p=parameters(dict(ln_ratio=1,other_weight=weight))
+    plan=propose_expression(a,p);section=plan['sections'][0]
+    section['voices']['other']['mode']='omit'
+    section['instrument_modes']['other']['yourmt3:program:48']='sustain'
+    evidence,_,trace=expression_evidence(a,plan,p)
+    assert [n.id for n in evidence]==([notes[0].id] if weight else [])
+    assert trace[notes[1].id]['reason']=='voice_not_selected'
+    if not weight:assert trace[notes[0].id]['reason']=='voice_not_selected'
+
+
+def test_instrument_articulation_override_uses_full_song_context_and_keeps_other_stream():
+    notes=bridge([candidate(0,1,2.5),candidate(0,1.3,2.7),candidate(0,1.6,3),candidate(48,1,3)])
+    a=analysis(notes);a['structure']=edit_boundaries(a['structure'],[1500],a)
+    p=parameters(dict(ln_ratio=1));plan=propose_expression(a,p)
+    for section in plan['sections']:section['voices']['other']['mode']='sustain'
+    plan['sections'][0]['instrument_modes']['other']['yourmt3:program:0']='articulation'
+    evidence,_,trace=expression_evidence(a,plan,p)
+    assert {n.id:n.end for n in evidence}=={
+        notes[0].id:1000,notes[1].id:1300,notes[2].id:3000,notes[3].id:3000}
+    assert trace[notes[1].id]['articulation']['attack_groups']==3
+    assert trace[notes[1].id]['articulation']['continuation']=='next_attack'
+    assert 'articulation' not in trace[notes[2].id]
+    assert 'articulation' not in trace[notes[3].id]
+    a['duration']=None;plan['evidence_signature']=propose_expression(a,p)['evidence_signature']
+    with pytest.raises(ValueError,match='音频时长'):expression_evidence(a,plan,p)
+
+
+def test_instrument_phrase_override_covers_only_its_own_supported_attacks():
+    notes=bridge([candidate(48,1,1.5),candidate(48,1.5,2),candidate(24,1.5,2)])
+    a=analysis(notes)
+    a['phrase_candidates']=[replace(notes[0],end=2000,phrase=True,
+        support=tuple(n.id for n in notes),support_coverage=1.).data()]
+    p=parameters(dict(ln_ratio=1));plan=propose_expression(a,p)
+    plan['sections'][0]['voices']['other']['mode']='onsets'
+    plan['sections'][0]['instrument_modes']['other']['yourmt3:program:48']='phrase'
+    evidence,_,trace=expression_evidence(a,plan,p)
+    assert {n.id:n.end for n in evidence}=={notes[0].id:2000,notes[2].id:1500}
+    assert trace[notes[1].id]['represented_by']==notes[0].id
+    assert trace[notes[2].id]['reason']=='section_onsets'
+    plan['sections'][0]['voices']['other']['mode']='phrase'
+    plan['sections'][0]['instrument_modes']['other']['yourmt3:program:48']='sustain'
+    evidence,_,trace=expression_evidence(a,plan,p)
+    assert {n.id:n.end for n in evidence}=={notes[0].id:1500,notes[1].id:2000,notes[2].id:2000}
+    assert all('represented_by' not in row for row in trace.values())
+
+
+@pytest.mark.parametrize('changed', [{'voice':'bass'}, {'instrument_id':'another'}])
+def test_phrase_cannot_replace_anchor_from_a_different_voice_or_instrument(changed):
+    notes=[Note(1000,1400,voice='other',source='pitch',id='anchor',instrument_id='known'),
+           Note(1500,1800,voice='bass',source='pitch',id='other',instrument_id='known')]
+    a=analysis(notes)
+    a['phrase_candidates']=[replace(notes[0],end=2000,phrase=True,support=('anchor','other'),
+        support_coverage=1.,**changed).data()]
+    p=parameters(dict(ln_ratio=1));plan=propose_expression(a,p)
+    for policy in plan['sections'][0]['voices'].values():policy['mode']='phrase'
+    evidence,_,trace=expression_evidence(a,plan,p)
+    assert {n.id:n.end for n in evidence}=={'anchor':1400,'other':1800}
+    assert all('represented_by' not in row for row in trace.values())
+
+
+@pytest.mark.parametrize('overrides',[
+    None,[],{'unknown':{}},{'other':None},{'other':[]},
+    {'other':{'':'sustain'}},{'other':{12:'sustain'}},{'other':{'missing':'sustain'}},
+    {'other':{'later':'sustain'}},{'other':{'known':'bad'}},{'other':{'known':None}},
+    {'other':{'known':{}}},{'other':{'known':[]}},{'other':{'known':''}},
+])
+def test_invalid_or_nonlocal_instrument_overrides_are_rejected(overrides):
+    notes=[Note(1000,2000,voice='other',id='a',instrument_id='known'),
+           Note(7000,8000,voice='other',id='b',instrument_id='later')]
+    a=analysis(notes);a['structure']=edit_boundaries(a['structure'],[6000],a)
+    plan=propose_expression(a,parameters());plan['sections'][0]['instrument_modes']=overrides
+    with pytest.raises(ValueError,match='乐器表达'):validate_expression(plan,a)
+
+
+def test_instrument_override_cannot_create_two_active_primary_voices():
+    notes=[Note(1000,2000,voice='other',id='a',instrument_id='known'),
+           Note(1000,2000,voice='piano',id='b')]
+    a=analysis(notes);plan=propose_expression(a,parameters())
+    section=plan['sections'][0]
+    section['voices']['piano'].update(mode='sustain',role='primary')
+    section['voices']['other'].update(mode='omit',role='primary')
+    assert validate_expression(plan,a)==plan
+    section['instrument_modes']['other']['known']='sustain'
+    with pytest.raises(ValueError,match='主声部'):validate_expression(plan,a)
 
 
 @pytest.mark.parametrize('value',[True,48.5])

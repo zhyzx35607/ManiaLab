@@ -23,6 +23,24 @@ from .structure import detect_structure
 MODES = ('sustain', 'articulation', 'onsets', 'phrase', 'omit')
 
 
+def _section_instruments(notes, begin, end):
+    instruments = defaultdict(set)
+    for note in notes:
+        identity = note.get('instrument_id', '')
+        if begin <= note['start'] < end and isinstance(identity, str) and identity:
+            instruments[note.get('voice', 'mix')].add(identity)
+    return instruments
+
+
+def _instrument_mode(section, voice, instrument_id):
+    return section.get('instrument_modes', {}).get(voice, {}).get(instrument_id, 'inherit')
+
+
+def _expression_mode(section, voice, instrument_id):
+    mode = _instrument_mode(section, voice, instrument_id)
+    return section['voices'][voice]['mode'] if mode == 'inherit' else mode
+
+
 def signature(analysis):
     payload = [analysis.get('structure'), analysis.get('candidates'), analysis.get('phrase_candidates'),
                analysis.get('duration')]
@@ -72,9 +90,13 @@ def propose_expression(analysis, settings):
                 mode = 'onsets'
             policies[voice] = dict(mode=mode, role='primary' if voice == main else 'support',
                 activity=evidence.get(voice,{}))
+        instruments = _section_instruments(notes, a, b)
         sections.append(dict(start_ms=a, end_ms=b, label=segment.get('label', ''),
             similarity_group=segment.get('similarity_group'), main_voice=main,
-            voices=policies, reason='主声部按检测活动建议，仍需试听确认；长短表达可单独修改。连续起音表达为可选编排方式，不代表手指松键检测。'))
+            voices=policies,
+            instrument_modes={voice: {identity: 'inherit' for identity in sorted(identities)}
+                              for voice, identities in sorted(instruments.items())},
+            reason='主声部按检测活动建议，仍需试听确认；长短表达可单独修改。连续起音表达为可选编排方式，不代表手指松键检测。'))
     return dict(revision=2, source='automatic', evidence_signature=signature(analysis),
         sections=sections, notice='LN 参数用于选择声部表达方向，不强凑全曲比例。段内策略保持一致；短音、停顿和占轨限制仍会影响实际结果。')
 
@@ -96,7 +118,21 @@ def validate_expression(value, analysis):
         for policy in policies.values():
             if not isinstance(policy, dict) or policy.get('mode') not in MODES or policy.get('role') not in ('primary', 'support'):
                 raise ValueError('声部表达只能选择持续音、连续起音优先、起音、连贯乐句或不采')
-        active_primary = [v for v, policy in policies.items() if policy['role'] == 'primary' and policy['mode'] != 'omit']
+        overrides = row.get('instrument_modes', {})
+        if not isinstance(overrides, dict) or not set(overrides) <= voices:
+            raise ValueError('乐器表达必须按当前分析的声部分组')
+        instruments = _section_instruments(analysis.get('candidates', []), segment['start_ms'], segment['end_ms'])
+        for voice, modes in overrides.items():
+            if not isinstance(modes, dict):
+                raise ValueError('乐器表达必须是乐器标识与表达方式的对应表')
+            for identity, mode in modes.items():
+                if not isinstance(identity, str) or not identity or identity not in instruments.get(voice, set()):
+                    raise ValueError('乐器表达包含本段不存在的乐器标识')
+                if mode not in ('inherit', *MODES):
+                    raise ValueError('乐器表达只能选择继承、持续音、连续起音优先、起音、连贯乐句或不采')
+        active_primary = [v for v, policy in policies.items() if policy['role'] == 'primary'
+            and (policy['mode'] != 'omit' or any(mode not in ('inherit', 'omit')
+                 for mode in overrides.get(v, {}).values()))]
         if len(active_primary) > 1:
             raise ValueError('每个段落最多指定一个主声部')
     return value
@@ -115,28 +151,29 @@ def expression_evidence(analysis, plan, settings):
     # Analyse the source's attack context once. Cutting chart sections through
     # a chord or run must not turn its last local object into a phrase ending.
     articulation = {}
-    articulation_voices = {voice for section in plan['sections']
-        for voice, policy in section['voices'].items() if policy['mode']=='articulation'}
+    articulation_streams = {(n.voice, n.instrument_id) for section in plan['sections'] for n in raw
+        if section['start_ms'] <= n.start < section['end_ms']
+        and _expression_mode(section, n.voice, n.instrument_id) == 'articulation'}
     duration = analysis.get('duration')
-    if articulation_voices and (isinstance(duration,bool) or not isinstance(duration,(int,float))
+    if articulation_streams and (isinstance(duration,bool) or not isinstance(duration,(int,float))
             or not math.isfinite(duration) or duration<=0):
         raise ValueError('连续起音表达需要有效的音频时长，请重新分析音频')
-    observed_until = round(duration*1000) if articulation_voices else None
-    for voice in articulation_voices:
-        articulation.update(articulation_policy(
-            [n for n in raw if n.voice==voice and n.strength>=.35], observed_until_ms=observed_until))
+    if articulation_streams:
+        articulation = articulation_policy(
+            [n for n in raw if (n.voice, n.instrument_id) in articulation_streams and n.strength>=.35],
+            observed_until_ms=round(duration*1000))
     for index, section in enumerate(plan['sections']):
         local = [n for n in raw if section['start_ms'] <= n.start < section['end_ms']]
         by_id = {n.id: n for n in local}
         replacements, covered = {}, {}
         for phrase in phrases:
-            policy = section['voices'].get(phrase.voice, {})
-            if (phrase.id not in by_id or policy.get('mode') != 'phrase' or
+            anchor = by_id.get(phrase.id)
+            if (anchor is None or phrase.voice != anchor.voice or phrase.instrument_id != anchor.instrument_id):
+                continue
+            if (_expression_mode(section, anchor.voice, anchor.instrument_id) != 'phrase' or
                     phrase.support_coverage < .95 or phrase.end > section['end_ms']):
                 continue
-            if (phrase.instrument_id != by_id[phrase.id].instrument_id or
-                    phrase.end <= by_id[phrase.id].end or phrase.id in covered or
-                    by_id[phrase.id].strength < .35):
+            if (phrase.end <= anchor.end or phrase.id in covered or anchor.strength < .35):
                 continue
             replacements[phrase.id] = phrase
             # Only strictly interior supported attacks are represented by the
@@ -149,10 +186,13 @@ def expression_evidence(analysis, plan, settings):
                     covered[identity] = phrase.id
         for original in local:
             policy = section['voices'][original.voice]
+            mode = _expression_mode(section, original.voice, original.instrument_id)
             base = dict(id=original.id, voice=original.voice, start=original.start, end=original.end,
-                        instrument_id=original.instrument_id, section=index, mode=policy['mode'], role=policy['role'])
+                        instrument_id=original.instrument_id, section=index, mode=mode, role=policy['role'],
+                        voice_mode=policy['mode'],
+                        instrument_mode=_instrument_mode(section, original.voice, original.instrument_id))
             reason = None
-            if policy['mode'] == 'omit' or p.get(original.voice+'_weight', 1.) <= 0:
+            if mode == 'omit' or p.get(original.voice+'_weight', 1.) <= 0:
                 reason = 'voice_not_selected'
             elif original.strength < .35:
                 reason = 'weak_detection'
@@ -163,9 +203,9 @@ def expression_evidence(analysis, plan, settings):
                 trace[original.id] = dict(base, decision='omitted', reason=reason)
                 continue
             n = replacements.get(original.id, original)
-            hold = n.source == 'pitch' and policy['mode'] != 'onsets' and n.end-n.start >= p['min_ln']
-            reason = 'supported_sustain' if hold else ('section_onsets' if policy['mode'] == 'onsets' else 'short_duration')
-            gesture=articulation.get(original.id) if policy['mode']=='articulation' else None
+            hold = n.source == 'pitch' and mode != 'onsets' and n.end-n.start >= p['min_ln']
+            reason = 'supported_sustain' if hold else ('section_onsets' if mode == 'onsets' else 'short_duration')
+            gesture=articulation.get(original.id) if mode=='articulation' else None
             if gesture is not None:
                 base['articulation']=gesture
                 if gesture['tap']:

@@ -13,4 +13,5 @@
 .structure-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.structure-section{padding:10px 0;border-top:1px solid var(--line,#ddd)}.structure-voices{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.structure-section>.field{max-width:350px}.structure-section summary{cursor:pointer}#expressionAudit button{display:block;text-align:left;max-width:100%}#structureBoundaries{width:100%;box-sizing:border-box}
 
 #providedStemsPanel{margin:14px 0;min-width:0;overflow-wrap:anywhere}#providedStemsPanel input[type=file]{width:100%;min-width:0;max-width:100%;font-size:11px}
+.structure-voice{min-width:0}.instrument-modes{padding:10px;margin:10px 0 0;overflow-wrap:anywhere}.instrument-modes select{max-width:100%;min-width:0}.instrument-modes .field{margin-top:10px}.instrument-modes summary{font-size:12px}
 @media(max-width:540px){.left{grid-template-columns:minmax(0,1fr)}.left section{min-width:0}}
