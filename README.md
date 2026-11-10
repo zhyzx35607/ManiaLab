@@ -26,6 +26,8 @@
 
 **其他乐器采音**：已实际运行 Tsumugi 的贝斯、吉他、人声及其他乐器权重；[完整 100 份吉他／人声结果](docs/tsumugi-guitar-vocal-results.md)显示吉他误采减少但漏音增加，人声两套标注结果一升一降。[候选模型及状态](docs/other-instrument-model-survey-2026-11-10.md)、[35 份弦管乐比较](docs/instrument-extension-results.md)、[ROSVOT 人声退步结果](docs/vocal-transcription-results.md)均保留。开发代码另修正了[起音校准挤在一起和重弹拖尾](docs/basic-pitch-attack-boundary-fix.md)，但完整音符区间仍未整体改善，没有据此发布完成版。
 
+**新增专用模型实测**：已下载并比较小提琴STRAdi、贝斯FiloBass、萨克斯FiloSax及PESTO音高辅助；固定录音的结果未支持替换现有方案，见[模型状态与实测依据](docs/specialist-instrument-models-2026-11-10.md)。源码另修复[钢琴重弹截尾误当LN放手](docs/piano-reattack-boundary.md)，保留起音并公开整曲表达的副作用；这项改动尚未进入旧下载包。
+
 **弦管乐专用对照**：[Tsumugi 完整 35 输入三方结果](docs/tsumugi-urmp-results.md)显示起音和完整区间整体改善，混音漏采减少；中提琴等局部起音仍不如 YourMT3。继续用原 Nova 全曲声轨检查实际编排，并准备[音色分组模型](docs/instrument-refinement-protocol.md)对照；音符指标不等于 LN 音乐验收。
 
 **可选连续起音表达**：逐段声部方案可选择“连续起音优先，组尾可延长”，处理钢琴等敲击序列的相互拖尾。自动推荐保持原行为；新主次/长短建议的两轮全曲结果包含鼓取舍退步，详见[表达对照](docs/articulated-expression-research.md)。
