@@ -180,7 +180,7 @@ def rhythmic_evidence(samples, beats_ms=None, estimate=True):
 
 
 def fuse_attacks(pitched, transients):
-    """Anchor nearby model onsets to measured attacks and avoid duplicate taps."""
+    """Anchor attacks while preserving retriggers and their release bounds."""
     times = np.array([n.start for n in transients])
     if not len(times):
         return pitched, transients, 0
@@ -194,6 +194,33 @@ def fuse_attacks(pitched, transients):
             used.add(j)
             n = replace(n, start=int(times[j]))
         corrected.append(n)
+    tracks = {}
+    for index, note in enumerate(pitched):
+        tracks.setdefault((note.voice, note.instrument_id, note.pitch), []).append(index)
+    for indices in tracks.values():
+        indices.sort(key=lambda i: pitched[i].start)
+        # One broadband transient may support several pitches in a chord, but
+        # must not collapse successive same-pitch attacks onto one timestamp.
+        # Reverting one correction can expose a conflict with its neighbour.
+        while True:
+            reverted = False
+            for left, right in zip(indices, indices[1:]):
+                if (pitched[left].start < pitched[right].start and
+                        corrected[left].start >= corrected[right].start):
+                    for index in (left, right):
+                        if corrected[index].start != pitched[index].start:
+                            corrected[index] = replace(corrected[index], start=pitched[index].start)
+                            reverted = True
+            if not reverted:
+                break
+        for left, right in zip(indices, indices[1:]):
+            note, following = corrected[left], corrected[right]
+            if (note.release_reason == 'same_pitch_reattack' and
+                    note.start < following.start < note.end):
+                # This endpoint was defined by the next attack, not a measured
+                # decay. Carry an earlier corroborated attack into that bound;
+                # a later attack is not evidence to lengthen the old note.
+                corrected[left] = replace(note, end=following.start)
     return corrected, [n for j, n in enumerate(transients) if j not in used], len(used)
 
 
@@ -260,7 +287,7 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     chunks = np.array_split(np.abs(samples), min(2400, len(samples)))
     waveform = [round(float(np.max(x)), 4) for x in chunks]
     candidates = sorted(notes + unmatched, key=lambda n: (n.start, n.pitch))
-    result = {"revision": 7, "duration": duration, "waveform": waveform, "tempo": tempo,
+    result = {"revision": 8, "duration": duration, "waveform": waveform, "tempo": tempo,
             "elapsed_seconds": round(time.perf_counter() - started, 2), "cached": cached is not None,
             "timing_attacks": [n.data() for n in transients], "fused_attacks": fused,
             "release_refinement": releases,
@@ -465,7 +492,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     if use_drums:
         tempo, attacks = cover_missing_timing_windows(tempo,drum_attacks,mix_attacks)
     candidates = sorted(all_candidates, key=lambda n: (n.start, n.pitch, n.voice))
-    result = dict(revision=12, duration=duration, tempo=tempo,
+    result = dict(revision=13, duration=duration, tempo=tempo,
         waveform=[round(float(np.max(x)), 4) for x in np.array_split(np.abs(samples), min(2400, len(samples)))],
         elapsed_seconds=round(time.perf_counter() - started, 2), cached=separation["cached"] and all(pitch_cached),
         timing_attacks=[n.data() for n in attacks], fused_attacks=0, candidates=[n.data() for n in candidates],
