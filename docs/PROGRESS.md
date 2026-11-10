@@ -25,11 +25,21 @@
   `3a1aa6d139d24b41508143e82773973d3789f5f6`；PR检查 `42859344954` 成功。
 - MuScriptor完整结果及独审已通过 PR #7 合入主线，合并提交
   `2510e103ffe83a38ae3fb4963d35a9fe1b498ecf`；PR检查 `42860878982` 成功。
+- 等价候选去重修复已通过 PR #8 合入主线，合并提交
+  `3b11f6d1b0c513b9e83fa2d3c4bc4c9004018933`；PR检查 `42863989466` 成功，
+  GitHub检查1901 passed、85 skipped。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
 ## 本阶段新增
 
+- 音色分组的已知乐器对照已实际启动，尚无完整成绩。复用原35份URMP检测，
+  对比原类别、逐音分类和聚类后类别；不改原音高和起止。旧12-1-vn核身份
+  后复用，其余34份串行，全部结束后读逐音标签。18项查询/计分控制通过。
+  协议见[instrument-family-validation-protocol.md](instrument-family-validation-protocol.md)，
+  入口`scripts/check_instrument_refinement.py`，输出`test-data/instrument-family-validation-v1`。
+  当前shell session `66272`，续接先核实实时状态与日志，不能仅凭本记录
+  重启；每项日志保存在输出根目录，未完成目录不能覆盖。没有改变应用默认。
 - 修复同占用、同强度、同表达含义候选的去重顺序偏置，沿用原对齐评分择优，
   同分按ID；不同尾长、乐句代表和不同表达依据不作等价替换。25项专项及
   相关检查共114 passed。固定《樱花草》6–10K重放、定轨、导出回读通过：
@@ -75,7 +85,7 @@
 原 shell session `69438` 已完成 Mega53 分离及下游采音，但在Harmonica首个
 静音控制的CPU bfloat16 LSTM处报错，已实际exit 1；当时MuScriptor尚未启动。
 显式float32兼容入口已修复，新串行session `54376`已完成Harmonica全部输入
-及MuScriptor全部36输入、评分，实际exit 0。当前没有排队的神经推理。
+及MuScriptor全部36输入、评分，实际exit 0。本轮另启动音色分组验证，见上。
 session/PID 仅用于本次会话定位，重开后先
 确认命令行和启动时间，不能凭旧PID启动、结束或重复任务。
 
@@ -126,5 +136,7 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 下一步仍从原Nova other三个固定片段定位实际采音与段落表达问题。
   已证实的去重偏置已修，不重复模型搜索或继续用其解释全部省略；不能把
   65个大移动当作65个已确认错音，不能为减小移动量统一调Offset。
+- 当前先完成音色分组已知类别对照，判断模型改名是否真的减少错误。
+  它不能补漏音、改起止或证明独立物理声部；不按标签切换减少就启用。
 - 下一次提交更新本文件并单独开 PR、检查、合并。已有源码与小阶段记录
   保存在 GitHub；本地 ignored 音频/权重仍需本机保留，GitHub源码不包含它们。
