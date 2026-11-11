@@ -12,9 +12,11 @@ from manialab.pattern_sequence import (
     FEATURE_SCHEMA_COUNTS,
     FEATURE_SCHEMA_NAMES,
     LN_INTERACTION_SCHEMA,
+    LN_PHRASE_CONTEXT_SCHEMA,
     ROW_WIDTH,
     window_features,
     window_features_with_ln_interactions,
+    window_features_with_ln_phrase_context,
 )
 from manialab.sequence_prior import (
     SequencePrior,
@@ -22,6 +24,7 @@ from manialab.sequence_prior import (
     load_sequence_prior,
     score_sequence_windows,
     sequence_beat_clock,
+    sequence_beat_positions,
     sequence_window_features,
     sequence_windows_features,
 )
@@ -131,6 +134,49 @@ def test_ln_interaction_sequence_encoder_matches_training_for_single_and_batch()
         batch[1],
         sequence_window_features(window[:2], 6, LN_INTERACTION_SCHEMA),
     )
+
+
+def test_phrase_context_runtime_encoder_matches_integrated_timing_training_schema():
+    initial_ends = (1500, -100000, -100000, -100000, -100000, -100000)
+    initial_last = (0, -100000, -100000, -100000, -100000, -100000)
+    rows = (
+        SequenceRow(
+            1000, 250, ((2, 1000),), initial_ends, initial_last,
+            beat_position=3.0,
+            note_end_positions=(3.0,),
+            initial_end_positions=(5.0, None, None, None, None, None),
+            initial_last_positions=(0.0, None, None, None, None, None),
+        ),
+        SequenceRow(
+            1500, 250, ((0, 1500),), initial_ends, initial_last,
+            beat_position=5.0,
+            note_end_positions=(5.0,),
+            initial_end_positions=(5.0, None, None, None, None, None),
+            initial_last_positions=(0.0, None, None, None, None, None),
+        ),
+    )
+    expected = window_features_with_ln_phrase_context(
+        [row.feature_row() for row in rows],
+        6,
+        [row.beat_ms for row in rows],
+        initial_ends=initial_ends,
+        initial_last=initial_last,
+        beat_positions=[3.0, 5.0],
+        initial_end_positions=(5.0, None, None, None, None, None),
+        initial_last_positions=(0.0, None, None, None, None, None),
+    )
+    actual = sequence_window_features(
+        rows, 6, LN_PHRASE_CONTEXT_SCHEMA
+    )
+    batch = sequence_windows_features(
+        [rows], 6, LN_PHRASE_CONTEXT_SCHEMA
+    )
+
+    assert actual.shape == (
+        FEATURE_SCHEMA_COUNTS[LN_PHRASE_CONTEXT_SCHEMA],
+    )
+    np.testing.assert_array_equal(actual, expected)
+    np.testing.assert_array_equal(batch[0], expected)
 
 
 def test_batched_sequence_features_match_training_encoder_for_mixed_windows():
@@ -271,6 +317,22 @@ def test_sequence_timing_guard_is_shared_with_training():
     ]
 
 
+def test_sequence_beat_positions_integrate_valid_redlines_and_ignore_bad_lines():
+    points = [
+        "0,500,4,2,0,70,1,0",
+        "500,250,4,2,0,70,1,0",
+        "1000,10001,4,2,0,70,1,0",
+        "1250,125,4,2,0,70,0,0",
+        "1500,400,4,2,0,70,1,0",
+    ]
+
+    positions = sequence_beat_positions(
+        [0, 500, 1000, 1500, 1900], points
+    )
+
+    np.testing.assert_allclose(positions, [0, 1, 3, 5, 6])
+
+
 def test_beam_sequence_context_retains_full_rows_and_scores_each_window(monkeypatch):
     prior = SequencePrior((), "fixture")
     captured = []
@@ -370,6 +432,60 @@ def test_beam_window_keeps_ln_occupancy_from_before_its_left_edge(monkeypatch):
         crossing_windows[0][0].initial_last[lane] == 500
         and row_data[0, lane * 9 + 3] == 1
         for lane in active_lanes
+    )
+
+
+def test_phrase_context_beam_retains_eight_beats_across_tempo_changes(monkeypatch):
+    prior = SequencePrior(
+        (), "fixture", feature_schema=LN_PHRASE_CONTEXT_SCHEMA
+    )
+    captured = []
+
+    def capture(windows, keys, model):
+        captured.extend(windows)
+        return np.zeros(len(windows), dtype=np.float32)
+
+    monkeypatch.setattr(layout, "score_sequence_windows", capture)
+    notes = [
+        Note(start, 3000 if start == 0 else start, lane=-1,
+             source="other", id=f"event-{start}")
+        for start in range(0, 5001, 250)
+    ]
+    notes[0] = Note(0, 3000, lane=-1, source="other", id="phrase-ln")
+    settings = parameters({
+        "keys": 6,
+        "pitch_follow": 0,
+        "balance": 0,
+        "jack_avoid": 0,
+        "pattern_prior": 0,
+    })
+
+    output = layout.search_layout(
+        notes,
+        settings,
+        width=2,
+        timing_points=[
+            "0,500,4,2,0,70,1,0",
+            "3000,250,4,2,0,70,1,0",
+        ],
+        sequence_prior=prior,
+    )
+    late_windows = [
+        window for window in captured
+        if window[-1].start_ms == 5000
+    ]
+
+    assert invariant(output) == invariant(notes)
+    assert validate(output, 6)["valid"]
+    assert late_windows
+    assert all(len(window) > 4 for window in late_windows)
+    assert all(
+        window[-1].beat_position - window[0].beat_position <= 8
+        for window in late_windows
+    )
+    assert all(
+        window[-1].beat_position == pytest.approx(14.0)
+        for window in late_windows
     )
 
 

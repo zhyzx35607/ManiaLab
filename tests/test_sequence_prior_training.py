@@ -9,11 +9,17 @@ from manialab.pattern_sequence import (
     FEATURE_COUNT,
     FEATURE_SCHEMA_COUNTS,
     FEATURE_SCHEMA_NAMES,
+    LN_INTERACTION_FEATURE_NAMES,
     LN_INTERACTION_SCHEMA,
+    LN_PHRASE_CONTEXT_FEATURES,
+    LN_PHRASE_CONTEXT_FEATURE_NAMES,
+    LN_PHRASE_CONTEXT_SCHEMA,
+    window_features_with_ln_phrase_context,
 )
 from scripts.train_sequence_prior import (
     CACHE_REVISION,
     LN_INTERACTION_CACHE_REVISION,
+    LN_PHRASE_CONTEXT_CACHE_REVISION,
     LN_TRANSITION_CACHE_REVISION,
     NEGATIVE_POLICY_LN_TRANSITION,
     MAX_SEQUENCE_BEAT_MS,
@@ -28,6 +34,10 @@ from scripts.train_sequence_prior import (
     _sequence_beat_clock,
     _training_keys,
     chart_samples,
+)
+from scripts.evaluate_sequence_prior_groups import (
+    CACHE_FILE_SUFFIXES,
+    _validate_report_config,
 )
 from scripts.train_pattern_prior import split_for
 
@@ -161,6 +171,99 @@ def test_ln_interaction_schema_appends_features_and_requires_hard_negatives():
         chart_samples(
             notes, 6, 31, feature_schema=LN_INTERACTION_SCHEMA
         )
+
+
+def test_phrase_context_samples_rolling_eight_beats_and_requires_hard_negatives():
+    notes = [Note(0, 3000, lane=0, id="long-ln")]
+    notes.extend(
+        Note(start, start, lane=1 + (index % 5), id=f"tap-{index}")
+        for index, start in enumerate(range(250, 5001, 250))
+    )
+
+    positive, negative, context = chart_samples(
+        notes,
+        6,
+        37,
+        windows_per_chart=10,
+        negatives=1,
+        negative_policy=NEGATIVE_POLICY_LN_TRANSITION,
+        feature_schema=LN_PHRASE_CONTEXT_SCHEMA,
+    )
+
+    assert positive.shape[1] == FEATURE_SCHEMA_COUNTS[LN_PHRASE_CONTEXT_SCHEMA]
+    assert negative.shape == (len(positive), 1, positive.shape[1])
+    assert context.any()
+    summary_start = FEATURE_COUNT + len(LN_INTERACTION_FEATURE_NAMES)
+    phrase_width = len(LN_PHRASE_CONTEXT_FEATURE_NAMES)
+    tap_index = LN_PHRASE_CONTEXT_FEATURES.index("tap_heads")
+    phrase = positive[:, summary_start:].reshape(
+        len(positive), 16, phrase_width // 16
+    )
+    assert np.any(phrase[:, :, tap_index].sum(axis=1) > 4 / 6)
+
+    with pytest.raises(ValueError, match="require the LN-transition"):
+        chart_samples(
+            notes,
+            6,
+            37,
+            feature_schema=LN_PHRASE_CONTEXT_SCHEMA,
+        )
+
+
+def test_phrase_hard_negative_changes_a_contiguous_multirow_layout():
+    rows = [
+        (1000, [Note(1000, 3000, lane=0, id="hold")]),
+        (1250, [Note(1250, 1250, lane=2, id="tap-a")]),
+        (1500, [Note(1500, 1500, lane=2, id="tap-b")]),
+    ]
+    options = [[(0,)], [(1,), (2,), (4,)], [(1,), (2,), (4,)]]
+    actual = [(0,), (2,), (2,)]
+    initial = np.full(6, -100000, dtype=np.int64)
+
+    positive = window_features_with_ln_phrase_context(
+        [
+            {
+                "start_ms": start,
+                "notes": [
+                    (int(lane), int(note.end))
+                    for lane, note in zip(lanes, row_notes)
+                ],
+            }
+            for (start, row_notes), lanes in zip(rows, actual)
+        ],
+        6,
+        [500, 500, 500],
+        initial_ends=initial,
+        initial_last=initial,
+    )
+    diagnostics = {
+        "phrase_multirow_search_trials": 0,
+        "phrase_single_row_fallback_trials": 0,
+        "phrase_multirow_negatives_found": 0,
+        "phrase_single_row_negatives_found": 0,
+    }
+    found, _, _ = _find_ln_transition_negatives(
+        rows,
+        options,
+        actual,
+        6,
+        [500, 500, 500],
+        initial,
+        initial,
+        np.random.default_rng(41),
+        1,
+        feature_schema=LN_PHRASE_CONTEXT_SCHEMA,
+        phrase_search_diagnostics=diagnostics,
+    )
+
+    assert len(found) == 1
+    assert diagnostics["phrase_multirow_search_trials"] > 0
+    assert diagnostics["phrase_multirow_negatives_found"] == 1
+    assert diagnostics["phrase_single_row_fallback_trials"] == 0
+    local_positive = positive[: 4 * 94].reshape(4, 94)
+    local_negative = found[0][: 4 * 94].reshape(4, 94)
+    changed_rows = np.any(local_positive != local_negative, axis=1)
+    assert changed_rows.sum() >= 2
 
 
 def test_ln_interaction_negatives_ignore_unencoded_pre_window_releases():
@@ -327,6 +430,37 @@ def test_ln_transition_policy_has_an_isolated_cache_revision():
     assert CACHE_REVISION == "sequence-window-cache-v3"
     assert LN_TRANSITION_CACHE_REVISION == "sequence-window-cache-v4-ln-transition"
     assert LN_INTERACTION_CACHE_REVISION == "sequence-window-cache-v5-ln-interactions"
+    assert LN_PHRASE_CONTEXT_CACHE_REVISION == (
+        "sequence-window-cache-v7-ln-phrase-context"
+    )
+    assert CACHE_FILE_SUFFIXES[LN_PHRASE_CONTEXT_CACHE_REVISION] == (
+        "sequence-window-v7-ln-phrase-context.npz"
+    )
+
+
+def test_phrase_context_report_requires_integrated_timing_and_revision():
+    feature_names = list(FEATURE_SCHEMA_NAMES[LN_PHRASE_CONTEXT_SCHEMA])
+    report = {
+        "revision": LN_PHRASE_CONTEXT_SCHEMA,
+        "feature_names": feature_names,
+        "prep": {"configs": {
+            "cache_revision": LN_PHRASE_CONTEXT_CACHE_REVISION,
+            "feature_count": FEATURE_SCHEMA_COUNTS[LN_PHRASE_CONTEXT_SCHEMA],
+            "feature_schema_sha256": _feature_schema_sha256(feature_names),
+            "feature_schema": LN_PHRASE_CONTEXT_SCHEMA,
+            "beat_reference": "integrated_redline_beats",
+            "phrase_context_beats": 8.0,
+        }},
+    }
+
+    assert _validate_report_config(report)["cache_revision"] == (
+        LN_PHRASE_CONTEXT_CACHE_REVISION
+    )
+
+    changed = json.loads(json.dumps(report))
+    changed["prep"]["configs"]["phrase_context_beats"] = 4.0
+    with pytest.raises(ValueError, match="Phrase-context report/cache schema"):
+        _validate_report_config(changed)
 
 
 def test_training_key_selection_defaults_to_all_available_or_one_specialist():

@@ -24,27 +24,7 @@ from manialab.pattern_prior import NETWORK_FEATURES,network_features,mirror_feat
 from scripts.train_pattern_prior import split_for
 
 
-def records_and_groups(root):
-    records=[json.loads(line) for p in sorted(root.glob('manifest-*.jsonl')) for line in p.read_text(encoding='utf-8').splitlines() if line]
-    selected,seen,excluded=[],set(),Counter()
-    for r in records:
-        if r.get('approved') not in (1,2,4):
-            excluded['status_not_ranked_loved']+=1;continue
-        if not r.get('eligible'):
-            excluded['ineligible']+=1;continue
-        if r['sha256'] in seen:
-            excluded['duplicate_bytes']+=1;continue
-        seen.add(r['sha256'])
-        raw=(root/'maps'/f"{r['beatmap_id']}.osu").read_bytes()
-        if hashlib.sha256(raw).hexdigest()!=r['sha256']:
-            excluded['chart_hash_mismatch']+=1;continue
-        style=' '.join(str(r.get(k,'')) for k in ('title','version','tags')).casefold()
-        # A labelled 4+6K pack is not training evidence for a 5+5 hand layout.
-        if r['keys']==10 and re.search(r'\b(?:4k?\s*\+\s*6k?|6k?\s*\+\s*4k?)\b',style):
-            excluded['asymmetric_10k']+=1;continue
-        if r['keys']==8 and re.search(r'\b(?:7k?\s*\+\s*1k?|1k?\s*\+\s*7k?|iidx)\b',style):
-            excluded['scratch_8k']+=1;continue
-        selected.append(r)
+def _attach_song_groups(selected):
     parent={}
     def find(x):
         parent.setdefault(x,x)
@@ -59,7 +39,72 @@ def records_and_groups(root):
         if r.get('audio_hash'):union(song,'audio:'+r['audio_hash'])
         for alias in r.get('related_song_keys',[]):union(song,'song:'+alias)
         for alias in r.get('related_audio_hashes',[]):union(song,'audio:'+alias)
-    return [r|dict(group=find('song:'+r['song_key'])) for r in selected],dict(excluded)
+    return [r|dict(group=find('song:'+r['song_key'])) for r in selected]
+
+
+def _style_exclusion(r):
+    style=' '.join(str(r.get(k,'')) for k in ('title','version','tags')).casefold()
+    # A labelled 4+6K pack is not training evidence for a 5+5 hand layout.
+    if r['keys']==10 and re.search(r'\b(?:4k?\s*\+\s*6k?|6k?\s*\+\s*4k?)\b',style):
+        return 'asymmetric_10k'
+    if r['keys']==8 and re.search(r'\b(?:7k?\s*\+\s*1k?|1k?\s*\+\s*7k?|iidx)\b',style):
+        return 'scratch_8k'
+    return None
+
+
+def records_and_groups(root, *, exclude_splits=(), split_seed=None):
+    records=[json.loads(line) for p in sorted(root.glob('manifest-*.jsonl')) for line in p.read_text(encoding='utf-8').splitlines() if line]
+    selected,seen,excluded=[],set(),Counter()
+    if isinstance(exclude_splits,str):
+        raise ValueError('exclude_splits must be an iterable of split names')
+    exclude_splits=set(exclude_splits)
+    if exclude_splits - {'train','validation','test'}:
+        raise ValueError('exclude_splits contains an unknown split')
+    if exclude_splits:
+        candidates=[]
+        for r in records:
+            if r.get('approved') not in (1,2,4):
+                excluded['status_not_ranked_loved']+=1;continue
+            if not r.get('eligible'):
+                excluded['ineligible']+=1;continue
+            if r['sha256'] in seen:
+                excluded['duplicate_bytes']+=1;continue
+            seen.add(r['sha256'])
+            style_exclusion=_style_exclusion(r)
+            if style_exclusion:
+                excluded[style_exclusion]+=1;continue
+            candidates.append(r)
+
+        # Group identities use manifest metadata first so split membership is
+        # known before any chart file in an excluded split is opened.
+        grouped=_attach_song_groups(candidates)
+        for r in grouped:
+            split=split_for(r['group'],seed=split_seed)
+            if split in exclude_splits:
+                excluded[f'split_{split}_excluded']+=1
+                continue
+            raw=(root/'maps'/f"{r['beatmap_id']}.osu").read_bytes()
+            if hashlib.sha256(raw).hexdigest()!=r['sha256']:
+                excluded['chart_hash_mismatch']+=1;continue
+            selected.append(r)
+        return selected,dict(excluded)
+
+    for r in records:
+        if r.get('approved') not in (1,2,4):
+            excluded['status_not_ranked_loved']+=1;continue
+        if not r.get('eligible'):
+            excluded['ineligible']+=1;continue
+        if r['sha256'] in seen:
+            excluded['duplicate_bytes']+=1;continue
+        seen.add(r['sha256'])
+        raw=(root/'maps'/f"{r['beatmap_id']}.osu").read_bytes()
+        if hashlib.sha256(raw).hexdigest()!=r['sha256']:
+            excluded['chart_hash_mismatch']+=1;continue
+        style_exclusion=_style_exclusion(r)
+        if style_exclusion:
+            excluded[style_exclusion]+=1;continue
+        selected.append(r)
+    return _attach_song_groups(selected),dict(excluded)
 
 
 def samples(parsed,seed,limit=250):
