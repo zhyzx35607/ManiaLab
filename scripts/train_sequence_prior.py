@@ -6,6 +6,7 @@ attacks, change LN endpoints, or certify that a chart is musical.
 from __future__ import annotations
 
 import argparse
+from bisect import bisect_left, bisect_right
 from collections import Counter, defaultdict
 import hashlib
 import json
@@ -17,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 
 from manialab.domain import parse_osu, validate
-from manialab.layout import release_choices
+from manialab.layout import fingers, release_choices
 from manialab.pattern_prior import score_network
 from manialab.pattern_sequence import (
     FEATURE_COUNT,
@@ -37,8 +38,22 @@ DEFAULT_WINDOWS_PER_CHART = 80
 DEFAULT_NEGATIVES = 2
 DEFAULT_GROUP_WINDOW_BUDGET = 1000
 CACHE_REVISION = "sequence-window-cache-v3"
+LN_TRANSITION_CACHE_REVISION = "sequence-window-cache-v4-ln-transition"
+NEGATIVE_POLICY_RANDOM = "random-feasible"
+NEGATIVE_POLICY_LN_TRANSITION = "ln-transition-hard"
+NEGATIVE_POLICIES = (NEGATIVE_POLICY_RANDOM, NEGATIVE_POLICY_LN_TRANSITION)
 SAKURA_SET_ID = 2644803
 SAKURA_BEATMAP_IDS = frozenset((5969639, 5969640))
+UNKNOWN_TIME = -100000
+LN_TRANSITION_KINDS = (
+    "inverse_heads",
+    "reverse_shield_heads",
+    "shield_heads",
+    "same_hand_hybrid_taps",
+    "split_release_hands",
+    "release_press_hands",
+    "near_release_press_hands",
+)
 
 
 def _feature_schema_sha256(names=FEATURE_NAMES):
@@ -67,6 +82,10 @@ def _empty_sampling_diagnostics():
         sampled_tap_windows=0,
         retained_ln_windows=0,
         retained_tap_windows=0,
+        ln_transition_search_trials=0,
+        ln_transition_negative_examples_found=0,
+        ln_transition_failed_windows=0,
+        ln_transition_changed_kinds={kind: 0 for kind in LN_TRANSITION_KINDS},
         max_chord_size_histograms=dict(sampled={}, retained={}, negative_failed={}),
     )
 
@@ -138,20 +157,148 @@ def _same_under_mirroring(a, b, keys):
             or np.array_equal(a, mirror_window_features(b, keys)))
 
 
+def _ln_transition_signature(rows, assignments, keys, beat_lengths,
+                             initial_ends, initial_last, initial_lns=()):
+    """Count lane-dependent LN transitions for one feasible window layout."""
+    profile = fingers(keys)
+    hands = np.array([
+        (.5, .5) if hand == 2 else (1., 0.) if hand == 0 else (0., 1.)
+        for hand, _ in profile
+    ])
+    ends = np.asarray(initial_ends, dtype=np.int64).copy()
+    last = np.asarray(initial_last, dtype=np.int64).copy()
+    counts = Counter()
+    prior_lns = list(initial_lns)
+
+    for (start, notes), lanes, beat_ms in zip(rows, assignments, beat_lengths):
+        prior_hold = (last != UNKNOWN_TIME) & (ends > last)
+        active = prior_hold & (ends > start)
+        released = prior_hold & (ends == start)
+        assigned = [int(lane) for lane in lanes]
+        tap_lanes = [
+            lane for lane, note in zip(assigned, notes) if note.end == start
+        ]
+        release_window = max(40., min(150., beat_ms * .25))
+        inverse_window = min(150., beat_ms * .3)
+
+        for lane, note in zip(assigned, notes):
+            if last[lane] != UNKNOWN_TIME:
+                gap = start - int(ends[lane])
+                if prior_hold[lane] and 0 < gap <= inverse_window:
+                    kind = "inverse_heads" if note.end > start else "reverse_shield_heads"
+                    counts[kind] += 1
+                elif (not prior_hold[lane] and note.end > start
+                      and 0 < start - int(last[lane]) <= inverse_window):
+                    counts["shield_heads"] += 1
+
+        for hand_index in (0, 1):
+            in_hand = hands[:, hand_index] > 0
+            held_in_hand = bool(np.any(active & in_hand))
+            released_in_hand = bool(np.any(released & in_hand))
+            continuing_in_hand = held_in_hand
+            heads_in_hand = any(in_hand[lane] for lane in assigned)
+
+            if released_in_hand and continuing_in_hand:
+                counts["split_release_hands"] += 1
+            if released_in_hand and heads_in_hand:
+                counts["release_press_hands"] += 1
+            nearby_release = any(
+                note_start < start
+                and 1 < abs(note_end - start) < release_window
+                and in_hand[lane]
+                for note_start, note_end, lane in prior_lns
+            )
+            if nearby_release and heads_in_hand:
+                counts["near_release_press_hands"] += 1
+
+        for lane in tap_lanes:
+            if np.any(active & (hands @ hands[lane] > 0)):
+                counts["same_hand_hybrid_taps"] += 1
+
+        for lane, note in zip(assigned, notes):
+            ends[lane], last[lane] = note.end, start
+            if note.end > start:
+                prior_lns.append((start, note.end, lane))
+
+    return tuple((kind, int(counts[kind])) for kind in LN_TRANSITION_KINDS)
+
+
+def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
+                                  initial_ends, initial_last, rng, count,
+                                  initial_lns=()):
+    """Find feasible one-row alternatives that change an LN transition type."""
+    positive_signature = _ln_transition_signature(
+        rows, actual, keys, beat_lengths, initial_ends, initial_last,
+        initial_lns)
+    positive_features = window_features(
+        _as_rows(rows, actual), keys, beat_lengths,
+        initial_ends=initial_ends, initial_last=initial_last)
+    eligible = [
+        index for index, candidates in enumerate(options)
+        if any(value != actual[index] for value in candidates)
+    ]
+    if not eligible:
+        return [], 0, {}
+
+    found, seen = [], []
+    trials = 0
+    changed_kind_counts = Counter()
+    for _ in range(max(count * 80, 80)):
+        if len(found) >= count:
+            break
+        trials += 1
+        target = int(rng.choice(eligible))
+        path = _negative_path(
+            rows, options, actual, {target}, initial_ends, initial_last, rng
+        )
+        if path is None or path == actual:
+            continue
+        negative_signature = _ln_transition_signature(
+            rows, path, keys, beat_lengths, initial_ends, initial_last,
+            initial_lns)
+        positive_counts = dict(positive_signature)
+        negative_counts = dict(negative_signature)
+        changed_kinds = [
+            kind for kind in LN_TRANSITION_KINDS
+            if positive_counts[kind] != negative_counts[kind]
+        ]
+        if not changed_kinds:
+            continue
+        negative = window_features(
+            _as_rows(rows, path), keys, beat_lengths,
+            initial_ends=initial_ends, initial_last=initial_last)
+        if _same_under_mirroring(positive_features, negative, keys):
+            continue
+        if any(_same_under_mirroring(old, negative, keys) for old in seen):
+            continue
+        found.append(negative)
+        seen.append(negative)
+        changed_kind_counts.update(changed_kinds)
+    return found, trials, dict(changed_kind_counts)
+
+
 def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
                   negatives=DEFAULT_NEGATIVES, timing_points=(),
+                  negative_policy=NEGATIVE_POLICY_RANDOM,
                   return_diagnostics=False):
     """Build positive and feasible local-perturbation windows for one chart."""
     if keys not in range(6, 11):
         raise ValueError("only 6K through 10K charts are supported")
     if windows_per_chart <= 0 or negatives <= 0:
         raise ValueError("window and negative budgets must be positive")
+    if negative_policy not in NEGATIVE_POLICIES:
+        raise ValueError(f"unsupported negative policy: {negative_policy}")
     rows_by_start = defaultdict(list)
     clock, ignored_red_timing_points = _sequence_beat_clock(timing_points, 500)
     for note in notes:
         rows_by_start[note.start].append(note)
     ordered = [(start, sorted(row, key=lambda n: n.lane))
                for start, row in sorted(rows_by_start.items())]
+    ln_releases = sorted(
+        (note.end, note.start, note.lane)
+        for _, row in ordered for note in row if note.hold
+    )
+    ln_release_ends = [event[0] for event in ln_releases]
     diagnostics = _empty_sampling_diagnostics()
     diagnostics["candidate_event_windows"] = len(ordered)
     diagnostics["ignored_red_timing_points"] = ignored_red_timing_points
@@ -207,6 +354,15 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
             diagnostics["sampled_tap_windows"] += 1
         initial_ends, initial_last = pre_ends[first_index], pre_last[first_index]
         beat_lengths = [clock(start) for start, _ in window]
+        initial_lns = set()
+        for start, _ in window:
+            begin = bisect_left(ln_release_ends, start - 150)
+            end = bisect_right(ln_release_ends, start + 150)
+            initial_lns.update(
+                event for event in ln_releases[begin:end]
+                if event[1] < window[0][0] and event[1] < start
+            )
+        initial_lns = tuple(sorted(initial_lns))
         actual = [tuple(note.lane for note in row) for _, row in window]
         options = []
         for (_, row), actual_lanes in zip(window, actual):
@@ -218,33 +374,44 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
         positive = window_features(
             _as_rows(window, actual), keys, beat_lengths,
             initial_ends=initial_ends, initial_last=initial_last)
-        # Use each chart's valid positive path as a starting point; negatives
-        # alter one to three rows and keep every original event and LN endpoint.
-        found = []
-        seen = []
-        search_trials = 0
-        eligible = [index for index, choices in enumerate(options)
-                    if any(value != actual[index] for value in choices)]
-        for _ in range(max(negatives * 40, 40)):
-            if len(found) >= negatives or not eligible:
-                break
-            search_trials += 1
-            count = int(rng.choice([1, 1, 2, 2, 3]))
-            count = min(count, len(eligible))
-            targets = set(map(int, rng.choice(eligible, count, replace=False)))
-            path = _negative_path(window, options, actual, targets,
-                                  initial_ends, initial_last, rng)
-            if path is None or path == actual:
-                continue
-            negative = window_features(
-                _as_rows(window, path), keys, beat_lengths,
-                initial_ends=initial_ends, initial_last=initial_last)
-            if _same_under_mirroring(positive, negative, keys):
-                continue
-            if any(_same_under_mirroring(old, negative, keys) for old in seen):
-                continue
-            found.append(negative)
-            seen.append(negative)
+        if (negative_policy == NEGATIVE_POLICY_LN_TRANSITION
+                and contexts[end_index]):
+            found, search_trials, changed_kinds = _find_ln_transition_negatives(
+                window, options, actual, keys, beat_lengths,
+                initial_ends, initial_last, rng, negatives, initial_lns)
+            diagnostics["ln_transition_search_trials"] += search_trials
+            diagnostics["ln_transition_negative_examples_found"] += len(found)
+            for kind, count in changed_kinds.items():
+                diagnostics["ln_transition_changed_kinds"][kind] += count
+            if len(found) != negatives:
+                diagnostics["ln_transition_failed_windows"] += 1
+        else:
+            # Keep the original policy for tap windows and existing experiments.
+            found = []
+            seen = []
+            search_trials = 0
+            eligible = [index for index, choices in enumerate(options)
+                        if any(value != actual[index] for value in choices)]
+            for _ in range(max(negatives * 40, 40)):
+                if len(found) >= negatives or not eligible:
+                    break
+                search_trials += 1
+                count = int(rng.choice([1, 1, 2, 2, 3]))
+                count = min(count, len(eligible))
+                targets = set(map(int, rng.choice(eligible, count, replace=False)))
+                path = _negative_path(window, options, actual, targets,
+                                      initial_ends, initial_last, rng)
+                if path is None or path == actual:
+                    continue
+                negative = window_features(
+                    _as_rows(window, path), keys, beat_lengths,
+                    initial_ends=initial_ends, initial_last=initial_last)
+                if _same_under_mirroring(positive, negative, keys):
+                    continue
+                if any(_same_under_mirroring(old, negative, keys) for old in seen):
+                    continue
+                found.append(negative)
+                seen.append(negative)
         diagnostics["negative_examples_found"] += len(found)
         diagnostics["negative_search_trials"] += search_trials
         if len(found) != negatives:
@@ -289,18 +456,28 @@ def _sakura_holdout_groups(records):
 def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             negatives=DEFAULT_NEGATIVES,
             group_window_budget=DEFAULT_GROUP_WINDOW_BUDGET,
-            max_maps_per_split=None):
+            max_maps_per_split=None,
+            negative_policy=NEGATIVE_POLICY_RANDOM):
+    if negative_policy not in NEGATIVE_POLICIES:
+        raise ValueError(f"unsupported negative policy: {negative_policy}")
     records, excluded = records_and_groups(root)
     holdout_groups = _sakura_holdout_groups(records)
     selected = [row for row in records if row["group"] not in holdout_groups]
     cache.mkdir(parents=True, exist_ok=True)
+    cache_revision = (
+        LN_TRANSITION_CACHE_REVISION
+        if negative_policy == NEGATIVE_POLICY_LN_TRANSITION
+        else CACHE_REVISION
+    )
     configs = dict(windows_per_chart=windows_per_chart, negatives=negatives,
                    feature_count=FEATURE_COUNT,
-                   cache_revision=CACHE_REVISION,
+                   cache_revision=cache_revision,
                    feature_schema_sha256=_feature_schema_sha256(),
                    seed=SEED,
                    beat_reference="tempo_at_each_row",
                    max_sequence_beat_ms=MAX_SEQUENCE_BEAT_MS)
+    if negative_policy != NEGATIVE_POLICY_RANDOM:
+        configs["negative_policy"] = negative_policy
     arrays = defaultdict(lambda: [[], [], []])
     statistics = defaultdict(lambda: dict(maps=0, groups=set(), windows=0, ln_windows=0))
     sampling_statistics = defaultdict(lambda: dict(
@@ -310,6 +487,10 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
         ignored_red_timing_points=0,
         sampled_ln_windows=0, sampled_tap_windows=0,
         retained_ln_windows=0, retained_tap_windows=0,
+        ln_transition_search_trials=0,
+        ln_transition_negative_examples_found=0,
+        ln_transition_failed_windows=0,
+        ln_transition_changed_kinds={kind: 0 for kind in LN_TRANSITION_KINDS},
         max_chord_size_histograms=dict(sampled={}, retained={}, negative_failed={}),
     ))
     per_group_maps = Counter((row["keys"], row["group"]) for row in selected)
@@ -325,7 +506,12 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
                 and seen_split_maps[split_key] >= max_maps_per_split):
             continue
         seen_split_maps[split_key] += 1
-        path = cache / f"{row['sha256']}-{row['beatmap_id']}-sequence-window-v3.npz"
+        cache_suffix = (
+            "sequence-window-v4-ln-transition"
+            if negative_policy == NEGATIVE_POLICY_LN_TRANSITION
+            else "sequence-window-v3"
+        )
+        path = cache / f"{row['sha256']}-{row['beatmap_id']}-{cache_suffix}.npz"
         if path.exists():
             positive, negative, context, diagnostics = _load_chart_cache(path, configs)
         else:
@@ -338,6 +524,7 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             positive, negative, context, diagnostics = chart_samples(
                 chart["notes"], key, SEED + int(row["beatmap_id"]),
                 windows_per_chart=windows_per_chart, negatives=negatives,
+                negative_policy=negative_policy,
                 timing_points=chart["timing"], return_diagnostics=True)
             np.savez_compressed(path, positive=positive, negative=negative,
                                 context=context,
@@ -353,8 +540,12 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             "ignored_red_timing_points",
             "sampled_ln_windows", "sampled_tap_windows",
             "retained_ln_windows", "retained_tap_windows",
+            "ln_transition_search_trials", "ln_transition_negative_examples_found",
+            "ln_transition_failed_windows",
         ):
-            sampling[field] += int(diagnostics[field])
+            sampling[field] += int(diagnostics.get(field, 0))
+        for kind, count in diagnostics.get("ln_transition_changed_kinds", {}).items():
+            sampling["ln_transition_changed_kinds"][kind] += int(count)
         for kind, histogram in diagnostics["max_chord_size_histograms"].items():
             aggregate = sampling["max_chord_size_histograms"][kind]
             for chord_size, count in histogram.items():
@@ -499,7 +690,8 @@ def train(args):
         windows_per_chart=args.windows_per_chart,
         negatives=args.negatives,
         group_window_budget=args.group_window_budget,
-        max_maps_per_split=args.max_maps_per_split)
+        max_maps_per_split=args.max_maps_per_split,
+        negative_policy=args.negative_policy)
     train_keys = [key for key in range(6, 11) if (key, "train") in data]
     if not train_keys or not any((key, "validation") in data for key in train_keys):
         raise ValueError("Need training and validation groups before fitting")
@@ -594,7 +786,8 @@ def train(args):
         seed=SEED,
         method=("4-row fixed-time windows; feasible 1–3-row lane perturbations; "
                 "song/set/audio-group split; LN/tap-balanced batches; mirror-averaged MLP; "
-                "ignore red periods above 10000 ms for local feature timing"),
+                "ignore red periods above 10000 ms for local feature timing; "
+                f"negative_policy={args.negative_policy}"),
         manifest=manifest,
     )
     args.output.mkdir(parents=True, exist_ok=False)
@@ -617,9 +810,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--corpus", type=Path,
                         default=Path("test-data/corpus-expanded/snapshot-verified"))
-    parser.add_argument("--cache", type=Path,
-                        default=Path("test-data/corpus-expanded/sequence-window-cache-v3"))
-    parser.add_argument("--output", type=Path, default=Path("test-data/sequence-prior-v1"))
+    parser.add_argument("--cache", type=Path)
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--windows-per-chart", type=int, default=DEFAULT_WINDOWS_PER_CHART)
     parser.add_argument("--negatives", type=int, default=DEFAULT_NEGATIVES)
     parser.add_argument("--group-window-budget", type=int,
@@ -629,7 +821,23 @@ def main():
     parser.add_argument("--steps", type=int, default=200)
     parser.add_argument("--batch", type=int, default=512)
     parser.add_argument("--threads", type=int, default=2)
+    parser.add_argument("--negative-policy", choices=NEGATIVE_POLICIES,
+                        default=NEGATIVE_POLICY_RANDOM)
     args = parser.parse_args()
+    if args.cache is None:
+        cache_name = (
+            "sequence-window-cache-v4-ln-transition"
+            if args.negative_policy == NEGATIVE_POLICY_LN_TRANSITION
+            else "sequence-window-cache-v3"
+        )
+        args.cache = Path("test-data/corpus-expanded") / cache_name
+    if args.output is None:
+        output_name = (
+            "sequence-prior-ln-transition-v1"
+            if args.negative_policy == NEGATIVE_POLICY_LN_TRANSITION
+            else "sequence-prior-v1"
+        )
+        args.output = Path("test-data") / output_name
     train(args)
 
 

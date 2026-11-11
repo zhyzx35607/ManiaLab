@@ -112,8 +112,20 @@
   （[0.299511,0.398175]）；平均先验定轨12.83秒/图，对照baseline
   5.40秒/图。三档均不满足冻结test的条件。细项见
   [定轨验证报告](sequence-prior-remap-results.md)，完整报告均留在ignored的
-  `test-data`。下一步先审查训练目标与LN特征表达，不能通过增大strength
-  掩盖模型只学到局部定轨倾向的限制。
+  `test-data`。不能通过增大strength掩盖模型只学到局部定轨倾向的限制。
+- PR #29已合并至`main`，merge commit `68e3ab1`；两项Windows validation均成功。
+- 只读审查确认旧序列先验用作者轨道作正例、随机可行改轨作负例，每窗改
+  1–3排且固定LN尾端；它学的是局部原谱排序，不是LN质量或长条时长。
+  新增隔离的`ln-transition-hard`负例策略，仅在LN上下文窗改一排，并要求
+  inverse、reverse-shield、shield、same-hand hybrid、split-release、
+  release-press或near-release-press计数至少一项变化；候选仍须全窗可行。
+  10K validation 13组45图抽样1461个LN窗，1360窗（93.1%）成功生成两条
+  定向负例；101窗不足两条。可接受负例中的各模式变化次数见
+  [LN难例探针](sequence-ln-hard-negative-probe.md)。
+  专项测试27 passed；全量`pytest`为2206 passed、85 skipped；`py_compile`、
+  `git diff --check`通过。全量训练尚未启动；
+  原序列先验、生成器默认行为和LN尾端均未改变。下一步仅在独立v4缓存上训练，
+  并按歌曲组对比LN窗/tap窗排序；若验证无改善则停止，不挑strength跑test。
 - 该验证固定LN尾端，所以不能证明LN长度、音频声部角色、乐句分段或实际可玩性；
   strength排序指标不能代替《樱花草》共同bookmark人工检查与实际试打。
 - `docs/full-remap-validation.json`中的既有谱不能用作本模型独立A/B：其中多张
