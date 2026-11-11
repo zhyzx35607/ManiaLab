@@ -75,11 +75,11 @@
   passed、85 skipped，`py_compile`与`git diff --check`通过。每排重置`seen`
   保证去重只发生在同一候选行。本改动可能改变原beam布局结果，不代表整谱
   音乐质量改善；source映射排序的性能尚无独立基准。
-- 运行时接入正在`research/sequence-prior-runtime`实现：新增显式加载、
-  manifest哈希校验和默认关闭的四排窗口scorer，只在完整beam布局中使用；
-  禁止locked局部重排。训练/运行时共用异常Timing guard，窗口保留四排上下文
-  与窗口左缘前的LN状态；累计分数只按候选分数差做有界排序影响。尚未通过
-  全谱评估，不默认启用，也不负责选采音、改变LN尾端或证明音乐质量。
+- 四排序列先验运行时接入已通过PR #27合并：显式加载、manifest哈希校验、
+  默认关闭，只用于完整beam定轨；训练/运行时共用异常Timing guard，窗口保留
+  四排上下文与左缘前LN状态，累计分数按候选分差做有界排序影响。10K全谱
+  validation三档均没有显示平衡的LN定轨收益，因此不默认启用；它不负责采音、
+  改LN尾端或证明音乐质量。
 - 新增`evaluate_sequence_prior_remap.py`作为固定输入全谱A/B入口，只从训练
   报告的validation/test歌曲组取图，逐图校验来源SHA、对象身份与轨道回读、
   TimingPoints、LN端点及可玩冲突；按键数分层、同图配对、歌曲组等权统计。
@@ -106,12 +106,16 @@
   （[-0.006457,-0.002829]），但LN inverse误差上升0.178843
   （[0.000000,0.501917]），LN相对原谱轨道变化增加0.261869
   （[0.213838,0.305008]）。平均先验定轨时间为10.07秒/图，对照baseline
-  4.93秒/图。该权衡不冻结test。两档细项见
-  [定轨验证报告](sequence-prior-remap-results.md)；下一步同一validation运行
-  strength=0.60。
-- 后续先在完整validation组上选定strength并冻结产物，再跑独立test组；
-  之后按《樱花草》共同bookmark检查具体定轨差异。窗口排序准确率、整谱结构
-  指标均不能替代音乐验收。
+  4.93秒/图。strength=0.60也完成45/45图、13组且结构检查全通过：cost/note
+  下降0.006339（[-0.009652,-0.002920]），LN inverse误差增加0.221021
+  （[0.018852,0.486119]），LN相对原谱轨道变化增加0.350249
+  （[0.299511,0.398175]）；平均先验定轨12.83秒/图，对照baseline
+  5.40秒/图。三档均不满足冻结test的条件。细项见
+  [定轨验证报告](sequence-prior-remap-results.md)，完整报告均留在ignored的
+  `test-data`。下一步先审查训练目标与LN特征表达，不能通过增大strength
+  掩盖模型只学到局部定轨倾向的限制。
+- 该验证固定LN尾端，所以不能证明LN长度、音频声部角色、乐句分段或实际可玩性；
+  strength排序指标不能代替《樱花草》共同bookmark人工检查与实际试打。
 - `docs/full-remap-validation.json`中的既有谱不能用作本模型独立A/B：其中多张
   10K图属于sequence prior的train或validation组。优先报告10K的12个独立test
   歌曲组、48张图；6/7K作补充，8/9K因test组少只作探索。

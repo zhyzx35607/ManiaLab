@@ -35,18 +35,23 @@ structural proxies, not musical judgments.
 | 0.35 | `ln_reference_lane_change_rate` +0.261869 | [0.213838, 0.305008] | LN assignments move substantially |
 | 0.35 | `ln_inverse_profile_error` +0.178843 | [0.000000, 0.501917] | LN inverse profile is worse |
 | 0.35 | `ln_reverse_shield_profile_error` +0.175856 | [-0.000796, 0.472561] | No demonstrated improvement |
+| 0.60 | `cost_per_note` -0.006339 | [-0.009652, -0.002920] | Lowest heuristic cost |
+| 0.60 | `lane_change_rate` +0.379614 | [0.358636, 0.401653] | Largest deviation from reference |
+| 0.60 | `ln_reference_lane_change_rate` +0.350249 | [0.299511, 0.398175] | LN assignments move substantially |
+| 0.60 | `ln_inverse_profile_error` +0.221021 | [0.018852, 0.486119] | LN inverse profile is worse |
+| 0.60 | `ln_reverse_shield_profile_error` +0.355674 | [-0.014847, 1.041229] | No demonstrated improvement |
 
 At strength 0.15, mean remap time was 8.65 seconds per chart versus 4.94
 seconds for baseline (1.75x). At strength 0.35, it was 10.07 versus 4.93
-seconds (2.04x).
+seconds (2.04x). At strength 0.60, it was 12.83 versus 5.40 seconds (2.38x).
 
 ## Decision
 
-Neither completed strength shows a balanced LN placement improvement.
-Strength 0.35 improves the solver's heuristic cost while moving many more notes
-away from the source map and worsening the LN inverse profile. Neither value is
-frozen for the independent test split. Strength 0.60 remains to be evaluated
-on the same validation set.
+None of the three strengths shows a balanced LN placement improvement. Higher
+strength consistently lowers the solver's heuristic cost while moving more
+notes away from the source map; at 0.35 and 0.60 it also worsens the LN inverse
+profile. The 0.60 LN inverse-profile delta is positive across its 95% group
+interval. No value is frozen for the independent test split.
 
 Even a favorable remap result would not validate LN lengths, because this
 experiment deliberately holds all LN endpoints fixed. Human review and actual
@@ -58,3 +63,4 @@ Full per-map outputs are ignored local research artifacts:
 
 - `test-data/sequence-prior-remap-v4-validation-015/report.json`
 - `test-data/sequence-prior-remap-v4-validation-035/report.json`
+- `test-data/sequence-prior-remap-v4-validation-060/report.json`
