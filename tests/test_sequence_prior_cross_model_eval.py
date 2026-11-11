@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pytest
 
 from manialab.pattern_sequence import FEATURE_COUNT, FEATURE_NAMES
 from scripts.evaluate_sequence_prior_cross_model import (
@@ -45,14 +46,16 @@ def _write_json(path, value):
     return path
 
 
-def test_cross_model_eval_uses_one_v4_sample_report_for_both_models(tmp_path):
+@pytest.mark.parametrize("split", ("validation", "test"))
+def test_cross_model_eval_uses_one_v4_sample_report_for_both_models(
+        tmp_path, split):
     chart_id = 123
     chart_hash = "a" * 64
     sampling_maps = [{
         "id": chart_id,
         "sha256": chart_hash,
         "keys": 6,
-        "split": "test",
+        "split": split,
         "group": "audio:one",
         "training_windows_before_group_budget": 2,
         "training_windows": 2,
@@ -88,11 +91,13 @@ def test_cross_model_eval_uses_one_v4_sample_report_for_both_models(tmp_path):
         sample_report_path,
         cache_root,
         keys=(6,),
+        split=split,
         bootstrap_samples=100,
         seed=7,
     )
 
     key_result = result["keys"]["6"]
+    assert result["split"] == split
     assert result["samples"]["cache_revision"] == LN_TRANSITION_CACHE_REVISION
     assert key_result["evaluated_groups"] == 1
     assert key_result["model_a"]["macro"]["overall"]["macro_accuracy"] == 0.5

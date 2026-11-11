@@ -1,4 +1,4 @@
-"""Compare two sequence priors on the same held-out chart-window candidates."""
+"""Compare two sequence priors on the same chart-window candidate split."""
 from __future__ import annotations
 
 import argparse
@@ -79,16 +79,16 @@ def _new_group_counts():
 
 
 def _evaluate_key(sample_report, cache_root, sample_config, layers_a, layers_b,
-                  keys, *, bootstrap_samples, seed, batch_size):
+                  keys, *, split, bootstrap_samples, seed, batch_size):
     sampling_maps = sample_report.get("prep", {}).get("sampling_maps")
     if not isinstance(sampling_maps, list):
         raise ValueError("Sample report is missing per-map sampling records")
     selected_maps = [
         row for row in sampling_maps
-        if row.get("keys") == keys and row.get("split") == "test"
+        if row.get("keys") == keys and row.get("split") == split
     ]
     if not selected_maps:
-        raise ValueError(f"No held-out test maps found for {keys}K")
+        raise ValueError(f"No {split} maps found for {keys}K")
 
     counts_a, counts_b = _new_group_counts(), _new_group_counts()
     group_charts = defaultdict(int)
@@ -97,7 +97,7 @@ def _evaluate_key(sample_report, cache_root, sample_config, layers_a, layers_b,
     for row in selected_maps:
         beatmap_id = row.get("id")
         if beatmap_id in seen_ids:
-            raise ValueError(f"Duplicate test map {beatmap_id} for {keys}K")
+            raise ValueError(f"Duplicate {split} map {beatmap_id} for {keys}K")
         seen_ids.add(beatmap_id)
         group = row.get("group")
         positive, negative, context = _validated_map_arrays(
@@ -125,7 +125,7 @@ def _evaluate_key(sample_report, cache_root, sample_config, layers_a, layers_b,
                 pos_b, neg_b, context[begin:end]))
 
     if not counts_a:
-        raise ValueError(f"No retained test windows found for {keys}K")
+        raise ValueError(f"No retained {split} windows found for {keys}K")
     macro_a = summarize_group_counts(
         counts_a, bootstrap_samples=bootstrap_samples, seed=seed)
     macro_b = summarize_group_counts(
@@ -158,7 +158,7 @@ def _evaluate_key(sample_report, cache_root, sample_config, layers_a, layers_b,
 
     return dict(
         keys=keys,
-        source_test_maps=len(selected_maps),
+        source_maps=len(selected_maps),
         evaluated_charts=sum(group_charts.values()),
         evaluated_groups=len(counts_a),
         evaluated_windows=sum(group_windows.values()),
@@ -173,7 +173,7 @@ def _evaluate_key(sample_report, cache_root, sample_config, layers_a, layers_b,
 def compare(report_a_path=DEFAULT_REPORT_A, model_a_path=DEFAULT_MODEL_A,
             report_b_path=DEFAULT_REPORT_B, model_b_path=DEFAULT_MODEL_B,
             sample_report_path=DEFAULT_SAMPLE_REPORT, cache_root=DEFAULT_CACHE,
-            *, keys=(10,), bootstrap_samples=5000, seed=20261112,
+            *, keys=(10,), split="test", bootstrap_samples=5000, seed=20261112,
             batch_size=512, label_a="model-a", label_b="model-b"):
     report_a = _read_json(report_a_path)
     model_a = _read_json(model_a_path)
@@ -202,6 +202,8 @@ def compare(report_a_path=DEFAULT_REPORT_A, model_a_path=DEFAULT_MODEL_A,
             or value not in range(6, 11)
             for value in requested_keys):
         raise ValueError("keys must contain one or more integers from 6 through 10")
+    if split not in ("validation", "test"):
+        raise ValueError("split must be validation or test")
     bootstrap_samples, seed, batch_size = (
         int(bootstrap_samples), int(seed), int(batch_size))
 
@@ -209,13 +211,13 @@ def compare(report_a_path=DEFAULT_REPORT_A, model_a_path=DEFAULT_MODEL_A,
     for key in requested_keys:
         results[str(key)] = _evaluate_key(
             sample_report, cache_root, sample_config, layers_a, layers_b, key,
-            bootstrap_samples=bootstrap_samples, seed=seed,
+            split=split, bootstrap_samples=bootstrap_samples, seed=seed,
             batch_size=batch_size)
     return dict(
         revision="sequence-window-cross-model-evaluation-v1",
-        scope=("Paired test-set local window ranking on identical candidates "
+        scope=("Paired held-out local window ranking on identical candidates "
                "with fixed authored note events and LN endpoints; not chart quality."),
-        split="test",
+        split=split,
         bootstrap=dict(
             unit="independent song group",
             samples=bootstrap_samples,
@@ -250,6 +252,7 @@ def main():
     parser.add_argument("--label-b", default="model-b")
     parser.add_argument("--keys", nargs="+", type=int, choices=range(6, 11),
                         default=[10])
+    parser.add_argument("--split", choices=("validation", "test"), default="test")
     parser.add_argument("--bootstrap-samples", type=int, default=5000)
     parser.add_argument("--seed", type=int, default=20261112)
     parser.add_argument("--batch-size", type=int, default=512)
@@ -260,6 +263,7 @@ def main():
         args.report_a, args.model_a, args.report_b, args.model_b,
         args.sample_report, args.cache,
         keys=args.keys,
+        split=args.split,
         bootstrap_samples=args.bootstrap_samples,
         seed=args.seed,
         batch_size=args.batch_size,

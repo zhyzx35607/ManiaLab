@@ -123,15 +123,24 @@
   定向负例；101窗不足两条。可接受负例中的各模式变化次数见
   [LN难例探针](sequence-ln-hard-negative-probe.md)。
   专项测试27 passed；全量`pytest`为2206 passed、85 skipped；`py_compile`、
-  `git diff --check`通过。PR #30已合并，merge commit `99a4e6c`。全量v4训练已
-  启动；最近检查已处理1500/7907张，生成的缓存和权重保留在ignored目录。
+  `git diff --check`通过。PR #30已合并，merge commit `99a4e6c`。全量v4训练
+  完成7,907张谱，按validation选中第20/24轮，导出误差`3.81e-5`。10K test
+  共有12组、3,694窗；逐对准确率overall 78.11%、LN 77.71%、tap 78.41%。
   原序列先验、生成器默认行为和LN尾端均未改变。
 - 新增`scripts/evaluate_sequence_prior_cross_model.py`，允许分别校验两模型的
-  训练报告，再在同一份v3或v4固定测试候选集上作配对歌曲组bootstrap，输出
-  overall/LN/tap逐组差值。歌曲组评估器同时支持两种缓存格式。
-  专项测试10 passed、`py_compile`和`git diff --check`通过。训练结束后分别用
-  v3原负例集和v4 LN定向负例集评估；模型选择只用validation，test只作冻结比较。
-  命令见对应的cross-model evaluator参数；研究结论仍不是可玩性验收。
+  训练报告，再在同一份v3或v4候选集上作配对歌曲组bootstrap，并输出
+  overall/LN/tap逐组差值；支持validation和test。PR #31已合并，merge commit
+  `3622127`；两项Windows validation成功。完整`pytest`为2211 passed、85 skipped，
+  `py_compile`及`git diff --check`通过。
+- 10K配对结果和边界见
+  [LN难负例实验报告](sequence-prior-ln-transition-results.md)。validation中，
+  v4相对v3在v3候选上的10K LN差为-1.03个百分点
+  （95% CI -4.45至+1.80），在v4候选上为-0.67个百分点
+  （-2.67至+1.30）；test两者均跨零，未证明收益。模型训练每个键数轮流取
+  相同优化步，所以7K样本多不是此差异的直接原因。
+- 当前仅尝试10K专用网络作为下一项validation假设；按10K validation选checkpoint，
+  同样本对比joint v3/v4模型。若没有清晰收益则不扩大方向；test集保持冻结。
+  当前研究仍未解决LN时长、整谱布局和实际可玩性。
 - 该验证固定LN尾端，所以不能证明LN长度、音频声部角色、乐句分段或实际可玩性；
   strength排序指标不能代替《樱花草》共同bookmark人工检查与实际试打。
 - `docs/full-remap-validation.json`中的既有谱不能用作本模型独立A/B：其中多张

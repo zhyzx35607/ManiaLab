@@ -14,6 +14,7 @@ from scripts.train_sequence_prior import (
     _ln_transition_signature,
     _load_chart_cache,
     _sequence_beat_clock,
+    _training_keys,
     chart_samples,
 )
 
@@ -251,3 +252,22 @@ def test_chart_cache_rejects_old_or_changed_feature_schema(tmp_path):
 def test_ln_transition_policy_has_an_isolated_cache_revision():
     assert CACHE_REVISION == "sequence-window-cache-v3"
     assert LN_TRANSITION_CACHE_REVISION == "sequence-window-cache-v4-ln-transition"
+
+
+def test_training_key_selection_defaults_to_all_available_or_one_specialist():
+    data = {
+        (6, "train"): object(),
+        (6, "validation"): object(),
+        (10, "train"): object(),
+        (10, "validation"): object(),
+    }
+
+    assert _training_keys(data) == [6, 10]
+    assert _training_keys(data, [10]) == [10]
+
+
+def test_training_key_selection_requires_validation_for_each_requested_key():
+    data = {(10, "train"): object()}
+
+    with pytest.raises(ValueError, match="training and validation"):
+        _training_keys(data, [10])
