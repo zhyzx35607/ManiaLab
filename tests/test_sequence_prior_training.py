@@ -4,13 +4,19 @@ import numpy as np
 import pytest
 
 from manialab.domain import Note
-from manialab.pattern_sequence import FEATURE_COUNT
+from manialab.pattern_sequence import (
+    FEATURE_COUNT,
+    FEATURE_SCHEMA_COUNTS,
+    LN_INTERACTION_SCHEMA,
+)
 from scripts.train_sequence_prior import (
     CACHE_REVISION,
+    LN_INTERACTION_CACHE_REVISION,
     LN_TRANSITION_CACHE_REVISION,
     NEGATIVE_POLICY_LN_TRANSITION,
     MAX_SEQUENCE_BEAT_MS,
     _feature_schema_sha256,
+    _find_ln_transition_negatives,
     _ln_transition_signature,
     _load_chart_cache,
     _sequence_beat_clock,
@@ -109,6 +115,67 @@ def test_ln_transition_policy_finds_fixed_time_feasible_hard_negatives():
         pos_rows = pos[: 4 * 94].reshape(4, 94)[:, 90:]
         neg_rows = neg[: 4 * 94].reshape(4, 94)[:, 90:]
         np.testing.assert_array_equal(pos_rows, neg_rows)
+
+
+def test_ln_interaction_schema_appends_features_and_requires_hard_negatives():
+    notes = [
+        Note(0, 900, lane=0, id="hold"),
+        Note(500, 500, lane=4, id="tap-under-hold"),
+        Note(1000, 1000, lane=5, id="tap-after-release"),
+    ]
+    positive, negative, context = chart_samples(
+        notes,
+        6,
+        31,
+        windows_per_chart=3,
+        negatives=1,
+        negative_policy=NEGATIVE_POLICY_LN_TRANSITION,
+        feature_schema=LN_INTERACTION_SCHEMA,
+    )
+
+    assert positive.shape[1] == FEATURE_SCHEMA_COUNTS[LN_INTERACTION_SCHEMA]
+    assert negative.shape == (len(positive), 1, positive.shape[1])
+    assert context.all()
+    base_positive, base_negative, base_context = chart_samples(
+        notes,
+        6,
+        31,
+        windows_per_chart=3,
+        negatives=1,
+        negative_policy=NEGATIVE_POLICY_LN_TRANSITION,
+    )
+    np.testing.assert_array_equal(positive[:, :FEATURE_COUNT], base_positive)
+    np.testing.assert_array_equal(
+        negative[:, :, :FEATURE_COUNT], base_negative
+    )
+    np.testing.assert_array_equal(context, base_context)
+
+    with pytest.raises(ValueError, match="require the LN-transition"):
+        chart_samples(
+            notes, 6, 31, feature_schema=LN_INTERACTION_SCHEMA
+        )
+
+
+def test_ln_interaction_negatives_ignore_unencoded_pre_window_releases():
+    rows = [(500, [Note(500, 500, lane=2, id="tap")])]
+    options = [[(2,), (4,)]]
+    actual = [(2,)]
+    initial_ends = np.full(6, -100000, dtype=np.int64)
+    initial_last = initial_ends.copy()
+    initial_ends[0] = initial_last[0] = 460
+    initial_lns = ((0, 450, 0),)
+
+    legacy, _, _ = _find_ln_transition_negatives(
+        rows, options, actual, 6, [500], initial_ends, initial_last,
+        np.random.default_rng(3), 1, initial_lns,
+    )
+    interaction, _, _ = _find_ln_transition_negatives(
+        rows, options, actual, 6, [500], initial_ends, initial_last,
+        np.random.default_rng(3), 1, initial_lns, LN_INTERACTION_SCHEMA,
+    )
+
+    assert len(legacy) == 1
+    assert interaction == []
 
 
 def test_window_training_returns_empty_arrays_for_unperturbable_full_chords():
@@ -252,6 +319,7 @@ def test_chart_cache_rejects_old_or_changed_feature_schema(tmp_path):
 def test_ln_transition_policy_has_an_isolated_cache_revision():
     assert CACHE_REVISION == "sequence-window-cache-v3"
     assert LN_TRANSITION_CACHE_REVISION == "sequence-window-cache-v4-ln-transition"
+    assert LN_INTERACTION_CACHE_REVISION == "sequence-window-cache-v5-ln-interactions"
 
 
 def test_training_key_selection_defaults_to_all_available_or_one_specialist():

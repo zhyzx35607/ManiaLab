@@ -23,9 +23,13 @@ from manialab.pattern_prior import score_network
 from manialab.pattern_sequence import (
     FEATURE_COUNT,
     FEATURE_NAMES,
+    FEATURE_SCHEMA_COUNTS,
+    FEATURE_SCHEMA_NAMES,
+    LN_INTERACTION_SCHEMA,
     WINDOW_ROWS,
     mirror_window_features,
     window_features,
+    window_features_with_ln_interactions,
 )
 from manialab.sequence_prior import (
     MAX_SEQUENCE_BEAT_MS,
@@ -39,6 +43,7 @@ DEFAULT_NEGATIVES = 2
 DEFAULT_GROUP_WINDOW_BUDGET = 1000
 CACHE_REVISION = "sequence-window-cache-v3"
 LN_TRANSITION_CACHE_REVISION = "sequence-window-cache-v4-ln-transition"
+LN_INTERACTION_CACHE_REVISION = "sequence-window-cache-v5-ln-interactions"
 NEGATIVE_POLICY_RANDOM = "random-feasible"
 NEGATIVE_POLICY_LN_TRANSITION = "ln-transition-hard"
 NEGATIVE_POLICIES = (NEGATIVE_POLICY_RANDOM, NEGATIVE_POLICY_LN_TRANSITION)
@@ -61,11 +66,28 @@ def _feature_schema_sha256(names=FEATURE_NAMES):
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def _empty_chart_arrays(negatives):
+def _empty_chart_arrays(negatives, feature_count=FEATURE_COUNT):
     return (
-        np.empty((0, FEATURE_COUNT), np.float16),
-        np.empty((0, negatives, FEATURE_COUNT), np.float16),
+        np.empty((0, feature_count), np.float16),
+        np.empty((0, negatives, feature_count), np.float16),
         np.empty((0,), bool),
+    )
+
+
+def _encode_window(rows, keys, beat_lengths, initial_ends, initial_last,
+                   feature_schema):
+    if feature_schema == LN_INTERACTION_SCHEMA:
+        return window_features_with_ln_interactions(
+            rows, keys, beat_lengths,
+            initial_ends=initial_ends,
+            initial_last=initial_last,
+        )
+    if feature_schema != "sequence-window-v1":
+        raise ValueError(f"unsupported feature schema: {feature_schema}")
+    return window_features(
+        rows, keys, beat_lengths,
+        initial_ends=initial_ends,
+        initial_last=initial_last,
     )
 
 
@@ -225,14 +247,19 @@ def _ln_transition_signature(rows, assignments, keys, beat_lengths,
 
 def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
                                   initial_ends, initial_last, rng, count,
-                                  initial_lns=()):
+                                  initial_lns=(),
+                                  feature_schema="sequence-window-v1"):
     """Find feasible one-row alternatives that change an LN transition type."""
+    # v5 cannot encode releases older than its per-lane edge state.
+    signature_initial_lns = (
+        () if feature_schema == LN_INTERACTION_SCHEMA else initial_lns
+    )
     positive_signature = _ln_transition_signature(
         rows, actual, keys, beat_lengths, initial_ends, initial_last,
-        initial_lns)
-    positive_features = window_features(
+        signature_initial_lns)
+    positive_features = _encode_window(
         _as_rows(rows, actual), keys, beat_lengths,
-        initial_ends=initial_ends, initial_last=initial_last)
+        initial_ends, initial_last, feature_schema)
     eligible = [
         index for index, candidates in enumerate(options)
         if any(value != actual[index] for value in candidates)
@@ -255,7 +282,7 @@ def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
             continue
         negative_signature = _ln_transition_signature(
             rows, path, keys, beat_lengths, initial_ends, initial_last,
-            initial_lns)
+            signature_initial_lns)
         positive_counts = dict(positive_signature)
         negative_counts = dict(negative_signature)
         changed_kinds = [
@@ -264,9 +291,9 @@ def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
         ]
         if not changed_kinds:
             continue
-        negative = window_features(
+        negative = _encode_window(
             _as_rows(rows, path), keys, beat_lengths,
-            initial_ends=initial_ends, initial_last=initial_last)
+            initial_ends, initial_last, feature_schema)
         if _same_under_mirroring(positive_features, negative, keys):
             continue
         if any(_same_under_mirroring(old, negative, keys) for old in seen):
@@ -280,6 +307,7 @@ def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
 def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
                   negatives=DEFAULT_NEGATIVES, timing_points=(),
                   negative_policy=NEGATIVE_POLICY_RANDOM,
+                  feature_schema="sequence-window-v1",
                   return_diagnostics=False):
     """Build positive and feasible local-perturbation windows for one chart."""
     if keys not in range(6, 11):
@@ -288,6 +316,14 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
         raise ValueError("window and negative budgets must be positive")
     if negative_policy not in NEGATIVE_POLICIES:
         raise ValueError(f"unsupported negative policy: {negative_policy}")
+    if feature_schema not in FEATURE_SCHEMA_COUNTS:
+        raise ValueError(f"unsupported feature schema: {feature_schema}")
+    if (feature_schema == LN_INTERACTION_SCHEMA
+            and negative_policy != NEGATIVE_POLICY_LN_TRANSITION):
+        raise ValueError(
+            "LN interaction features require the LN-transition hard-negative policy"
+        )
+    feature_count = FEATURE_SCHEMA_COUNTS[feature_schema]
     rows_by_start = defaultdict(list)
     clock, ignored_red_timing_points = _sequence_beat_clock(timing_points, 500)
     for note in notes:
@@ -303,7 +339,7 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
     diagnostics["candidate_event_windows"] = len(ordered)
     diagnostics["ignored_red_timing_points"] = ignored_red_timing_points
     if not ordered:
-        arrays = _empty_chart_arrays(negatives)
+        arrays = _empty_chart_arrays(negatives, feature_count)
         return (*arrays, diagnostics) if return_diagnostics else arrays
 
     ends = np.full(keys, -100000, dtype=np.int64)
@@ -371,14 +407,15 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
             unique = {tuple(map(int, choice)) for choice in generated}
             unique.add(actual_lanes)
             options.append(sorted(unique))
-        positive = window_features(
+        positive = _encode_window(
             _as_rows(window, actual), keys, beat_lengths,
-            initial_ends=initial_ends, initial_last=initial_last)
+            initial_ends, initial_last, feature_schema)
         if (negative_policy == NEGATIVE_POLICY_LN_TRANSITION
                 and contexts[end_index]):
             found, search_trials, changed_kinds = _find_ln_transition_negatives(
                 window, options, actual, keys, beat_lengths,
-                initial_ends, initial_last, rng, negatives, initial_lns)
+                initial_ends, initial_last, rng, negatives, initial_lns,
+                feature_schema)
             diagnostics["ln_transition_search_trials"] += search_trials
             diagnostics["ln_transition_negative_examples_found"] += len(found)
             for kind, count in changed_kinds.items():
@@ -403,9 +440,9 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
                                       initial_ends, initial_last, rng)
                 if path is None or path == actual:
                     continue
-                negative = window_features(
+                negative = _encode_window(
                     _as_rows(window, path), keys, beat_lengths,
-                    initial_ends=initial_ends, initial_last=initial_last)
+                    initial_ends, initial_last, feature_schema)
                 if _same_under_mirroring(positive, negative, keys):
                     continue
                 if any(_same_under_mirroring(old, negative, keys) for old in seen):
@@ -435,7 +472,7 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
         negative_failed=dict(sorted(failed_chord_sizes.items(), key=lambda item: int(item[0]))),
     )
     if not positives:
-        arrays = _empty_chart_arrays(negatives)
+        arrays = _empty_chart_arrays(negatives, feature_count)
     else:
         arrays = (
             np.asarray(positives, dtype=np.float16),
@@ -457,25 +494,40 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             negatives=DEFAULT_NEGATIVES,
             group_window_budget=DEFAULT_GROUP_WINDOW_BUDGET,
             max_maps_per_split=None,
-            negative_policy=NEGATIVE_POLICY_RANDOM):
+            negative_policy=NEGATIVE_POLICY_RANDOM,
+            feature_schema="sequence-window-v1"):
     if negative_policy not in NEGATIVE_POLICIES:
         raise ValueError(f"unsupported negative policy: {negative_policy}")
+    if feature_schema not in FEATURE_SCHEMA_COUNTS:
+        raise ValueError(f"unsupported feature schema: {feature_schema}")
+    if (feature_schema == LN_INTERACTION_SCHEMA
+            and negative_policy != NEGATIVE_POLICY_LN_TRANSITION):
+        raise ValueError(
+            "LN interaction features require the LN-transition hard-negative policy"
+        )
     records, excluded = records_and_groups(root)
     holdout_groups = _sakura_holdout_groups(records)
     selected = [row for row in records if row["group"] not in holdout_groups]
     cache.mkdir(parents=True, exist_ok=True)
-    cache_revision = (
-        LN_TRANSITION_CACHE_REVISION
-        if negative_policy == NEGATIVE_POLICY_LN_TRANSITION
-        else CACHE_REVISION
-    )
+    if feature_schema == LN_INTERACTION_SCHEMA:
+        cache_revision = LN_INTERACTION_CACHE_REVISION
+    else:
+        cache_revision = (
+            LN_TRANSITION_CACHE_REVISION
+            if negative_policy == NEGATIVE_POLICY_LN_TRANSITION
+            else CACHE_REVISION
+        )
+    feature_names = FEATURE_SCHEMA_NAMES[feature_schema]
+    feature_count = FEATURE_SCHEMA_COUNTS[feature_schema]
     configs = dict(windows_per_chart=windows_per_chart, negatives=negatives,
-                   feature_count=FEATURE_COUNT,
+                   feature_count=feature_count,
                    cache_revision=cache_revision,
-                   feature_schema_sha256=_feature_schema_sha256(),
+                   feature_schema_sha256=_feature_schema_sha256(feature_names),
                    seed=SEED,
                    beat_reference="tempo_at_each_row",
                    max_sequence_beat_ms=MAX_SEQUENCE_BEAT_MS)
+    if feature_schema != "sequence-window-v1":
+        configs["feature_schema"] = feature_schema
     if negative_policy != NEGATIVE_POLICY_RANDOM:
         configs["negative_policy"] = negative_policy
     arrays = defaultdict(lambda: [[], [], []])
@@ -506,11 +558,11 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
                 and seen_split_maps[split_key] >= max_maps_per_split):
             continue
         seen_split_maps[split_key] += 1
-        cache_suffix = (
-            "sequence-window-v4-ln-transition"
-            if negative_policy == NEGATIVE_POLICY_LN_TRANSITION
-            else "sequence-window-v3"
-        )
+        cache_suffix = {
+            CACHE_REVISION: "sequence-window-v3",
+            LN_TRANSITION_CACHE_REVISION: "sequence-window-v4-ln-transition",
+            LN_INTERACTION_CACHE_REVISION: "sequence-window-v5-ln-interactions",
+        }[cache_revision]
         path = cache / f"{row['sha256']}-{row['beatmap_id']}-{cache_suffix}.npz"
         if path.exists():
             positive, negative, context, diagnostics = _load_chart_cache(path, configs)
@@ -525,6 +577,7 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
                 chart["notes"], key, SEED + int(row["beatmap_id"]),
                 windows_per_chart=windows_per_chart, negatives=negatives,
                 negative_policy=negative_policy,
+                feature_schema=feature_schema,
                 timing_points=chart["timing"], return_diagnostics=True)
             np.savez_compressed(path, positive=positive, negative=negative,
                                 context=context,
@@ -641,7 +694,8 @@ def evaluate(model, data, split, torch, keys=None):
             for begin in range(0, len(positive), 512):
                 end = min(len(positive), begin + 512)
                 pos = positive[begin:end].astype(np.float32)
-                neg = negative[begin:end].reshape(-1, FEATURE_COUNT).astype(np.float32)
+                neg = negative[begin:end].reshape(
+                    -1, positive.shape[1]).astype(np.float32)
                 pos_score = _score(model, pos, key_count, torch).numpy()[:, 0]
                 neg_score = _score(model, neg, key_count, torch).numpy()[:, 0].reshape(
                     end - begin, negative.shape[1])
@@ -706,8 +760,12 @@ def train(args):
         negatives=args.negatives,
         group_window_budget=args.group_window_budget,
         max_maps_per_split=args.max_maps_per_split,
-        negative_policy=args.negative_policy)
+        negative_policy=args.negative_policy,
+        feature_schema=args.feature_schema)
     train_keys = _training_keys(data, args.keys)
+    feature_schema = args.feature_schema
+    feature_names = FEATURE_SCHEMA_NAMES[feature_schema]
+    feature_count = FEATURE_SCHEMA_COUNTS[feature_schema]
     pools = {}
     for key in train_keys:
         context = data[(key, "train")][2]
@@ -715,7 +773,7 @@ def train(args):
             np.flatnonzero(context), np.flatnonzero(~context)) if len(pool)]
 
     model = torch.nn.Sequential(
-        torch.nn.Linear(FEATURE_COUNT, 128), torch.nn.ReLU(),
+        torch.nn.Linear(feature_count, 128), torch.nn.ReLU(),
         torch.nn.Linear(128, 64), torch.nn.ReLU(),
         torch.nn.Linear(64, 1))
     optimizer = torch.optim.AdamW(model.parameters(), lr=.001, weight_decay=.002)
@@ -777,7 +835,7 @@ def train(args):
              bias=np.round(layer.bias.detach().numpy(), 7).tolist())
         for layer in model if isinstance(layer, torch.nn.Linear)
     ]
-    probe = rng.normal(size=(16, FEATURE_COUNT)).astype(np.float32)
+    probe = rng.normal(size=(16, feature_count)).astype(np.float32)
     with torch.inference_mode():
         expected = model(torch.from_numpy(probe))[:, 0].numpy()
     exported = score_network(probe, layers)
@@ -787,9 +845,9 @@ def train(args):
     training_hash = hashlib.sha256(
         json.dumps(manifest, sort_keys=True).encode()).hexdigest()
     report = dict(
-        revision="sequence-window-v1",
+        revision=feature_schema,
         purpose="Four-row lane-pattern ranking under fixed authored events; research only",
-        feature_names=list(FEATURE_NAMES),
+        feature_names=list(feature_names),
         training_manifest_sha256=training_hash,
         training_keys=train_keys,
         models=final_metrics,
@@ -806,8 +864,8 @@ def train(args):
     )
     args.output.mkdir(parents=True, exist_ok=False)
     payload = dict(
-        revision="sequence-window-v1",
-        features=list(FEATURE_NAMES),
+        revision=feature_schema,
+        features=list(feature_names),
         training_keys=train_keys,
         layers=layers,
         training_manifest_sha256=training_hash,
@@ -840,9 +898,15 @@ def main():
                         help="Train a key-count specialist (default: 6K through 10K).")
     parser.add_argument("--negative-policy", choices=NEGATIVE_POLICIES,
                         default=NEGATIVE_POLICY_RANDOM)
+    parser.add_argument("--feature-schema",
+                        choices=tuple(FEATURE_SCHEMA_NAMES),
+                        default="sequence-window-v1")
     args = parser.parse_args()
     if args.cache is None:
         cache_name = (
+            "sequence-window-cache-v5-ln-interactions"
+            if args.feature_schema == LN_INTERACTION_SCHEMA
+            else
             "sequence-window-cache-v4-ln-transition"
             if args.negative_policy == NEGATIVE_POLICY_LN_TRANSITION
             else "sequence-window-cache-v3"
@@ -850,6 +914,9 @@ def main():
         args.cache = Path("test-data/corpus-expanded") / cache_name
     if args.output is None:
         output_name = (
+            "sequence-prior-ln-interactions-v1"
+            if args.feature_schema == LN_INTERACTION_SCHEMA
+            else
             "sequence-prior-ln-transition-v1"
             if args.negative_policy == NEGATIVE_POLICY_LN_TRANSITION
             else "sequence-prior-v1"

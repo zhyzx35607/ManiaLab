@@ -1,6 +1,6 @@
 # 续接进度
 
-更新：2026-11-11，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
+更新：2026-11-12，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
 ## 已保存的应用
@@ -138,9 +138,24 @@
   （95% CI -4.45至+1.80），在v4候选上为-0.67个百分点
   （-2.67至+1.30）；test两者均跨零，未证明收益。模型训练每个键数轮流取
   相同优化步，所以7K样本多不是此差异的直接原因。
-- 当前仅尝试10K专用网络作为下一项validation假设；按10K validation选checkpoint，
-  同样本对比joint v3/v4模型。若没有清晰收益则不扩大方向；test集保持冻结。
-  当前研究仍未解决LN时长、整谱布局和实际可玩性。
+- 10K专训已完成，validation选择第4/24轮。它对比joint v4时，在相同10K
+  validation hard-negative候选上的LN变化为+0.57个百分点
+  （95%组级区间[-1.08,+2.47]），整体-2.30个百分点
+  （[-3.58,-1.02]）、tap -4.08个百分点（[-6.06,-2.42]）；
+  LN区间跨0且整体/tap下降，不接入生成器。独立评估产物保存在ignored目录
+  `test-data/sequence-prior-cross-v1-validation-v4-10k-specialist.json`。
+- 新增实验性`sequence-window-ln-interactions-v1`输入，在原382维前缀后添加
+  4排×17个镜像不变的LN互动摘要，涉及持有密度/手间组合、hybrid、释放配合、
+  inverse、reverse-shield、shield及近释放起音。训练、单窗/批量运行时和评估器
+  支持新schema；采用独立v5缓存，旧模型和v1生成行为不变。v5难负例签名忽略
+  运行时不可见的窗口外LN释放，避免训练目标依赖额外历史；配对评估器校验目标
+  歌曲组与两模型训练组互斥。66项专项测试通过；真实模型报告的1626个训练组
+  与195个validation组、202个test组均无重叠。2轮、每轮4步的小样本训练、
+  导出及跨schema validation smoke跑通，导出最大误差
+  `2.76e-7`。全量套件`2219 passed, 85 skipped`，`py_compile`与
+  `git diff --check`通过。smoke数据只有每键每split最多2图，不能用于判断模型收益。
+  全量10K validation比较仍待完成；新特征没有音乐验收，不启用默认生成。
+- 当前研究仍未解决LN尾端/长度决策、整谱布局和实际可玩性。
 - 该验证固定LN尾端，所以不能证明LN长度、音频声部角色、乐句分段或实际可玩性；
   strength排序指标不能代替《樱花草》共同bookmark人工检查与实际试打。
 - `docs/full-remap-validation.json`中的既有谱不能用作本模型独立A/B：其中多张

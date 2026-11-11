@@ -6,7 +6,16 @@ import pytest
 import manialab.layout as layout
 from manialab.arrange import parameters
 from manialab.domain import Note, invariant, validate
-from manialab.pattern_sequence import FEATURE_COUNT, FEATURE_NAMES, ROW_WIDTH, window_features
+from manialab.pattern_sequence import (
+    FEATURE_COUNT,
+    FEATURE_NAMES,
+    FEATURE_SCHEMA_COUNTS,
+    FEATURE_SCHEMA_NAMES,
+    LN_INTERACTION_SCHEMA,
+    ROW_WIDTH,
+    window_features,
+    window_features_with_ln_interactions,
+)
 from manialab.sequence_prior import (
     SequencePrior,
     SequenceRow,
@@ -96,6 +105,32 @@ def test_sequence_window_features_match_training_encoder_for_ln_and_variable_tem
     )
 
     assert np.array_equal(actual, expected)
+
+
+def test_ln_interaction_sequence_encoder_matches_training_for_single_and_batch():
+    window = (
+        _row(1000, 500, [(0, 1500)]),
+        _row(1250, 500, [(1, 1250), (5, 1250)]),
+        _row(1600, 400, [(0, 1900)]),
+    )
+    expected = window_features_with_ln_interactions(
+        [row.feature_row() for row in window],
+        6,
+        [row.beat_ms for row in window],
+    )
+
+    actual = sequence_window_features(window, 6, LN_INTERACTION_SCHEMA)
+    batch = sequence_windows_features(
+        [window, window[:2]], 6, LN_INTERACTION_SCHEMA
+    )
+
+    assert actual.shape == (FEATURE_SCHEMA_COUNTS[LN_INTERACTION_SCHEMA],)
+    assert np.array_equal(actual, expected)
+    assert np.array_equal(batch[0], actual)
+    assert np.array_equal(
+        batch[1],
+        sequence_window_features(window[:2], 6, LN_INTERACTION_SCHEMA),
+    )
 
 
 def test_batched_sequence_features_match_training_encoder_for_mixed_windows():
@@ -194,6 +229,29 @@ def test_sequence_prior_loader_validates_revision_features_and_shapes(tmp_path):
         path.write_text(json.dumps(changed), encoding="utf-8")
         with pytest.raises(ValueError, match=match):
             load_sequence_prior(path)
+
+
+def test_sequence_prior_loader_accepts_explicit_ln_interaction_schema(tmp_path):
+    feature_names = FEATURE_SCHEMA_NAMES[LN_INTERACTION_SCHEMA]
+    feature_count = FEATURE_SCHEMA_COUNTS[LN_INTERACTION_SCHEMA]
+    payload = {
+        "revision": LN_INTERACTION_SCHEMA,
+        "features": list(feature_names),
+        "training_manifest_sha256": "1" * 64,
+        "layers": [
+            {
+                "weight": np.zeros((1, feature_count), dtype=np.float32).tolist(),
+                "bias": [0.0],
+            }
+        ],
+    }
+    path = tmp_path / "ln-interactions.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    prior = load_sequence_prior(path)
+
+    assert prior.feature_schema == LN_INTERACTION_SCHEMA
+    assert prior.layers[0]["weight"].shape == (1, feature_count)
 
 
 def test_sequence_timing_guard_is_shared_with_training():

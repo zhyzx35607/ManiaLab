@@ -49,22 +49,44 @@ gain on the hard test candidates for lower tap and overall scores. The 6K-9K
 results do not change that conclusion; 8K and 9K have few independent groups.
 Do not connect this model to generation or increase its runtime weight.
 
+## 10K Specialist
+
+A 10K-only model was trained on the same v4 hard-negative cache. Validation
+selected epoch 4 of 24. On identical 10K validation candidates, compared with
+the joint v4 model, the specialist's paired changes were:
+
+| Metric | Delta (95% group-bootstrap CI) |
+|---|---:|
+| Overall | -2.30 pp (-3.58 to -1.02) |
+| LN | +0.57 pp (-1.08 to +2.47) |
+| Tap | -4.08 pp (-6.06 to -2.42) |
+
+The LN interval includes zero while overall and tap ranking decrease. This
+does not support connecting the specialist to generation. The comparison uses
+2,668 LN pairs from 12 groups and 4,142 tap pairs from 12 groups; the unit of
+the interval is the independent song group. The report is retained locally at
+`test-data/sequence-prior-cross-v1-validation-v4-10k-specialist.json`.
+
 ## Next Experiment
 
-The trainer already gives each available key count the same number of
-optimization steps, so 7K's larger map count does not dominate updates. The
-next validation-only hypothesis is cross-key representation interference:
-train a 10K-only specialist using the same v4 hard-negative examples, select
-its checkpoint on 10K validation, and compare it with both joint models on the
-same validation candidates. Do not select a version from repeated test
-comparisons. LN duration and whole-chart playability remain separate
-unaddressed tasks.
+The next validation hypothesis adds explicit LN interaction summaries while
+preserving the original 382 input values as an exact prefix. The new
+`sequence-window-ln-interactions-v1` schema adds 17 per-row values for active
+LN combinations, hybrid taps/heads, release-press interactions, inverse,
+reverse-shield, shield, and near-release behavior. It reads only the supplied
+window and per-lane left-edge state, so training and generation can encode the
+same information; older LN-release history not present in that runtime state
+is excluded from both the v5 feature input and its hard-negative transition
+signature, keeping training labels within the runtime-visible context. A
+separate v5 cache prevents mixing these features with existing data.
 
-Example specialist run:
-
-```powershell
-.\.venv-audio\Scripts\python.exe scripts\train_sequence_prior.py --negative-policy ln-transition-hard --keys 10 --threads 2 --cache test-data\corpus-expanded\sequence-window-cache-v4-ln-transition --output test-data\sequence-prior-ln-transition-10k-v1
-```
+The schema has passed focused training/runtime/evaluator tests and a small
+train/export/cross-schema validation smoke. That smoke is only a pipeline
+check: it used at most two maps per key and split and cannot establish a
+ranking or play-quality gain. Full v5 training and paired 10K validation remain
+the next steps. Do not select from test or connect this model to generation
+unless validation demonstrates a balanced improvement. LN duration and
+whole-chart playability remain separate unaddressed tasks.
 
 The reports, models, caches, and comparison JSON files are ignored local
 artifacts under `test-data`; none are included in the repository.
