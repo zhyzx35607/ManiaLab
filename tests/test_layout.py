@@ -2,11 +2,12 @@ from dataclasses import replace
 from pathlib import Path
 import random
 
+import numpy as np
 import pytest
 
 from manialab.arrange import parameters
 from manialab.domain import Note, invariant, validate
-from manialab.layout import fingers, search_layout
+from manialab.layout import State, _state_signature, fingers, search_layout
 
 
 @pytest.mark.parametrize('keys',range(6,11))
@@ -72,3 +73,69 @@ def test_variable_tempo_remap_retains_all_endpoints(engine):
     output = assign_lanes(notes,parameters({'keys':6,'layout_engine':engine}),timing_points=points)
     assert invariant(output) == invariant(notes)
     assert validate(output,6)['valid']
+
+
+def test_beam_signature_keeps_future_cost_context_but_ignores_total_cost():
+    state = State(
+        1.0,
+        np.array([100.0, 200.0]),
+        np.array([80.0, 150.0]),
+        np.array([1.5, 2.5]),
+        {
+            ('mix', 'bass', 60): (0, 100, 300),
+            ('other', -1): (1, 150, 150),
+        },
+        ((100, 1, 1), (250, 3, 2), (500, 9, 2)),
+        500,
+        None,
+        (),
+    )
+    signature = _state_signature(state)
+
+    assert _state_signature(replace(state, cost=12.0)) == signature
+    reordered_sources = dict(reversed(list(state.source.items())))
+    assert _state_signature(replace(state, source=reordered_sources)) == signature
+
+    variants = (
+        replace(state, ends=np.array([100.0, 201.0])),
+        replace(state, last=np.array([80.0, 151.0])),
+        replace(state, load=np.array([1.5, 2.6])),
+        replace(state, source={**state.source, ('mix', 'bass', 60): (1, 100, 300)}),
+        replace(state, recent=(*state.recent[:-1], (500, 17, 2))),
+        replace(state, time=501),
+    )
+    assert all(_state_signature(variant) != signature for variant in variants)
+
+
+def test_beam_keeps_history_distinct_after_current_occupancy_converges(monkeypatch):
+    def controlled_prior(choices, keys, start, ends, last, history, durations,
+                        beat_ms, strength):
+        masks = np.sum(1 << choices, axis=1)
+        if start == 0:
+            return np.where(masks == 5, 0.1, np.where(masks == 6, 0.0, 1.0))
+        if start == 100:
+            return np.where(masks == 3, 0.0, 2.0)
+        if start == 200:
+            return np.full(len(choices), 0.0 if history[-2][1] == 5 else 1.0)
+        raise AssertionError(f'unexpected event time: {start}')
+
+    monkeypatch.setattr('manialab.layout.preference_cost', controlled_prior)
+    notes = [
+        Note(0, 0, lane=-1, source='other', id='a'),
+        Note(0, 0, lane=-1, source='other', id='b'),
+        Note(100, 100, lane=-1, source='other', id='c'),
+        Note(100, 100, lane=-1, source='other', id='d'),
+        Note(200, 200, lane=-1, source='other', id='e'),
+    ]
+    settings = parameters({
+        'keys': 6,
+        'pitch_follow': 0,
+        'balance': 0,
+        'jack_avoid': 0,
+        'pattern_prior': 1,
+    })
+
+    output = search_layout(notes, settings, width=2)
+
+    assert {note.lane for note in output if note.start == 0} == {0, 2}
+    assert invariant(output) == invariant(notes)
