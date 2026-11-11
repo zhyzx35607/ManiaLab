@@ -26,15 +26,17 @@ from manialab.pattern_sequence import (
     mirror_window_features,
     window_features,
 )
+from manialab.sequence_prior import (
+    MAX_SEQUENCE_BEAT_MS,
+    sequence_beat_clock as _sequence_beat_clock,
+)
 from scripts.train_layout_network import records_and_groups, split_for
-from manialab.timing import BeatClock
 
 SEED = 20261111
 DEFAULT_WINDOWS_PER_CHART = 80
 DEFAULT_NEGATIVES = 2
 DEFAULT_GROUP_WINDOW_BUDGET = 1000
 CACHE_REVISION = "sequence-window-cache-v3"
-MAX_SEQUENCE_BEAT_MS = 10_000.0
 SAKURA_SET_ID = 2644803
 SAKURA_BEATMAP_IDS = frozenset((5969639, 5969640))
 
@@ -42,25 +44,6 @@ SAKURA_BEATMAP_IDS = frozenset((5969639, 5969640))
 def _feature_schema_sha256(names=FEATURE_NAMES):
     payload = json.dumps(list(names), ensure_ascii=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-
-
-def _sequence_beat_clock(timing_points, fallback=500.0):
-    """Ignore implausibly long uninherited periods for local pattern features."""
-    filtered = []
-    ignored = 0
-    for line in timing_points:
-        fields = line.split(",")
-        try:
-            period = float(fields[1])
-            red = len(fields) < 7 or fields[6].strip() == "1"
-        except (ValueError, IndexError):
-            filtered.append(line)
-            continue
-        if red and (not np.isfinite(period) or period <= 0 or period > MAX_SEQUENCE_BEAT_MS):
-            ignored += 1
-            continue
-        filtered.append(line)
-    return BeatClock(filtered, fallback), ignored
 
 
 def _empty_chart_arrays(negatives):

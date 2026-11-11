@@ -66,7 +66,8 @@
 
 ## 本阶段新增
 
-- Beam未来状态去重修复已完成，分支`fix/beam-future-state-key`，尚待PR。
+- Beam未来状态去重修复已通过PR #26合入主线，merge commit
+  `501b05404c30b08b15a0dc159f53d1bc156f0fb9`；两项Windows validation成功。
   原去重键只比较轨道结束、上次起音和当前行掩码，会合并未来评分上下文不同
   的路径；新签名保存`ends/last/load/source/recent/time`，不把累计cost或回溯
   指针当作未来状态。定向反例用旧签名会选错首排，修复后保留预期的`{0,2}`。
@@ -74,11 +75,34 @@
   passed、85 skipped，`py_compile`与`git diff --check`通过。每排重置`seen`
   保证去重只发生在同一候选行。本改动可能改变原beam布局结果，不代表整谱
   音乐质量改善；source映射排序的性能尚无独立基准。
-- 后续按顺序推进：先用冻结输入把`sequence-window-v1`特征逐窗重建与训练缓存
-  对齐，再添加显式可选的整谱scorer并保持模型默认关闭；随后做6–10K同候选
-  整谱A/B，核对LN协调/放手/反键、声部连续、手部负担、耗时和`.osu`回读；
-  最后按《樱花草》共同bookmark检查分段与具体键型，并结合音频/实际试打决定
-  是否接受。窗口准确率或结构指标均不能替代音乐验收。
+- 运行时接入正在`research/sequence-prior-runtime`实现：新增显式加载、
+  manifest哈希校验和默认关闭的四排窗口scorer，只在完整beam布局中使用；
+  禁止locked局部重排。训练/运行时共用异常Timing guard，窗口保留四排上下文
+  与窗口左缘前的LN状态；累计分数只按候选分数差做有界排序影响。尚未通过
+  全谱评估，不默认启用，也不负责选采音、改变LN尾端或证明音乐质量。
+- 新增`evaluate_sequence_prior_remap.py`作为固定输入全谱A/B入口，只从训练
+  报告的validation/test歌曲组取图，逐图校验来源SHA、对象身份与轨道回读、
+  TimingPoints、LN端点及可玩冲突；按键数分层、同图配对、歌曲组等权统计。
+  test必须引用完整validation产物并匹配相同模型/报告/seed/键数/强度；
+  输出留在ignored的`test-data`，支持原子检查点和配置一致的续跑。
+- 上一轮完整测试为`2194 passed, 85 skipped`；序列运行时/训练/组评价相关
+  32项通过，边界测试覆盖窗口左缘LN、beam序列历史签名、完整对象到轨道回读
+  及test强度冻结契约。验证集有45张10K图、13个歌曲组，约45,019个物件；
+  10K独立test为48张、12组。结构A/B仍不能替代《樱花草》分段/LN人工审查或
+  实际试打，未验证前不能宣称键型质量提升。
+- 本轮独立审查发现10K五音和弦在特定LN尾长顺序下会产生1008个release-order
+  候选（`ends=(0,1,2,4,3)`），旧cap=256会截掉仍可能进入beam的布局。cap现调为
+  1024，并以真实`release_choices()`反例及6–10K理论上限增加测试；定向测试
+  `34 passed`，完整套件`2201 passed, 85 skipped`，`py_compile`与
+  `git diff --check`通过。独立协议审查未发现A/B完整性阻断项，并确认强度
+  应按歌曲组及多项结构指标并列比较；固定LN尾长的定轨结果不能证明LN表达
+  质量。全谱validation尚未运行。
+- 后续先在完整validation组上选定strength并冻结产物，再跑独立test组；
+  之后按《樱花草》共同bookmark检查具体定轨差异。窗口排序准确率、整谱结构
+  指标均不能替代音乐验收。
+- `docs/full-remap-validation.json`中的既有谱不能用作本模型独立A/B：其中多张
+  10K图属于sequence prior的train或validation组。优先报告10K的12个独立test
+  歌曲组、48张图；6/7K作补充，8/9K因test组少只作探索。
 - 当前项目`AGENTS.md`限制最多一个活动子代理。即使用户侧并发额度已升至3，
   仍按项目约束一次运行一个代理，优先用于独立只读审查；不并行修改共享的
   layout或研究脚本。

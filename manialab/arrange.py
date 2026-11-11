@@ -114,16 +114,25 @@ def layout_metrics(notes, keys, beat_ms=500, timing_points=()):
                 peak_hand_pressure=round(peak, 3))
 
 
-def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None, cancelled=lambda: False, segment_preferences=(), timing_points=()):
+def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None,
+                 cancelled=lambda: False, segment_preferences=(), timing_points=(),
+                 sequence_prior=None, sequence_strength=.35):
     """Compare complete assignments against hand/LN-release costs."""
     p = parameters(settings)
+    if sequence_prior is not None and p["layout_engine"] != "beam":
+        raise ValueError("sequence prior requires the beam layout engine")
     notes, locked = list(notes), list(locked)
     if p["layout_engine"] == "beam":
         from .layout import search_layout
         try:
             return search_layout(notes, p, locked, beat_ms, progress=progress, cancelled=cancelled,
-                                 segment_preferences=segment_preferences, timing_points=timing_points)
+                                 segment_preferences=segment_preferences,
+                                 timing_points=timing_points,
+                                 sequence_prior=sequence_prior,
+                                 sequence_strength=sequence_strength)
         except ValueError:
+            if sequence_prior is not None:
+                raise
             # Ordered subsets deliberately limit the search space. The exact
             # per-chord assignment remains a fallback for feasible irregular
             # intervals and local rewrites with many locked future objects.

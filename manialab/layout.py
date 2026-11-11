@@ -17,8 +17,17 @@ import numpy as np
 from .domain import invariant, validate
 from .pattern_prior import preference_cost
 from .arrange import settings_at
+from .sequence_prior import (
+    SequencePrior,
+    SequenceRow,
+    score_sequence_windows,
+    sequence_beat_clock,
+)
 from .timing import BeatClock
 from .ln_patterns import ln_row_costs
+
+# Distinct LN-release orderings can expand the 10K five-note subset space to 1008.
+SEQUENCE_SCORE_CANDIDATE_CAP = 1024
 
 
 @lru_cache(maxsize=5)
@@ -66,27 +75,63 @@ class State:
     time: int
     parent: object
     notes: tuple
+    sequence_rows: tuple = ()
 
 
-def _python_values(values):
-    return tuple(value.item() if isinstance(value, np.generic) else value for value in values)
+def _freeze_state_value(value):
+    if isinstance(value, np.ndarray):
+        return tuple(_freeze_state_value(item) for item in value.tolist())
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, dict):
+        return tuple(sorted(
+            ((_freeze_state_value(key), _freeze_state_value(item))
+             for key, item in value.items()),
+            key=lambda pair: repr(pair[0]),
+        ))
+    if isinstance(value, (tuple, list)):
+        return tuple(_freeze_state_value(item) for item in value)
+    return value
 
 
 def _state_signature(state):
     """Capture every field that can change a future beam transition."""
-    sources = tuple(
-        (key, _python_values(value))
-        for key, value in sorted(state.source.items(), key=lambda item: repr(item[0]))
-    )
-    recent = tuple(_python_values(row) for row in state.recent)
     return (
-        _python_values(state.ends),
-        _python_values(state.last),
-        _python_values(state.load),
-        sources,
-        recent,
-        state.time.item() if isinstance(state.time, np.generic) else state.time,
+        _freeze_state_value(state.ends),
+        _freeze_state_value(state.last),
+        _freeze_state_value(state.load),
+        _freeze_state_value(state.source),
+        _freeze_state_value(state.recent),
+        _freeze_state_value(state.time),
+        _freeze_state_value(state.sequence_rows),
     )
+
+
+def _sequence_score_shortlist(values, valid_choices, keep, strength):
+    """Skip model inference for candidates that cannot enter the beam winners.
+
+    The learned adjustment is bounded by ``strength`` in either direction and
+    deterministic noise is in [0, .025). A fixed reference model score is
+    taken from the lowest-cost baseline candidate. Any candidate more than
+    twice the learned-adjustment range above the unadjusted kth score cannot
+    overtake the kth baseline candidate.
+    """
+    valid_choices = np.asarray(valid_choices, dtype=np.int64)
+    if len(valid_choices) <= keep:
+        return valid_choices
+    baseline = values[valid_choices]
+    cutoff = np.partition(baseline, keep - 1)[keep - 1]
+    margin = 2 * strength + .025
+    return valid_choices[baseline <= cutoff + margin]
+
+
+def _limit_sequence_score_candidates(values, choices, limit):
+    """Guard candidate scoring while retaining the bounded lowest-cost rows."""
+    choices = np.asarray(choices, dtype=np.int64)
+    if len(choices) <= limit:
+        return choices
+    best = np.argpartition(values[choices], limit - 1)[:limit]
+    return np.sort(choices[best])
 
 
 def source_key(note):
@@ -98,9 +143,28 @@ def _conflicts(a, b):
     return a.start == b.start or a.start <= b.start < a.end or b.start <= a.start < b.end
 
 
-def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=None, cancelled=lambda: False, segment_preferences=(), timing_points=()):
+def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=None,
+                  cancelled=lambda: False, segment_preferences=(), timing_points=(),
+                  sequence_prior=None, sequence_strength=.35):
     keys = settings["keys"]
     notes, locked = list(notes), list(locked)
+    if sequence_prior is not None:
+        if not isinstance(sequence_prior, SequencePrior):
+            raise TypeError("sequence_prior must be loaded with load_sequence_prior()")
+        if (
+            isinstance(sequence_strength, bool)
+            or not isinstance(sequence_strength, (int, float))
+            or not math.isfinite(sequence_strength)
+            or not 0 <= sequence_strength <= 1
+        ):
+            raise ValueError("sequence_strength must be between 0 and 1")
+        if locked:
+            raise ValueError("sequence prior currently requires a full-chart layout")
+    use_sequence_prior = sequence_prior is not None and sequence_strength > 0
+    sequence_clock = (
+        sequence_beat_clock(timing_points, 500)[0]
+        if use_sequence_prior else None
+    )
     if not notes:
         return sorted(locked, key=lambda n: (n.start, n.lane))
     if locked and not validate(locked, keys)["valid"]:
@@ -113,7 +177,8 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
     profile = fingers(keys)
     hands = np.array([[.5, .5] if h == 2 else [1., 0.] if h == 0 else [0., 1.] for h, _ in profile])
     digits = np.array([d for _, d in profile])
-    beam = [State(0., np.full(keys, -100000.), np.full(keys, -100000.), np.zeros(keys), {}, (), 0, None, ())]
+    beam = [State(0., np.full(keys, -100000.), np.full(keys, -100000.),
+                  np.zeros(keys), {}, (), 0, None, ())]
     fixed_index = 0
     groups = sorted(by_time.items())
     pitch_values = [n.pitch for n in notes if n.source == "pitch"]
@@ -122,6 +187,7 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
     clock = BeatClock(timing_points, beat_ms)
     for row_index, (start, chord) in enumerate(groups):
         beat_ms = clock(start)
+        sequence_beat_ms = sequence_clock(start) if use_sequence_prior else None
         local = settings_at(settings, start, segment_preferences)
         if cancelled():
             raise InterruptedError("已取消键型搜索")
@@ -146,6 +212,8 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
         seed = np.uint64((settings["seed"] + row_index * 104729) & 0xffffffff)
         noise = ((np.arange(len(choices), dtype=np.uint64) * 2654435761 + seed) % 65521).astype(float) / 65521 * .025
         candidates = []
+        parent_records = []
+        sequence_windows = []
         for parent_index, state in enumerate(beam):
             previous_ends, previous_last = state.ends.copy(), state.last.copy()
             load = state.load * math.exp(-(start - state.time) / max(350, beat_ms * 3))
@@ -201,18 +269,93 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
             if strength:
                 values += preference_cost(choices,keys,start,previous_ends,previous_last,
                     state.recent,duration,beat_ms,strength)
+            sequence_rows_by_choice = {}
+            score_choices = np.empty(0, dtype=np.int64)
+            score_window_start = score_window_end = 0
+            reference_choice = None
+            if use_sequence_prior:
+                valid_choices = np.flatnonzero(valid)
+                keep = min(width * 2, len(valid_choices))
+                score_choices = _sequence_score_shortlist(
+                    values, valid_choices, keep, sequence_strength)
+                score_choices = _limit_sequence_score_candidates(
+                    values, score_choices, SEQUENCE_SCORE_CANDIDATE_CAP)
+                reference_choice = int(valid_choices[
+                    np.argmin(values[valid_choices])])
+                initial_ends = tuple(int(value) for value in state.ends)
+                initial_last = tuple(int(value) for value in state.last)
+                windows = []
+                for choice_index in score_choices:
+                    row = SequenceRow(
+                        start_ms=int(start),
+                        beat_ms=float(sequence_beat_ms),
+                        notes=tuple(sorted(
+                            (int(lane), int(end))
+                            for lane, end in zip(choices[choice_index], ends)
+                        )),
+                        initial_ends=initial_ends,
+                        initial_last=initial_last,
+                    )
+                    sequence_rows_by_choice[int(choice_index)] = row
+                    windows.append((*state.sequence_rows[-3:], row))
+                score_window_start = len(sequence_windows)
+                sequence_windows.extend(windows)
+                score_window_end = len(sequence_windows)
+            parent_records.append(
+                dict(
+                    parent_index=parent_index,
+                    state=state,
+                    values=values,
+                    valid=valid,
+                    previous_ends=previous_ends,
+                    previous_last=previous_last,
+                    load=load,
+                    sequence_rows_by_choice=sequence_rows_by_choice,
+                    score_choices=score_choices,
+                    score_window_start=score_window_start,
+                    score_window_end=score_window_end,
+                    reference_choice=reference_choice,
+                )
+            )
+        if use_sequence_prior and sequence_windows:
+            learned_scores = score_sequence_windows(
+                sequence_windows, keys, sequence_prior)
+            for record in parent_records:
+                score_choices = record["score_choices"]
+                start_index = record["score_window_start"]
+                end_index = record["score_window_end"]
+                scores = learned_scores[start_index:end_index]
+                reference_score = scores[
+                    int(np.searchsorted(
+                        score_choices, record["reference_choice"]
+                    ))
+                ]
+                record["values"][score_choices] += -sequence_strength * np.tanh(
+                    scores - reference_score
+                )
+                scored_mask = np.zeros(len(choices), dtype=bool)
+                scored_mask[score_choices] = True
+                record["valid"] &= scored_mask
+        for record in parent_records:
+            values = record["values"]
             values += noise
-            values[~valid] = np.inf
-            # Keep several branches from each state, then select globally.
-            keep = min(width * 2, int(valid.sum()))
+            values[~record["valid"]] = np.inf
+            keep = min(width * 2, int(record["valid"].sum()))
             winners = np.argpartition(values, keep - 1)[:keep]
-            candidates.extend((state.cost + float(values[c]), parent_index, int(c), previous_ends,
-                               previous_last, load) for c in winners)
+            candidates.extend(
+                (record["state"].cost + float(values[c]),
+                 record["parent_index"], int(c),
+                 record["previous_ends"], record["previous_last"],
+                 record["load"],
+                 record["sequence_rows_by_choice"].get(int(c)))
+                for c in winners
+            )
         if not candidates:
             raise ValueError(f"{start}ms 的 LN 占轨后搜索未找到保时定轨；未删音或缩短 LN")
         candidates.sort(key=lambda item: item[0])
         next_beam, seen = [], set()
-        for score, parent_index, choice_index, previous_ends, previous_last, load in candidates:
+        for (score, parent_index, choice_index, previous_ends, previous_last,
+             load, sequence_row) in candidates:
             parent = beam[parent_index]
             columns = choices[choice_index]
             new_ends, new_last, new_load = previous_ends.copy(), previous_last.copy(), load.copy()
@@ -225,7 +368,9 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
             recent = (*parent.recent[-2:], (start, mask, size))
             decision = tuple(replace(n, lane=int(col)) for n, col in zip(chord, columns))
             next_state = State(score, new_ends, new_last, new_load, mapping,
-                recent, start, parent, decision)
+                recent, start, parent, decision,
+                (*parent.sequence_rows[-2:], sequence_row)
+                if sequence_row is not None else parent.sequence_rows)
             signature = _state_signature(next_state)
             if signature in seen:
                 continue
