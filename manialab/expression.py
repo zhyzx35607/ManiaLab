@@ -352,7 +352,10 @@ def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferen
         existing_notes_fixed=True)
 
 
-def select_expression(candidates, metadata, trace, settings, beat_ms, segment_preferences=(), *, coherence=0.):
+def select_expression(
+    candidates, metadata, trace, settings, beat_ms, segment_preferences=(),
+    *, coherence=0., sustain_coverage=0.,
+):
     """Select rhythmic groups and chord depth; retained LNs keep their ends.
 
     A source group can use fewer simultaneous pitch layers while retaining its
@@ -361,10 +364,13 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
     After selection, wholly omitted transient drum groups may retain one
     aligned attack in the remaining capacity without changing existing notes.
     Research callers can request bounded adjacent-group transition costs;
-    the application default remains disabled pending musical evaluation.
+    sustain coverage is also bounded and rewards only supported long notes.
+    Both research weights default to zero pending musical evaluation.
     """
     from .expression_coherence import validate_weight, group_links, add_costs, selection_report
+    from . import expression_sustain
     validate_weight(coherence, beat_ms)
+    expression_sustain.validate_weight(sustain_coverage, beat_ms)
     p = parameters(settings)
     by_voice = defaultdict(list)
     for n in candidates:
@@ -417,7 +423,10 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
                 family(group, role)
     if not units:
         resolve_phrase_decisions(trace)
-        return [], dict(message='当前段落方案没有可用音符。', decisions=list(trace.values()), selected=0)
+        report = dict(message='当前段落方案没有可用音符。', decisions=list(trace.values()), selected=0)
+        if sustain_coverage:
+            report['sustain_coverage'] = expression_sustain.coverage_report([], [], sustain_coverage)
+        return [], report
     by_start, holds, total = defaultdict(Counter), [], []
     for unit, group in enumerate(units):
         for n in group:
@@ -506,6 +515,9 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
     links = group_links(families, metadata, beat_ms, coherence,
         lambda n: _attack_value(n, settings_at(p, n.start, segment_preferences)), boundaries)
     add_costs(links, families, utility, constraint)
+    sustain_intervals = expression_sustain.coverage_intervals(units, metadata, trace, beat_ms,
+        sustain_coverage, lambda n: _attack_value(n, settings_at(p, n.start, segment_preferences)))
+    expression_sustain.add_rewards(sustain_intervals, utility, constraint)
     matrix = csc_matrix((vals, (rows, cols)), shape=(len(upper), len(utility)))
     solved = _solve_binary(-np.asarray(utility), integrality=np.ones(len(utility)), bounds=Bounds(0, 1),
         constraints=LinearConstraint(matrix, -np.inf, np.asarray(upper)), options={'time_limit': 15., 'mip_rel_gap': .005})
@@ -564,4 +576,6 @@ def select_expression(candidates, metadata, trace, settings, beat_ms, segment_pr
         message=f'按段落声部策略保留 {count} 个物件、{ln} 个 LN；不以全曲比例截断音尾。可查看各音的保留和省略原因。')
     if coherence:
         report['group_coherence'] = selection_report(links, families, chosen, coherence)
+    if sustain_coverage:
+        report['sustain_coverage'] = expression_sustain.coverage_report(sustain_intervals, chosen, sustain_coverage)
     return selected, report

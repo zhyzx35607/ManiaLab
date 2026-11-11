@@ -13,7 +13,10 @@ from scripts.check_expression_current_replay import ANALYSIS, ANALYSIS_SHA, read
 from scripts.check_expression_coherence import BASE, BASE_SHA, WINDOWS
 
 
-def run(study, output, dependencies):
+def run(study, output, dependencies, comparison='coherence'):
+    labels = {'coherence':'Group coherence', 'sustain':'Bounded sustain coverage'}
+    if comparison not in labels:
+        raise ValueError('Unsupported expression comparison')
     study, output = study.resolve(), output.resolve()
     if dependencies:
         sys.path.insert(0, str(dependencies.resolve()))
@@ -50,12 +53,13 @@ def run(study, output, dependencies):
     raw = [n for n in read(ANALYSIS)['candidates'] if n['voice'] == 'other']
     changed = {n['id'] for n in notes[0]} ^ {n['id'] for n in notes[1]}
     changed_bins = sorted({n['start']//8000*8000 for n in raw if n['id'] in changed})
-    windows = list(dict.fromkeys([*WINDOWS, *((begin, min(begin+8000, round(len(pcm)*1000/rate)))
+    fixed_windows = [*WINDOWS, *(((216000,224000),) if comparison == 'sustain' else ())]
+    windows = list(dict.fromkeys([*fixed_windows, *((begin, min(begin+8000, round(len(pcm)*1000/rate)))
                                              for begin in changed_bins)]))
     identities = sorted({n['instrument_id'] for n in raw})
     colors = {identity: plt.get_cmap('tab20')(i) for i, identity in enumerate(identities)}
     save(output/'plan.json', dict(inputs={str(path.relative_to(ROOT)): value for path, value in inputs.items()},
-        windows_ms=windows, original_windows_ms=WINDOWS,
+        windows_ms=windows, original_windows_ms=fixed_windows, comparison=comparison,
         added_window_rule='Every 8-second bin containing a changed other candidate start, without ranking.',
         changed_candidate_ids=sorted(changed), voices=['other'], chart_time_shift_ms=0,
         music_volume=.7, click_volume=.3, neural_inference=False, listened=False,
@@ -69,7 +73,7 @@ def run(study, output, dependencies):
             gridspec_kw={'height_ratios': [1, 2, 2, 2, 2]})
         axes[0].plot((first+np.arange(len(wave))[::22])/rate, wave[::22], lw=.5)
         axes[0].set_ylabel('Original PCM')
-        axes[0].set_title('Fixed Nova other stem / chord-evidence baseline vs group-coherence experiment', loc='left')
+        axes[0].set_title('Fixed Nova other stem / chord-evidence baseline vs '+labels[comparison], loc='left')
         f, t, z = stft(wave, rate, nperseg=4096, noverlap=4096-128, boundary=None, padded=False)
         valid = (f >= 80) & (f <= 5000)
         power = np.maximum(np.abs(z[valid]), 1e-10)
@@ -77,7 +81,7 @@ def run(study, output, dependencies):
             shading='auto', cmap='magma', vmin=-60, vmax=0)
         axes[1].set_yscale('log'); axes[1].set_ylabel('Hz / whole stem')
         visible_classes = set()
-        for axis, row, label in zip(axes[2:], (raw, *notes), ('Raw detected intervals', 'Baseline chart', 'Coherence chart')):
+        for axis, row, label in zip(axes[2:], (raw, *notes), ('Raw detected intervals', 'Baseline chart', labels[comparison]+' chart')):
             visible = [n for n in row if n['start'] < end and n['end'] >= begin]
             for note in visible:
                 color = colors[note['instrument_id']]
@@ -96,7 +100,7 @@ def run(study, output, dependencies):
         clip = dict(start_ms=begin, end_ms=end, figure=figure.name, figure_sha256=sha(figure), audio={})
         for name, events in [('source', []), *[(name, [(n[k], kind) for n in row
                 for k, kind in [('start', 'head'), ('end', 'tail')] if k == 'start' or n['end']>n['start']])
-                for name, row in zip(('baseline', 'coherence'), notes)]]:
+                for name, row in zip(('baseline', comparison), notes)]]:
             data, metadata = render_audition(audio, begin, end-begin, events, .7, .3)
             path = output/f'{begin}-{name}.wav'
             with path.open('xb') as stream:
@@ -118,5 +122,6 @@ if __name__ == '__main__':
     cli.add_argument('--study', type=Path, required=True)
     cli.add_argument('--output', type=Path, required=True)
     cli.add_argument('--plot-dependencies', type=Path)
+    cli.add_argument('--comparison', choices=('coherence', 'sustain'), default='coherence')
     args = cli.parse_args()
-    run(args.study, args.output, args.plot_dependencies)
+    run(args.study, args.output, args.plot_dependencies, args.comparison)
