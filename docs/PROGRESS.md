@@ -123,9 +123,15 @@
   定向负例；101窗不足两条。可接受负例中的各模式变化次数见
   [LN难例探针](sequence-ln-hard-negative-probe.md)。
   专项测试27 passed；全量`pytest`为2206 passed、85 skipped；`py_compile`、
-  `git diff --check`通过。全量训练尚未启动；
-  原序列先验、生成器默认行为和LN尾端均未改变。下一步仅在独立v4缓存上训练，
-  并按歌曲组对比LN窗/tap窗排序；若验证无改善则停止，不挑strength跑test。
+  `git diff --check`通过。PR #30已合并，merge commit `99a4e6c`。全量v4训练已
+  启动；最近检查已处理1500/7907张，生成的缓存和权重保留在ignored目录。
+  原序列先验、生成器默认行为和LN尾端均未改变。
+- 新增`scripts/evaluate_sequence_prior_cross_model.py`，允许分别校验两模型的
+  训练报告，再在同一份v3或v4固定测试候选集上作配对歌曲组bootstrap，输出
+  overall/LN/tap逐组差值。歌曲组评估器同时支持两种缓存格式。
+  专项测试10 passed、`py_compile`和`git diff --check`通过。训练结束后分别用
+  v3原负例集和v4 LN定向负例集评估；模型选择只用validation，test只作冻结比较。
+  命令见对应的cross-model evaluator参数；研究结论仍不是可玩性验收。
 - 该验证固定LN尾端，所以不能证明LN长度、音频声部角色、乐句分段或实际可玩性；
   strength排序指标不能代替《樱花草》共同bookmark人工检查与实际试打。
 - `docs/full-remap-validation.json`中的既有谱不能用作本模型独立A/B：其中多张
