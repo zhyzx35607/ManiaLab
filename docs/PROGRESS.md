@@ -96,7 +96,13 @@
   `34 passed`，完整套件`2201 passed, 85 skipped`，`py_compile`与
   `git diff --check`通过。独立协议审查未发现A/B完整性阻断项，并确认强度
   应按歌曲组及多项结构指标并列比较；固定LN尾长的定轨结果不能证明LN表达
-  质量。全谱validation尚未运行。
+  质量。cap=1024的10K validation strength=0.15已完成45/45图、13组且结构检查
+  全通过：cost/note变化为-0.001384（95%组级区间[-0.003085,0.000224]），
+  LN inverse误差变化-0.032204（[-0.156698,0.072554]）；区间均跨0。
+  原谱轨道偏移率增加0.080562，shield轮廓误差点估计增加0.112701。
+  暂无明确收益，不冻结test；报告位于ignored的
+  `test-data/sequence-prior-remap-v4-validation-015/report.json`。
+  后续按相同10K validation继续strength=0.35和0.60。
 - 后续先在完整validation组上选定strength并冻结产物，再跑独立test组；
   之后按《樱花草》共同bookmark检查具体定轨差异。窗口排序准确率、整谱结构
   指标均不能替代音乐验收。
