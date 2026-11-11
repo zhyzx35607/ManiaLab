@@ -623,12 +623,13 @@ def _score(model, x, keys, torch):
             + model(torch.from_numpy(mirrored.astype(np.float32)))) / 2
 
 
-def evaluate(model, data, split, torch):
+def evaluate(model, data, split, torch, keys=None):
     result = {}
     model.eval()
     with torch.inference_mode():
-        for keys in range(6, 11):
-            sample = data.get((keys, split))
+        selected_keys = range(6, 11) if keys is None else keys
+        for key_count in selected_keys:
+            sample = data.get((key_count, split))
             if sample is None:
                 continue
             positive, negative, context = sample
@@ -641,8 +642,8 @@ def evaluate(model, data, split, torch):
                 end = min(len(positive), begin + 512)
                 pos = positive[begin:end].astype(np.float32)
                 neg = negative[begin:end].reshape(-1, FEATURE_COUNT).astype(np.float32)
-                pos_score = _score(model, pos, keys, torch).numpy()[:, 0]
-                neg_score = _score(model, neg, keys, torch).numpy()[:, 0].reshape(
+                pos_score = _score(model, pos, key_count, torch).numpy()[:, 0]
+                neg_score = _score(model, neg, key_count, torch).numpy()[:, 0].reshape(
                     end - begin, negative.shape[1])
                 margin = pos_score[:, None] - neg_score
                 rows = context[begin:end]
@@ -658,7 +659,7 @@ def evaluate(model, data, split, torch):
                 correct += count[0]
                 loss += count[1]
                 total += count[2]
-            result[str(keys)] = dict(
+            result[str(key_count)] = dict(
                 pairs=int(total),
                 accuracy=round(correct / total, 4) if total else None,
                 loss=round(loss / total, 4) if total else None,
@@ -674,6 +675,20 @@ def evaluate(model, data, split, torch):
                           if by_context["taps"][2] else None),
             )
     return result
+
+
+def _training_keys(data, requested=None):
+    available = [key for key in range(6, 11) if (key, "train") in data]
+    keys = available if requested is None else sorted(set(requested))
+    if not keys or any(key not in range(6, 11) for key in keys):
+        raise ValueError("training keys must contain values from 6 through 10")
+    missing = [
+        key for key in keys
+        if (key, "train") not in data or (key, "validation") not in data
+    ]
+    if missing:
+        raise ValueError(f"Need training and validation groups for keys {missing}")
+    return keys
 
 
 def train(args):
@@ -692,9 +707,7 @@ def train(args):
         group_window_budget=args.group_window_budget,
         max_maps_per_split=args.max_maps_per_split,
         negative_policy=args.negative_policy)
-    train_keys = [key for key in range(6, 11) if (key, "train") in data]
-    if not train_keys or not any((key, "validation") in data for key in train_keys):
-        raise ValueError("Need training and validation groups before fitting")
+    train_keys = _training_keys(data, args.keys)
     pools = {}
     for key in train_keys:
         context = data[(key, "train")][2]
@@ -737,7 +750,7 @@ def train(args):
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
             optimizer.step()
             train_losses.append(float(loss.detach()))
-        validation = evaluate(model, data, "validation", torch)
+        validation = evaluate(model, data, "validation", torch, keys=train_keys)
         losses = [
             report[context]["loss"]
             for report in validation.values()
@@ -756,7 +769,7 @@ def train(args):
         raise ValueError("No validation windows; refusing to export an unvalidated model")
     model.load_state_dict(best_state)
     final_metrics = {
-        split: evaluate(model, data, split, torch)
+        split: evaluate(model, data, split, torch, keys=train_keys)
         for split in ("train", "validation", "test")
     }
     layers = [
@@ -778,6 +791,7 @@ def train(args):
         purpose="Four-row lane-pattern ranking under fixed authored events; research only",
         feature_names=list(FEATURE_NAMES),
         training_manifest_sha256=training_hash,
+        training_keys=train_keys,
         models=final_metrics,
         prep=prep_report,
         best_epoch=best_epoch,
@@ -794,6 +808,7 @@ def train(args):
     payload = dict(
         revision="sequence-window-v1",
         features=list(FEATURE_NAMES),
+        training_keys=train_keys,
         layers=layers,
         training_manifest_sha256=training_hash,
         purpose=report["purpose"],
@@ -821,6 +836,8 @@ def main():
     parser.add_argument("--steps", type=int, default=200)
     parser.add_argument("--batch", type=int, default=512)
     parser.add_argument("--threads", type=int, default=2)
+    parser.add_argument("--keys", nargs="+", type=int, choices=range(6, 11),
+                        help="Train a key-count specialist (default: 6K through 10K).")
     parser.add_argument("--negative-policy", choices=NEGATIVE_POLICIES,
                         default=NEGATIVE_POLICY_RANDOM)
     args = parser.parse_args()
