@@ -351,7 +351,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   `test-data/corpus-expanded/sequence-window-cache-v3-root-smoke-20261111`。
 - 局部窗口特征忽略非有限、非正或超过10,000ms的红线周期，继续使用先前有效
   红线；若无有效红线则采用500ms fallback。该研究过滤不改写谱面Timing。
-  v3修复仍待独立PR检查合并；完成后再启动全量预处理/训练。
+- timing guard 已通过 PR #23 合入，merge commit `ddb430b7cab8a6c8319e8fd4824edbcf9458b437`；
+  两项 Windows validation 均成功。全量 v3 缓存和训练尚未启动。
+- 启动前资源快照为可用内存6.11GiB、D盘余量53.35GiB；按预处理估算峰值
+  约2.54GiB，再加Python和训练开销，启动后应持续监视进程内存。
 - 下一步在核对当时可用内存后，使用2个CPU算子线程、1个跨算子线程运行全量
   研究训练，报告每键数、LN/tap和负例可行性；训练分数只用于决定是否值得做
   冻结候选整谱A/B。接入前还必须修正beam历史状态去重遗漏，并做具体片段
