@@ -67,25 +67,23 @@ does not support connecting the specialist to generation. The comparison uses
 the interval is the independent song group. The report is retained locally at
 `test-data/sequence-prior-cross-v1-validation-v4-10k-specialist.json`.
 
-## Next Experiment
+## LN Interaction Follow-Up
 
-The next validation hypothesis adds explicit LN interaction summaries while
-preserving the original 382 input values as an exact prefix. The new
+The follow-up added explicit LN interaction summaries while preserving the
+original 382 input values as an exact prefix. The
 `sequence-window-ln-interactions-v1` schema adds 17 per-row values for active
 LN combinations, hybrid taps/heads, release-press interactions, inverse,
 reverse-shield, shield, and near-release behavior. It reads only the supplied
-window and per-lane left-edge state, so training and generation can encode the
-same information; older LN-release history not present in that runtime state
-is excluded from both the v5 feature input and its hard-negative transition
-signature, keeping training labels within the runtime-visible context. A
-separate v5 cache prevents mixing these features with existing data.
+window and per-lane left-edge state; older LN-release history not present in
+runtime state is excluded from both features and hard-negative transition
+signatures. A separate v5 cache prevents mixing these features with earlier
+data.
 
-The schema has passed focused training/runtime/evaluator tests and a small
-train/export/cross-schema validation smoke. That smoke is only a pipeline
-check: it used at most two maps per key and split and cannot establish a
-ranking or play-quality gain. Full v5 training and paired 10K validation remain
-the next steps. Do not select from test or connect this model to generation
-unless validation demonstrates a balanced improvement. LN duration and
+The full training run and paired 6K-10K validation and 10K test are complete.
+The 10K validation LN delta was positive, but did not replicate on the
+held-out test. The v5 model therefore remains disconnected from generation.
+See [LN interaction feature results](sequence-prior-ln-interactions-results.md)
+for coverage, confidence intervals, commands, and limitations. LN duration and
 whole-chart playability remain separate unaddressed tasks.
 
 The reports, models, caches, and comparison JSON files are ignored local
