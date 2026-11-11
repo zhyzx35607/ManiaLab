@@ -7,8 +7,10 @@ from manialab.domain import Note
 from manialab.pattern_sequence import FEATURE_COUNT
 from scripts.train_sequence_prior import (
     CACHE_REVISION,
+    MAX_SEQUENCE_BEAT_MS,
     _feature_schema_sha256,
     _load_chart_cache,
+    _sequence_beat_clock,
     chart_samples,
 )
 
@@ -95,6 +97,47 @@ def test_feature_schema_hash_changes_when_feature_names_change():
     assert _feature_schema_sha256(names) != _feature_schema_sha256(
         ("lane_attack", "hold_remaining")
     )
+
+
+def test_sequence_beat_clock_ignores_implausible_red_lines_and_keeps_previous_period():
+    timing_points = [
+        "0,500,4,2,0,70,1,0",
+        "1000,10001,4,2,0,70,1,0",
+        "1250,-100,4,2,0,70,1,0",
+        "1500,250,4,2,0,70,0,0",
+        "2000,600,4,2,0,70,1,0",
+    ]
+
+    clock, ignored = _sequence_beat_clock(timing_points)
+
+    assert ignored == 2
+    assert clock(1200) == 500
+    assert clock(1750) == 500
+    assert clock(2000) == 600
+
+
+def test_sequence_beat_clock_uses_fallback_when_no_valid_red_line_remains():
+    clock, ignored = _sequence_beat_clock(
+        ["0,1000000000,4,2,0,70,1,0"], fallback=480
+    )
+
+    assert ignored == 1
+    assert clock(5000) == 480
+
+
+def test_sequence_beat_clock_counts_nonfinite_and_nonpositive_red_lines():
+    clock, ignored = _sequence_beat_clock([
+        "0,nan,4,2,0,70,1,0",
+        "100,-1,4,2,0,70,1,0",
+        "200,inf,4,2,0,70,1,0",
+    ])
+
+    assert ignored == 3
+    assert clock(500) == 500
+
+
+def test_sequence_timing_limit_stays_within_float16_feature_range():
+    assert MAX_SEQUENCE_BEAT_MS / 1000 < np.finfo(np.float16).max
 
 
 def test_chart_cache_rejects_old_or_changed_feature_schema(tmp_path):

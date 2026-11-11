@@ -33,7 +33,8 @@ SEED = 20261111
 DEFAULT_WINDOWS_PER_CHART = 80
 DEFAULT_NEGATIVES = 2
 DEFAULT_GROUP_WINDOW_BUDGET = 1000
-CACHE_REVISION = "sequence-window-cache-v2"
+CACHE_REVISION = "sequence-window-cache-v3"
+MAX_SEQUENCE_BEAT_MS = 10_000.0
 SAKURA_SET_ID = 2644803
 SAKURA_BEATMAP_IDS = frozenset((5969639, 5969640))
 
@@ -41,6 +42,25 @@ SAKURA_BEATMAP_IDS = frozenset((5969639, 5969640))
 def _feature_schema_sha256(names=FEATURE_NAMES):
     payload = json.dumps(list(names), ensure_ascii=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _sequence_beat_clock(timing_points, fallback=500.0):
+    """Ignore implausibly long uninherited periods for local pattern features."""
+    filtered = []
+    ignored = 0
+    for line in timing_points:
+        fields = line.split(",")
+        try:
+            period = float(fields[1])
+            red = len(fields) < 7 or fields[6].strip() == "1"
+        except (ValueError, IndexError):
+            filtered.append(line)
+            continue
+        if red and (not np.isfinite(period) or period <= 0 or period > MAX_SEQUENCE_BEAT_MS):
+            ignored += 1
+            continue
+        filtered.append(line)
+    return BeatClock(filtered, fallback), ignored
 
 
 def _empty_chart_arrays(negatives):
@@ -59,6 +79,7 @@ def _empty_sampling_diagnostics():
         negative_failed_windows=0,
         negative_examples_found=0,
         negative_search_trials=0,
+        ignored_red_timing_points=0,
         sampled_ln_windows=0,
         sampled_tap_windows=0,
         retained_ln_windows=0,
@@ -143,13 +164,14 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
     if windows_per_chart <= 0 or negatives <= 0:
         raise ValueError("window and negative budgets must be positive")
     rows_by_start = defaultdict(list)
-    clock = BeatClock(timing_points, 500)
+    clock, ignored_red_timing_points = _sequence_beat_clock(timing_points, 500)
     for note in notes:
         rows_by_start[note.start].append(note)
     ordered = [(start, sorted(row, key=lambda n: n.lane))
                for start, row in sorted(rows_by_start.items())]
     diagnostics = _empty_sampling_diagnostics()
     diagnostics["candidate_event_windows"] = len(ordered)
+    diagnostics["ignored_red_timing_points"] = ignored_red_timing_points
     if not ordered:
         arrays = _empty_chart_arrays(negatives)
         return (*arrays, diagnostics) if return_diagnostics else arrays
@@ -294,13 +316,15 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
                    cache_revision=CACHE_REVISION,
                    feature_schema_sha256=_feature_schema_sha256(),
                    seed=SEED,
-                   beat_reference="tempo_at_each_row")
+                   beat_reference="tempo_at_each_row",
+                   max_sequence_beat_ms=MAX_SEQUENCE_BEAT_MS)
     arrays = defaultdict(lambda: [[], [], []])
     statistics = defaultdict(lambda: dict(maps=0, groups=set(), windows=0, ln_windows=0))
     sampling_statistics = defaultdict(lambda: dict(
         maps_seen=0, candidate_event_windows=0, sampled_window_attempts=0,
         retained_windows=0, negative_failed_windows=0,
         negative_examples_found=0, negative_search_trials=0,
+        ignored_red_timing_points=0,
         sampled_ln_windows=0, sampled_tap_windows=0,
         retained_ln_windows=0, retained_tap_windows=0,
         max_chord_size_histograms=dict(sampled={}, retained={}, negative_failed={}),
@@ -318,7 +342,7 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
                 and seen_split_maps[split_key] >= max_maps_per_split):
             continue
         seen_split_maps[split_key] += 1
-        path = cache / f"{row['sha256']}-{row['beatmap_id']}-sequence-window-v2.npz"
+        path = cache / f"{row['sha256']}-{row['beatmap_id']}-sequence-window-v3.npz"
         if path.exists():
             positive, negative, context, diagnostics = _load_chart_cache(path, configs)
         else:
@@ -343,6 +367,7 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             "candidate_event_windows", "sampled_window_attempts",
             "retained_windows", "negative_failed_windows",
             "negative_examples_found", "negative_search_trials",
+            "ignored_red_timing_points",
             "sampled_ln_windows", "sampled_tap_windows",
             "retained_ln_windows", "retained_tap_windows",
         ):
@@ -585,7 +610,8 @@ def train(args):
         export_max_error=export_error,
         seed=SEED,
         method=("4-row fixed-time windows; feasible 1–3-row lane perturbations; "
-                "song/set/audio-group split; LN/tap-balanced batches; mirror-averaged MLP"),
+                "song/set/audio-group split; LN/tap-balanced batches; mirror-averaged MLP; "
+                "ignore red periods above 10000 ms for local feature timing"),
         manifest=manifest,
     )
     args.output.mkdir(parents=True, exist_ok=False)
@@ -609,7 +635,7 @@ def main():
     parser.add_argument("--corpus", type=Path,
                         default=Path("test-data/corpus-expanded/snapshot-verified"))
     parser.add_argument("--cache", type=Path,
-                        default=Path("test-data/corpus-expanded/sequence-window-cache-v2"))
+                        default=Path("test-data/corpus-expanded/sequence-window-cache-v3"))
     parser.add_argument("--output", type=Path, default=Path("test-data/sequence-prior-v1"))
     parser.add_argument("--windows-per-chart", type=int, default=DEFAULT_WINDOWS_PER_CHART)
     parser.add_argument("--negatives", type=int, default=DEFAULT_NEGATIVES)
