@@ -133,6 +133,56 @@ def test_ln_interaction_sequence_encoder_matches_training_for_single_and_batch()
     )
 
 
+@pytest.mark.parametrize("keys", range(6, 11))
+def test_batched_ln_interactions_match_single_window_encoder_for_all_shapes(keys):
+    sentinel = -100000
+    initial_ends = [sentinel] * keys
+    initial_last = [sentinel] * keys
+    for lane, last, end in (
+        (0, 600, 1000),
+        (2, 700, 1060),
+        (4, 800, 1450),
+        (5, 900, 1600),
+    ):
+        initial_last[lane] = last
+        initial_ends[lane] = end
+
+    starts = (1000, 1320, 1650, 1980)
+    beats = (250.0, 333.0, 500.0, 750.0)
+    notes = (
+        ((0, 1000), (1, 1300)),
+        ((2, 1620), (3, 1320)),
+        ((2, 1650), (3, 2100), (5, 1650)),
+        ((1, 1980),),
+    )
+    windows = []
+    for row_count in range(1, 5):
+        rows = []
+        for offset in range(row_count):
+            rows.append(SequenceRow(
+                start_ms=starts[offset],
+                beat_ms=beats[offset],
+                notes=notes[offset],
+                initial_ends=tuple(initial_ends if offset == 0 else [sentinel] * keys),
+                initial_last=tuple(initial_last if offset == 0 else [sentinel] * keys),
+            ))
+        windows.append(tuple(rows))
+
+    actual = sequence_windows_features(windows, keys, LN_INTERACTION_SCHEMA)
+    expected = np.stack([
+        sequence_window_features(window, keys, LN_INTERACTION_SCHEMA)
+        for window in windows
+    ])
+
+    assert np.array_equal(actual[:, :FEATURE_COUNT], expected[:, :FEATURE_COUNT])
+    np.testing.assert_allclose(
+        actual[:, FEATURE_COUNT:],
+        expected[:, FEATURE_COUNT:],
+        rtol=0,
+        atol=1e-7,
+    )
+
+
 def test_batched_sequence_features_match_training_encoder_for_mixed_windows():
     initial_ends = [-100000, -100000, 1200, -100000, -100000, -100000]
     initial_last = [-100000, -100000, 800, -100000, -100000, -100000]

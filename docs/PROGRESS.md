@@ -184,6 +184,26 @@
   单边/不一致祖先证明、model/report哈希绑定与同split joint-to-10K案例；
   定向和完整测试为2230 passed、89 skipped，`py_compile`及`git diff --check`
   通过。
+- PR #35已合并，merge commit `b111855`。全谱10K A/B评估器现接受
+  `sequence-window-ln-interactions-v1`及旧v1模型，读取地图前验证报告、
+  模型schema、清单与模型SHA；test冻结同时绑定feature schema。
+  仅增加v5 run identity字段，保持旧v1续跑身份不变。synthetic v1/v5与
+  不匹配控制35 passed，`py_compile`、`git diff --check`通过。
+  后续验证中发现v5运行时逐个候选窗重算特征，导致一张真实10K图约237秒。
+  v5现复用v1批量前缀并向量化LN互动特征；单窗训练编码仍作基准。3,000个
+  合成窗用时从1.472秒降至0.081秒、特征最大误差0；6–10K随机状态各120窗
+  与单窗逐值一致。全套测试2247 passed、89 skipped，`py_compile`与
+  `git diff --check`通过。真实验证图4993903的v5定轨从236.710秒降至49.167秒，
+  所有非耗时输出完全一致。
+  alternate-split validation按相同seed每歌曲组抽1图，v4/v5相同14图、
+  14组均通过结构检查。按歌曲组配对后没有平衡的LN键型收益：逆LN模式误差
+  点估计增加0.093（95%组区间[0,0.206]），release-shield与release-press
+  等若干误差点估计下降但区间跨0；短jack略增。更多数值与限制见
+  [v5全谱验证](sequence-prior-remap-v5-alternate-validation.md)，完整结果
+  留在ignored的`test-data/sequence-prior-remap-alt-v{4,5}-validation-pergroup-20261112.json`。
+  本阶段不读test分数、不冻结强度、不接入默认生成。下一步应以《樱花草》
+  实际bookmark分段和人工轨道角色为依据建立更直接的键型检查，不能继续把
+  lane熵或与原谱的相似度当作音乐质量。
 - 当前研究仍未解决LN尾端/长度决策、整谱布局和实际可玩性。
 - 该验证固定LN尾端，所以不能证明LN长度、音频声部角色、乐句分段或实际可玩性；
   strength排序指标不能代替《樱花草》共同bookmark人工检查与实际试打。
