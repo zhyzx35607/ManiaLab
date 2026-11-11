@@ -80,6 +80,15 @@
   完整[结果](expression-precision-results.md)与[协议](expression-precision-protocol.md)。
   无推理/训练。后续研究段内节奏骨架必须用确认过的全曲拍格，不能从每个
   短组首重置相位，也不能把全部support声部误认为重复伴奏。
+- 固定节奏骨架研究已完成，当前分支`research/rhythm-policy`。新增显式恒速
+  拍格策略接口，默认不启用；每个段落/声部/乐器类别固定stride与phase，
+  删除起音不贡献奖励、不被LN代替，原两拍source group的密度检查和补鼓
+  检查时刻保留。合成边界及相关检查通过。
+  《樱花草》默认与持续覆盖、6–10K、完整/phase0/phase1共30组已完成，
+  产物`test-data/expression-rhythm-v1`。完整方案逐Note重现；10K默认
+  1496/382，phase0 1435/440，phase1 1391/532。phase1同时造成其他
+  声部容量重排，不能解释成钢琴伴奏被安全抽稀；本轮无新增原声窗口、试听
+  或音乐验收。结果见[固定节奏对照](expression-rhythm-results.md)与协议。
 - 有限 LN 持续覆盖研究已完成并合并，原分支`research/sustain-coverage`。
   新参数`select_expression(..., sustain_coverage=.25)`默认0，只给通过现有
   尾音资格检查的`sustain` pitch 长音有限奖励，不改起止或尾音资格；

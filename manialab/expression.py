@@ -354,7 +354,7 @@ def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferen
 
 def select_expression(
     candidates, metadata, trace, settings, beat_ms, segment_preferences=(),
-    *, coherence=0., sustain_coverage=0.,
+    *, coherence=0., sustain_coverage=0., rhythm_policy=None,
 ):
     """Select rhythmic groups and chord depth; retained LNs keep their ends.
 
@@ -366,11 +366,25 @@ def select_expression(
     Research callers can request bounded adjacent-group transition costs;
     sustain coverage is also bounded and rewards only supported long notes.
     Both research weights default to zero pending musical evaluation.
+    A research rhythm policy can explicitly omit whole attack rows on a
+    confirmed chart grid. It keeps the original grouping boundaries and never
+    changes retained note durations; no automatic accompaniment is inferred.
     """
     from .expression_coherence import validate_weight, group_links, add_costs, selection_report
     from . import expression_sustain
     validate_weight(coherence, beat_ms)
     expression_sustain.validate_weight(sustain_coverage, beat_ms)
+    from .expression_rhythm import plan_rhythm
+    if rhythm_policy is not None and not isinstance(rhythm_policy, dict):
+        raise ValueError('节奏策略必须包含显式拍格与段内规则')
+    rhythm, rhythm_report = plan_rhythm(candidates, metadata, **(rhythm_policy or {}))
+    if rhythm_report is not None:
+        if coherence:
+            raise ValueError('节奏简化尚不能与相邻组连贯惩罚组合')
+        if not math.isclose(beat_ms, 60000 / rhythm_policy['clock']['bpm'], rel_tol=1e-10):
+            raise ValueError('节奏策略拍格与表达分组拍长不一致')
+        for identity, decision in rhythm.items():
+            trace[identity]['rhythm_policy'] = decision
     p = parameters(settings)
     by_voice = defaultdict(list)
     for n in candidates:
@@ -389,6 +403,7 @@ def select_expression(
             units.append(option)
             roles.append(role)
         families.append((group, indices))
+    source_group_index, rhythm_check_times = 0, set()
     for (section, voice, instrument_id, role), notes in by_voice.items():
         notes.sort(key=lambda n: (n.start, -n.strength, n.pitch))
         groups, current = [], []
@@ -403,6 +418,21 @@ def select_expression(
         if current:
             groups.append(current)
         for group in groups:
+            # Form groups from the complete source first: a mask must not
+            # bridge an original boundary or reset phase at a new group.
+            if rhythm_report is not None:
+                rhythm_check_times.update(n.start for n in group)
+                retained = []
+                for n in group:
+                    trace[n.id]['rhythm_source_group'] = source_group_index
+                    if rhythm.get(n.id, {}).get('keep', True):
+                        retained.append(n)
+                    else:
+                        trace[n.id].update(decision='omitted', reason='rhythm_policy_omitted')
+                group = retained
+                source_group_index += 1
+                if not group:
+                    continue
             # Test the lightest expression, not the number of MIDI pitches.
             # A five-pitch chord must not force an entire phrase to disappear
             # when the configured chart chord limit is only two notes.
@@ -426,6 +456,8 @@ def select_expression(
         report = dict(message='当前段落方案没有可用音符。', decisions=list(trace.values()), selected=0)
         if sustain_coverage:
             report['sustain_coverage'] = expression_sustain.coverage_report([], [], sustain_coverage)
+        if rhythm_report is not None:
+            report['rhythm_policy'] = rhythm_report
         return [], report
     by_start, holds, total = defaultdict(Counter), [], []
     for unit, group in enumerate(units):
@@ -453,7 +485,7 @@ def select_expression(
         events[n.end+pref['release_gap']].append((unit, 0, -1))
     live, reserved = Counter(), Counter()
     boundaries = {s[k] for s in segment_preferences for k in ('start_ms', 'end_ms')}
-    times = sorted(set(events) | set(by_start) | boundaries)
+    times = sorted(set(events) | set(by_start) | boundaries | rhythm_check_times)
     recent, pos = Counter(), 0
     total.sort()
     added = 0
@@ -466,7 +498,7 @@ def select_expression(
                 new_holds[unit] += delta
         pref = settings_at(p, t, segment_preferences)
         constraint(live, pref['max_held'])
-        if t not in by_start:
+        if t not in by_start and t not in rhythm_check_times:
             continue
         chord = by_start[t]
         constraint(chord, pref['chord_size'])
@@ -554,7 +586,8 @@ def select_expression(
             else:
                 selected.append(n)
                 trace[n.id].update(chart_start=n.start, chart_end=n.end)
-    added_drums, fallback_solver = _select_drum_anchors(selected, anchors, metadata, p, segment_preferences, by_start)
+    added_drums, fallback_solver = _select_drum_anchors(
+        selected, anchors, metadata, p, segment_preferences, set(by_start) | rhythm_check_times)
     for n in added_drums:
         for member in anchor_groups[n.id]:
             trace[member.id]['group_simplification'] = 'strongest_drum_attack'
@@ -583,4 +616,6 @@ def select_expression(
         report['group_coherence'] = selection_report(links, families, chosen, coherence)
     if sustain_coverage:
         report['sustain_coverage'] = expression_sustain.coverage_report(sustain_intervals, chosen, sustain_coverage)
+    if rhythm_report is not None:
+        report['rhythm_policy'] = rhythm_report
     return selected, report
