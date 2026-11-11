@@ -4,16 +4,22 @@ import pytest
 from manialab.pattern_sequence import (
     FEATURE_COUNT,
     FEATURE_NAMES,
+    FEATURE_SCHEMA_COUNTS,
     GLOBAL_FEATURES,
     LANE_FEATURES,
     LN_INTERACTION_FEATURE_NAMES,
     LN_INTERACTION_ROW_FEATURES,
+    LN_PHRASE_CONTEXT_BINS,
+    LN_PHRASE_CONTEXT_FEATURES,
+    LN_PHRASE_CONTEXT_FEATURE_NAMES,
+    LN_PHRASE_CONTEXT_SCHEMA,
     ROW_FEATURES,
     ROW_WIDTH,
     WINDOW_ROWS,
     mirror_window_features,
     window_features,
     window_features_with_ln_interactions,
+    window_features_with_ln_phrase_context,
 )
 
 
@@ -127,6 +133,221 @@ def test_shared_thumb_hybrid_features_split_same_and_cross_hand_affinity():
     assert interaction[-1, index["hybrid_cross_hand_taps"]] == pytest.approx(
         .5 / 7
     )
+
+
+def test_phrase_context_appends_ordered_eight_beat_summary_and_is_mirror_invariant():
+    rows = [
+        {"start_ms": 1000, "beat_position": 0.0, "notes": [(0, 1800)]},
+        {"start_ms": 1250, "beat_position": 0.5, "notes": [(4, 1250)]},
+        {"start_ms": 1500, "beat_position": 1.0, "notes": [(2, 2500)]},
+        {"start_ms": 1750, "beat_position": 1.5, "notes": [(5, 1750)]},
+        {"start_ms": 2000, "beat_position": 2.0, "notes": [(1, 2000)]},
+    ]
+    result = window_features_with_ln_phrase_context(
+        rows, 6, [500] * len(rows)
+    )
+    initial_ends = [1800, -100000, -100000, -100000, -100000, -100000]
+    initial_last = [1000, -100000, -100000, -100000, -100000, -100000]
+    local = window_features_with_ln_interactions(
+        rows[-WINDOW_ROWS:], 6, [500] * WINDOW_ROWS,
+        initial_ends=initial_ends,
+        initial_last=initial_last,
+    )
+    phrase_start = FEATURE_COUNT + len(LN_INTERACTION_FEATURE_NAMES)
+    summary = result[phrase_start:].reshape(
+        LN_PHRASE_CONTEXT_BINS, -1
+    )
+    phrase_index = {
+        name: index for index, name in enumerate(LN_PHRASE_CONTEXT_FEATURES)
+    }
+
+    assert result.shape == (
+        FEATURE_SCHEMA_COUNTS[LN_PHRASE_CONTEXT_SCHEMA],
+    )
+    assert len(LN_PHRASE_CONTEXT_FEATURE_NAMES) == (
+        LN_PHRASE_CONTEXT_BINS * len(phrase_index)
+    )
+    assert np.isfinite(result).all()
+    assert np.array_equal(result[:len(local)], local)
+    assert summary[12, phrase_index["ln_heads"]] == pytest.approx(1 / 6)
+    assert summary[13, phrase_index["tap_heads"]] == pytest.approx(1 / 6)
+    assert summary[14, phrase_index["ln_heads"]] == pytest.approx(1 / 6)
+    assert summary[:, phrase_index["active_ln_fraction"]].sum() > 0
+    assert np.array_equal(
+        mirror_window_features(result, 6)[phrase_start:],
+        result[phrase_start:],
+    )
+
+
+def test_phrase_context_distinguishes_same_counts_with_different_event_order():
+    first = [
+        {"start_ms": 1000, "beat_position": 0.0, "notes": [(0, 1800)]},
+        {"start_ms": 1250, "beat_position": 0.5, "notes": [(4, 1250)]},
+        {"start_ms": 1500, "beat_position": 1.0, "notes": [(2, 2200)]},
+    ]
+    reordered = [
+        {"start_ms": 1000, "beat_position": 0.0, "notes": [(0, 1800)]},
+        {"start_ms": 1250, "beat_position": 0.5, "notes": [(2, 2200)]},
+        {"start_ms": 1500, "beat_position": 1.0, "notes": [(4, 1500)]},
+    ]
+    a = window_features_with_ln_phrase_context(first, 6, 500)
+    b = window_features_with_ln_phrase_context(reordered, 6, 500)
+
+    assert not np.array_equal(a[-len(LN_PHRASE_CONTEXT_FEATURE_NAMES):],
+                              b[-len(LN_PHRASE_CONTEXT_FEATURE_NAMES):])
+
+
+def test_phrase_context_uses_integrated_ln_release_beats_across_tempo_changes():
+    rows = [
+        {
+            "start_ms": 0,
+            "beat_position": 0.0,
+            "note_end_positions": [5.0],
+            "notes": [(0, 1500)],
+        },
+        {
+            "start_ms": 500,
+            "beat_position": 1.0,
+            "note_end_positions": [1.0],
+            "notes": [(4, 500)],
+        },
+        {
+            "start_ms": 1000,
+            "beat_position": 3.0,
+            "note_end_positions": [3.0],
+            "notes": [(2, 1000)],
+        },
+        {
+            "start_ms": 1500,
+            "beat_position": 5.0,
+            "note_end_positions": [5.0],
+            "notes": [(0, 1500)],
+        },
+    ]
+    result = window_features_with_ln_phrase_context(
+        rows,
+        6,
+        [500, 500, 250, 250],
+        beat_positions=[0.0, 1.0, 3.0, 5.0],
+    )
+    summary = result[
+        FEATURE_COUNT + len(LN_INTERACTION_FEATURE_NAMES):
+    ].reshape(LN_PHRASE_CONTEXT_BINS, -1)
+    index = {
+        name: offset for offset, name in enumerate(LN_PHRASE_CONTEXT_FEATURES)
+    }
+
+    assert summary[6, index["ln_duration_long"]] == pytest.approx(1 / 6)
+    assert summary[6, index["ln_duration_medium"]] == 0
+    assert summary[15, index["ln_releases"]] == pytest.approx(1 / 6)
+    assert summary[15, index["release_press_same_hand"]] == pytest.approx(1 / 6)
+
+
+def test_phrase_context_keeps_pre_window_ln_release_and_release_press():
+    rows = [
+        {"start_ms": 1000, "beat_position": 2.0, "notes": [(2, 1000)]},
+        {"start_ms": 1500, "beat_position": 3.0, "notes": [(0, 1500)]},
+    ]
+    initial_ends = [1500, None, None, None, None, None]
+    initial_last = [0, None, None, None, None, None]
+    result = window_features_with_ln_phrase_context(
+        rows,
+        6,
+        500,
+        initial_ends=initial_ends,
+        initial_last=initial_last,
+        beat_positions=[2.0, 3.0],
+        initial_end_positions=[3.0, None, None, None, None, None],
+        initial_last_positions=[0.0, None, None, None, None, None],
+    )
+    summary = result[
+        FEATURE_COUNT + len(LN_INTERACTION_FEATURE_NAMES):
+    ].reshape(LN_PHRASE_CONTEXT_BINS, -1)
+    names = {
+        name: offset for offset, name in enumerate(LN_PHRASE_CONTEXT_FEATURES)
+    }
+
+    assert summary[15, names["ln_releases"]] == pytest.approx(1 / 6)
+    assert summary[15, names["release_press_same_hand"]] == pytest.approx(1 / 6)
+    assert summary[:, names["active_ln_fraction"]].sum() > 0
+
+
+def test_phrase_context_encodes_near_release_press_hand_relationship():
+    rows = [
+        {
+            "start_ms": 1000,
+            "beat_position": 0.0,
+            "notes": [(0, 1450), (5, 1450)],
+        },
+        {"start_ms": 1500, "beat_position": 1.0, "notes": [(4, 1500)]},
+    ]
+    result = window_features_with_ln_phrase_context(
+        rows, 6, [500, 500]
+    )
+    summary = result[
+        FEATURE_COUNT + len(LN_INTERACTION_FEATURE_NAMES):
+    ].reshape(LN_PHRASE_CONTEXT_BINS, -1)
+    names = {
+        name: offset for offset, name in enumerate(LN_PHRASE_CONTEXT_FEATURES)
+    }
+
+    assert summary[-1, names["release_press_same_hand"]] == 0
+    assert summary[-1, names["near_release_press_same_hand"]] == pytest.approx(1 / 12)
+    assert summary[-1, names["near_release_press_cross_hand"]] == pytest.approx(
+        1 / 12
+    )
+    assert np.array_equal(
+        result[
+            FEATURE_COUNT + len(LN_INTERACTION_FEATURE_NAMES):
+        ].reshape(LN_PHRASE_CONTEXT_BINS, -1)[:, names["near_release_press_same_hand"]],
+        mirror_window_features(result, 6)[
+            FEATURE_COUNT + len(LN_INTERACTION_FEATURE_NAMES):
+        ].reshape(LN_PHRASE_CONTEXT_BINS, -1)[:, names["near_release_press_same_hand"]],
+    )
+
+    same_hand = window_features_with_ln_phrase_context(
+        [
+            {"start_ms": 1000, "beat_position": 0.0, "notes": [(0, 1450)]},
+            {"start_ms": 1500, "beat_position": 1.0, "notes": [(1, 1500)]},
+        ],
+        6,
+        [500, 500],
+    )
+    same_summary = same_hand[
+        FEATURE_COUNT + len(LN_INTERACTION_FEATURE_NAMES):
+    ].reshape(LN_PHRASE_CONTEXT_BINS, -1)
+    assert same_summary[-1, names["near_release_press_same_hand"]] == pytest.approx(
+        1 / 6
+    )
+
+
+def test_phrase_context_rejects_missing_initial_ln_positions():
+    rows = [
+        {"start_ms": 1000, "beat_position": 2.0, "notes": [(2, 1000)]},
+    ]
+
+    with pytest.raises(ValueError, match="initial_end_positions"):
+        window_features_with_ln_phrase_context(
+            rows,
+            6,
+            500,
+            initial_ends=[1500, None, None, None, None, None],
+            initial_last=[0, None, None, None, None, None],
+            beat_positions=[2.0],
+            initial_end_positions=[None, None, None, None, None, None],
+            initial_last_positions=[0.0, None, None, None, None, None],
+        )
+    with pytest.raises(ValueError, match="initial_last_positions"):
+        window_features_with_ln_phrase_context(
+            rows,
+            6,
+            500,
+            initial_ends=[1500, None, None, None, None, None],
+            initial_last=[0, None, None, None, None, None],
+            beat_positions=[2.0],
+            initial_end_positions=[3.0, None, None, None, None, None],
+            initial_last_positions=[None, None, None, None, None, None],
+        )
 
 
 def test_hold_state_duration_and_release_between_rows_are_encoded():

@@ -16,6 +16,7 @@ from .pattern_sequence import (
     FEATURE_SCHEMA_COUNTS,
     FEATURE_SCHEMA_NAMES,
     LN_INTERACTION_SCHEMA,
+    LN_PHRASE_CONTEXT_SCHEMA,
     LANE_FEATURES,
     MAX_LANES,
     ROW_FEATURES,
@@ -24,6 +25,7 @@ from .pattern_sequence import (
     mirror_window_features,
     window_features,
     window_features_with_ln_interactions,
+    window_features_with_ln_phrase_context,
 )
 from .timing import BeatClock
 
@@ -38,9 +40,18 @@ class SequenceRow:
     notes: tuple[tuple[int, int], ...]
     initial_ends: tuple[int, ...]
     initial_last: tuple[int, ...]
+    beat_position: float | None = None
+    note_end_positions: tuple[float, ...] | None = None
+    initial_end_positions: tuple[float | None, ...] | None = None
+    initial_last_positions: tuple[float | None, ...] | None = None
 
     def feature_row(self):
-        return {"start_ms": self.start_ms, "notes": self.notes}
+        return {
+            "start_ms": self.start_ms,
+            "notes": self.notes,
+            "beat_position": self.beat_position,
+            "note_end_positions": self.note_end_positions,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +83,34 @@ def sequence_beat_clock(timing_points=(), fallback=500.0):
             continue
         filtered.append(line)
     return BeatClock(filtered, fallback), ignored
+
+
+def sequence_beat_positions(times, timing_points=(), fallback=500.0):
+    """Integrate red-line timing points into continuous beat positions."""
+    if not np.isfinite(fallback) or fallback <= 0:
+        raise ValueError("fallback beat period must be finite and positive")
+    clock, _ = sequence_beat_clock(timing_points, fallback)
+    offsets = np.asarray(clock.offsets, dtype=np.float64)
+    periods = np.asarray(clock.periods, dtype=np.float64)
+    if not len(offsets):
+        offsets = np.asarray([0.0], dtype=np.float64)
+        periods = np.asarray([fallback], dtype=np.float64)
+    origins = np.zeros(len(offsets), dtype=np.float64)
+    for index in range(1, len(offsets)):
+        origins[index] = (
+            origins[index - 1]
+            + (offsets[index] - offsets[index - 1]) / periods[index - 1]
+        )
+    values = np.asarray(times, dtype=np.float64)
+    if values.ndim != 1 or not np.isfinite(values).all():
+        raise ValueError("times must be a one-dimensional finite sequence")
+    indices = np.maximum(0, np.searchsorted(offsets, values, side="right") - 1)
+    result = origins[indices] + (
+        values - offsets[indices]
+    ) / periods[indices]
+    if not np.isfinite(result).all():
+        raise ValueError("Could not integrate sequence beat positions")
+    return result
 
 
 def load_sequence_prior(path):
@@ -137,6 +176,16 @@ def sequence_window_features(rows, keys, feature_schema="sequence-window-v1"):
             initial_ends=first.initial_ends,
             initial_last=first.initial_last,
         )
+    if feature_schema == LN_PHRASE_CONTEXT_SCHEMA:
+        return window_features_with_ln_phrase_context(
+            encoded_rows,
+            keys,
+            beat_lengths,
+            initial_ends=first.initial_ends,
+            initial_last=first.initial_last,
+            initial_end_positions=first.initial_end_positions,
+            initial_last_positions=first.initial_last_positions,
+        )
     return window_features(
         encoded_rows, keys, beat_lengths,
         initial_ends=first.initial_ends,
@@ -151,6 +200,11 @@ def sequence_windows_features(windows, keys, feature_schema="sequence-window-v1"
                 or feature_schema not in FEATURE_SCHEMA_COUNTS):
             raise ValueError(f"Unsupported sequence feature schema: {feature_schema}")
         return np.empty((0, FEATURE_SCHEMA_COUNTS[feature_schema]), dtype=np.float32)
+    if feature_schema == LN_PHRASE_CONTEXT_SCHEMA:
+        return np.stack([
+            sequence_window_features(rows, keys, feature_schema)
+            for rows in windows
+        ])
     if any(not 1 <= len(rows) <= WINDOW_ROWS for rows in windows):
         raise ValueError("A sequence window must contain one to four event rows")
     if feature_schema == LN_INTERACTION_SCHEMA:

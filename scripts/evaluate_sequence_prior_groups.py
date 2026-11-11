@@ -18,11 +18,14 @@ from manialab.pattern_prior import score_network
 from manialab.pattern_sequence import (
     FEATURE_SCHEMA_COUNTS,
     FEATURE_SCHEMA_NAMES,
+    LN_PHRASE_CONTEXT_BEATS,
+    LN_PHRASE_CONTEXT_SCHEMA,
     mirror_window_features,
 )
 from scripts.train_sequence_prior import (
     CACHE_REVISION,
     LN_INTERACTION_CACHE_REVISION,
+    LN_PHRASE_CONTEXT_CACHE_REVISION,
     LN_TRANSITION_CACHE_REVISION,
     _feature_schema_sha256,
     _load_chart_cache,
@@ -36,6 +39,8 @@ CACHE_FILE_SUFFIXES = {
     LN_TRANSITION_CACHE_REVISION: "sequence-window-v4-ln-transition.npz",
     LN_INTERACTION_CACHE_REVISION:
         "sequence-window-v5-ln-interactions.npz",
+    LN_PHRASE_CONTEXT_CACHE_REVISION:
+        "sequence-window-v7-ln-phrase-context.npz",
 }
 METRICS = ("overall", "ln", "tap")
 BOOTSTRAP_CONFIDENCE = 0.95
@@ -73,11 +78,21 @@ def _validate_report_config(report):
     if feature_schema == "sequence-window-v1":
         if config.get("feature_schema") is not None:
             raise ValueError("Legacy report unexpectedly declares an extended schema")
-        if config["cache_revision"] == "sequence-window-cache-v5-ln-interactions":
+        if config["cache_revision"] in (
+                LN_INTERACTION_CACHE_REVISION,
+                LN_PHRASE_CONTEXT_CACHE_REVISION):
             raise ValueError("Legacy schema cannot use the interaction cache")
+    elif feature_schema == LN_PHRASE_CONTEXT_SCHEMA:
+        if (
+            config.get("feature_schema") != feature_schema
+            or config["cache_revision"] != LN_PHRASE_CONTEXT_CACHE_REVISION
+            or config.get("beat_reference") != "integrated_redline_beats"
+            or config.get("phrase_context_beats") != LN_PHRASE_CONTEXT_BEATS
+        ):
+            raise ValueError("Phrase-context report/cache schema mismatch")
     elif (
         config.get("feature_schema") != feature_schema
-        or config["cache_revision"] != "sequence-window-cache-v5-ln-interactions"
+        or config["cache_revision"] != LN_INTERACTION_CACHE_REVISION
     ):
         raise ValueError("Interaction report/cache schema mismatch")
     return config

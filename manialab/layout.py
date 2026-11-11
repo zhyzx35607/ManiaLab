@@ -22,7 +22,9 @@ from .sequence_prior import (
     SequenceRow,
     score_sequence_windows,
     sequence_beat_clock,
+    sequence_beat_positions,
 )
+from .pattern_sequence import LN_PHRASE_CONTEXT_BEATS, LN_PHRASE_CONTEXT_SCHEMA
 from .timing import BeatClock
 from .ln_patterns import ln_row_costs
 
@@ -165,6 +167,10 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
         sequence_beat_clock(timing_points, 500)[0]
         if use_sequence_prior else None
     )
+    phrase_context_prior = (
+        use_sequence_prior
+        and sequence_prior.feature_schema == LN_PHRASE_CONTEXT_SCHEMA
+    )
     if not notes:
         return sorted(locked, key=lambda n: (n.start, n.lane))
     if locked and not validate(locked, keys)["valid"]:
@@ -181,6 +187,21 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
                   np.zeros(keys), {}, (), 0, None, ())]
     fixed_index = 0
     groups = sorted(by_time.items())
+    phrase_position_by_time = None
+    phrase_positions = None
+    if phrase_context_prior:
+        phrase_times = sorted({
+            int(value)
+            for note in notes
+            for value in (note.start, note.end)
+        })
+        phrase_position_by_time = dict(zip(
+            phrase_times,
+            sequence_beat_positions(phrase_times, timing_points, 500),
+        ))
+        phrase_positions = np.asarray([
+            phrase_position_by_time[start] for start, _ in groups
+        ], dtype=np.float64)
     pitch_values = [n.pitch for n in notes if n.source == "pitch"]
     low, high = np.percentile(pitch_values, [10, 90]) if pitch_values else (36., 84.)
     high = max(low + 12, high)
@@ -188,6 +209,10 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
     for row_index, (start, chord) in enumerate(groups):
         beat_ms = clock(start)
         sequence_beat_ms = sequence_clock(start) if use_sequence_prior else None
+        sequence_beat_position = (
+            float(phrase_positions[row_index])
+            if phrase_context_prior else None
+        )
         local = settings_at(settings, start, segment_preferences)
         if cancelled():
             raise InterruptedError("已取消键型搜索")
@@ -286,18 +311,51 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
                 initial_last = tuple(int(value) for value in state.last)
                 windows = []
                 for choice_index in score_choices:
+                    assigned_notes = tuple(sorted(
+                        (int(lane), int(end))
+                        for lane, end in zip(choices[choice_index], ends)
+                    ))
                     row = SequenceRow(
                         start_ms=int(start),
                         beat_ms=float(sequence_beat_ms),
-                        notes=tuple(sorted(
-                            (int(lane), int(end))
-                            for lane, end in zip(choices[choice_index], ends)
-                        )),
+                        notes=assigned_notes,
                         initial_ends=initial_ends,
                         initial_last=initial_last,
+                        beat_position=sequence_beat_position,
+                        note_end_positions=(
+                            tuple(
+                                float(phrase_position_by_time[end])
+                                for _, end in assigned_notes
+                            )
+                            if phrase_context_prior else None
+                        ),
+                        initial_end_positions=(
+                            tuple(
+                                float(phrase_position_by_time[int(end)])
+                                if int(end) in phrase_position_by_time else None
+                                for end in initial_ends
+                            )
+                            if phrase_context_prior else None
+                        ),
+                        initial_last_positions=(
+                            tuple(
+                                float(phrase_position_by_time[int(last_time)])
+                                if int(last_time) in phrase_position_by_time else None
+                                for last_time in initial_last
+                            )
+                            if phrase_context_prior else None
+                        ),
                     )
                     sequence_rows_by_choice[int(choice_index)] = row
-                    windows.append((*state.sequence_rows[-3:], row))
+                    if phrase_context_prior:
+                        history = tuple(
+                            previous for previous in state.sequence_rows
+                            if sequence_beat_position - previous.beat_position
+                            <= LN_PHRASE_CONTEXT_BEATS
+                        )
+                    else:
+                        history = state.sequence_rows[-3:]
+                    windows.append((*history, row))
                 score_window_start = len(sequence_windows)
                 sequence_windows.extend(windows)
                 score_window_end = len(sequence_windows)
@@ -367,10 +425,21 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
                 mapping[source] = (int(col), start, end)
             recent = (*parent.recent[-2:], (start, mask, size))
             decision = tuple(replace(n, lane=int(col)) for n, col in zip(chord, columns))
+            if sequence_row is None:
+                sequence_history = parent.sequence_rows
+            elif phrase_context_prior:
+                sequence_history = tuple(
+                    previous for previous in (
+                        *parent.sequence_rows, sequence_row
+                    )
+                    if sequence_row.beat_position - previous.beat_position
+                    <= LN_PHRASE_CONTEXT_BEATS
+                )
+            else:
+                sequence_history = (*parent.sequence_rows[-2:], sequence_row)
             next_state = State(score, new_ends, new_last, new_load, mapping,
                 recent, start, parent, decision,
-                (*parent.sequence_rows[-2:], sequence_row)
-                if sequence_row is not None else parent.sequence_rows)
+                sequence_history)
             signature = _state_signature(next_state)
             if signature in seen:
                 continue

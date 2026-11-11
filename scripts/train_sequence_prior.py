@@ -1,4 +1,4 @@
-"""Train and evaluate a research-only four-row mania pattern prior.
+"""Train and evaluate research-only mania lane-pattern priors.
 
 The model ranks lane assignments for fixed event rows. It does not select
 attacks, change LN endpoints, or certify that a chart is musical.
@@ -26,14 +26,18 @@ from manialab.pattern_sequence import (
     FEATURE_SCHEMA_COUNTS,
     FEATURE_SCHEMA_NAMES,
     LN_INTERACTION_SCHEMA,
+    LN_PHRASE_CONTEXT_BEATS,
+    LN_PHRASE_CONTEXT_SCHEMA,
     WINDOW_ROWS,
     mirror_window_features,
     window_features,
     window_features_with_ln_interactions,
+    window_features_with_ln_phrase_context,
 )
 from manialab.sequence_prior import (
     MAX_SEQUENCE_BEAT_MS,
     sequence_beat_clock as _sequence_beat_clock,
+    sequence_beat_positions as _sequence_beat_positions,
 )
 from scripts.train_layout_network import records_and_groups, split_for
 
@@ -44,6 +48,7 @@ DEFAULT_GROUP_WINDOW_BUDGET = 1000
 CACHE_REVISION = "sequence-window-cache-v3"
 LN_TRANSITION_CACHE_REVISION = "sequence-window-cache-v4-ln-transition"
 LN_INTERACTION_CACHE_REVISION = "sequence-window-cache-v5-ln-interactions"
+LN_PHRASE_CONTEXT_CACHE_REVISION = "sequence-window-cache-v7-ln-phrase-context"
 NEGATIVE_POLICY_RANDOM = "random-feasible"
 NEGATIVE_POLICY_LN_TRANSITION = "ln-transition-hard"
 NEGATIVE_POLICIES = (NEGATIVE_POLICY_RANDOM, NEGATIVE_POLICY_LN_TRANSITION)
@@ -75,7 +80,19 @@ def _empty_chart_arrays(negatives, feature_count=FEATURE_COUNT):
 
 
 def _encode_window(rows, keys, beat_lengths, initial_ends, initial_last,
-                   feature_schema):
+                   feature_schema, *, beat_positions=None,
+                   initial_end_positions=None, initial_last_positions=None):
+    if feature_schema == LN_PHRASE_CONTEXT_SCHEMA:
+        return window_features_with_ln_phrase_context(
+            rows,
+            keys,
+            beat_lengths,
+            initial_ends=initial_ends,
+            initial_last=initial_last,
+            beat_positions=beat_positions,
+            initial_end_positions=initial_end_positions,
+            initial_last_positions=initial_last_positions,
+        )
     if feature_schema == LN_INTERACTION_SCHEMA:
         return window_features_with_ln_interactions(
             rows, keys, beat_lengths,
@@ -108,6 +125,10 @@ def _empty_sampling_diagnostics():
         ln_transition_negative_examples_found=0,
         ln_transition_failed_windows=0,
         ln_transition_changed_kinds={kind: 0 for kind in LN_TRANSITION_KINDS},
+        phrase_multirow_search_trials=0,
+        phrase_single_row_fallback_trials=0,
+        phrase_multirow_negatives_found=0,
+        phrase_single_row_negatives_found=0,
         max_chord_size_histograms=dict(sampled={}, retained={}, negative_failed={}),
     )
 
@@ -130,14 +151,20 @@ def _load_chart_cache(path, expected_config):
         )
 
 
-def _as_rows(rows, assignments):
-    return [
-        {
+def _as_rows(rows, assignments, beat_position_by_time=None):
+    encoded = []
+    for (start, notes), lanes in zip(rows, assignments):
+        row = {
             "start_ms": start,
             "notes": [(int(lane), int(note.end)) for lane, note in zip(lanes, notes)],
         }
-        for (start, notes), lanes in zip(rows, assignments)
-    ]
+        if beat_position_by_time is not None:
+            row["beat_position"] = float(beat_position_by_time[start])
+            row["note_end_positions"] = [
+                float(beat_position_by_time[int(note.end)]) for note in notes
+            ]
+        encoded.append(row)
+    return encoded
 
 
 def _negative_path(rows, options, actual, targets, initial_ends, initial_last, rng):
@@ -248,8 +275,13 @@ def _ln_transition_signature(rows, assignments, keys, beat_lengths,
 def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
                                   initial_ends, initial_last, rng, count,
                                   initial_lns=(),
-                                  feature_schema="sequence-window-v1"):
-    """Find feasible one-row alternatives that change an LN transition type."""
+                                  feature_schema="sequence-window-v1",
+                                  *, beat_positions=None,
+                                  beat_position_by_time=None,
+                                  initial_end_positions=None,
+                                  initial_last_positions=None,
+                                  phrase_search_diagnostics=None):
+    """Find feasible LN-window alternatives that change an LN transition type."""
     # v5 cannot encode releases older than its per-lane edge state.
     signature_initial_lns = (
         () if feature_schema == LN_INTERACTION_SCHEMA else initial_lns
@@ -258,8 +290,11 @@ def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
         rows, actual, keys, beat_lengths, initial_ends, initial_last,
         signature_initial_lns)
     positive_features = _encode_window(
-        _as_rows(rows, actual), keys, beat_lengths,
-        initial_ends, initial_last, feature_schema)
+        _as_rows(rows, actual, beat_position_by_time), keys, beat_lengths,
+        initial_ends, initial_last, feature_schema,
+        beat_positions=beat_positions,
+        initial_end_positions=initial_end_positions,
+        initial_last_positions=initial_last_positions)
     eligible = [
         index for index, candidates in enumerate(options)
         if any(value != actual[index] for value in candidates)
@@ -274,9 +309,34 @@ def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
         if len(found) >= count:
             break
         trials += 1
-        target = int(rng.choice(eligible))
+        if feature_schema == LN_PHRASE_CONTEXT_SCHEMA:
+            eligible_set = set(eligible)
+            contiguous_starts = [
+                index for index in eligible
+                if index + 1 in eligible_set
+            ]
+            if contiguous_starts:
+                target_start = int(rng.choice(contiguous_starts))
+                max_length = 1
+                while (max_length < min(4, len(rows) - target_start)
+                       and target_start + max_length in eligible_set):
+                    max_length += 1
+                target_count = int(rng.integers(2, max_length + 1))
+                targets = set(range(target_start, target_start + target_count))
+                if phrase_search_diagnostics is not None:
+                    phrase_search_diagnostics[
+                        "phrase_multirow_search_trials"
+                    ] += 1
+            else:
+                targets = {int(rng.choice(eligible))}
+                if phrase_search_diagnostics is not None:
+                    phrase_search_diagnostics[
+                        "phrase_single_row_fallback_trials"
+                    ] += 1
+        else:
+            targets = {int(rng.choice(eligible))}
         path = _negative_path(
-            rows, options, actual, {target}, initial_ends, initial_last, rng
+            rows, options, actual, targets, initial_ends, initial_last, rng
         )
         if path is None or path == actual:
             continue
@@ -292,8 +352,11 @@ def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
         if not changed_kinds:
             continue
         negative = _encode_window(
-            _as_rows(rows, path), keys, beat_lengths,
-            initial_ends, initial_last, feature_schema)
+            _as_rows(rows, path, beat_position_by_time), keys, beat_lengths,
+            initial_ends, initial_last, feature_schema,
+            beat_positions=beat_positions,
+            initial_end_positions=initial_end_positions,
+            initial_last_positions=initial_last_positions)
         if _same_under_mirroring(positive_features, negative, keys):
             continue
         if any(_same_under_mirroring(old, negative, keys) for old in seen):
@@ -301,6 +364,13 @@ def _find_ln_transition_negatives(rows, options, actual, keys, beat_lengths,
         found.append(negative)
         seen.append(negative)
         changed_kind_counts.update(changed_kinds)
+        if phrase_search_diagnostics is not None:
+            diagnostic_key = (
+                "phrase_multirow_negatives_found"
+                if len(targets) > 1
+                else "phrase_single_row_negatives_found"
+            )
+            phrase_search_diagnostics[diagnostic_key] += 1
     return found, trials, dict(changed_kind_counts)
 
 
@@ -323,6 +393,11 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
         raise ValueError(
             "LN interaction features require the LN-transition hard-negative policy"
         )
+    if (feature_schema == LN_PHRASE_CONTEXT_SCHEMA
+            and negative_policy != NEGATIVE_POLICY_LN_TRANSITION):
+        raise ValueError(
+            "LN phrase-context features require the LN-transition hard-negative policy"
+        )
     feature_count = FEATURE_SCHEMA_COUNTS[feature_schema]
     rows_by_start = defaultdict(list)
     clock, ignored_red_timing_points = _sequence_beat_clock(timing_points, 500)
@@ -330,6 +405,26 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
         rows_by_start[note.start].append(note)
     ordered = [(start, sorted(row, key=lambda n: n.lane))
                for start, row in sorted(rows_by_start.items())]
+    if feature_schema == LN_PHRASE_CONTEXT_SCHEMA:
+        event_positions = _sequence_beat_positions(
+            [start for start, _ in ordered], timing_points, 500
+        )
+        event_position_by_start = {
+            start: float(position)
+            for (start, _), position in zip(ordered, event_positions)
+        }
+        all_relevant_times = sorted(
+            {start for start, _ in ordered}
+            | {int(note.end) for _, row in ordered for note in row}
+        )
+        time_to_beat_position = dict(zip(
+            all_relevant_times,
+            _sequence_beat_positions(all_relevant_times, timing_points, 500),
+        ))
+    else:
+        event_positions = None
+        event_position_by_start = None
+        time_to_beat_position = None
     ln_releases = sorted(
         (note.end, note.start, note.lane)
         for _, row in ordered for note in row if note.hold
@@ -353,7 +448,14 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
 
     contexts, windows = [], []
     for end_index in range(len(ordered)):
-        first_index = max(0, end_index - WINDOW_ROWS + 1)
+        if event_positions is not None:
+            first_index = int(np.searchsorted(
+                event_positions,
+                event_positions[end_index] - LN_PHRASE_CONTEXT_BEATS,
+                side="left",
+            ))
+        else:
+            first_index = max(0, end_index - WINDOW_ROWS + 1)
         window = ordered[first_index:end_index + 1]
         window_start = window[0][0]
         context = (any(note.hold for _, row in window for note in row)
@@ -390,6 +492,24 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
             diagnostics["sampled_tap_windows"] += 1
         initial_ends, initial_last = pre_ends[first_index], pre_last[first_index]
         beat_lengths = [clock(start) for start, _ in window]
+        window_beat_positions = (
+            [event_position_by_start[start] for start, _ in window]
+            if time_to_beat_position is not None else None
+        )
+        initial_end_positions = (
+            tuple(
+                time_to_beat_position.get(int(end)) if end >= 0 else None
+                for end in initial_ends
+            )
+            if time_to_beat_position is not None else None
+        )
+        initial_last_positions = (
+            tuple(
+                time_to_beat_position.get(int(start)) if start >= 0 else None
+                for start in initial_last
+            )
+            if time_to_beat_position is not None else None
+        )
         initial_lns = set()
         for start, _ in window:
             begin = bisect_left(ln_release_ends, start - 150)
@@ -408,14 +528,26 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
             unique.add(actual_lanes)
             options.append(sorted(unique))
         positive = _encode_window(
-            _as_rows(window, actual), keys, beat_lengths,
-            initial_ends, initial_last, feature_schema)
+            _as_rows(window, actual, time_to_beat_position),
+            keys, beat_lengths,
+            initial_ends, initial_last, feature_schema,
+            beat_positions=window_beat_positions,
+            initial_end_positions=initial_end_positions,
+            initial_last_positions=initial_last_positions)
         if (negative_policy == NEGATIVE_POLICY_LN_TRANSITION
                 and contexts[end_index]):
             found, search_trials, changed_kinds = _find_ln_transition_negatives(
                 window, options, actual, keys, beat_lengths,
                 initial_ends, initial_last, rng, negatives, initial_lns,
-                feature_schema)
+                feature_schema,
+                beat_positions=window_beat_positions,
+                beat_position_by_time=time_to_beat_position,
+                initial_end_positions=initial_end_positions,
+                initial_last_positions=initial_last_positions,
+                phrase_search_diagnostics=(
+                    diagnostics
+                    if feature_schema == LN_PHRASE_CONTEXT_SCHEMA else None
+                ))
             diagnostics["ln_transition_search_trials"] += search_trials
             diagnostics["ln_transition_negative_examples_found"] += len(found)
             for kind, count in changed_kinds.items():
@@ -441,8 +573,12 @@ def chart_samples(notes, keys, seed, *, windows_per_chart=DEFAULT_WINDOWS_PER_CH
                 if path is None or path == actual:
                     continue
                 negative = _encode_window(
-                    _as_rows(window, path), keys, beat_lengths,
-                    initial_ends, initial_last, feature_schema)
+                    _as_rows(window, path, time_to_beat_position),
+                    keys, beat_lengths,
+                    initial_ends, initial_last, feature_schema,
+                    beat_positions=window_beat_positions,
+                    initial_end_positions=initial_end_positions,
+                    initial_last_positions=initial_last_positions)
                 if _same_under_mirroring(positive, negative, keys):
                     continue
                 if any(_same_under_mirroring(old, negative, keys) for old in seen):
@@ -496,21 +632,39 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             max_maps_per_split=None,
             negative_policy=NEGATIVE_POLICY_RANDOM,
             feature_schema="sequence-window-v1",
+            exclude_test_split=False,
             split_seed=None):
     if negative_policy not in NEGATIVE_POLICIES:
         raise ValueError(f"unsupported negative policy: {negative_policy}")
     if feature_schema not in FEATURE_SCHEMA_COUNTS:
         raise ValueError(f"unsupported feature schema: {feature_schema}")
+    if not isinstance(exclude_test_split, bool):
+        raise ValueError("exclude_test_split must be a boolean")
+    if exclude_test_split and feature_schema != LN_PHRASE_CONTEXT_SCHEMA:
+        raise ValueError(
+            "test split exclusion is reserved for the phrase-context experiment"
+        )
     if (feature_schema == LN_INTERACTION_SCHEMA
             and negative_policy != NEGATIVE_POLICY_LN_TRANSITION):
         raise ValueError(
             "LN interaction features require the LN-transition hard-negative policy"
         )
-    records, excluded = records_and_groups(root)
+    if (feature_schema == LN_PHRASE_CONTEXT_SCHEMA
+            and negative_policy != NEGATIVE_POLICY_LN_TRANSITION):
+        raise ValueError(
+            "LN phrase-context features require the LN-transition hard-negative policy"
+        )
+    records, excluded = records_and_groups(
+        root,
+        exclude_splits=("test",) if exclude_test_split else (),
+        split_seed=split_seed,
+    )
     holdout_groups = _sakura_holdout_groups(records)
     selected = [row for row in records if row["group"] not in holdout_groups]
     cache.mkdir(parents=True, exist_ok=True)
-    if feature_schema == LN_INTERACTION_SCHEMA:
+    if feature_schema == LN_PHRASE_CONTEXT_SCHEMA:
+        cache_revision = LN_PHRASE_CONTEXT_CACHE_REVISION
+    elif feature_schema == LN_INTERACTION_SCHEMA:
         cache_revision = LN_INTERACTION_CACHE_REVISION
     else:
         cache_revision = (
@@ -525,10 +679,17 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
                    cache_revision=cache_revision,
                    feature_schema_sha256=_feature_schema_sha256(feature_names),
                    seed=SEED,
-                   beat_reference="tempo_at_each_row",
+                   beat_reference=(
+                       "integrated_redline_beats"
+                       if feature_schema == LN_PHRASE_CONTEXT_SCHEMA
+                       else "tempo_at_each_row"
+                   ),
+                   excluded_splits=["test"] if exclude_test_split else [],
                    max_sequence_beat_ms=MAX_SEQUENCE_BEAT_MS)
     if feature_schema != "sequence-window-v1":
         configs["feature_schema"] = feature_schema
+    if feature_schema == LN_PHRASE_CONTEXT_SCHEMA:
+        configs["phrase_context_beats"] = LN_PHRASE_CONTEXT_BEATS
     if negative_policy != NEGATIVE_POLICY_RANDOM:
         configs["negative_policy"] = negative_policy
     arrays = defaultdict(lambda: [[], [], []])
@@ -544,6 +705,10 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
         ln_transition_negative_examples_found=0,
         ln_transition_failed_windows=0,
         ln_transition_changed_kinds={kind: 0 for kind in LN_TRANSITION_KINDS},
+        phrase_multirow_search_trials=0,
+        phrase_single_row_fallback_trials=0,
+        phrase_multirow_negatives_found=0,
+        phrase_single_row_negatives_found=0,
         max_chord_size_histograms=dict(sampled={}, retained={}, negative_failed={}),
     ))
     per_group_maps = Counter((row["keys"], row["group"]) for row in selected)
@@ -551,9 +716,16 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
     manifest = []
     sampling_maps = []
     skipped = Counter()
+    if exclude_test_split:
+        skipped["excluded_test_split_maps"] = int(
+            excluded.pop("split_test_excluded", 0)
+        )
     for index, row in enumerate(selected):
         key, group = row["keys"], row["group"]
         split = split_for(group, seed=split_seed)
+        if exclude_test_split and split == "test":
+            skipped["excluded_test_split_maps"] += 1
+            continue
         split_key = (key, split)
         if (max_maps_per_split is not None
                 and seen_split_maps[split_key] >= max_maps_per_split):
@@ -563,6 +735,8 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             CACHE_REVISION: "sequence-window-v3",
             LN_TRANSITION_CACHE_REVISION: "sequence-window-v4-ln-transition",
             LN_INTERACTION_CACHE_REVISION: "sequence-window-v5-ln-interactions",
+            LN_PHRASE_CONTEXT_CACHE_REVISION:
+                "sequence-window-v7-ln-phrase-context",
         }[cache_revision]
         path = cache / f"{row['sha256']}-{row['beatmap_id']}-{cache_suffix}.npz"
         if path.exists():
@@ -596,6 +770,10 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             "retained_ln_windows", "retained_tap_windows",
             "ln_transition_search_trials", "ln_transition_negative_examples_found",
             "ln_transition_failed_windows",
+            "phrase_multirow_search_trials",
+            "phrase_single_row_fallback_trials",
+            "phrase_multirow_negatives_found",
+            "phrase_single_row_negatives_found",
         ):
             sampling[field] += int(diagnostics.get(field, 0))
         for kind, count in diagnostics.get("ln_transition_changed_kinds", {}).items():
@@ -870,6 +1048,14 @@ def train(args):
 
     if args.output.exists():
         raise FileExistsError(f"Refusing to overwrite research output: {args.output}")
+    if args.exclude_test_split and (
+        args.feature_schema != LN_PHRASE_CONTEXT_SCHEMA
+        or not args.skip_test_evaluation
+    ):
+        raise ValueError(
+            "--exclude-test-split requires the phrase-context schema and "
+            "--skip-test-evaluation"
+        )
     torch.set_num_threads(args.threads)
     torch.set_num_interop_threads(1)
     torch.manual_seed(SEED)
@@ -882,6 +1068,7 @@ def train(args):
         max_maps_per_split=args.max_maps_per_split,
         negative_policy=args.negative_policy,
         feature_schema=args.feature_schema,
+        exclude_test_split=args.exclude_test_split,
         split_seed=args.split_seed)
     train_keys = _training_keys(data, args.keys)
     feature_schema = args.feature_schema
@@ -979,9 +1166,28 @@ def train(args):
     if export_error > 1e-4:
         raise AssertionError(f"Export mismatch: {export_error}")
     training_hash = _manifest_sha256(manifest)
+    if feature_schema == LN_PHRASE_CONTEXT_SCHEMA:
+        method = (
+            "rolling 8-beat LN phrase context with a four-row local prefix; "
+            "attempted feasible contiguous 2–4-event-row lane perturbations, "
+            "with a single-row fallback when no adjacent eligible rows exist; "
+            "integrated redline beat positions; song/set/audio-group split; "
+            "LN/tap-balanced batches; mirror-averaged MLP"
+        )
+    else:
+        method = (
+            "4-row fixed-time windows; feasible 1–3-row lane perturbations; "
+            "song/set/audio-group split; LN/tap-balanced batches; mirror-averaged MLP; "
+            "ignore red periods above 10000 ms for local feature timing; "
+            f"negative_policy={args.negative_policy}"
+        )
     report = dict(
         revision=feature_schema,
-        purpose="Four-row lane-pattern ranking under fixed authored events; research only",
+        purpose=(
+            "LN phrase-context lane ranking under fixed authored events; research only"
+            if feature_schema == LN_PHRASE_CONTEXT_SCHEMA
+            else "Four-row lane-pattern ranking under fixed authored events; research only"
+        ),
         feature_names=list(feature_names),
         training_manifest_sha256=training_hash,
         training_keys=train_keys,
@@ -992,12 +1198,10 @@ def train(args):
         export_max_error=export_error,
         learning_rate=args.learning_rate,
         test_evaluation_skipped=args.skip_test_evaluation,
+        test_split_excluded=args.exclude_test_split,
         split_seed=args.split_seed,
         seed=SEED,
-        method=("4-row fixed-time windows; feasible 1–3-row lane perturbations; "
-                "song/set/audio-group split; LN/tap-balanced batches; mirror-averaged MLP; "
-                "ignore red periods above 10000 ms for local feature timing; "
-                f"negative_policy={args.negative_policy}"),
+        method=method,
         manifest=manifest,
     )
     report.update(provenance)
@@ -1045,6 +1249,8 @@ def main():
                         help="Source training report (default: model's sibling report.json).")
     parser.add_argument("--skip-test-evaluation", action="store_true",
                         help="Leave test metrics out of the final training report.")
+    parser.add_argument("--exclude-test-split", action="store_true",
+                        help="Do not read test maps (phrase-context experiments only).")
     parser.add_argument("--split-seed", type=int,
                         help="Use a deterministic alternate song-group split.")
     parser.add_argument("--negative-policy", choices=NEGATIVE_POLICIES,
@@ -1055,7 +1261,12 @@ def main():
     args = parser.parse_args()
     if args.cache is None:
         cache_name = (
-            "sequence-window-cache-v5-ln-interactions"
+            "sequence-window-cache-v7-ln-phrase-context-no-test"
+            if args.feature_schema == LN_PHRASE_CONTEXT_SCHEMA
+            and args.exclude_test_split
+            else "sequence-window-cache-v7-ln-phrase-context"
+            if args.feature_schema == LN_PHRASE_CONTEXT_SCHEMA
+            else "sequence-window-cache-v5-ln-interactions"
             if args.feature_schema == LN_INTERACTION_SCHEMA
             else
             "sequence-window-cache-v4-ln-transition"
@@ -1065,7 +1276,12 @@ def main():
         args.cache = Path("test-data/corpus-expanded") / cache_name
     if args.output is None:
         output_name = (
-            "sequence-prior-ln-interactions-v1"
+            "sequence-prior-ln-phrase-context-v2-no-test"
+            if args.feature_schema == LN_PHRASE_CONTEXT_SCHEMA
+            and args.exclude_test_split
+            else "sequence-prior-ln-phrase-context-v2"
+            if args.feature_schema == LN_PHRASE_CONTEXT_SCHEMA
+            else "sequence-prior-ln-interactions-v1"
             if args.feature_schema == LN_INTERACTION_SCHEMA
             else
             "sequence-prior-ln-transition-v1"
