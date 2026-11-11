@@ -13,6 +13,9 @@ from .pattern_prior import score_network
 from .pattern_sequence import (
     FEATURE_COUNT,
     FEATURE_NAMES,
+    FEATURE_SCHEMA_COUNTS,
+    FEATURE_SCHEMA_NAMES,
+    LN_INTERACTION_SCHEMA,
     LANE_FEATURES,
     MAX_LANES,
     ROW_FEATURES,
@@ -20,6 +23,7 @@ from .pattern_sequence import (
     WINDOW_ROWS,
     mirror_window_features,
     window_features,
+    window_features_with_ln_interactions,
 )
 from .timing import BeatClock
 
@@ -44,6 +48,7 @@ class SequencePrior:
     layers: tuple[dict[str, np.ndarray], ...]
     sha256: str
     training_manifest_sha256: str = ""
+    feature_schema: str = "sequence-window-v1"
 
 
 def sequence_beat_clock(timing_points=(), fallback=500.0):
@@ -70,13 +75,16 @@ def sequence_beat_clock(timing_points=(), fallback=500.0):
 
 
 def load_sequence_prior(path):
-    """Load and validate an explicit sequence-window-v1 research model."""
+    """Load and validate an explicitly selected research sequence model."""
     path = Path(path)
     raw = path.read_bytes()
     value = json.loads(raw.decode("utf-8"))
-    if value.get("revision") != SEQUENCE_PRIOR_REVISION:
+    feature_schema = value.get("revision")
+    if (not isinstance(feature_schema, str)
+            or feature_schema not in FEATURE_SCHEMA_NAMES):
         raise ValueError("Unsupported sequence prior revision")
-    if value.get("features") != list(FEATURE_NAMES):
+    feature_names = FEATURE_SCHEMA_NAMES[feature_schema]
+    if value.get("features") != list(feature_names):
         raise ValueError("Sequence prior feature schema mismatch")
     manifest_hash = value.get("training_manifest_sha256")
     if not isinstance(manifest_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", manifest_hash):
@@ -86,7 +94,7 @@ def load_sequence_prior(path):
         raise ValueError("Sequence prior must contain exported layers")
 
     layers = []
-    width = len(FEATURE_NAMES)
+    width = len(feature_names)
     for index, layer in enumerate(exported):
         weights = np.asarray(layer["weight"], dtype=np.float32)
         bias = np.asarray(layer["bias"], dtype=np.float32)
@@ -107,29 +115,51 @@ def load_sequence_prior(path):
         tuple(layers),
         hashlib.sha256(raw).hexdigest(),
         manifest_hash,
+        feature_schema,
     )
 
 
-def sequence_window_features(rows, keys):
+def sequence_window_features(rows, keys, feature_schema="sequence-window-v1"):
     """Encode the exact right-aligned window and left-edge state used in training."""
     if not rows:
         raise ValueError("A sequence window must contain at least one event row")
+    if (not isinstance(feature_schema, str)
+            or feature_schema not in FEATURE_SCHEMA_NAMES):
+        raise ValueError(f"Unsupported sequence feature schema: {feature_schema}")
     first = rows[0]
+    encoded_rows = [row.feature_row() for row in rows]
+    beat_lengths = [row.beat_ms for row in rows]
+    if feature_schema == LN_INTERACTION_SCHEMA:
+        return window_features_with_ln_interactions(
+            encoded_rows,
+            keys,
+            beat_lengths,
+            initial_ends=first.initial_ends,
+            initial_last=first.initial_last,
+        )
     return window_features(
-        [row.feature_row() for row in rows],
-        keys,
-        [row.beat_ms for row in rows],
+        encoded_rows, keys, beat_lengths,
         initial_ends=first.initial_ends,
         initial_last=first.initial_last,
     )
 
 
-def sequence_windows_features(windows, keys):
+def sequence_windows_features(windows, keys, feature_schema="sequence-window-v1"):
     """Batch-encode candidate windows while matching the training encoder."""
     if not windows:
-        return np.empty((0, FEATURE_COUNT), dtype=np.float32)
+        if (not isinstance(feature_schema, str)
+                or feature_schema not in FEATURE_SCHEMA_COUNTS):
+            raise ValueError(f"Unsupported sequence feature schema: {feature_schema}")
+        return np.empty((0, FEATURE_SCHEMA_COUNTS[feature_schema]), dtype=np.float32)
     if any(not 1 <= len(rows) <= WINDOW_ROWS for rows in windows):
         raise ValueError("A sequence window must contain one to four event rows")
+    if feature_schema == LN_INTERACTION_SCHEMA:
+        return np.stack([
+            sequence_window_features(rows, keys, feature_schema)
+            for rows in windows
+        ])
+    if feature_schema != "sequence-window-v1":
+        raise ValueError(f"Unsupported sequence feature schema: {feature_schema}")
 
     output = np.zeros((len(windows), FEATURE_COUNT), dtype=np.float32)
     grouped = {}
@@ -302,7 +332,7 @@ def score_sequence_windows(windows, keys, prior):
     """Score candidate windows with the training-time left/right mirror average."""
     if not windows:
         return np.empty(0, dtype=np.float32)
-    encoded = sequence_windows_features(windows, keys)
+    encoded = sequence_windows_features(windows, keys, prior.feature_schema)
     mirrored = mirror_window_features(encoded, keys)
     batch_size = len(encoded)
     scores = score_network(

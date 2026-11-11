@@ -16,12 +16,13 @@ import numpy as np
 
 from manialab.pattern_prior import score_network
 from manialab.pattern_sequence import (
-    FEATURE_COUNT,
-    FEATURE_NAMES,
+    FEATURE_SCHEMA_COUNTS,
+    FEATURE_SCHEMA_NAMES,
     mirror_window_features,
 )
 from scripts.train_sequence_prior import (
     CACHE_REVISION,
+    LN_INTERACTION_CACHE_REVISION,
     LN_TRANSITION_CACHE_REVISION,
     _feature_schema_sha256,
     _load_chart_cache,
@@ -33,6 +34,8 @@ DEFAULT_CACHE = Path("test-data/corpus-expanded/sequence-window-cache-v3")
 CACHE_FILE_SUFFIXES = {
     CACHE_REVISION: "sequence-window-v3.npz",
     LN_TRANSITION_CACHE_REVISION: "sequence-window-v4-ln-transition.npz",
+    LN_INTERACTION_CACHE_REVISION:
+        "sequence-window-v5-ln-interactions.npz",
 }
 METRICS = ("overall", "ln", "tap")
 BOOTSTRAP_CONFIDENCE = 0.95
@@ -46,9 +49,14 @@ def _read_json(path):
 
 
 def _validate_report_config(report):
-    expected_features = list(FEATURE_NAMES)
-    if report.get("revision") != "sequence-window-v1":
+    feature_schema = report.get("revision")
+    expected = (
+        FEATURE_SCHEMA_NAMES.get(feature_schema)
+        if isinstance(feature_schema, str) else None
+    )
+    if expected is None:
         raise ValueError("Unexpected sequence-prior report revision")
+    expected_features = list(expected)
     if report.get("feature_names") != expected_features:
         raise ValueError("Report feature schema does not match this evaluator")
     prep = report.get("prep")
@@ -57,17 +65,33 @@ def _validate_report_config(report):
     config = prep["configs"]
     if config.get("cache_revision") not in CACHE_FILE_SUFFIXES:
         raise ValueError("Report does not reference a supported sequence cache")
-    if config.get("feature_count") != FEATURE_COUNT:
+    feature_count = FEATURE_SCHEMA_COUNTS[feature_schema]
+    if config.get("feature_count") != feature_count:
         raise ValueError("Report feature count does not match this evaluator")
-    if config.get("feature_schema_sha256") != _feature_schema_sha256():
+    if config.get("feature_schema_sha256") != _feature_schema_sha256(expected):
         raise ValueError("Report feature schema hash does not match this evaluator")
+    if feature_schema == "sequence-window-v1":
+        if config.get("feature_schema") is not None:
+            raise ValueError("Legacy report unexpectedly declares an extended schema")
+        if config["cache_revision"] == "sequence-window-cache-v5-ln-interactions":
+            raise ValueError("Legacy schema cannot use the interaction cache")
+    elif (
+        config.get("feature_schema") != feature_schema
+        or config["cache_revision"] != "sequence-window-cache-v5-ln-interactions"
+    ):
+        raise ValueError("Interaction report/cache schema mismatch")
     return config
 
 
 def _validate_model_artifact(report, model):
-    expected_features = list(FEATURE_NAMES)
-    if model.get("revision") != "sequence-window-v1":
+    feature_schema = report.get("revision")
+    expected_features = report.get("feature_names")
+    if feature_schema not in FEATURE_SCHEMA_NAMES:
+        raise ValueError("Unexpected sequence-prior report revision")
+    if model.get("revision") != feature_schema:
         raise ValueError("Unexpected sequence-prior model revision")
+    if expected_features != list(FEATURE_SCHEMA_NAMES[feature_schema]):
+        raise ValueError("Report feature schema does not match this evaluator")
     if model.get("features") != expected_features:
         raise ValueError("Model feature schema does not match this evaluator")
     training_hash = report.get("training_manifest_sha256")
@@ -77,7 +101,7 @@ def _validate_model_artifact(report, model):
     if not isinstance(raw_layers, list) or not raw_layers:
         raise ValueError("Model has no network layers")
     layers = []
-    previous_width = FEATURE_COUNT
+    previous_width = len(expected_features)
     for index, layer in enumerate(raw_layers):
         if not isinstance(layer, dict) or "weight" not in layer or "bias" not in layer:
             raise ValueError(f"Invalid model layer {index}")
@@ -193,9 +217,10 @@ def _validated_map_arrays(row, cache_root, config):
         raise ValueError("Unsupported sequence cache revision")
     cache_path = Path(cache_root) / f"{sha256}-{beatmap_id}-{cache_suffix}"
     positive, negative, context, _ = _load_chart_cache(cache_path, config)
-    if (positive.ndim != 2 or positive.shape[1] != FEATURE_COUNT
+    feature_count = int(config["feature_count"])
+    if (positive.ndim != 2 or positive.shape[1] != feature_count
             or negative.ndim != 3 or negative.shape[0] != len(positive)
-            or negative.shape[2] != FEATURE_COUNT
+            or negative.shape[2] != feature_count
             or context.shape != (len(positive),)):
         raise ValueError(f"Invalid cached sample shapes for beatmap {beatmap_id}")
     if (not np.isfinite(positive).all() or not np.isfinite(negative).all()):
@@ -250,7 +275,7 @@ def evaluate_key(report, cache_root, config, layers, keys, *,
             end = min(len(positive), begin + batch_size)
             pos_score = _score_mirror_averaged(
                 positive[begin:end], layers, keys)
-            neg = negative[begin:end].reshape(-1, FEATURE_COUNT)
+            neg = negative[begin:end].reshape(-1, positive.shape[1])
             neg_score = _score_mirror_averaged(neg, layers, keys).reshape(
                 end - begin, negative.shape[1])
             counts = pair_accuracy_counts(

@@ -6,11 +6,14 @@ from manialab.pattern_sequence import (
     FEATURE_NAMES,
     GLOBAL_FEATURES,
     LANE_FEATURES,
+    LN_INTERACTION_FEATURE_NAMES,
+    LN_INTERACTION_ROW_FEATURES,
     ROW_FEATURES,
     ROW_WIDTH,
     WINDOW_ROWS,
     mirror_window_features,
     window_features,
+    window_features_with_ln_interactions,
 )
 
 
@@ -71,6 +74,59 @@ def test_mirror_reverses_only_valid_lanes_and_is_an_involution():
 
     batch = np.stack((x, mirrored))
     assert np.array_equal(mirror_window_features(batch, keys)[0], mirrored)
+
+
+def test_ln_interaction_features_preserve_v1_prefix_and_mirror_symmetry():
+    rows = [
+        {"start_ms": 1000, "notes": [(0, 1500), (4, 1000)]},
+        {"start_ms": 1250, "notes": [(1, 1250), (5, 1250)]},
+        {"start_ms": 1600, "notes": [(0, 1900)]},
+    ]
+    base = window_features(rows, 6, 500)
+    extended = window_features_with_ln_interactions(rows, 6, 500)
+
+    assert extended.shape == (FEATURE_COUNT + len(LN_INTERACTION_FEATURE_NAMES),)
+    assert np.array_equal(extended[:FEATURE_COUNT], base)
+    assert np.isfinite(extended).all()
+    mirrored = mirror_window_features(extended, 6)
+    assert np.array_equal(mirror_window_features(mirrored, 6), extended)
+    assert np.array_equal(mirrored[FEATURE_COUNT:], extended[FEATURE_COUNT:])
+
+    interaction = extended[FEATURE_COUNT:].reshape(
+        WINDOW_ROWS, len(LN_INTERACTION_ROW_FEATURES)
+    )
+    row_one = interaction[-3]
+    row_two = interaction[-2]
+    row_three = interaction[-1]
+    index = {name: i for i, name in enumerate(LN_INTERACTION_ROW_FEATURES)}
+    assert row_one[index["active_ln_density"]] == 0
+    assert row_two[index["hybrid_same_hand_taps"]] == pytest.approx(1 / 6)
+    assert row_two[index["hybrid_cross_hand_taps"]] == pytest.approx(1 / 6)
+    assert row_three[index["inverse_ln_heads"]] == pytest.approx(1 / 6)
+    assert row_three[index["near_release_press"]] == pytest.approx(1 / 6)
+    assert row_three[index["release_press_same_hand"]] == pytest.approx(1 / 6)
+
+
+def test_shared_thumb_hybrid_features_split_same_and_cross_hand_affinity():
+    values = window_features_with_ln_interactions(
+        [
+            {"start_ms": 1000, "notes": [(3, 1800)]},
+            {"start_ms": 1250, "notes": [(0, 1250)]},
+        ],
+        7,
+        500,
+    )
+    interaction = values[FEATURE_COUNT:].reshape(
+        WINDOW_ROWS, len(LN_INTERACTION_ROW_FEATURES)
+    )
+    index = {name: i for i, name in enumerate(LN_INTERACTION_ROW_FEATURES)}
+
+    assert interaction[-1, index["hybrid_same_hand_taps"]] == pytest.approx(
+        .5 / 7
+    )
+    assert interaction[-1, index["hybrid_cross_hand_taps"]] == pytest.approx(
+        .5 / 7
+    )
 
 
 def test_hold_state_duration_and_release_between_rows_are_encoded():

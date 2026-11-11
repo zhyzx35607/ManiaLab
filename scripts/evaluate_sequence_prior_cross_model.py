@@ -78,8 +78,55 @@ def _new_group_counts():
     return defaultdict(lambda: {metric: [0.0, 0] for metric in METRICS})
 
 
+def _groups_for_split(report, split, label):
+    sampling_maps = report.get("prep", {}).get("sampling_maps")
+    if not isinstance(sampling_maps, list):
+        raise ValueError(f"{label} report is missing per-map split records")
+    groups = set()
+    for row in sampling_maps:
+        if not isinstance(row, dict):
+            raise ValueError(f"{label} report has an invalid map record")
+        if row.get("split") != split:
+            continue
+        group = row.get("group")
+        if not isinstance(group, str) or not group:
+            raise ValueError(f"{label} report has a map without a song group")
+        groups.add(group)
+    return groups
+
+
+def _validate_group_isolation(report_a, report_b, sample_report, split):
+    evaluation_groups = _groups_for_split(sample_report, split, "Sample")
+    if not evaluation_groups:
+        raise ValueError(f"Sample report has no {split} song groups")
+
+    training_group_counts = {}
+    for label, report in (("Model A", report_a), ("Model B", report_b)):
+        training_groups = _groups_for_split(report, "train", label)
+        if not training_groups:
+            raise ValueError(f"{label} report has no training song groups")
+        overlap = evaluation_groups & training_groups
+        if overlap:
+            examples = ", ".join(sorted(overlap)[:5])
+            raise ValueError(
+                f"{label} training groups overlap the {split} evaluation "
+                f"groups: {examples}"
+            )
+        training_group_counts[label.lower().replace(" ", "_")] = len(
+            training_groups
+        )
+    return dict(
+        split=split,
+        evaluation_groups=len(evaluation_groups),
+        model_a_training_groups=training_group_counts["model_a"],
+        model_b_training_groups=training_group_counts["model_b"],
+        overlapping_groups=0,
+    )
+
+
 def _evaluate_key(sample_report, cache_root, sample_config, layers_a, layers_b,
-                  keys, *, split, bootstrap_samples, seed, batch_size):
+                  keys, *, feature_count_a, feature_count_b, split,
+                  bootstrap_samples, seed, batch_size):
     sampling_maps = sample_report.get("prep", {}).get("sampling_maps")
     if not isinstance(sampling_maps, list):
         raise ValueError("Sample report is missing per-map sampling records")
@@ -112,12 +159,18 @@ def _evaluate_key(sample_report, cache_root, sample_config, layers_a, layers_b,
         for begin in range(0, len(positive), batch_size):
             end = min(len(positive), begin + batch_size)
             pos = positive[begin:end]
-            neg = negative[begin:end].reshape(-1, positive.shape[1])
-            pos_a = _score_mirror_averaged(pos, layers_a, keys)
-            neg_a = _score_mirror_averaged(neg, layers_a, keys).reshape(
+            neg = negative[begin:end]
+            pos_a = _score_mirror_averaged(
+                pos[:, :feature_count_a], layers_a, keys)
+            neg_a = _score_mirror_averaged(
+                neg[:, :, :feature_count_a].reshape(-1, feature_count_a),
+                layers_a, keys).reshape(
                 end - begin, negative.shape[1])
-            pos_b = _score_mirror_averaged(pos, layers_b, keys)
-            neg_b = _score_mirror_averaged(neg, layers_b, keys).reshape(
+            pos_b = _score_mirror_averaged(
+                pos[:, :feature_count_b], layers_b, keys)
+            neg_b = _score_mirror_averaged(
+                neg[:, :, :feature_count_b].reshape(-1, feature_count_b),
+                layers_b, keys).reshape(
                 end - begin, negative.shape[1])
             _merge_counts(counts_a[group], pair_accuracy_counts(
                 pos_a, neg_a, context[begin:end]))
@@ -185,6 +238,17 @@ def compare(report_a_path=DEFAULT_REPORT_A, model_a_path=DEFAULT_MODEL_A,
     layers_b = _validate_model_artifact(report_b, model_b)
     sample_report = _read_json(sample_report_path)
     sample_config = _validate_report_config(sample_report)
+    sample_features = sample_report["feature_names"]
+    features_a = report_a["feature_names"]
+    features_b = report_b["feature_names"]
+    for features in (features_a, features_b):
+        if (len(features) > len(sample_features)
+                or sample_features[:len(features)] != features):
+            raise ValueError(
+                "Sample features do not contain a model's schema prefix"
+            )
+    feature_count_a = len(features_a)
+    feature_count_b = len(features_b)
 
     if (isinstance(batch_size, bool)
             or not isinstance(batch_size, (int, np.integer)) or batch_size < 1):
@@ -204,6 +268,9 @@ def compare(report_a_path=DEFAULT_REPORT_A, model_a_path=DEFAULT_MODEL_A,
         raise ValueError("keys must contain one or more integers from 6 through 10")
     if split not in ("validation", "test"):
         raise ValueError("split must be validation or test")
+    group_isolation = _validate_group_isolation(
+        report_a, report_b, sample_report, split
+    )
     bootstrap_samples, seed, batch_size = (
         int(bootstrap_samples), int(seed), int(batch_size))
 
@@ -211,6 +278,8 @@ def compare(report_a_path=DEFAULT_REPORT_A, model_a_path=DEFAULT_MODEL_A,
     for key in requested_keys:
         results[str(key)] = _evaluate_key(
             sample_report, cache_root, sample_config, layers_a, layers_b, key,
+            feature_count_a=feature_count_a,
+            feature_count_b=feature_count_b,
             split=split, bootstrap_samples=bootstrap_samples, seed=seed,
             batch_size=batch_size)
     return dict(
@@ -218,6 +287,7 @@ def compare(report_a_path=DEFAULT_REPORT_A, model_a_path=DEFAULT_MODEL_A,
         scope=("Paired held-out local window ranking on identical candidates "
                "with fixed authored note events and LN endpoints; not chart quality."),
         split=split,
+        group_isolation=group_isolation,
         bootstrap=dict(
             unit="independent song group",
             samples=bootstrap_samples,
