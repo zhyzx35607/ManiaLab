@@ -68,6 +68,27 @@ class State:
     notes: tuple
 
 
+def _python_values(values):
+    return tuple(value.item() if isinstance(value, np.generic) else value for value in values)
+
+
+def _state_signature(state):
+    """Capture every field that can change a future beam transition."""
+    sources = tuple(
+        (key, _python_values(value))
+        for key, value in sorted(state.source.items(), key=lambda item: repr(item[0]))
+    )
+    recent = tuple(_python_values(row) for row in state.recent)
+    return (
+        _python_values(state.ends),
+        _python_values(state.last),
+        _python_values(state.load),
+        sources,
+        recent,
+        state.time.item() if isinstance(state.time, np.generic) else state.time,
+    )
+
+
 def source_key(note):
     voice = getattr(note, "voice", "mix")
     return (voice, note.instrument_id, note.pitch) if note.source == "pitch" else (note.source, note.lane)
@@ -198,16 +219,18 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
             new_ends[columns], new_last[columns] = ends, start
             new_load[columns] += 1 + np.minimum(duration / 2500, 2)
             mask = sum(1 << int(c) for c in columns)
-            signature = (tuple(new_ends), tuple(new_last), mask)
-            if signature in seen:
-                continue
-            seen.add(signature)
             mapping = {k: v for k, v in parent.source.items() if start - v[1] < beat_ms * 8}
             for source, col, end in zip(sources, columns, ends):
                 mapping[source] = (int(col), start, end)
+            recent = (*parent.recent[-2:], (start, mask, size))
             decision = tuple(replace(n, lane=int(col)) for n, col in zip(chord, columns))
-            next_beam.append(State(score, new_ends, new_last, new_load, mapping,
-                (*parent.recent[-2:], (start, mask, size)), start, parent, decision))
+            next_state = State(score, new_ends, new_last, new_load, mapping,
+                recent, start, parent, decision)
+            signature = _state_signature(next_state)
+            if signature in seen:
+                continue
+            seen.add(signature)
+            next_beam.append(next_state)
             if len(next_beam) >= width:
                 break
         beam = next_beam
