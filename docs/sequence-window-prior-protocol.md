@@ -20,6 +20,11 @@
   等价而丢弃。模型不会用生成结果自我标注。
 - 每图缓存同时保存诊断和 `FEATURE_NAMES` SHA256；配置还包含显式缓存版本。
   负例生成或抽样语义改变时必须提升缓存版本，不可继续复用旧窗口。
+- 局部节拍特征忽略非有限、非正或超过 10,000ms 的红线周期；忽略后沿用
+  前一条有效红线，没有有效红线时使用 500ms fallback。被忽略红线数逐谱和按
+  键数/切分累计。该限制只保护研究窗口特征，不改写原谱或应用 Timing。
+- 定时过滤规则属于特征生成语义；对应缓存版本为 `sequence-window-cache-v3`，
+  不复用 v1/v2 的窗口缓存。
 - 固定随机种子 `20261111`；训练使用 24 epochs、每轮 200 steps、batch 512、
   CPU算子线程2、跨算子线程1。按键数和LN/tap窗口均衡取样，验证集选轮次，
   测试集仅最终报告。
@@ -37,7 +42,7 @@
 
 ## 隔离产物
 
-新缓存使用 `test-data/corpus-expanded/sequence-window-cache-v2`，完整训练输出
+新缓存使用 `test-data/corpus-expanded/sequence-window-cache-v3`，完整训练输出
 使用 ignored 本地目录 `test-data/sequence-prior-v1`。不得覆盖旧 `network-cache`
 或 `assets/pattern-prior.json`。Reference、成品、音频、窗口缓存和权重不进入源码
 提交或Release。
