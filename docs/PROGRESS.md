@@ -352,16 +352,23 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 局部窗口特征忽略非有限、非正或超过10,000ms的红线周期，继续使用先前有效
   红线；若无有效红线则采用500ms fallback。该研究过滤不改写谱面Timing。
 - timing guard 已通过 PR #23 合入，merge commit `ddb430b7cab8a6c8319e8fd4824edbcf9458b437`；
-  两项 Windows validation 均成功。全量 v3 缓存和训练尚未启动。
+  两项 Windows validation 均成功。PR #24 随后记录了该阶段验证。
 - 启动前资源快照为可用内存6.11GiB、D盘余量53.35GiB；按预处理估算峰值
-  约2.54GiB，再加Python和训练开销，启动后应持续监视进程内存。
-- 下一步在核对当时可用内存后，使用2个CPU算子线程、1个跨算子线程运行全量
-  研究训练，报告每键数、LN/tap和负例可行性；训练分数只用于决定是否值得做
-  冻结候选整谱A/B。接入前还必须修正beam历史状态去重遗漏，并做具体片段
-  审查与玩家试打。每个已验证阶段仍单独开 PR、检查、合并。已有源码与小阶段记录
-  保存在 GitHub；本地 ignored 音频/权重仍需本机保留，GitHub源码不包含它们。
-- 评估边界复核：四排模型仍只排序固定事件、固定起止下的四排局部窗口，训练
-  JSON 不兼容当前 `manialab.pattern_prior` runtime 格式。即使测试窗口得分提高，
-  也不代表整谱键型或 LN 质量；全量结果必须独立报 10K 的 LN/tap 窗口及独立
-  歌曲组覆盖，8K/9K 作为小样本探索报告。下一阶段需先实现四排历史状态 scorer，
-  再做冻结候选整谱A/B、《樱花草》片段审查及玩家试打。
+  约2.54GiB，再加Python和训练开销；全量任务已结束，无活动训练进程。
+- 全量v3预处理和四排窗口先验训练已完成，命令为
+  `.\.venv-audio\Scripts\python.exe scripts\train_sequence_prior.py --threads 2 --cache test-data/corpus-expanded/sequence-window-cache-v3 --output test-data/sequence-prior-v1`。
+  共7,907张谱，最佳轮次20，导出最大误差`2.29e-5`。10K逐窗口测试为
+  7,672个排序对、77.05%准确率；LN为75.13%，tap为78.57%。训练报告和模型
+  留在ignored本地目录，不提交源码或Release。
+- 新增歌曲组等权评价入口`scripts/evaluate_sequence_prior_groups.py`，结果与协议
+  见[四排序列先验结果](sequence-window-prior-results.md)。10K测试覆盖12个独立
+  歌曲组（11组含LN）、48张图及3,836个窗口；歌曲组宏平均整体77.55%
+  [74.57%,80.68%]、LN 77.61% [73.09%,83.02%]、tap 78.89%
+  [75.97%,81.76%]，区间为固定种子的95%组级percentile bootstrap。
+  9K测试只有3组、其中2组含LN，应视作探索性结果；8K也只有8组。
+- 上述指标只说明模型能在固定起音、音符和LN尾端下，对局部可行轨道布局
+  做高于随机水平的排序；不证明整谱键型、LN长度或音乐质量已提升。
+  `sequence-window-v1`权重格式仍不兼容现有`manialab.pattern_prior` runtime。
+  下一阶段先修复beam状态去重对未来评分上下文的保留，再设计可选scorer，
+  做固定候选整谱A/B、《樱花草》片段审查、`.osu`回读和实际试打。
+  目前没有默认行为变化或新Release。
