@@ -164,6 +164,26 @@
   复现。因此v5不接入生成器。完整覆盖、命令和限制见
   [LN互动特征实验结果](sequence-prior-ln-interactions-results.md)；结果仅为
   固定起音与LN尾端下的定轨排序，不是音乐质量验收。
+- 10K random-initialized specialist在原validation上相对joint v5明显退步；
+  从joint v5低学习率warm-start后，原validation曾有`+2.51pp` LN信号。
+  为避免重复使用已查看的test，训练器新增兼容模型warm-start、学习率、
+  确定性alternate split及可跳过test报告的显式参数，默认行为不变。
+  使用新split seed `20261112`从头重训v4与joint v5，再从该joint权重微调10K；
+  新validation覆盖10K的14组/150图。warm-start相对v4的LN变化
+  `+1.17pp`（95%组级区间`[-0.76,+3.20]`），overall `+0.80pp`
+  `[-0.61,+2.76]`、tap `-0.17pp` `[-1.50,+1.17]`；joint v5的LN变化
+  `+1.35pp` `[-0.58,+3.37]`。均未显示可靠增益，未打开新test；
+  新10K test含7组、6组有LN，与旧test组重叠1组，因此不能称为完全未见语料；
+  且跳过test评分仍会准备/读取其窗口缓存，只是不运行test模型评分。
+  warm-start不接入生成。复现及专家模型失败结果见
+  [10K LN warm-start复验](sequence-prior-ln-warmstart-results.md)。
+  warm-start现在要求来源报告与导出模型绑定，重算完整训练manifest SHA，
+  并要求与当前各split完全相同；新模型记录来源model/report SHA。
+  继续warm-start必须由model和report共同证明祖先也使用同一manifest，
+  因此缺少来源或祖先证明的旧模型会拒绝。覆盖跨split、哈希篡改、
+  单边/不一致祖先证明、model/report哈希绑定与同split joint-to-10K案例；
+  定向和完整测试为2230 passed、89 skipped，`py_compile`及`git diff --check`
+  通过。
 - 当前研究仍未解决LN尾端/长度决策、整谱布局和实际可玩性。
 - 该验证固定LN尾端，所以不能证明LN长度、音频声部角色、乐句分段或实际可玩性；
   strength排序指标不能代替《樱花草》共同bookmark人工检查与实际试打。

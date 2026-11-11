@@ -21,8 +21,9 @@ from manialab.layout import chord_choices
 from manialab.pattern_prior import FEATURES, features
 
 
-def split_for(song):
-    value = int(hashlib.sha256(song.encode()).hexdigest()[:8], 16) % 10
+def split_for(song, seed=None):
+    token = song if seed is None else f"{seed}:{song}"
+    value = int(hashlib.sha256(token.encode()).hexdigest()[:8], 16) % 10
     return "test" if value == 0 else "validation" if value == 1 else "train"
 
 
