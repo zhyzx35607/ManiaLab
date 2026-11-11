@@ -7,8 +7,11 @@ from manialab.domain import Note
 from manialab.pattern_sequence import FEATURE_COUNT
 from scripts.train_sequence_prior import (
     CACHE_REVISION,
+    LN_TRANSITION_CACHE_REVISION,
+    NEGATIVE_POLICY_LN_TRANSITION,
     MAX_SEQUENCE_BEAT_MS,
     _feature_schema_sha256,
+    _ln_transition_signature,
     _load_chart_cache,
     _sequence_beat_clock,
     chart_samples,
@@ -30,6 +33,81 @@ def test_window_training_keeps_fixed_notes_and_generates_feasible_negatives():
     assert negative.shape == (len(positive), 1, FEATURE_COUNT)
     assert len(context) == len(positive)
     assert np.isfinite(positive).all() and np.isfinite(negative).all()
+
+
+def test_ln_transition_signature_distinguishes_same_hand_hybrid_from_split_hands():
+    rows = [(500, [Note(500, 500, lane=4, id="tap")])]
+    initial_ends = np.full(6, -100000, dtype=np.int64)
+    initial_last = initial_ends.copy()
+    initial_ends[0], initial_last[0] = 900, 0
+
+    same_hand = _ln_transition_signature(
+        rows, [(2,)], 6, [500], initial_ends, initial_last)
+    other_hand = _ln_transition_signature(
+        rows, [(4,)], 6, [500], initial_ends, initial_last)
+
+    assert dict(same_hand)["same_hand_hybrid_taps"] == 1
+    assert dict(other_hand)["same_hand_hybrid_taps"] == 0
+    assert same_hand != other_hand
+
+
+def test_ln_transition_signature_distinguishes_inverse_repress_from_other_lane():
+    rows = [(1000, [Note(1000, 1500, lane=0, id="next-hold")])]
+    initial_ends = np.full(6, -100000, dtype=np.int64)
+    initial_last = initial_ends.copy()
+    initial_ends[0], initial_last[0] = 900, 0
+
+    inverse = _ln_transition_signature(
+        rows, [(0,)], 6, [500], initial_ends, initial_last)
+    other_lane = _ln_transition_signature(
+        rows, [(2,)], 6, [500], initial_ends, initial_last)
+
+    assert dict(inverse)["inverse_heads"] == 1
+    assert dict(other_lane)["inverse_heads"] == 0
+
+
+def test_ln_transition_signature_keeps_recent_release_before_window_edge():
+    rows = [(500, [Note(500, 500, lane=4, id="tap")])]
+    initial_ends = np.full(6, -100000, dtype=np.int64)
+    initial_last = initial_ends.copy()
+    initial_ends[0], initial_last[0] = 450, 0
+    initial_lns = ((0, 450, 0),)
+
+    same_hand = _ln_transition_signature(
+        rows, [(2,)], 6, [500], initial_ends, initial_last, initial_lns)
+    other_hand = _ln_transition_signature(
+        rows, [(4,)], 6, [500], initial_ends, initial_last, initial_lns)
+
+    assert dict(same_hand)["near_release_press_hands"] == 1
+    assert dict(other_hand)["near_release_press_hands"] == 0
+
+
+def test_ln_transition_policy_finds_fixed_time_feasible_hard_negatives():
+    notes = [
+        Note(0, 900, lane=0, id="hold"),
+        Note(500, 500, lane=4, id="tap-under-hold"),
+        Note(1000, 1000, lane=5, id="tap-after-release"),
+    ]
+
+    positive, negative, context, diagnostics = chart_samples(
+        notes,
+        6,
+        31,
+        windows_per_chart=3,
+        negatives=1,
+        negative_policy=NEGATIVE_POLICY_LN_TRANSITION,
+        return_diagnostics=True,
+    )
+
+    assert len(positive) == len(negative) == 2
+    assert context.all()
+    assert diagnostics["ln_transition_negative_examples_found"] >= 1
+    assert diagnostics["ln_transition_search_trials"] >= 1
+    for pos, neg in zip(positive, negative[:, 0]):
+        assert not np.array_equal(pos, neg)
+        pos_rows = pos[: 4 * 94].reshape(4, 94)[:, 90:]
+        neg_rows = neg[: 4 * 94].reshape(4, 94)[:, 90:]
+        np.testing.assert_array_equal(pos_rows, neg_rows)
 
 
 def test_window_training_returns_empty_arrays_for_unperturbable_full_chords():
@@ -168,3 +246,8 @@ def test_chart_cache_rejects_old_or_changed_feature_schema(tmp_path):
         )
     with pytest.raises(ValueError, match="configuration mismatch"):
         _load_chart_cache(cache, {"feature_count": FEATURE_COUNT})
+
+
+def test_ln_transition_policy_has_an_isolated_cache_revision():
+    assert CACHE_REVISION == "sequence-window-cache-v3"
+    assert LN_TRANSITION_CACHE_REVISION == "sequence-window-cache-v4-ln-transition"
