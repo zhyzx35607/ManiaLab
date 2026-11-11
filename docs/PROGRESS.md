@@ -58,12 +58,29 @@
 - 乐器评分完整结果已通过 PR #18 合入主线，合并提交
   `97f9fc1`；GitHub检查 `42892770435`、`42892755994` 均为2021 passed、
   85 skipped；没有新Release。
+- 有限持续覆盖研究已通过 PR #19 合入主线，合并提交
+  `1f90d1c06530ed59124d7882ccdbda46b0ec2fd9`；检查 `42969262042`、
+  `42969130741`成功。研究权重仍默认0，没有新Release。
 - 自动 Timing、真实混音的漏采/串音、声部连续性和 LN 音乐性尚未最终验收。
   不宣称已超越 Mapperatorinator。质量标准见[目标](music-quality-target.md)。
 
 ## 本阶段新增
 
-- 有限 LN 持续覆盖研究已完成，当前分支`research/sustain-coverage`。
+- 表达求解精度对照完成，当前分支`research/expression-tradeoffs`。
+  旧持续覆盖9K方案在10K完整约束中可行且目标更高；原0.005相对间隙允许
+  这部分损失。固定10组对照全部gap=0，主选择2.60–5.20秒，原15秒/5秒
+  时间上限不增加。默认6–10K及持续覆盖6–8K逐物件不变；持续覆盖9K和
+  10K均1491物件/425LN。只修正数值取舍，持续覆盖仍不默认启用。
+  生产两处gap改0，`attack_optimal`要求两个阶段status0且gap0；不表示
+  音乐验收或联合最优。新增9项及相关检查共97 passed。
+  生产修复后完整套件2053 passed、85 skipped；72份case产物、14份源码
+  与85份输入独审通过，默认selected/placed全部字段与顺序一致。
+  入口`scripts/check_expression_precision.py`，产物
+  `test-data/expression-precision-v1`，session `49169`已exit 0，勿重跑。
+  完整[结果](expression-precision-results.md)与[协议](expression-precision-protocol.md)。
+  无推理/训练。后续研究段内节奏骨架必须用确认过的全曲拍格，不能从每个
+  短组首重置相位，也不能把全部support声部误认为重复伴奏。
+- 有限 LN 持续覆盖研究已完成并合并，原分支`research/sustain-coverage`。
   新参数`select_expression(..., sustain_coverage=.25)`默认0，只给通过现有
   尾音资格检查的`sustain` pitch 长音有限奖励，不改起止或尾音资格；
   资格字段不代表物理松键时刻已独立确认。

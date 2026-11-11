@@ -340,7 +340,7 @@ def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferen
     matrix = csc_matrix((values, (rows, cols)), shape=(len(limits), len(anchors)))
     solved = _solve_binary(-utility, integrality=np.ones(len(anchors)), bounds=Bounds(0, 1),
         constraints=LinearConstraint(matrix, -np.inf, np.asarray(limits)),
-        options={'time_limit': 5., 'mip_rel_gap': .005})
+        options={'time_limit': 5., 'mip_rel_gap': 0.})
     if solved.x is None:
         raise ValueError('剩余容量的鼓点选择没有找到可行方案')
     chosen = solved.x > .5
@@ -519,8 +519,10 @@ def select_expression(
         sustain_coverage, lambda n: _attack_value(n, settings_at(p, n.start, segment_preferences)))
     expression_sustain.add_rewards(sustain_intervals, utility, constraint)
     matrix = csc_matrix((vals, (rows, cols)), shape=(len(upper), len(utility)))
+    # A song-wide relative gap can hide the value of several short figures.
+    # Keep the time budget, but do not stop early on that relative allowance.
     solved = _solve_binary(-np.asarray(utility), integrality=np.ones(len(utility)), bounds=Bounds(0, 1),
-        constraints=LinearConstraint(matrix, -np.inf, np.asarray(upper)), options={'time_limit': 15., 'mip_rel_gap': .005})
+        constraints=LinearConstraint(matrix, -np.inf, np.asarray(upper)), options={'time_limit': 15., 'mip_rel_gap': 0.})
     if solved.x is None:
         raise ValueError('段落取舍未找到可行方案，请降低主声部层数或提高密度上限')
     chosen = solved.x > .5
@@ -564,7 +566,10 @@ def select_expression(
     reasons = dict(Counter(r['reason'] for r in trace.values() if r['decision'] == 'omitted'))
     report = dict(selected=count, candidates=len(trace), omitted=len(trace)-count,
         attack_selection='source_groups_then_drum_anchors',
-        attack_optimal=solved.status == 0 and (fallback_solver is None or fallback_solver['status'] == 0),
+        # Numerical optimality of both stages, not musical or joint optimality.
+        attack_optimal=solved.status == 0 and solved.mip_gap == 0.
+            and (fallback_solver is None or
+                 (fallback_solver['status'] == 0 and fallback_solver['relative_gap'] == 0.)),
         drum_fallback_solver=fallback_solver,
         selection_solver=dict(status=int(solved.status), message=str(solved.message),
             relative_gap=float(solved.mip_gap), objective=float(-solved.fun),
