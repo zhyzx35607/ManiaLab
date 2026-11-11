@@ -22,6 +22,7 @@ from manialab.pattern_sequence import (
 )
 from scripts.train_sequence_prior import (
     CACHE_REVISION,
+    LN_TRANSITION_CACHE_REVISION,
     _feature_schema_sha256,
     _load_chart_cache,
 )
@@ -29,6 +30,10 @@ from scripts.train_sequence_prior import (
 DEFAULT_REPORT = Path("test-data/sequence-prior-v1/report.json")
 DEFAULT_MODEL = Path("test-data/sequence-prior-v1/model.json")
 DEFAULT_CACHE = Path("test-data/corpus-expanded/sequence-window-cache-v3")
+CACHE_FILE_SUFFIXES = {
+    CACHE_REVISION: "sequence-window-v3.npz",
+    LN_TRANSITION_CACHE_REVISION: "sequence-window-v4-ln-transition.npz",
+}
 METRICS = ("overall", "ln", "tap")
 BOOTSTRAP_CONFIDENCE = 0.95
 
@@ -40,31 +45,34 @@ def _read_json(path):
         raise ValueError(f"Could not read JSON artifact {path}: {exc}") from exc
 
 
-def _validate_artifacts(report, model):
+def _validate_report_config(report):
     expected_features = list(FEATURE_NAMES)
     if report.get("revision") != "sequence-window-v1":
         raise ValueError("Unexpected sequence-prior report revision")
-    if model.get("revision") != "sequence-window-v1":
-        raise ValueError("Unexpected sequence-prior model revision")
     if report.get("feature_names") != expected_features:
         raise ValueError("Report feature schema does not match this evaluator")
+    prep = report.get("prep")
+    if not isinstance(prep, dict) or not isinstance(prep.get("configs"), dict):
+        raise ValueError("Report is missing cache configuration")
+    config = prep["configs"]
+    if config.get("cache_revision") not in CACHE_FILE_SUFFIXES:
+        raise ValueError("Report does not reference a supported sequence cache")
+    if config.get("feature_count") != FEATURE_COUNT:
+        raise ValueError("Report feature count does not match this evaluator")
+    if config.get("feature_schema_sha256") != _feature_schema_sha256():
+        raise ValueError("Report feature schema hash does not match this evaluator")
+    return config
+
+
+def _validate_model_artifact(report, model):
+    expected_features = list(FEATURE_NAMES)
+    if model.get("revision") != "sequence-window-v1":
+        raise ValueError("Unexpected sequence-prior model revision")
     if model.get("features") != expected_features:
         raise ValueError("Model feature schema does not match this evaluator")
     training_hash = report.get("training_manifest_sha256")
     if not training_hash or model.get("training_manifest_sha256") != training_hash:
         raise ValueError("Model/report training manifest hash mismatch")
-
-    prep = report.get("prep")
-    if not isinstance(prep, dict) or not isinstance(prep.get("configs"), dict):
-        raise ValueError("Report is missing cache configuration")
-    config = prep["configs"]
-    if config.get("cache_revision") != CACHE_REVISION:
-        raise ValueError("Report does not reference the expected v3 cache")
-    if config.get("feature_count") != FEATURE_COUNT:
-        raise ValueError("Report feature count does not match this evaluator")
-    if config.get("feature_schema_sha256") != _feature_schema_sha256():
-        raise ValueError("Report feature schema hash does not match this evaluator")
-
     raw_layers = model.get("layers")
     if not isinstance(raw_layers, list) or not raw_layers:
         raise ValueError("Model has no network layers")
@@ -84,7 +92,12 @@ def _validate_artifacts(report, model):
         previous_width = weight.shape[0]
     if previous_width != 1:
         raise ValueError("Model network must produce one ranking score")
-    return config, layers
+    return layers
+
+
+def _validate_artifacts(report, model):
+    config = _validate_report_config(report)
+    return config, _validate_model_artifact(report, model)
 
 
 def pair_accuracy_counts(positive_scores, negative_scores, ln_context):
@@ -175,8 +188,10 @@ def _validated_map_arrays(row, cache_root, config):
         raise ValueError("Invalid beatmap identity in sampling map")
     if not isinstance(row.get("group"), str) or not row["group"]:
         raise ValueError(f"Beatmap {beatmap_id} has no song group")
-    cache_path = Path(cache_root) / (
-        f"{sha256}-{beatmap_id}-sequence-window-v3.npz")
+    cache_suffix = CACHE_FILE_SUFFIXES.get(config.get("cache_revision"))
+    if cache_suffix is None:
+        raise ValueError("Unsupported sequence cache revision")
+    cache_path = Path(cache_root) / f"{sha256}-{beatmap_id}-{cache_suffix}"
     positive, negative, context, _ = _load_chart_cache(cache_path, config)
     if (positive.ndim != 2 or positive.shape[1] != FEATURE_COUNT
             or negative.ndim != 3 or negative.shape[0] != len(positive)
@@ -323,7 +338,7 @@ def evaluate(report_path=DEFAULT_REPORT, model_path=DEFAULT_MODEL,
         artifact=dict(
             report=str(report_path),
             model=str(model_path),
-            cache_revision=CACHE_REVISION,
+            cache_revision=config["cache_revision"],
         ),
         keys=results,
     )
