@@ -495,7 +495,8 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             group_window_budget=DEFAULT_GROUP_WINDOW_BUDGET,
             max_maps_per_split=None,
             negative_policy=NEGATIVE_POLICY_RANDOM,
-            feature_schema="sequence-window-v1"):
+            feature_schema="sequence-window-v1",
+            split_seed=None):
     if negative_policy not in NEGATIVE_POLICIES:
         raise ValueError(f"unsupported negative policy: {negative_policy}")
     if feature_schema not in FEATURE_SCHEMA_COUNTS:
@@ -552,7 +553,7 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
     skipped = Counter()
     for index, row in enumerate(selected):
         key, group = row["keys"], row["group"]
-        split = split_for(group)
+        split = split_for(group, seed=split_seed)
         split_key = (key, split)
         if (max_maps_per_split is not None
                 and seen_split_maps[split_key] >= max_maps_per_split):
@@ -663,6 +664,7 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
     return data, manifest, dict(
         source_exclusions=excluded, sakura_holdout_groups=len(holdout_groups),
         skipped=dict(skipped), splits=split_info, configs=configs,
+        split_seed=split_seed,
         sampling_maps=sampling_maps)
 
 
@@ -745,6 +747,124 @@ def _training_keys(data, requested=None):
     return keys
 
 
+def _manifest_sha256(manifest):
+    return hashlib.sha256(
+        json.dumps(manifest, sort_keys=True).encode()).hexdigest()
+
+
+def _validate_initial_model_report(artifact, report, manifest):
+    """Only warm-start within the exact same frozen corpus and split."""
+    expected_hash = _manifest_sha256(manifest)
+    source_manifest = report.get("manifest")
+    if (not isinstance(source_manifest, list)
+            or _manifest_sha256(source_manifest) != expected_hash
+            or report.get("training_manifest_sha256") != expected_hash
+            or artifact.get("training_manifest_sha256") != expected_hash):
+        raise ValueError(
+            "initial model/report must use the same frozen training manifest "
+            "and song-group split as this run"
+        )
+    if (report.get("revision") != artifact.get("revision")
+            or report.get("feature_names") != artifact.get("features")
+            or report.get("training_keys") != artifact.get("training_keys")):
+        raise ValueError("initial model/report schema or training keys do not match")
+    inherited_hash = report.get("initial_training_manifest_sha256")
+    warm_start_fields = (
+        "initial_model", "initial_model_sha256", "initial_report",
+        "initial_report_sha256", "initial_training_manifest_sha256",
+    )
+    if any(
+        value.get(field) is not None
+        for value in (artifact, report) for field in warm_start_fields
+    ):
+        if (inherited_hash != expected_hash
+                or artifact.get("initial_training_manifest_sha256") != expected_hash):
+            raise ValueError(
+                "initial warm-start model has no matching ancestor manifest proof"
+            )
+    return expected_hash
+
+
+def _load_initial_model_weights(model, path, *, feature_schema, train_keys,
+                                manifest, torch, report_path=None):
+    source = Path(path)
+    raw = source.read_bytes()
+    artifact = json.loads(raw.decode("utf-8"))
+    if not isinstance(artifact, dict):
+        raise ValueError("initial model artifact must be a JSON object")
+    if artifact.get("revision") != feature_schema:
+        raise ValueError("initial model feature schema does not match")
+    if artifact.get("features") != list(FEATURE_SCHEMA_NAMES[feature_schema]):
+        raise ValueError("initial model feature names do not match")
+
+    initial_keys = artifact.get("training_keys")
+    if (not isinstance(initial_keys, list)
+            or any(isinstance(key, bool) or not isinstance(key, int)
+                   for key in initial_keys)
+            or not set(train_keys).issubset(initial_keys)):
+        raise ValueError(
+            "initial model must include every requested training key"
+        )
+
+    source_report_path = (
+        Path(report_path) if report_path is not None
+        else source.with_name("report.json")
+    )
+    report_raw = source_report_path.read_bytes()
+    source_report = json.loads(report_raw.decode("utf-8"))
+    if not isinstance(source_report, dict):
+        raise ValueError("initial model report must be a JSON object")
+    manifest_hash = _validate_initial_model_report(
+        artifact, source_report, manifest)
+    source_hash = hashlib.sha256(raw).hexdigest()
+    if (source_report.get("model_sha256") is not None
+            and source_report["model_sha256"] != source_hash):
+        raise ValueError("initial model/report model SHA256 does not match")
+
+    initial_layers = artifact.get("layers")
+    model_layers = [
+        layer for layer in model if isinstance(layer, torch.nn.Linear)
+    ]
+    if not isinstance(initial_layers, list) or len(initial_layers) != len(model_layers):
+        raise ValueError("initial model layer count does not match")
+
+    prepared = []
+    for index, (layer, values) in enumerate(zip(model_layers, initial_layers)):
+        if not isinstance(values, dict):
+            raise ValueError(f"initial model layer {index} is invalid")
+        if "weight" not in values or "bias" not in values:
+            raise ValueError(f"initial model layer {index} is incomplete")
+        weight = np.asarray(values.get("weight"), dtype=np.float32)
+        bias = np.asarray(values.get("bias"), dtype=np.float32)
+        if weight.shape != tuple(layer.weight.shape):
+            raise ValueError(f"initial model layer {index} weight shape does not match")
+        if bias.shape != tuple(layer.bias.shape):
+            raise ValueError(f"initial model layer {index} bias shape does not match")
+        if not np.isfinite(weight).all() or not np.isfinite(bias).all():
+            raise ValueError(f"initial model layer {index} contains non-finite weights")
+        prepared.append((weight, bias))
+
+    with torch.no_grad():
+        for layer, (weight, bias) in zip(model_layers, prepared):
+            layer.weight.copy_(torch.as_tensor(weight, dtype=layer.weight.dtype))
+            layer.bias.copy_(torch.as_tensor(bias, dtype=layer.bias.dtype))
+    return dict(
+        initial_model=str(source),
+        initial_model_sha256=source_hash,
+        initial_report=str(source_report_path),
+        initial_report_sha256=hashlib.sha256(report_raw).hexdigest(),
+        initial_training_manifest_sha256=manifest_hash,
+    )
+
+
+def _evaluation_splits(skip_test_evaluation):
+    return (
+        ("train", "validation")
+        if skip_test_evaluation
+        else ("train", "validation", "test")
+    )
+
+
 def train(args):
     import torch
 
@@ -761,7 +881,8 @@ def train(args):
         group_window_budget=args.group_window_budget,
         max_maps_per_split=args.max_maps_per_split,
         negative_policy=args.negative_policy,
-        feature_schema=args.feature_schema)
+        feature_schema=args.feature_schema,
+        split_seed=args.split_seed)
     train_keys = _training_keys(data, args.keys)
     feature_schema = args.feature_schema
     feature_names = FEATURE_SCHEMA_NAMES[feature_schema]
@@ -776,7 +897,22 @@ def train(args):
         torch.nn.Linear(feature_count, 128), torch.nn.ReLU(),
         torch.nn.Linear(128, 64), torch.nn.ReLU(),
         torch.nn.Linear(64, 1))
-    optimizer = torch.optim.AdamW(model.parameters(), lr=.001, weight_decay=.002)
+    provenance = {}
+    if args.initial_model is not None:
+        provenance = _load_initial_model_weights(
+            model, args.initial_model,
+            feature_schema=feature_schema,
+            train_keys=train_keys,
+            manifest=manifest,
+            torch=torch,
+            report_path=args.initial_report,
+        )
+    elif args.initial_report is not None:
+        raise ValueError("--initial-report requires --initial-model")
+    if not np.isfinite(args.learning_rate) or args.learning_rate <= 0:
+        raise ValueError("learning rate must be finite and positive")
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=args.learning_rate, weight_decay=.002)
     best_state = None
     best_loss = float("inf")
     best_epoch = 0
@@ -828,7 +964,7 @@ def train(args):
     model.load_state_dict(best_state)
     final_metrics = {
         split: evaluate(model, data, split, torch, keys=train_keys)
-        for split in ("train", "validation", "test")
+        for split in _evaluation_splits(args.skip_test_evaluation)
     }
     layers = [
         dict(weight=np.round(layer.weight.detach().numpy(), 7).tolist(),
@@ -842,8 +978,7 @@ def train(args):
     export_error = float(np.max(np.abs(expected - exported)))
     if export_error > 1e-4:
         raise AssertionError(f"Export mismatch: {export_error}")
-    training_hash = hashlib.sha256(
-        json.dumps(manifest, sort_keys=True).encode()).hexdigest()
+    training_hash = _manifest_sha256(manifest)
     report = dict(
         revision=feature_schema,
         purpose="Four-row lane-pattern ranking under fixed authored events; research only",
@@ -855,6 +990,9 @@ def train(args):
         best_epoch=best_epoch,
         history=epochs,
         export_max_error=export_error,
+        learning_rate=args.learning_rate,
+        test_evaluation_skipped=args.skip_test_evaluation,
+        split_seed=args.split_seed,
         seed=SEED,
         method=("4-row fixed-time windows; feasible 1–3-row lane perturbations; "
                 "song/set/audio-group split; LN/tap-balanced batches; mirror-averaged MLP; "
@@ -862,6 +1000,7 @@ def train(args):
                 f"negative_policy={args.negative_policy}"),
         manifest=manifest,
     )
+    report.update(provenance)
     args.output.mkdir(parents=True, exist_ok=False)
     payload = dict(
         revision=feature_schema,
@@ -871,8 +1010,11 @@ def train(args):
         training_manifest_sha256=training_hash,
         purpose=report["purpose"],
     )
-    (args.output / "model.json").write_text(
-        json.dumps(payload, separators=(",", ":")), encoding="utf-8")
+    if provenance:
+        payload["initial_training_manifest_sha256"] = training_hash
+    model_raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    report["model_sha256"] = hashlib.sha256(model_raw).hexdigest()
+    (args.output / "model.json").write_bytes(model_raw)
     (args.output / "report.json").write_text(
         json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(dict(output=str(args.output), best_epoch=best_epoch,
@@ -893,9 +1035,18 @@ def main():
     parser.add_argument("--epochs", type=int, default=24)
     parser.add_argument("--steps", type=int, default=200)
     parser.add_argument("--batch", type=int, default=512)
+    parser.add_argument("--learning-rate", type=float, default=.001)
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--keys", nargs="+", type=int, choices=range(6, 11),
                         help="Train a key-count specialist (default: 6K through 10K).")
+    parser.add_argument("--initial-model", type=Path,
+                        help="Warm-start within the same frozen corpus and split.")
+    parser.add_argument("--initial-report", type=Path,
+                        help="Source training report (default: model's sibling report.json).")
+    parser.add_argument("--skip-test-evaluation", action="store_true",
+                        help="Leave test metrics out of the final training report.")
+    parser.add_argument("--split-seed", type=int,
+                        help="Use a deterministic alternate song-group split.")
     parser.add_argument("--negative-policy", choices=NEGATIVE_POLICIES,
                         default=NEGATIVE_POLICY_RANDOM)
     parser.add_argument("--feature-schema",

@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import numpy as np
@@ -7,6 +8,7 @@ from manialab.domain import Note
 from manialab.pattern_sequence import (
     FEATURE_COUNT,
     FEATURE_SCHEMA_COUNTS,
+    FEATURE_SCHEMA_NAMES,
     LN_INTERACTION_SCHEMA,
 )
 from scripts.train_sequence_prior import (
@@ -19,10 +21,15 @@ from scripts.train_sequence_prior import (
     _find_ln_transition_negatives,
     _ln_transition_signature,
     _load_chart_cache,
+    _load_initial_model_weights,
+    _manifest_sha256,
+    _validate_initial_model_report,
+    _evaluation_splits,
     _sequence_beat_clock,
     _training_keys,
     chart_samples,
 )
+from scripts.train_pattern_prior import split_for
 
 
 def test_window_training_keeps_fixed_notes_and_generates_feasible_negatives():
@@ -339,3 +346,201 @@ def test_training_key_selection_requires_validation_for_each_requested_key():
 
     with pytest.raises(ValueError, match="training and validation"):
         _training_keys(data, [10])
+
+
+def test_song_group_split_seed_preserves_legacy_default_and_is_deterministic():
+    group = "group-1"
+    legacy = int(hashlib.sha256(group.encode()).hexdigest()[:8], 16) % 10
+    expected_legacy = (
+        "test" if legacy == 0 else "validation" if legacy == 1 else "train"
+    )
+
+    assert split_for(group) == expected_legacy
+    assert split_for(group, seed=20261112) == "test"
+    assert split_for(group, seed=20261112) == split_for(group, seed=20261112)
+
+
+def test_optional_test_evaluation_preserves_default_and_can_be_skipped():
+    assert _evaluation_splits(False) == ("train", "validation", "test")
+    assert _evaluation_splits(True) == ("train", "validation")
+
+
+def _initial_model_artifact():
+    feature_count = FEATURE_SCHEMA_COUNTS[LN_INTERACTION_SCHEMA]
+    shapes = ((128, feature_count), (64, 128), (1, 64))
+    return {
+        "revision": LN_INTERACTION_SCHEMA,
+        "features": list(FEATURE_SCHEMA_NAMES[LN_INTERACTION_SCHEMA]),
+        "training_keys": [6, 7, 8, 9, 10],
+        "training_manifest_sha256": _manifest_sha256(_initial_manifest()),
+        "layers": [
+            {
+                "weight": np.full(shape, index + 1, dtype=np.float32).tolist(),
+                "bias": np.full(shape[0], index + 1, dtype=np.float32).tolist(),
+            }
+            for index, shape in enumerate(shapes)
+        ],
+    }
+
+
+def _initial_manifest():
+    return [
+        dict(group="song:train", keys=10, split="train", windows=1),
+        dict(group="song:validation", keys=10, split="validation", windows=1),
+        dict(group="song:test", keys=10, split="test", windows=1),
+    ]
+
+
+def _initial_report(artifact):
+    return {
+        "revision": artifact["revision"],
+        "feature_names": artifact["features"],
+        "training_keys": artifact["training_keys"],
+        "training_manifest_sha256": artifact["training_manifest_sha256"],
+        "manifest": _initial_manifest(),
+    }
+
+
+def test_initial_model_rejects_new_split_that_trained_on_evaluation_song():
+    artifact = _initial_model_artifact()
+    report = _initial_report(artifact)
+    new_manifest = [dict(row) for row in _initial_manifest()]
+    new_manifest[0]["split"] = "validation"
+    new_manifest[1]["split"] = "train"
+
+    with pytest.raises(ValueError, match="same frozen training manifest"):
+        _validate_initial_model_report(artifact, report, new_manifest)
+
+
+def test_initial_model_rejects_manifest_or_artifact_hash_mismatch():
+    artifact = _initial_model_artifact()
+    report = _initial_report(artifact)
+    report["manifest"][0]["windows"] += 1
+
+    with pytest.raises(ValueError, match="same frozen training manifest"):
+        _validate_initial_model_report(artifact, report, _initial_manifest())
+
+    report = _initial_report(artifact)
+    artifact["training_manifest_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="same frozen training manifest"):
+        _validate_initial_model_report(artifact, report, _initial_manifest())
+
+
+@pytest.mark.parametrize(
+    ("part", "marker"),
+    [
+        ("report", "initial_model"),
+        ("report", "initial_model_sha256"),
+        ("report", "initial_training_manifest_sha256"),
+        ("model", "initial_training_manifest_sha256"),
+    ],
+)
+def test_initial_model_rejects_untracked_warm_start_ancestors(part, marker):
+    artifact = _initial_model_artifact()
+    report = _initial_report(artifact)
+    (report if part == "report" else artifact)[marker] = "older-split"
+
+    with pytest.raises(ValueError, match="ancestor manifest proof"):
+        _validate_initial_model_report(artifact, report, _initial_manifest())
+
+
+def test_initial_model_accepts_tracked_ancestors_only_on_same_manifest():
+    artifact = _initial_model_artifact()
+    report = _initial_report(artifact)
+    manifest_hash = _manifest_sha256(_initial_manifest())
+    report.update(initial_model="same-split/model.json",
+                  initial_training_manifest_sha256=manifest_hash)
+    artifact["initial_training_manifest_sha256"] = manifest_hash
+    assert _validate_initial_model_report(
+        artifact, report, _initial_manifest()) == manifest_hash
+
+    artifact["initial_training_manifest_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="ancestor manifest proof"):
+        _validate_initial_model_report(artifact, report, _initial_manifest())
+
+
+@pytest.mark.parametrize(
+    ("part", "field", "value"),
+    [
+        ("report", "initial_training_manifest_sha256", "0" * 64),
+        ("model", "initial_training_manifest_sha256", "0" * 64),
+    ],
+)
+def test_initial_model_rejects_one_sided_or_mismatched_ancestor_proofs(
+        part, field, value):
+    artifact = _initial_model_artifact()
+    report = _initial_report(artifact)
+    (report if part == "report" else artifact)[field] = value
+
+    with pytest.raises(ValueError, match="ancestor manifest proof"):
+        _validate_initial_model_report(artifact, report, _initial_manifest())
+
+
+def _ln_interaction_model(torch):
+    feature_count = FEATURE_SCHEMA_COUNTS[LN_INTERACTION_SCHEMA]
+    return torch.nn.Sequential(
+        torch.nn.Linear(feature_count, 128), torch.nn.ReLU(),
+        torch.nn.Linear(128, 64), torch.nn.ReLU(),
+        torch.nn.Linear(64, 1))
+
+
+def test_initial_model_warm_start_copies_compatible_weights_and_hashes_source(tmp_path):
+    torch = pytest.importorskip("torch")
+    path = tmp_path / "initial-model.json"
+    artifact = _initial_model_artifact()
+    raw = json.dumps(artifact, separators=(",", ":"))
+    path.write_text(raw, encoding="utf-8")
+    source_report = _initial_report(artifact)
+    report_path = tmp_path / "report.json"
+    report_path.write_text(json.dumps(source_report), encoding="utf-8")
+    model = _ln_interaction_model(torch)
+
+    provenance = _load_initial_model_weights(
+        model, path, feature_schema=LN_INTERACTION_SCHEMA,
+        train_keys=[10], manifest=_initial_manifest(), torch=torch)
+
+    assert provenance["initial_model_sha256"] == hashlib.sha256(raw.encode()).hexdigest()
+    assert provenance["initial_report_sha256"] == hashlib.sha256(
+        report_path.read_bytes()).hexdigest()
+    assert provenance["initial_training_manifest_sha256"] == _manifest_sha256(
+        _initial_manifest())
+    layers = [layer for layer in model if isinstance(layer, torch.nn.Linear)]
+    assert torch.all(layers[0].weight == 1)
+    assert torch.all(layers[1].weight == 2)
+    assert torch.all(layers[2].weight == 3)
+
+    source_report["model_sha256"] = "0" * 64
+    report_path.write_text(json.dumps(source_report), encoding="utf-8")
+    with pytest.raises(ValueError, match="model SHA256 does not match"):
+        _load_initial_model_weights(
+            _ln_interaction_model(torch), path,
+            feature_schema=LN_INTERACTION_SCHEMA,
+            train_keys=[10], manifest=_initial_manifest(), torch=torch)
+
+
+@pytest.mark.parametrize(
+    ("update", "message"),
+    [
+        (lambda artifact: artifact.update(revision="sequence-window-v1"),
+         "feature schema"),
+        (lambda artifact: artifact.update(training_keys=[6, 7, 8, 9]),
+         "requested training key"),
+        (lambda artifact: artifact["layers"][0].update(weight=[[0.0]]),
+         "weight shape"),
+    ],
+)
+def test_initial_model_warm_start_rejects_incompatible_artifacts(
+        tmp_path, update, message):
+    torch = pytest.importorskip("torch")
+    artifact = _initial_model_artifact()
+    update(artifact)
+    path = tmp_path / "initial-model.json"
+    path.write_text(json.dumps(artifact), encoding="utf-8")
+    (tmp_path / "report.json").write_text(
+        json.dumps(_initial_report(artifact)), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        _load_initial_model_weights(
+            _ln_interaction_model(torch), path,
+            feature_schema=LN_INTERACTION_SCHEMA,
+            train_keys=[10], manifest=_initial_manifest(), torch=torch)
