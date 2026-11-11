@@ -102,7 +102,13 @@
   原谱轨道偏移率增加0.080562，shield轮廓误差点估计增加0.112701。
   暂无明确收益，不冻结test；报告位于ignored的
   `test-data/sequence-prior-remap-v4-validation-015/report.json`。
-  后续按相同10K validation继续strength=0.35和0.60。
+  strength=0.35也完成45/45图、13组且结构检查全通过：cost/note下降0.004630
+  （[-0.006457,-0.002829]），但LN inverse误差上升0.178843
+  （[0.000000,0.501917]），LN相对原谱轨道变化增加0.261869
+  （[0.213838,0.305008]）。平均先验定轨时间为10.07秒/图，对照baseline
+  4.93秒/图。该权衡不冻结test。两档细项见
+  [定轨验证报告](sequence-prior-remap-results.md)；下一步同一validation运行
+  strength=0.60。
 - 后续先在完整validation组上选定strength并冻结产物，再跑独立test组；
   之后按《樱花草》共同bookmark检查具体定轨差异。窗口排序准确率、整谱结构
   指标均不能替代音乐验收。
