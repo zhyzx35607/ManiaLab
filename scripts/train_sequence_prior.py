@@ -35,7 +35,6 @@ from manialab.pattern_sequence import (
     window_features_with_ln_phrase_context,
 )
 from manialab.sequence_prior import (
-    MIN_SEQUENCE_BEAT_MS,
     MAX_SEQUENCE_BEAT_MS,
     sequence_beat_clock as _sequence_beat_clock,
     sequence_beat_positions as _sequence_beat_positions,
@@ -49,7 +48,7 @@ DEFAULT_GROUP_WINDOW_BUDGET = 1000
 CACHE_REVISION = "sequence-window-cache-v3"
 LN_TRANSITION_CACHE_REVISION = "sequence-window-cache-v4-ln-transition"
 LN_INTERACTION_CACHE_REVISION = "sequence-window-cache-v5-ln-interactions"
-LN_PHRASE_CONTEXT_CACHE_REVISION = "sequence-window-cache-v8-ln-phrase-context"
+LN_PHRASE_CONTEXT_CACHE_REVISION = "sequence-window-cache-v7-ln-phrase-context"
 NEGATIVE_POLICY_RANDOM = "random-feasible"
 NEGATIVE_POLICY_LN_TRANSITION = "ln-transition-hard"
 NEGATIVE_POLICIES = (NEGATIVE_POLICY_RANDOM, NEGATIVE_POLICY_LN_TRANSITION)
@@ -685,7 +684,6 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
                        if feature_schema == LN_PHRASE_CONTEXT_SCHEMA
                        else "tempo_at_each_row"
                    ),
-                   min_sequence_beat_ms=MIN_SEQUENCE_BEAT_MS,
                    excluded_splits=["test"] if exclude_test_split else [],
                    max_sequence_beat_ms=MAX_SEQUENCE_BEAT_MS)
     if feature_schema != "sequence-window-v1":
@@ -738,7 +736,7 @@ def prepare(root, cache, *, windows_per_chart=DEFAULT_WINDOWS_PER_CHART,
             LN_TRANSITION_CACHE_REVISION: "sequence-window-v4-ln-transition",
             LN_INTERACTION_CACHE_REVISION: "sequence-window-v5-ln-interactions",
             LN_PHRASE_CONTEXT_CACHE_REVISION:
-                "sequence-window-v8-ln-phrase-context",
+                "sequence-window-v7-ln-phrase-context",
         }[cache_revision]
         path = cache / f"{row['sha256']}-{row['beatmap_id']}-{cache_suffix}.npz"
         if path.exists():
@@ -1263,10 +1261,10 @@ def main():
     args = parser.parse_args()
     if args.cache is None:
         cache_name = (
-            "sequence-window-cache-v8-ln-phrase-context-no-test"
+            "sequence-window-cache-v7-ln-phrase-context-no-test"
             if args.feature_schema == LN_PHRASE_CONTEXT_SCHEMA
             and args.exclude_test_split
-            else "sequence-window-cache-v8-ln-phrase-context"
+            else "sequence-window-cache-v7-ln-phrase-context"
             if args.feature_schema == LN_PHRASE_CONTEXT_SCHEMA
             else "sequence-window-cache-v5-ln-interactions"
             if args.feature_schema == LN_INTERACTION_SCHEMA
@@ -1278,10 +1276,10 @@ def main():
         args.cache = Path("test-data/corpus-expanded") / cache_name
     if args.output is None:
         output_name = (
-            "sequence-prior-ln-phrase-context-v3-no-test"
+            "sequence-prior-ln-phrase-context-v2-no-test"
             if args.feature_schema == LN_PHRASE_CONTEXT_SCHEMA
             and args.exclude_test_split
-            else "sequence-prior-ln-phrase-context-v3"
+            else "sequence-prior-ln-phrase-context-v2"
             if args.feature_schema == LN_PHRASE_CONTEXT_SCHEMA
             else "sequence-prior-ln-interactions-v1"
             if args.feature_schema == LN_INTERACTION_SCHEMA

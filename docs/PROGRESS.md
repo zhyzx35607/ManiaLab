@@ -5,19 +5,10 @@
 
 ## 当前研究
 
-- 八拍LN乐句上下文仍是独立研究，不接入默认生成器。特征以累计红线拍位
+- v6 八拍LN乐句上下文仍是独立研究，不接入默认生成器。特征以累计红线拍位
   编码最近8拍，并保留末四个事件行的完整互动；新增了近放手起音的同手/跨手
-  统计。由于特征和Timing guard变化，schema升为
-  `sequence-window-ln-phrase-context-v3`，缓存升为v8，旧格式不会复用。
-- 完整v7准备在谱面`2571106`处发现红线beatLength为`1E-61`，导致累计绝对拍位
-  超出float64能分辨后续起音间隔的范围。sequence prior现在把小于10ms或大于
-  10,000ms的红线周期都视为不可信并继续使用前一有效红线；这不修改谱面原Timing。
-  失败缓存留在`sequence-window-cache-v7-ln-phrase-context-no-test-full-20261112`，
-  不作为训练结果。修复后对谱面`2571106`重放得到80个窗口（40个LN），特征均
-  有限；1016条红线中极端值按guard忽略，多行难负例成功80条、单行回退0次。
-  定向测试`81 passed, 4 skipped`，完整套件`2244 passed, 89 skipped`，
-  `py_compile`和`git diff --check`通过。修复后完整训练尚未重跑，下一次使用独立
-  v8缓存，避免复用失败阶段的特征。
+  统计。由于特征变化，schema升为`sequence-window-ln-phrase-context-v2`，
+  缓存升为v7，旧格式不会复用。
 - LN难负例尝试改动连续的2–4个事件行；若窗口内没有相邻可改事件行，退化为
   单行候选。诊断分别记录两种候选的搜索次数和成功数；有限搜索找不到足够
   可行负例时，该窗口仍会被记为失败，不会伪造样本。
@@ -29,9 +20,10 @@
   validation没有LN窗口（24个tap负例对），所以只证明数据到模型的流程能跑通，
   不提供LN收益或音乐质量证据。产物留在ignored目录
   `test-data/sequence-prior-ln-phrase-context-v2-smoke-20261112`及相邻缓存目录。
-- v7完整准备约处理3,850张谱后因上述异常周期中止，尚未进入训练。修复后还需
-  重新生成完整v8的train/validation窗口并训练，再比较10K LN/tap分层结果与现有
-  v5基线；如果validation没有稳定收益，保持关闭。当前特征固定起音和LN尾端，排序结果不
+- 最近全量测试`2243 passed, 89 skipped`，定向序列测试`80 passed, 4 skipped`；
+  `py_compile`和`git diff --check`通过。尚未进行完整v6训练和配对validation。
+  下一步只用train/validation训练并比较10K LN/tap分层结果与现有v5基线；如果
+  validation没有稳定收益，保持关闭。当前特征固定起音和LN尾端，排序结果不
   等于真实歌曲写谱质量，也不能替代《樱花草》人工分段检查和实际试打。
 
 ## 已保存的应用

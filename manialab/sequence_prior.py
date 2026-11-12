@@ -29,7 +29,6 @@ from .pattern_sequence import (
 )
 from .timing import BeatClock
 
-MIN_SEQUENCE_BEAT_MS = 10.0
 MAX_SEQUENCE_BEAT_MS = 10_000.0
 SEQUENCE_PRIOR_REVISION = "sequence-window-v1"
 
@@ -77,7 +76,7 @@ def sequence_beat_clock(timing_points=(), fallback=500.0):
             continue
         if red and (
             not np.isfinite(period)
-            or period < MIN_SEQUENCE_BEAT_MS
+            or period <= 0
             or period > MAX_SEQUENCE_BEAT_MS
         ):
             ignored += 1

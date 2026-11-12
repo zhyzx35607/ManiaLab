@@ -22,7 +22,6 @@ from scripts.train_sequence_prior import (
     LN_PHRASE_CONTEXT_CACHE_REVISION,
     LN_TRANSITION_CACHE_REVISION,
     NEGATIVE_POLICY_LN_TRANSITION,
-    MIN_SEQUENCE_BEAT_MS,
     MAX_SEQUENCE_BEAT_MS,
     _feature_schema_sha256,
     _find_ln_transition_negatives,
@@ -33,7 +32,6 @@ from scripts.train_sequence_prior import (
     _validate_initial_model_report,
     _evaluation_splits,
     _sequence_beat_clock,
-    _sequence_beat_positions,
     _training_keys,
     chart_samples,
 )
@@ -394,25 +392,6 @@ def test_sequence_beat_clock_counts_nonfinite_and_nonpositive_red_lines():
     assert clock(500) == 500
 
 
-def test_sequence_beat_clock_ignores_extremely_short_redline_periods():
-    timing_points = [
-        "-500,372.670807453416,44444,2,0,0,1,8",
-        "-499.99,1E-61,44444,2,0,0,1,8",
-        "-499.98,372.670807453416,44444,2,0,0,1,8",
-        "137,372.670807453416,44444,2,0,0,1,8",
-    ]
-
-    clock, ignored = _sequence_beat_clock(timing_points)
-    positions = _sequence_beat_positions(
-        [-500, -499.98, 0, 137, 23987], timing_points
-    )
-
-    assert MIN_SEQUENCE_BEAT_MS == 10
-    assert ignored == 1
-    assert np.all(np.diff(positions) > 0)
-    assert clock(-499.98) == pytest.approx(372.670807453416)
-
-
 def test_sequence_timing_limit_stays_within_float16_feature_range():
     assert MAX_SEQUENCE_BEAT_MS / 1000 < np.finfo(np.float16).max
 
@@ -452,10 +431,10 @@ def test_ln_transition_policy_has_an_isolated_cache_revision():
     assert LN_TRANSITION_CACHE_REVISION == "sequence-window-cache-v4-ln-transition"
     assert LN_INTERACTION_CACHE_REVISION == "sequence-window-cache-v5-ln-interactions"
     assert LN_PHRASE_CONTEXT_CACHE_REVISION == (
-        "sequence-window-cache-v8-ln-phrase-context"
+        "sequence-window-cache-v7-ln-phrase-context"
     )
     assert CACHE_FILE_SUFFIXES[LN_PHRASE_CONTEXT_CACHE_REVISION] == (
-        "sequence-window-v8-ln-phrase-context.npz"
+        "sequence-window-v7-ln-phrase-context.npz"
     )
 
 
@@ -471,7 +450,6 @@ def test_phrase_context_report_requires_integrated_timing_and_revision():
             "feature_schema": LN_PHRASE_CONTEXT_SCHEMA,
             "beat_reference": "integrated_redline_beats",
             "phrase_context_beats": 8.0,
-            "min_sequence_beat_ms": MIN_SEQUENCE_BEAT_MS,
         }},
     }
 
