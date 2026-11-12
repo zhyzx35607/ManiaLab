@@ -1,9 +1,9 @@
 # 续接进度
 
-更新：2026-11-12，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
+更新：2026-11-13，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
-## 项目整理与 dev.5/dev.6/dev.7/dev.8/dev.9 发布
+## 项目整理与开发测试版发布记录
 
 - 2026-11-12 从 `origin/main` 的 `e17fc1b` 开始整理，导航索引已通过 PR #48
   合并到 `main`（`ba17760416dabace44a693653624ba69ade809e9`）。没有搬迁
@@ -102,6 +102,12 @@
   附Windows ZIP、SHA256SUMS和机器可读验证报告。验证和发布资产不构成音乐验收；
   音乐质量、Timing、Nova人声候选人工听审与osu!试打仍未完成，checkpoint单独再分发
   授权仍未核实。
+- 2026-11-13 开始准备dev.10，GitHub当前最新发布仍为dev.9。版本变更仅同步
+  `manialab.__version__`、README下载入口和发布范围说明，使标签可对齐已合并PR #63/#64
+  的`main`；不改变应用运行逻辑、默认行为或模型。训练集听审包是ignored本地产物，
+  不进入Release。本地全量`pytest`为2295 passed、89 skipped，`compileall`和
+  `git diff --check`通过。此版本待PR检查、合并和Windows tag CI；在CI与资产独立复核
+  完成前不创建Release或宣称已有新便携包。
 
 ## Nova 人声乐句候选复核包
 
