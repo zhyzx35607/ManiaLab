@@ -106,6 +106,17 @@
   `git diff --check` 通过。
   尚未由人试听或填写标签，不能称97条候选为真声，也未做 osu! 试打或音乐质量验收。
   下一步需复核并导出标签，再基于人工声学证据检查连续 LN 的起止、声部和段落表达。
+- 续接核查确认主线仍与 `origin/main` 同为 `7105f6d`、工作区干净；未发现 ManiaLab
+  研究/推理进程。审核包有97个冻结候选和194段音频，未发现导出的
+  `vocal-phrase-review-v1-labels.json`。Edge 存在审核页窗口，但桌面采集连续两次超时；
+  没有据此推断浏览器本地暂存为空，也未触碰标注。
+- 新增 `scripts/summarize_vocal_phrase_review.py`：接收导出的 JSON，核验审核包的
+  输入身份、`review_key`、冻结候选集合和全部登记产物哈希，汇总声源/边界标签覆盖、
+  缺项及边界待回听 ID；不输出备注正文，不计算准确率，`musical_acceptance` 保持
+  false。实际审核包 200 项登记产物哈希和 97 个候选 ID 均通过核验；定向测试
+  `10 passed`，全量 `.\.venv\Scripts\python.exe -m pytest -q` 为
+  `2282 passed, 89 skipped`，新脚本/测试 `py_compile` 与 `git diff --check` 通过。
+  此工具不能代替人工试听，仍需用户导出标签后才能进行声部和边界复核。
 
 ## 当前研究
 

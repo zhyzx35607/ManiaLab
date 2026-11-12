@@ -25,6 +25,18 @@
 
 审核页面默认将标注保存在浏览器本地；导出 JSON 后应保留原件，后续分析不得覆盖。标签尚未导出或人工试听尚未完成时，不报告人声准确率、LN收益或音乐质量改善。
 
+## 标签导入与完整性检查
+
+导出文件只保存原件，不要重命名成摘要或覆盖。使用汇总器验证冻结审核包、导出 `review_key`、97 个候选 ID 及声源/边界标签枚举，并检查每项产物哈希：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\summarize_vocal_phrase_review.py `
+  --labels test-data\sakura-benchmark\vocal-phrase-audio-review-v1\vocal-phrase-review-v1-labels.json `
+  --output test-data\sakura-benchmark\vocal-phrase-audio-review-v1\vocal-phrase-review-v1-summary.json
+```
+
+摘要保留缺少声源或边界标签的候选 ID，并列出需回听的边界标签；它不会输出备注正文，也不会把标签覆盖完整等同于听审质量或音乐验收。验证失败时先保留标签原件，修复输入来源后再另存摘要。
+
 ## 复现
 
 ```powershell
