@@ -424,9 +424,11 @@ def create_app(resources, data_root):
                     from .expression import propose_expression, validate_expression, expression_evidence, select_expression
                     expression = state.get('expression')
                     if not expression or expression.get('source') == 'automatic':
-                        expression = propose_expression(state['analysis'], prefs)
+                        expression = propose_expression(
+                            state['analysis'], prefs, segment_preferences=segment_preferences)
                     validate_expression(expression, state['analysis'])
-                    evidence, expression_meta, decisions = expression_evidence(state['analysis'], expression, prefs)
+                    evidence, expression_meta, decisions = expression_evidence(
+                        state['analysis'], expression, prefs, segment_preferences=segment_preferences)
                     phrase_report = dict(used=sum(n.phrase for n in evidence), explanation='由段落声部策略选择连续乐句表达')
                     state['expression'] = expression
                 else:
@@ -628,7 +630,10 @@ def create_app(resources, data_root):
             if not state.get('analysis', {}).get('structure'):
                 raise ValueError('请先检测音乐段落')
             if payload.get('action') == 'automatic':
-                value = propose_expression(state['analysis'], parameters(state['settings'] | payload.get('settings', {})))
+                prefs = parameters(state['settings'] | payload.get('settings', {}))
+                from .recommendations import adjusted_segments
+                value = propose_expression(state['analysis'], prefs,
+                    segment_preferences=adjusted_segments(state.get('plan', {}), prefs))
             else:
                 value = validate_expression(payload.get('expression'), state['analysis'])
                 value = dict(value, source='manual')
@@ -653,13 +658,14 @@ def create_app(resources, data_root):
             if option is None:
                 raise ValueError('请选择已有的编排建议')
             state['settings']=parameters(prefs | option['preferences'])
-            if state.get('expression', {}).get('source') == 'automatic':
-                from .expression import propose_expression
-                state['expression'] = propose_expression(state['analysis'], state['settings'])
             state['plan']={k:option[k] for k in ('preferences','segments','explanation')}
             state['plan'].update(source='local-audio-recommendation',choice=option['id'],
                 evidence_signature=result['evidence_signature'],reference=result['reference'],
                 section_reasons=option['section_reasons'],keys=result['keys'],bpm=result['bpm'])
+            if state.get('expression', {}).get('source') == 'automatic':
+                from .expression import propose_expression
+                state['expression'] = propose_expression(state['analysis'], state['settings'],
+                    segment_preferences=option['segments'])
             projects.save(state)
         return jsonify(state)
 

@@ -59,12 +59,16 @@ window.lockStructure=()=>{
       (e===kiaiImport&&!state?.reference_marks?.kiai_transitions?.length)||
       ([sectionSave,expressionAuto,expressionSave].includes(e)&&!state?.analysis?.structure);
   });
+  structurePanel.querySelectorAll('[data-section-phrase-ln]').forEach(e=>{
+    const section=expressionDraft?.sections?.[Number(e.dataset.sectionPhraseLn)];
+    e.disabled=busy||!state?.analysis||section?.voices?.vocals?.mode!=='phrase';
+  });
   const planned=!!state?.analysis?.structure;
   const ratioLabel=$('ln_ratio').closest('label');
   if(ratioLabel)ratioLabel.firstChild.textContent=planned?'持续声部倾向 ':'LN 比例目标 ';
   $('ln_ratio').disabled=busy||(planned&&state?.expression?.source==='manual');
   $('phrase_ln').disabled=busy||planned;
-  $('phrase_ln').title=planned?'请在逐段声部方案里选择连续人声乐句':'';
+  $('phrase_ln').title=planned?'请在本段启用连续人声乐句后设置选取比例':'';
 };
 window.renderStructure=()=>{
   structurePanel.classList.toggle('hidden',$('mode').value==='remap');
@@ -90,7 +94,24 @@ window.renderStructure=()=>{
         const label=document.createElement('label');label.className='field';label.textContent=sourceNames[voice]||voice;
         const choice=document.createElement('select');choice.dataset.expressionVoice=voice;choice.dataset.expressionSection=index;
         options(choice,expressionOptions(voice));choice.value=policy.mode;
-        choice.onchange=()=>policy.mode=choice.value;label.append(choice);voiceGroup.append(label);
+        let phraseInput=null;
+        choice.onchange=()=>{policy.mode=choice.value;if(phraseInput)phraseInput.disabled=choice.value!=='phrase';};
+        label.append(choice);voiceGroup.append(label);
+        if(voice==='vocals'){
+          const phraseField=document.createElement('label');phraseField.className='range-field';
+          phraseField.append(document.createTextNode('本段人声乐句 LN 选取比例 '));
+          const phraseOutput=document.createElement('output');
+          phraseInput=document.createElement('input');phraseInput.type='range';phraseInput.dataset.sectionPhraseLn=index;phraseInput.min='0';phraseInput.max='1';phraseInput.step='.05';
+          const localPhraseLn=state?.plan?.segments?.find(s=>s.start_ms<=section.start_ms&&section.start_ms<s.end_ms)?.preferences?.phrase_ln;
+          phraseInput.value=String(section.phrase_ln??localPhraseLn??state?.settings?.phrase_ln??.65);
+          phraseInput.disabled=choice.value!=='phrase';
+          const showPhraseAmount=()=>{phraseOutput.textContent=`${Math.round(Number(phraseInput.value)*100)}%`;};
+          phraseInput.oninput=()=>{section.phrase_ln=Number(phraseInput.value);showPhraseAmount();};
+          showPhraseAmount();phraseField.append(phraseOutput,phraseInput);voiceGroup.append(phraseField);
+          const phraseHint=document.createElement('p');phraseHint.className='muted compact';
+          phraseHint.textContent='只在本段可靠的连续人声乐句中按支持度取舍；未选乐句的起音仍可作为短键。它不是全谱 LN 比例。';
+          voiceGroup.append(phraseHint);
+        }
         const activity=policy.activity;
         if(activity&&Number.isFinite(activity.local_attack_groups)){
           const detail=document.createElement('p');detail.className='muted compact';
