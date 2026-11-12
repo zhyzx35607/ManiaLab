@@ -29,11 +29,25 @@
   `compileall -q manialab scripts tests`、全部 `static/*.js` 的 `node --check`、
   `assets/deep-models.json` JSON 解析与 `git diff --check`通过。Windows便携EXE、
   在线模型镜像下载、离线运行和关停验证仍须由合并后 tag CI 完成。
-- dev.6 合并和 tag CI 仍待完成。需要完整通过测试、Windows 便携 EXE、离线运行、
-  关停检查、ZIP CRC 与版本校验报告后才创建 Release。现有长期目标仍是用 Nova
-  人声音轨逐段核验连续人声 LN 候选，再由真实音频听检和 osu! 试打验收段落、
-  声部与 LN 表达；研究权重保持关闭，不能重复已完成的模型实验或把 CI 通过当作
-  音乐质量完成。
+- PR #49 已合并到 `main`（`300b22deed77fabf6277afa5845d6fdf09684fae`），
+  tag `v0.1.0-alpha.6-dev.6` 指向该提交。tag CI `43194516944` 的测试、模型下载、
+  音频 worker 构建均通过，但主程序打包在 PyInstaller 的 `--add-data static;static`
+  上失败：生成的 spec 位于独立临时目录，`static` 被错误解析为 spec 旁边的路径。
+  因此 EXE、完整 ZIP、离线运行、关停检查和发布验证报告没有生成，dev.6 没有 Release。
+- 修复分支 `fix/windows-pyinstaller-data-paths` 将所有 PyInstaller 数据源和入口脚本
+  改为仓库绝对路径。完整测试为 `2272 passed, 89 skipped`；`compileall`、全部
+  `static/*.js` 的 `node --check` 和 `git diff --check` 通过。Windows
+  `workflow_dispatch` run `43196428192` 对提交 `7603c3f` 完整通过：模型下载、
+  worker 与主程序构建、ZIP、真实 EXE 离线运行、关停检查、验证报告和 CI 构建产物
+  均成功。该手动构建时的版本仍为 dev.6，因此只作为路径修复验证，不作为 dev.7
+  发布文件。PR 检查 run `43196101819` 通过测试，但 PR 事件跳过便携步骤。
+- 为保留旧 tag、正确生成新包版本，PR #50 现在把应用版本和文档同步到 dev.7；README
+  下载步骤改为从 Releases 选最新已发布 ZIP，避免把 Tags 的源码归档误当 Windows 包。
+  PR #50 合并后需创建 `v0.1.0-alpha.6-dev.7` tag 并运行正式 tag CI；仅当它产出并
+  通过 Windows ZIP、SHA-256、离线/关停与验证报告检查后才创建 Release。
+- 现有长期目标仍是用 Nova 人声音轨逐段核验连续人声 LN 候选，再由真实音频听检和
+  osu! 试打验收段落、声部与 LN 表达；研究权重保持关闭，不能重复已完成的模型实验
+  或把 CI 通过当作音乐质量完成。
 
 ## 当前研究
 

@@ -89,12 +89,15 @@ package_path=build_root/'release'
 for directory in (workpath,distpath,specpath,package_path):
     directory.mkdir()
 args=[sys.executable,'-m','PyInstaller','--noconfirm','--name','ManiaLab','--console',
-      '--add-data','static;static','--add-data','assets;assets','--add-data','licenses;licenses',
-      '--add-data','manialab/tsumugi-source.json;manialab',
-      '--add-data','vendor/mapperatorinator/template.osu;vendor/mapperatorinator',
+      '--add-data',f'{ROOT / "static"};static',
+      '--add-data',f'{ROOT / "assets"};assets',
+      '--add-data',f'{ROOT / "licenses"};licenses',
+      '--add-data',f'{ROOT / "manialab/tsumugi-source.json"};manialab',
+      '--add-data',f'{ROOT / "vendor/mapperatorinator/template.osu"};vendor/mapperatorinator',
       '--copy-metadata','numpy','--copy-metadata','scipy','--copy-metadata','onnxruntime',
       '--collect-all','imageio_ffmpeg','--collect-binaries','onnxruntime','--exclude-module','pytest',
-      '--workpath',str(workpath),'--distpath',str(distpath),'--specpath',str(specpath),'launcher.py']
+      '--workpath',str(workpath),'--distpath',str(distpath),'--specpath',str(specpath),
+      str(ROOT / 'launcher.py')]
 subprocess.run(args,check=True)
 target=distpath/'ManiaLab'
 if source_snapshot()!=build_sources:
