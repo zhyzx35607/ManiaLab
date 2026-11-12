@@ -129,6 +129,16 @@
   SHA-256为`53e266794dfd3f9a7e9b6dd3ef1e1d155c1717b46d6cf11f731b52f9ffa1fddd`。
   GitHub Pre-release已发布，ZIP、SHA256SUMS和验证JSON资产digest/大小与本地一致。
   CI使用合成音频只验证软件/便携运行，不代表音乐或Timing验收；本地39组人工听审仍待完成。
+- 2026-11-13 发布后复核发现GitHub Release正文把2,399项测试总数误写为
+  `2,399 tests passed, 89 skipped`；已更正为`2,310 passed, 89 skipped (2,399 total)`。
+  使用`gh release view`及带no-cache参数的GitHub API/Release页面复核，更新后的正文可见；
+  tag仍指向`635dd382758916902df4d876bdc4bbb44e46d97d`且仍为Pre-release。3个上传资产
+  名称、大小和digest均未变化：Windows ZIP 698,933,352字节、
+  `4cabc4a8b7879afd83f4fc688dad29848dfb8d7f7e1bcb82ba82ae26401a6e06`；
+  SHA256SUMS 226字节、`6b7e4dc10b53104ef1edf6a744bba7c9077eed86876220fef208ff0a2849f482`；
+  validation JSON 1,992字节、
+  `53e266794dfd3f9a7e9b6dd3ef1e1d155c1717b46d6cf11f731b52f9ffa1fddd`。
+  仅修改Release正文，没有移动tag、重建或重传资产。
 
 ## Nova 人声乐句候选复核包
 
