@@ -3,34 +3,37 @@
 更新：2026-11-12，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
-## 项目整理与 dev.5 发布
+## 项目整理与 dev.5/dev.6 发布
 
-- 2026-11-12 从 `origin/main` 的 `e17fc1b` 建立分支
-  `codex/project-layout-and-dev5`。目录整理采用导航索引，不搬迁 `docs/` 或
-  `scripts/` 文件：研究记录、测试导入、历史命令和协议哈希广泛依赖现有路径。
-  新增 `docs/README.md` 与 `scripts/README.md`；不清理或提交被忽略的
-  `test-data/`、模型、音频、便携包和历史构建产物。
-- 版本准备升为 `0.1.0-alpha.6-dev.5`，承接已合并主线的 Kiai 边界提示导入和
-  段落级连续人声乐句控制。发布说明明确这些候选/提示不等于人声身份、主歌副歌
-  识别或音乐质量验收。最新公开版仍是 dev.4，dev.5 尚未打 tag 或发布。
-- 修正 `/api/import` 在上传中途失败后留下空项目目录的问题；随机新建目录的失败
-  路径现在会被清理，已有项目不受影响。`tests/test_server.py` 增加部分上传后失败
-  的回归测试。
-- Windows 构建按唯一 `MANIALAB_BUILD_ID` 写入
-  `build/portable/<run-id>/`，包括 PyInstaller 工作目录、便携目录、ZIP 和发布
-  证据；同 ID 已存在时退出，不覆盖 dev.4 或其他历史构建。校验文件按版本命名，
-  workflow 只上传该 run 的文件；tag 必须与源码 `__version__` 一致。
-  `scripts/collect_release_validation.py` 校验源码快照、ZIP CRC/EXE/manifest，
-  并汇总测试、离线便携检查和关停证据；报告不包含音频或逐音数据。
-- 本地验证：`.venv\Scripts\python.exe -m pytest -q` 为 `2268 passed, 89 skipped`
-  （2026-11-12）；`tests/test_server.py` 与发布证据收集器定向测试为
-  `16 passed`；`compileall -q manialab scripts tests`、全部 `static/*.js`
-  的 `node --check` 与 `git diff --check` 通过。尚未构建 Windows EXE，也未运行
-  tag CI、发布或进行音乐试听验收；这些必须从合并后的 main/tag 执行。
-- 下一步：推送并开 PR，等待 Windows validation；合并后推送
-  `v0.1.0-alpha.6-dev.5`，只在 tag CI 的测试、离线 EXE、关停和 ZIP/校验报告
-  全部通过后发布。发布后继续核对 Nova 人声音轨与逐段人声乐句候选，保持模型
-  研究权重关闭；音乐质量目标仍未完成。
+- 2026-11-12 从 `origin/main` 的 `e17fc1b` 开始整理，导航索引已通过 PR #48
+  合并到 `main`（`ba17760416dabace44a693653624ba69ade809e9`）。没有搬迁
+  `docs/` 或 `scripts/` 文件，因为研究记录、测试导入、历史命令和协议哈希依赖
+  现有路径；忽略的 `test-data/`、模型、音频、便携包和历史构建产物均保留。
+- dev.5 的 `/api/import` 半上传清理和 Windows 唯一构建 ID 隔离已合并并验证；
+  原 tag `v0.1.0-alpha.6-dev.5` 指向上述 main 提交，不改写该 tag。
+- dev.5 tag CI run `43189215747` 的测试与 tag/source 版本检查通过，但在
+  `Fetch verified audio models` 因 `dl.fbaipublicfiles.com` TLS 证书过期失败，
+  Windows EXE、离线便携检查、关停验证和发布验证报告均未运行。GitHub Release
+  尚未创建，因此不能称 dev.5 已发布。
+- 本机 `assets/deep/htdemucs_6s.th` SHA-256 与清单的
+  `34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd` 一致。
+  本轮 dev.6 修复只在原源下载失败时尝试固定 revision 镜像，并对每个来源继续
+  校验字节数与 SHA-256；不关闭 TLS。本轮未运行本地下载/构建流程，未修改本机
+  模型、音频或研究产物，且不改变应用行为。
+- 完整检查发现 `THIRD_PARTY_NOTICES.md` 先前把 Demucs 代码 MIT 延伸到了预训练
+  权重；现已改为明确区分软件与 checkpoint。上游维护者说明预训练权重不由代码
+  MIT 覆盖、限科学用途；本项目没有核实两个打包 checkpoint 的单独再分发授权。
+  固定镜像 SHA 只证明字节一致，不证明授权；该权利状态是本版发布的已知风险。
+- dev.6 本地验证：`tests/test_fetch_audio_models.py` 为4 passed；全量
+  `.\.venv\Scripts\python.exe -m pytest -q` 为2272 passed、89 skipped；
+  `compileall -q manialab scripts tests`、全部 `static/*.js` 的 `node --check`、
+  `assets/deep-models.json` JSON 解析与 `git diff --check`通过。Windows便携EXE、
+  在线模型镜像下载、离线运行和关停验证仍须由合并后 tag CI 完成。
+- dev.6 合并和 tag CI 仍待完成。需要完整通过测试、Windows 便携 EXE、离线运行、
+  关停检查、ZIP CRC 与版本校验报告后才创建 Release。现有长期目标仍是用 Nova
+  人声音轨逐段核验连续人声 LN 候选，再由真实音频听检和 osu! 试打验收段落、
+  声部与 LN 表达；研究权重保持关闭，不能重复已完成的模型实验或把 CI 通过当作
+  音乐质量完成。
 
 ## 当前研究
 

@@ -21,6 +21,9 @@
       "name": "HTDemucs six-source",
       "filename": "htdemucs_6s.th",
       "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th",
+      "mirror_urls": [
+        "https://huggingface.co/adepusricharan/Demucs-v4/resolve/d8da960b3245f2b0d8a44d737cbc66f56123f896/5c90dfd2-34c22ccb.th"
+      ],
       "sha256": "34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd",
       "bytes": 54996327,
       "purpose": "Optional six-source separation with guitar and piano; no guaranteed transcription improvement"
