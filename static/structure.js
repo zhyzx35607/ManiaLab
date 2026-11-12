@@ -6,6 +6,7 @@ const structureInfo=document.createElement('p');structureInfo.className='muted c
 const structureActions=document.createElement('div');structureActions.className='structure-actions';
 const sectionDetect=document.createElement('button');sectionDetect.id='sectionDetect';sectionDetect.textContent='检测音乐段落';sectionDetect.className='secondary';
 const bookmarkImport=document.createElement('button');bookmarkImport.id='bookmarkImport';bookmarkImport.textContent='采用原谱书签';bookmarkImport.className='quiet';
+const kiaiImport=document.createElement('button');kiaiImport.id='kiaiImport';kiaiImport.textContent='采用原谱 Kiai 切换';kiaiImport.className='quiet';
 const structureBoundaries=document.createElement('input');structureBoundaries.id='structureBoundaries';structureBoundaries.placeholder='分界秒数，以逗号分隔，例如 14.273, 42.508';
 const boundaryLabel=document.createElement('label');boundaryLabel.className='field';boundaryLabel.textContent='编辑分界 / 原始音频秒数';boundaryLabel.append(structureBoundaries);
 const sectionSave=document.createElement('button');sectionSave.id='sectionSave';sectionSave.textContent='保存分界';sectionSave.className='quiet';
@@ -13,7 +14,7 @@ const expressionAuto=document.createElement('button');expressionAuto.id='express
 const expressionSave=document.createElement('button');expressionSave.id='expressionSave';expressionSave.textContent='保存声部方案';expressionSave.className='secondary';
 const structureRows=document.createElement('div');structureRows.id='structureRows';
 const expressionAudit=document.createElement('div');expressionAudit.id='expressionAudit';
-structureActions.append(sectionDetect,bookmarkImport,sectionSave,expressionAuto,expressionSave);
+structureActions.append(sectionDetect,bookmarkImport,kiaiImport,sectionSave,expressionAuto,expressionSave);
 structurePanel.append(structureTitle,structureInfo,boundaryLabel,structureActions,structureRows,expressionAudit);
 document.querySelector('article .project-head').after(structurePanel);
 let expressionDraft=null;
@@ -55,6 +56,7 @@ function preserveTimingLoad(next){
 window.lockStructure=()=>{
   structurePanel.querySelectorAll('button,input,select').forEach(e=>{
     e.disabled=busy||!state?.analysis||(e===bookmarkImport&&!state?.reference_marks?.bookmarks?.length)||
+      (e===kiaiImport&&!state?.reference_marks?.kiai_transitions?.length)||
       ([sectionSave,expressionAuto,expressionSave].includes(e)&&!state?.analysis?.structure);
   });
   const planned=!!state?.analysis?.structure;
@@ -146,6 +148,7 @@ async function structureJob(payload){
 }
 sectionDetect.onclick=guarded(()=>structureJob({action:'detect'}));
 bookmarkImport.onclick=guarded(()=>structureJob({action:'bookmarks'}));
+kiaiImport.onclick=guarded(()=>structureJob({action:'kiai'}));
 sectionSave.onclick=guarded(()=>{
   const text=structureBoundaries.value.trim();
   const boundaries=text?text.split(/[,，\s]+/).map(v=>Math.round(Number(v)*1000)):[];

@@ -595,6 +595,18 @@ def create_app(resources, data_root):
                 shift = requested_shift(payload, state)
                 marks = [round(t+shift) for t in marks if 0 < t+shift < analysis['duration']*1000]
                 structure = edit_boundaries(structure, marks, analysis, 'reference-bookmarks')
+                structure['notice'] = '段落边界来自导入谱面的书签；它们是可编辑提示，不代表自动识别了主歌或副歌。'
+            elif action == 'kiai':
+                marks = state.get('reference_marks', {}).get('kiai_transitions', [])
+                if not marks:
+                    raise ValueError('当前导入谱面没有 Kiai 开关点')
+                # Kiai state changes use the chart clock; acoustic sections use audio.
+                shift = requested_shift(payload, state)
+                marks = [round(t+shift) for t in marks if 0 < t+shift < analysis['duration']*1000]
+                if not marks:
+                    raise ValueError('导入谱面的 Kiai 开关点都不在当前音频范围内')
+                structure = edit_boundaries(structure, marks, analysis, 'reference-kiai')
+                structure['notice'] = '段落边界来自导入谱面的 Kiai 开关；它们是可编辑提示，不代表自动识别了主歌或副歌。'
             elif action == 'edit':
                 structure = edit_boundaries(structure, payload.get('boundaries'), analysis)
             else:

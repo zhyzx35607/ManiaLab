@@ -28,9 +28,10 @@ def test_sections_follow_acoustic_change_not_fifteen_second_windows():
 
 
 def test_bookmarks_are_separate_from_sv_and_kiai():
-    m=reference_marks('[Editor]\nBookmarks: 1000, 2000\n[TimingPoints]\n0,500,4,2,1,70,1,0\n1200,-50,4,2,1,60,0,0\n2000,-100,4,2,1,70,0,1')
+    m=reference_marks('[Editor]\nBookmarks: 1000, 2000\n[TimingPoints]\n0,500,4,2,1,70,1,0\n1200,-50,4,2,1,60,0,0\n2000,-100,4,2,1,70,0,1\n2300,500,4,2,1,70,1,1\n2600,500,4,2,1,70,1,0\nNaN,500,4,2,1,70,1,1')
     assert m['bookmarks']==[1000,2000]
     assert len(m['green_lines'])==2 and m['green_lines'][1]['kiai']
+    assert m['kiai_transitions']==[2000,2600]
 
 
 def test_boundary_edits_reject_invalid_or_tiny_segments():
@@ -244,4 +245,20 @@ def test_structure_api_preserves_audio_evidence_and_exports_saved_plan(tmp_path)
         assert client.post(url+'/expression',json={'expression':plan},headers=h).status_code==400
         # The saved variant keeps its own section snapshot after later edits.
         assert values(sections(client.get(url+'/export/osu').data.decode())['Editor'])['Bookmarks']=='6022'
+        state=client.get(url).json
+        state['reference_marks']['kiai_transitions']=[3000,6000]
+        Projects(tmp_path/'projects').save(state)
+        job=client.post(url+'/structure',json={'action':'kiai','audio_shift_ms':22.5},headers=h).json
+        assert wait_job(client,job)['status']=='done'
+        current=client.get(url).json
+        assert current['analysis']['structure']['boundaries']==[0,3022,6022,12000]
+        assert current['analysis']['structure']['source']=='reference-kiai'
+        assert 'Kiai 开关' in current['analysis']['structure']['notice']
+        state=current
+        state['reference_marks']['kiai_transitions']=[30000]
+        Projects(tmp_path/'projects').save(state)
+        job=client.post(url+'/structure',json={'action':'kiai','audio_shift_ms':22.5},headers=h).json
+        failed=wait_job(client,job)
+        assert failed['status']=='error'
+        assert '不在当前音频范围内' in failed['message']
     finally:app.extensions['executor'].shutdown()
