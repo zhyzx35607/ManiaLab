@@ -20,6 +20,7 @@ from .domain import UNOBSERVED_RELEASES,note_from
 from .expression_articulation import articulation_policy
 from .expression_activity import section_activity
 from .structure import detect_structure
+from .voices import select_phrase_subset
 
 MODES = ('sustain', 'articulation', 'onsets', 'phrase', 'omit')
 
@@ -42,24 +43,52 @@ def _expression_mode(section, voice, instrument_id):
     return section['voices'][voice]['mode'] if mode == 'inherit' else mode
 
 
+def _phrase_eligible(phrase, anchor, section, min_length):
+    return (
+        anchor is not None
+        and phrase.voice == anchor.voice
+        and phrase.instrument_id == anchor.instrument_id
+        and phrase.support_coverage >= .95
+        and phrase.end <= section['end_ms']
+        and phrase.release_reason not in UNOBSERVED_RELEASES
+        and phrase.source == 'pitch'
+        and phrase.end - phrase.start >= min_length
+        and phrase.end > anchor.end
+        and anchor.strength >= .35
+    )
+
+
 def signature(analysis):
     payload = [analysis.get('structure'), analysis.get('candidates'), analysis.get('phrase_candidates'),
                analysis.get('duration')]
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
-def propose_expression(analysis, settings):
+def propose_expression(analysis, settings, segment_preferences=()):
     p = parameters(settings)
     structure = analysis.get('structure') or detect_structure(analysis)
     notes = analysis.get('candidates', [])
+    identities = [note.get('id') for note in notes]
+    if any(not isinstance(identity, str) or not identity for identity in identities):
+        raise ValueError('候选音符标识缺失或无效')
+    if len(set(identities)) != len(identities):
+        raise ValueError('候选音符标识重复')
+    anchors = {n.get('id'): note_from(n) for n in notes}
+    phrases = sorted([note_from(n) for n in analysis.get('phrase_candidates', [])], key=lambda n: n.start)
     sections = []
     voices = sorted({n.get('voice', 'mix') for n in notes})
     sources = {voice: [note_from(n) for n in notes if n.get('voice', 'mix') == voice and n.get('strength', 0) >= .35]
                for voice in voices}
     for segment in structure['segments']:
         a, b = segment['start_ms'], segment['end_ms']
+        local_settings = settings_at(p, a, segment_preferences)
         evidence = {voice: section_activity(sources[voice], a, b) for voice in voices}
-        active = [voice for voice in voices if evidence[voice]['present'] and p.get(voice+'_weight', 1.) > 0]
+        active = [voice for voice in voices if evidence[voice]['present']
+                  and p.get(voice+'_weight', 1.) > 0]
+        local = {identity: anchor for identity, anchor in anchors.items() if a <= anchor.start < b}
+        phrase_voices = {phrase.voice for phrase in phrases
+            if (_phrase_eligible(phrase, local.get(phrase.id), segment, p['min_ln'])
+                and settings_at(p, phrase.start, segment_preferences)['phrase_ln'] > 0)}
         melodic = [voice for voice in active if voice != 'drums']
         # Coverage, attack counts and model classes do not identify a lead.
         # Only suggest a priority when no other melodic source is present.
@@ -72,6 +101,8 @@ def propose_expression(analysis, settings):
                 mode = 'omit'
             elif voice == 'drums' or p['ln_ratio'] == 0:
                 mode = 'onsets'
+            elif voice == 'vocals' and local_settings['phrase_ln'] > 0 and voice in phrase_voices:
+                mode = 'phrase'
             elif voice in ('piano', 'guitar') and p['ln_ratio'] < .75:
                 mode = 'articulation'
             else:
@@ -108,6 +139,11 @@ def validate_expression(value, analysis):
         for policy in policies.values():
             if not isinstance(policy, dict) or policy.get('mode') not in MODES or policy.get('role') not in ('primary', 'support'):
                 raise ValueError('声部表达只能选择持续音、连续起音优先、起音、连贯乐句或不采')
+        phrase_ln = row.get('phrase_ln')
+        if phrase_ln is not None and (
+                isinstance(phrase_ln, bool) or not isinstance(phrase_ln, (int, float))
+                or not math.isfinite(phrase_ln) or not 0 <= phrase_ln <= 1):
+            raise ValueError('本段人声乐句比例必须在0到1之间')
         overrides = row.get('instrument_modes', {})
         if not isinstance(overrides, dict) or not set(overrides) <= voices:
             raise ValueError('乐器表达必须按当前分析的声部分组')
@@ -128,7 +164,7 @@ def validate_expression(value, analysis):
     return value
 
 
-def expression_evidence(analysis, plan, settings, *, stream_evidence=None):
+def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segment_preferences=()):
     """Apply an explicit source policy, without LN quotas or lane decisions."""
     validate_expression(plan, analysis)
     p = parameters(settings)
@@ -164,26 +200,29 @@ def expression_evidence(analysis, plan, settings, *, stream_evidence=None):
         local = [n for n in raw if section['start_ms'] <= n.start < section['end_ms']]
         by_id = {n.id: n for n in local}
         replacements, covered = {}, {}
+        phrase_groups = defaultdict(list)
         for phrase in phrases:
             anchor = by_id.get(phrase.id)
-            if (anchor is None or phrase.voice != anchor.voice or phrase.instrument_id != anchor.instrument_id):
+            if (not _phrase_eligible(phrase, anchor, section, p['min_ln']) or
+                    _expression_mode(section, anchor.voice, anchor.instrument_id) != 'phrase'):
                 continue
-            if (_expression_mode(section, anchor.voice, anchor.instrument_id) != 'phrase' or
-                    phrase.support_coverage < .95 or phrase.end > section['end_ms'] or
-                    phrase.release_reason in UNOBSERVED_RELEASES or phrase.source != 'pitch' or
-                    phrase.end-phrase.start < p['min_ln']):
-                continue
-            if (phrase.end <= anchor.end or phrase.id in covered or anchor.strength < .35):
-                continue
-            replacements[phrase.id] = phrase
+            amount = section.get('phrase_ln',
+                settings_at(p, phrase.start, segment_preferences)['phrase_ln'])
+            phrase_groups[(anchor.voice, anchor.instrument_id, amount)].append(phrase)
+        for (_, _, amount), candidates in phrase_groups.items():
+            for phrase in select_phrase_subset(candidates, amount):
+                anchor = by_id[phrase.id]
+                if phrase.id in covered:
+                    continue
+                replacements[phrase.id] = phrase
             # Only strictly interior supported attacks are represented by the
             # gesture. Never swallow a new attack at its end or another voice.
-            for identity in phrase.support:
-                n = by_id.get(identity)
-                if (n and n.voice == phrase.voice and n.instrument_id == phrase.instrument_id
-                        and phrase.start < n.start < phrase.end
-                        and n.end <= phrase.end):
-                    covered[identity] = phrase.id
+                for identity in phrase.support:
+                    n = by_id.get(identity)
+                    if (n and n.voice == phrase.voice and n.instrument_id == phrase.instrument_id
+                            and phrase.start < n.start < phrase.end
+                            and n.end <= phrase.end):
+                        covered[identity] = phrase.id
         for original in local:
             policy = section['voices'][original.voice]
             mode = _expression_mode(section, original.voice, original.instrument_id)

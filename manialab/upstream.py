@@ -78,14 +78,92 @@ class MapperEngine:
                 "source_commit": SOURCE_COMMIT, "model_revision": MODEL_REVISION}
 
     @staticmethod
+    def _windows_descendants(root_pid):
+        import ctypes
+        from collections import defaultdict
+        from ctypes import wintypes
+
+        class ProcessEntry(ctypes.Structure):
+            _fields_ = [
+                ("dwSize", wintypes.DWORD),
+                ("cntUsage", wintypes.DWORD),
+                ("th32ProcessID", wintypes.DWORD),
+                ("th32DefaultHeapID", ctypes.c_size_t),
+                ("th32ModuleID", wintypes.DWORD),
+                ("cntThreads", wintypes.DWORD),
+                ("th32ParentProcessID", wintypes.DWORD),
+                ("pcPriClassBase", wintypes.LONG),
+                ("dwFlags", wintypes.DWORD),
+                ("szExeFile", wintypes.WCHAR * 260),
+            ]
+
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+        kernel.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+        kernel.Process32FirstW.argtypes = [wintypes.HANDLE, ctypes.POINTER(ProcessEntry)]
+        kernel.Process32FirstW.restype = wintypes.BOOL
+        kernel.Process32NextW.argtypes = [wintypes.HANDLE, ctypes.POINTER(ProcessEntry)]
+        kernel.Process32NextW.restype = wintypes.BOOL
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        snapshot = kernel.CreateToolhelp32Snapshot(0x00000002, 0)
+        if snapshot == ctypes.c_void_p(-1).value:
+            return []
+        children = defaultdict(list)
+        try:
+            entry = ProcessEntry()
+            entry.dwSize = ctypes.sizeof(entry)
+            has_entry = kernel.Process32FirstW(snapshot, ctypes.byref(entry))
+            while has_entry:
+                children[entry.th32ParentProcessID].append(entry.th32ProcessID)
+                has_entry = kernel.Process32NextW(snapshot, ctypes.byref(entry))
+        finally:
+            kernel.CloseHandle(snapshot)
+
+        result = []
+        visited = {root_pid}
+
+        def visit(parent):
+            for child in children.get(parent, ()):
+                if child in visited:
+                    continue
+                visited.add(child)
+                visit(child)
+                result.append(child)
+
+        visit(root_pid)
+        return result
+
+    @staticmethod
     def stop_process(process):
         if process.poll() is not None:
             return
         # The Windows venv launcher and uv create children. Killing only the
         # launcher leaves model inference running after a timeout/cancellation.
         if os.name == "nt":
-            subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True,
-                           creationflags=subprocess.CREATE_NO_WINDOW, timeout=30)
+            descendants = MapperEngine._windows_descendants(process.pid)
+            try:
+                subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True,
+                               creationflags=subprocess.CREATE_NO_WINDOW, timeout=30)
+            except subprocess.TimeoutExpired:
+                pass
+            descendants.extend(MapperEngine._windows_descendants(process.pid))
+            import ctypes
+            from ctypes import wintypes
+            kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+            kernel.OpenProcess.restype = wintypes.HANDLE
+            kernel.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+            kernel.TerminateProcess.restype = wintypes.BOOL
+            kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+            kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+            for pid in dict.fromkeys(descendants):
+                handle = kernel.OpenProcess(0x00100001, False, pid)
+                if handle:
+                    kernel.TerminateProcess(handle, 1)
+                    kernel.WaitForSingleObject(handle, 5000)
+                    kernel.CloseHandle(handle)
+            if process.poll() is None:
+                process.kill()
         else:
             process.terminate()
         process.wait(timeout=15)

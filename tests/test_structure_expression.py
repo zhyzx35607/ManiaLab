@@ -163,6 +163,67 @@ def test_phrase_mode_represents_internal_pitch_without_double_counting():
     assert trace['b']['represented_by']=='a'
 
 
+def test_automatic_plan_uses_only_supported_vocal_phrases():
+    notes=[Note(1000,1100,source='pitch',voice='vocals',id='a'),
+           Note(1400,1500,source='pitch',voice='vocals',id='b'),
+           Note(1000,1100,source='pitch',voice='other',id='other')]
+    a=analysis(notes)
+    a['phrase_candidates']=[dict(notes[0].data(),end=1800,phrase=True,support=['a','b'],
+                                 support_coverage=.96,release_reason='vocal_activity_decay')]
+    plan=propose_expression(a,parameters({'phrase_ln':.65}))
+    assert plan['sections'][0]['voices']['vocals']['mode']=='phrase'
+    assert plan['sections'][0]['voices']['other']['mode']=='sustain'
+    disabled=propose_expression(a,parameters({'phrase_ln':0}))
+    assert disabled['sections'][0]['voices']['vocals']['mode']=='sustain'
+
+
+def test_local_phrase_ln_override_can_enable_only_its_section():
+    notes=[Note(1000,1100,source='pitch',voice='vocals',id='a'),
+           Note(1400,1500,source='pitch',voice='vocals',id='b'),
+           Note(3000,3100,source='pitch',voice='vocals',id='c'),
+           Note(3300,3400,source='pitch',voice='vocals',id='d')]
+    a=analysis(notes)
+    a['structure']=edit_boundaries({},[0,2500,5000,12000],a)
+    a['phrase_candidates']=[
+        dict(notes[0].data(),end=2100,phrase=True,support=['a','b'],support_coverage=.96,
+             release_reason='vocal_activity_decay'),
+        dict(notes[2].data(),end=4100,phrase=True,support=['c','d'],support_coverage=1.,
+             release_reason='vocal_activity_decay'),
+    ]
+    p=parameters({'phrase_ln':0})
+    segments=[dict(start_ms=0,end_ms=2500,preferences={'phrase_ln':0}),
+              dict(start_ms=2500,end_ms=5000,preferences={'phrase_ln':1}),
+              dict(start_ms=5000,end_ms=12000,preferences={'phrase_ln':0})]
+    plan=propose_expression(a,p,segment_preferences=segments)
+    assert [row['voices']['vocals']['mode'] for row in plan['sections']]==[
+        'sustain','phrase','omit']
+    evidence,_,trace=expression_evidence(a,plan,p,segment_preferences=segments)
+    assert [(n.id,n.end) for n in evidence]==[('a',1000),('b',1400),('c',4100)]
+    assert trace['d']['represented_by']=='c'
+
+
+def test_phrase_ln_budget_is_applied_per_segment_and_keeps_unselected_attacks():
+    notes=[Note(1000,1100,source='pitch',voice='vocals',id='a',strength=.7),
+           Note(1400,1500,source='pitch',voice='vocals',id='b',strength=.7),
+           Note(3000,3100,source='pitch',voice='vocals',id='c',strength=.8),
+           Note(3300,3400,source='pitch',voice='vocals',id='d',strength=.8)]
+    a=analysis(notes)
+    a['phrase_candidates']=[
+        dict(notes[0].data(),end=2100,phrase=True,support=['a','b'],support_coverage=.96,
+             release_reason='vocal_activity_decay'),
+        dict(notes[2].data(),end=4100,phrase=True,support=['c','d'],support_coverage=1.,
+             release_reason='vocal_activity_decay'),
+    ]
+    p=parameters({'phrase_ln':.5})
+    plan=propose_expression(a,p)
+    segments=[dict(start_ms=0,end_ms=2500,preferences={'phrase_ln':0}),
+              dict(start_ms=2500,end_ms=5000,preferences={'phrase_ln':1})]
+    evidence,_,trace=expression_evidence(a,plan,p,segment_preferences=segments)
+    assert [(n.id,n.end) for n in evidence]==[('a',1000),('b',1400),('c',4100)]
+    assert trace['b']['reason']=='short_duration'
+    assert trace['d']['represented_by']=='c'
+
+
 def test_export_marks_use_bookmarks_without_invented_green_lines():
     from pathlib import Path
     text=export_osu([Note(1000,1000,0)],10,Path(__file__).parents[1]/'vendor/mapperatorinator/template.osu',bookmarks=[1000,3000])
@@ -261,4 +322,40 @@ def test_structure_api_preserves_audio_evidence_and_exports_saved_plan(tmp_path)
         failed=wait_job(client,job)
         assert failed['status']=='error'
         assert '不在当前音频范围内' in failed['message']
+    finally:app.extensions['executor'].shutdown()
+
+
+def test_automatic_expression_api_uses_per_section_phrase_budget(tmp_path):
+    import io
+    from pathlib import Path
+    from manialab.server import create_app
+    from manialab.storage import Projects
+    root=Path(__file__).parents[1];app=create_app(root,tmp_path);client=app.test_client()
+    headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=state['id'];url=f'/api/projects/{pid}'
+    notes=[Note(1000,1100,source='pitch',voice='vocals',id='a'),
+           Note(1400,1500,source='pitch',voice='vocals',id='b'),
+           Note(3000,3100,source='pitch',voice='vocals',id='c'),
+           Note(3300,3400,source='pitch',voice='vocals',id='d')]
+    a=analysis(notes)
+    a['structure']=edit_boundaries({},[0,2500,5000,12000],a)
+    a['phrase_candidates']=[
+        dict(notes[0].data(),end=2100,phrase=True,support=['a','b'],support_coverage=.96,
+             release_reason='vocal_activity_decay'),
+        dict(notes[2].data(),end=4100,phrase=True,support=['c','d'],support_coverage=1.,
+             release_reason='vocal_activity_decay'),
+    ]
+    state['analysis']=a
+    state['settings']=parameters({'phrase_ln':0})
+    state['plan']={'source':'local-audio-recommendation','preferences':state['settings'],'segments':[
+        dict(start_ms=0,end_ms=2500,preferences={'phrase_ln':0}),
+        dict(start_ms=2500,end_ms=5000,preferences={'phrase_ln':1}),
+        dict(start_ms=5000,end_ms=12000,preferences={'phrase_ln':0})]}
+    Projects(tmp_path/'projects').save(state)
+    try:
+        response=client.post(url+'/expression',json={'action':'automatic'},headers=headers)
+        assert response.status_code==200
+        assert [row['voices']['vocals']['mode'] for row in response.json['expression']['sections']]==[
+            'sustain','phrase','omit']
     finally:app.extensions['executor'].shutdown()

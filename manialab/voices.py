@@ -102,9 +102,19 @@ def apply_phrase_evidence(candidates, phrases, amount, segment_preferences=()):
         groups.setdefault((segment_index, local_amount), []).append(phrase)
     chosen = []
     for (_, local_amount), local in groups.items():
-        count = min(len(local), int(len(local) * local_amount + .5))
-        chosen.extend(sorted(local, key=lambda n: n.support_coverage * n.strength * np.log1p((n.end - n.start) / 500), reverse=True)[:count])
+        chosen.extend(select_phrase_subset(local, local_amount))
     replacements = {n.id: n for n in chosen}
     result = [replacements.get(n.id, n) for n in candidates]
     return result, dict(available=len(phrases), used=sum(n.phrase for n in result),
                         explanation="跨音高人声持续段仅替换已有起音的音尾；保留其他起音，LN 仍需通过占轨约束")
+
+
+def select_phrase_subset(phrases, amount):
+    """Keep the strongest supported phrases within a local expression budget."""
+    if isinstance(amount, bool) or not isinstance(amount, (int, float)) or not np.isfinite(amount) or not 0 <= amount <= 1:
+        raise ValueError("人声乐句比例必须在0到1之间")
+    count = min(len(phrases), int(len(phrases) * amount + .5))
+    ranked = sorted(phrases,
+        key=lambda n: n.support_coverage * n.strength * np.log1p((n.end - n.start) / 500),
+        reverse=True)
+    return ranked[:count]
