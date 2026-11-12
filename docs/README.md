@@ -13,7 +13,8 @@
 ## 项目状态
 
 - [当前续接进度](PROGRESS.md)：已完成阶段、真实验证结果、产物位置和下一步。
-- [dev.6 发布说明](releases/0.1.0-alpha.6-dev.6.md)：本测试版的变更和限制。
+- [dev.7 发布说明](releases/0.1.0-alpha.6-dev.7.md)：Windows 便携构建修复及验证范围。
+- [dev.6 发布说明](releases/0.1.0-alpha.6-dev.6.md)：模型下载回退及历史变更。
 - [开发测试版本记录](alpha5-validation.md)：早期发布验证历史。
 
 ## 研究入口
