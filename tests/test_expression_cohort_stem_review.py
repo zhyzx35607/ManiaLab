@@ -50,7 +50,7 @@ def _write_json(path, value):
     path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
 
 
-def _fixture(tmp_path, monkeypatch):
+def _fixture(tmp_path, monkeypatch, stored_audio_filename="track.wav"):
     root = tmp_path / "project"
     cohort = root / "test-data" / "expression-audio-cohort-v3"
     separated = root / "test-data" / "expression-audio-cohort-v3-separated-train-v1"
@@ -62,7 +62,7 @@ def _fixture(tmp_path, monkeypatch):
 
     chart_bytes = _chart().encode("utf-8")
     chart_hash = hashlib.sha256(chart_bytes).hexdigest()
-    audio_path = cohort / "101" / "track.wav"
+    audio_path = cohort / "101" / stored_audio_filename
     audio_path.parent.mkdir(parents=True)
     audio = np.zeros((44100 * 10, 2), dtype=np.float32)
     time = np.arange(len(audio), dtype=np.float32) / 44100
@@ -90,7 +90,7 @@ def _fixture(tmp_path, monkeypatch):
         "layout_training_split": "train",
         "chart_sha256": chart_hash,
         "audio_sha256": audio_hash,
-        "audio_filename": "track.wav",
+        "audio_filename": stored_audio_filename,
     }
     _write_json(cohort / "101" / "reference.json", reference)
     _write_json(cohort / "selection.json", selection)
@@ -245,7 +245,9 @@ def test_window_selection_prefers_richer_then_earlier_chart_window():
 def test_build_review_bundle_uses_only_train_audio_and_exports_five_tracks(
     tmp_path, monkeypatch
 ):
-    root, cohort, separated, ffmpeg = _fixture(tmp_path, monkeypatch)
+    root, cohort, separated, ffmpeg = _fixture(
+        tmp_path, monkeypatch, stored_audio_filename="audio.wav"
+    )
     output = root / "test-data" / "expression-audio-cohort-v3-stem-review-v1"
 
     report = review.build_review_bundle(
@@ -286,3 +288,21 @@ def test_build_review_bundle_uses_only_train_audio_and_exports_five_tracks(
             ffmpeg=ffmpeg,
             root=root,
         )
+
+
+def test_build_review_bundle_rejects_audio_extension_mismatch(tmp_path, monkeypatch):
+    root, cohort, separated, ffmpeg = _fixture(
+        tmp_path, monkeypatch, stored_audio_filename="audio.mp3"
+    )
+    output = root / "test-data" / "expression-audio-cohort-v3-stem-review-v1"
+
+    with pytest.raises(ValueError, match="Training chart metadata mismatch"):
+        review.build_review_bundle(
+            cohort_root=cohort,
+            separated_root=separated,
+            output=output,
+            ffmpeg=ffmpeg,
+            root=root,
+        )
+
+    assert not output.exists()

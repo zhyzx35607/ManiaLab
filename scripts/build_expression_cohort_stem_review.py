@@ -6,7 +6,7 @@ import hashlib
 import html
 import json
 import math
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
 import sys
@@ -280,9 +280,15 @@ def _case_rows(cohort_root: Path, rows: list[dict], completed: list[dict]) -> li
     for row, complete in zip(rows, completed):
         chart_path = cohort_root / str(row["beatmap_id"]) / "reference.osu"
         parsed = parse_osu(chart_path.read_text(encoding="utf-8-sig"))
+        chart_audio = str(parsed["general"].get("AudioFilename", ""))
+        chart_extension = PurePosixPath(chart_audio.replace("\\", "/")).suffix.casefold()
+        stored_extension = PurePosixPath(
+            str(row["audio_filename"]).replace("\\", "/")
+        ).suffix.casefold()
         if (
             parsed["keys"] != row["keys"]
-            or parsed["general"].get("AudioFilename") != row["audio_filename"]
+            or not chart_extension
+            or chart_extension != stored_extension
         ):
             raise ValueError(f"Training chart metadata mismatch for {row['beatmap_id']}")
         validation = complete["validation"]
