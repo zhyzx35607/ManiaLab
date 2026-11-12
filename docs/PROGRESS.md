@@ -50,11 +50,20 @@
   等图形动作；8拍只是采样上下文，不是主歌/副歌或固定乐句标签。采用歌曲组等权
   ridge，对比键数×键数内密度三分位×全曲位置三分位基线，test组在读取谱面前排除。
   基线在每个键数×密度×全曲位置格内重新按歌曲组等权，避免局部筛选后又被多谱歌曲支配。
-  新研究不使用音频、没有乐器身份，不证明音尾有声学支持，也不接入默认生成器。
-  定向测试8 passed，`py_compile`及`git diff --check`通过；尚未对全语料运行，避免
-  与v8同时重复读取数千张谱。v8完成后运行：
-  `.venv\Scripts\python.exe -m scripts.research_expression_actions --corpus test-data/corpus-expanded --output test-data/expression-action-predictability-v1/report.json`，
-  并审查10K未见歌曲组结果。PR #40 的配对音频覆盖清点已合并（`3fc9b4e`）。
+  全语料运行已完成：6428张train谱/1626组、735张validation谱/195组，test组未读取。
+  10K validation有13组；ridge相对分层基线在LN和弦比例上改善（MAE
+  0.3314→0.2623），但LN总比例略退步（0.2167→0.2201）且反键比例退步
+  （0.0267→0.0366）。报告不含组级置信区间，不使用音频或乐器身份，也不接入默认
+  生成器；这些结果只表明部分图形动作可从谱面上下文预测，不能证明听音、声部条件
+  或音乐质量收益。结果位于ignored目录
+  `test-data/expression-action-predictability-v1/report.json`。
+  《樱花草》单曲逐段表达报告由`scripts/analyze_sakura_expression_profile.py`
+  生成，核验Reference/成品身份并按共同书签统计LN长度、交错放手、Hybrid及同时持条。
+  除开头7物件引子外，成品各段LN比为10.7%–52.3%；此范围仅描述一张作者谱，
+  不作为生成配额。
+  报告留在ignored目录`test-data/sakura-benchmark/expression-profile-v2/report.json`；
+  研究边界和代表区间见[编排设计](arrangement-design.md)。PR #40 的配对音频
+  覆盖清点已合并（`3fc9b4e`）。
 - 完整v7准备在谱面`2571106`处发现红线beatLength为`1E-61`，导致累计绝对拍位
   超出float64能分辨后续起音间隔的范围。sequence prior现在把小于10ms或大于
   10,000ms的红线周期都视为不可信并继续使用前一有效红线；这不修改谱面原Timing。
