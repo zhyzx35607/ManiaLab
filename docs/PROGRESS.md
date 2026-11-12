@@ -191,6 +191,15 @@
   该审计未重下载、解包写入或运行分离/转录模型。目录大小约731MB，音频仍为
   与谱面按文件名配对的混音，不包含声部身份、逐音标签或LN音尾真值；只证明
   本批次字节与配对清单完整，不构成音乐质量验收。
+- 新增`scripts/separate_expression_audio_cohort.py`及
+  [分轨协议](expression-audio-cohort-separation-protocol.md)，仅面向冻结cohort的
+  39个train组，validation/test不读音频；CPU串行，线程2/1，输出在ignored目录，
+  完整输入、模型和逐轨哈希后才允许续跑。首次`--plan-only`发现新入口的规范JSON
+  哈希错误使用原样Unicode，而冻结选择器采用默认ASCII转义；已统一为选择器规则并
+  加Unicode回归测试。定向测试6 passed，`py_compile`与`git diff --check`通过。
+  `--plan-only`核对出6K/7K/8K/9K/10K分别9/9/6/9/6组，Hybrid Demucs模型SHA
+  匹配，PyTorch CPU 2.9.1、intra/inter-op线程2/1，`inference_started=false`。
+  尚未运行分轨推理；该阶段仅准备后续声学候选，不提供乐器身份或LN音尾真值。
 - 新增研究入口`scripts/research_expression_actions.py`，从作者谱的8拍局部窗口
   提取起音骨架，预测LN比例、LN拍长、LN和弦、错开放手、Hybrid、反键与独立放手
   等图形动作；8拍只是采样上下文，不是主歌/副歌或固定乐句标签。采用歌曲组等权
