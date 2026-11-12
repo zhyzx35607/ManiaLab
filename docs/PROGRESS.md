@@ -114,6 +114,12 @@
   全过、无重复路径，GitHub资产digest与本地匹配。GitHub Pre-release已发布：
   [ManiaLab alpha.6 dev.10](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.10)，
   附Windows ZIP、SHA256SUMS和验证JSON。报告未声称音乐/Timing验收；本地39组听审仍待人工完成。
+- 2026-11-13 开始准备dev.11，使新tag/Windows便携包源码快照精确对齐包含PR #67/#68/#69
+  的当前`main`。变化只同步版本元数据、README和发布说明；新增的stem-review导出校验器
+  是研究辅助CLI，不改变应用运行、默认采音或模型。本地全量`pytest`为2310 passed、
+  89 skipped；`compileall`、11个静态JS `node --check`及`git diff --check`通过。当前
+  仅处于准备阶段；Windows tag CI、ZIP独立复核和Release资产发布均须随后实际通过再记录，
+  不视为已发布。
 
 ## Nova 人声乐句候选复核包
 
