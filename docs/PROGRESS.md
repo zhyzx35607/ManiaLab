@@ -114,12 +114,21 @@
   全过、无重复路径，GitHub资产digest与本地匹配。GitHub Pre-release已发布：
   [ManiaLab alpha.6 dev.10](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.10)，
   附Windows ZIP、SHA256SUMS和验证JSON。报告未声称音乐/Timing验收；本地39组听审仍待人工完成。
-- 2026-11-13 开始准备dev.11，使新tag/Windows便携包源码快照精确对齐包含PR #67/#68/#69
-  的当前`main`。变化只同步版本元数据、README和发布说明；新增的stem-review导出校验器
-  是研究辅助CLI，不改变应用运行、默认采音或模型。本地全量`pytest`为2310 passed、
-  89 skipped；`compileall`、11个静态JS `node --check`及`git diff --check`通过。当前
-  仅处于准备阶段；Windows tag CI、ZIP独立复核和Release资产发布均须随后实际通过再记录，
-  不视为已发布。
+- 2026-11-13 准备并发布dev.11，使新tag/Windows便携包源码快照精确对齐包含PR
+  #67/#68/#69及版本准备PR #70的`main`。应用版本/README/发布范围仅同步版本；
+  stem-review标签校验器是研究辅助CLI，不改变应用运行、默认采音或模型。本地全量
+  `pytest`为2310 passed、89 skipped；`compileall`、11个静态JS `node --check`及
+  `git diff --check`通过。PR #70两项Windows verify通过后合入，merge commit为
+  `635dd382758916902df4d876bdc4bbb44e46d97d`；annotated tag
+  `v0.1.0-alpha.6-dev.11`精确指向该提交。Windows tag CI run `43271869370`于
+  2026-11-13完成、耗时8m10s：2,399项测试中2,310 passed、89 skipped、零失败/错误；
+  模型校验下载、worker/Windows归档构建、clean PATH与Unicode数据路径离线EXE、worker
+  关停、验证报告和工件上传全部成功。ZIP 698,933,352字节，SHA-256
+  `4cabc4a8b7879afd83f4fc688dad29848dfb8d7f7e1bcb82ba82ae26401a6e06`；4,220个条目
+  CI与本地独立CRC检查通过、无重复路径，包内版本/manifest/EXE哈希匹配；验证JSON
+  SHA-256为`53e266794dfd3f9a7e9b6dd3ef1e1d155c1717b46d6cf11f731b52f9ffa1fddd`。
+  GitHub Pre-release已发布，ZIP、SHA256SUMS和验证JSON资产digest/大小与本地一致。
+  CI使用合成音频只验证软件/便携运行，不代表音乐或Timing验收；本地39组人工听审仍待完成。
 
 ## Nova 人声乐句候选复核包
 
