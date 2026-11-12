@@ -3,7 +3,7 @@
 更新：2026-11-12，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
-## 项目整理与 dev.5/dev.6/dev.7/dev.8 发布准备
+## 项目整理与 dev.5/dev.6/dev.7/dev.8 发布
 
 - 2026-11-12 从 `origin/main` 的 `e17fc1b` 开始整理，导航索引已通过 PR #48
   合并到 `main`（`ba17760416dabace44a693653624ba69ade809e9`）。没有搬迁
@@ -58,14 +58,27 @@
 - 现有长期目标仍是用 Nova 人声音轨逐段核验连续人声 LN 候选，再由真实音频听检和
   osu! 试打验收段落、声部与 LN 表达；研究权重保持关闭，不能重复已完成的模型实验
   或把 CI 通过当作音乐质量完成。
-- dev.7 tag 固定在 `ad6a398`，而 PR #52 合并后 `main` 已前移到 `0b5ddfe`；两者差异
-  仅为复核进度、协议、研究脚本和测试。为让新开发版的源码 tag 与当时 `main` 完全一致，
-  dev.8 只同步应用版本元数据与发布说明，不修改应用运行逻辑、模型或用户数据。该版本
-  目前仅准备中；本地 `.\.venv\Scripts\python.exe -m pytest -q` 为2275 passed、
-  89 skipped，`compileall -q manialab scripts tests`、dev.8版本断言和
-  `git diff --check` 通过。PR 检查、合并后的 tag CI、Windows 便携包/关停检查及
-  Release 资产均尚未验证/发布，完成前不得称 dev.8 已发布。发布后补录真实 tag SHA、
-  CI run、ZIP 校验和和报告 SHA。
+- dev.7 tag 固定在 `ad6a398`，而 PR #52 合并后 `main` 前移到 `0b5ddfe`；差异仅为
+  复核进度、协议、研究脚本和测试。PR #53 将源码版本升至 dev.8 并合入 `main`，
+  合并提交 `1fb9ef964f04919e02a12559f6b8a598db7fe602`。annotated tag
+  `v0.1.0-alpha.6-dev.8` 精确指向该提交；打 tag 时 `HEAD` 与 `origin/main` SHA 相同。
+  本次只同步版本元数据和发布说明，没有应用运行逻辑、模型或用户数据变化。PR 的两项
+  Windows validation 均通过；本地全量测试2275 passed、89 skipped。
+- dev.8 tag CI run `43209073390` 于2026-11-12完成，全部步骤成功，耗时6分46秒：
+  tag/source 版本一致、2364项测试（89 skipped、零 failures/errors）、模型校验下载、
+  音频 worker 和 Windows 包构建、clean PATH 与 Unicode 路径离线 EXE 检查、worker
+  关停、验证报告和工件上传均通过。报告记录4215个 ZIP 条目 CRC 检查通过，并明确
+  标注没有音乐或 Timing 验收。
+- CI 产物下载到 ignored 目录
+  `build/portable/verified-dev8-43209073390/` 并独立复核：ZIP 大小698,920,560字节，
+  SHA-256 `0c7e7844cdb77f81cef8ed58e19b54bdb5d0b584ea4b7c478f495113b6f8baa3`；
+  本地完整 CRC 检查和4,215条目重复名检查通过，包内版本和 release manifest 与报告相符，
+  ZIP 与验证 JSON 的 `SHA256SUMS` 2/2 匹配。GitHub Release 返回的 ZIP digest、
+  文件大小及两个小型资产 digest 均与本地结果相符；验证 JSON SHA-256 为
+  `8297467152e3b10fa5701573f2378d899235758f59a712c50d3d0872468f9ca3`。Release 已发布：
+  [ManiaLab alpha.6 dev.8](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.8)，
+  附 Windows ZIP、SHA256SUMS 和验证报告。音乐质量、Timing 和 Nova 人声候选人工听审
+  仍未完成；Demucs checkpoint 单独再分发授权仍未核实。
 
 ## Nova 人声乐句候选复核包
 
