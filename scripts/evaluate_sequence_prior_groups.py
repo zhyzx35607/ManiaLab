@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 
 from manialab.pattern_prior import score_network
+from manialab.sequence_prior import MIN_SEQUENCE_BEAT_MS
 from manialab.pattern_sequence import (
     FEATURE_SCHEMA_COUNTS,
     FEATURE_SCHEMA_NAMES,
@@ -40,7 +41,7 @@ CACHE_FILE_SUFFIXES = {
     LN_INTERACTION_CACHE_REVISION:
         "sequence-window-v5-ln-interactions.npz",
     LN_PHRASE_CONTEXT_CACHE_REVISION:
-        "sequence-window-v7-ln-phrase-context.npz",
+        "sequence-window-v8-ln-phrase-context.npz",
 }
 METRICS = ("overall", "ln", "tap")
 BOOTSTRAP_CONFIDENCE = 0.95
@@ -87,6 +88,7 @@ def _validate_report_config(report):
             config.get("feature_schema") != feature_schema
             or config["cache_revision"] != LN_PHRASE_CONTEXT_CACHE_REVISION
             or config.get("beat_reference") != "integrated_redline_beats"
+            or config.get("min_sequence_beat_ms") != MIN_SEQUENCE_BEAT_MS
             or config.get("phrase_context_beats") != LN_PHRASE_CONTEXT_BEATS
         ):
             raise ValueError("Phrase-context report/cache schema mismatch")
