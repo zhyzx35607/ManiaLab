@@ -3,7 +3,7 @@
 更新：2026-11-12，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
-## 项目整理与 dev.5/dev.6/dev.7/dev.8 发布
+## 项目整理与 dev.5/dev.6/dev.7/dev.8/dev.9 发布
 
 - 2026-11-12 从 `origin/main` 的 `e17fc1b` 开始整理，导航索引已通过 PR #48
   合并到 `main`（`ba17760416dabace44a693653624ba69ade809e9`）。没有搬迁
@@ -79,6 +79,14 @@
   [ManiaLab alpha.6 dev.8](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.8)，
   附 Windows ZIP、SHA256SUMS 和验证报告。音乐质量、Timing 和 Nova 人声候选人工听审
   仍未完成；Demucs checkpoint 单独再分发授权仍未核实。
+- PR #55 将人工人声标签校验工具合入 `main`，merge commit 为
+  `78335ad0e773e502903b2d9236290916e799323e`，两项 Windows `verify` 均通过。
+  这使 dev.8 tag (`1fb9ef9`) 不再等于当前主线；因此只同步版本元数据和发布说明准备
+  dev.9，应用运行行为不变。dev.9 PR/CI、tag 与 Windows 便携产物尚待验证。
+- dev.9 版本准备仅变更 `manialab.__version__`、README 当前版本/下载入口和发布说明。
+  本地全量 `.\.venv\Scripts\python.exe -m pytest -q` 为
+  `2282 passed, 89 skipped`，`py_compile`、`git diff --check` 通过；尚未打 tag 或构建
+  Windows ZIP，待 PR 合并后从同一 `main` SHA 发布。
 
 ## Nova 人声乐句候选复核包
 
@@ -106,8 +114,8 @@
   `git diff --check` 通过。
   尚未由人试听或填写标签，不能称97条候选为真声，也未做 osu! 试打或音乐质量验收。
   下一步需复核并导出标签，再基于人工声学证据检查连续 LN 的起止、声部和段落表达。
-- 续接核查确认主线仍与 `origin/main` 同为 `7105f6d`、工作区干净；未发现 ManiaLab
-  研究/推理进程。审核包有97个冻结候选和194段音频，未发现导出的
+- 2026-11-12续接复查确认主线当前与 `origin/main` 同为 `78335ad`；未发现 ManiaLab
+  研究/推理进程。审核包有97个冻结候选和194段音频，磁盘上未发现导出的
   `vocal-phrase-review-v1-labels.json`。Edge 存在审核页窗口，但桌面采集连续两次超时；
   没有据此推断浏览器本地暂存为空，也未触碰标注。
 - 新增 `scripts/summarize_vocal_phrase_review.py`：接收导出的 JSON，核验审核包的
