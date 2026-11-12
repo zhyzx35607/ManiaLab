@@ -42,9 +42,9 @@
   9K LN-heavy只有3个train组。两项失败是谱面音频文件名不匹配或无支持扩展名，
   未强行配对。一个113.7MB谱包通过HTTP Range只读取3.82MB。
   配对样本是原曲与谱面，不带分轨或逐音乐器标签；只能为下一步对音与弱监督
-  提供候选，不能直接当作声部条件LN真值。实现和定向验证尚未提交：
-  `tests/test_expression_audio_cohort.py`、`tests/test_fetch_paired_maps.py`
-  共6 passed，`py_compile`与`git diff --check`通过。
+  提供候选，不能直接当作声部条件LN真值。实现已通过PR #44合入`main`
+  （`f7764ae`）；`tests/test_expression_audio_cohort.py`、
+  `tests/test_fetch_paired_maps.py`共6 passed，`py_compile`与`git diff --check`通过。
 - 新增研究入口`scripts/research_expression_actions.py`，从作者谱的8拍局部窗口
   提取起音骨架，预测LN比例、LN拍长、LN和弦、错开放手、Hybrid、反键与独立放手
   等图形动作；8拍只是采样上下文，不是主歌/副歌或固定乐句标签。采用歌曲组等权
