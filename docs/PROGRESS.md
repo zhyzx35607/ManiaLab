@@ -199,7 +199,14 @@
   加Unicode回归测试。定向测试6 passed，`py_compile`与`git diff --check`通过。
   `--plan-only`核对出6K/7K/8K/9K/10K分别9/9/6/9/6组，Hybrid Demucs模型SHA
   匹配，PyTorch CPU 2.9.1、intra/inter-op线程2/1，`inference_started=false`。
-  尚未运行分轨推理；该阶段仅准备后续声学候选，不提供乐器身份或LN音尾真值。
+  PR #59已通过两项Windows verify并合入`main`（`54cb27b`）。随后串行运行39组
+  CPU分离，`run_identity_sha256=2ce6c31a6ee8c8ee1850a7f5994af5eaefb7b62bc8b68496de52b88b3ddb9903`；
+  共97.44分钟原音频、156条四轨NPY，输出约1,967.15 MiB，保留于ignored目录
+  `test-data/expression-audio-cohort-v3-separated-train-v1`。重新核验39/39完成记录、
+  输入身份、模型SHA、输出采样率/帧数/float32、有限值及全部声轨SHA，均匹配；
+  汇总清单与39个训练ID完全一致。结果只提供后续局部声学候选，不证明乐器身份、
+  谱音对应关系或LN真实音尾，也不是音乐质量验收。下一步仅基于train分轨和谱面
+  作者动作做局部证据对齐，避免把弱分轨当真值；仍需原曲听审与osu!试打验收。
 - 新增研究入口`scripts/research_expression_actions.py`，从作者谱的8拍局部窗口
   提取起音骨架，预测LN比例、LN拍长、LN和弦、错开放手、Hybrid、反键与独立放手
   等图形动作；8拍只是采样上下文，不是主歌/副歌或固定乐句标签。采用歌曲组等权
