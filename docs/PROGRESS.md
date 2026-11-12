@@ -102,12 +102,18 @@
   附Windows ZIP、SHA256SUMS和机器可读验证报告。验证和发布资产不构成音乐验收；
   音乐质量、Timing、Nova人声候选人工听审与osu!试打仍未完成，checkpoint单独再分发
   授权仍未核实。
-- 2026-11-13 开始准备dev.10，GitHub当前最新发布仍为dev.9。版本变更仅同步
-  `manialab.__version__`、README下载入口和发布范围说明，使标签可对齐已合并PR #63/#64
-  的`main`；不改变应用运行逻辑、默认行为或模型。训练集听审包是ignored本地产物，
-  不进入Release。本地全量`pytest`为2295 passed、89 skipped，`compileall`和
-  `git diff --check`通过。此版本待PR检查、合并和Windows tag CI；在CI与资产独立复核
-  完成前不创建Release或宣称已有新便携包。
+- 2026-11-13 准备并发布dev.10。版本变更仅同步`manialab.__version__`、README下载入口
+  和发布范围说明，使tag对齐已合并PR #63/#64后的`main`；不改变应用运行逻辑、默认行为
+  或模型。训练集听审包是ignored本地产物，不进入Release。本地全量`pytest`为2295
+  passed、89 skipped，`compileall`和`git diff --check`通过。PR #65两项Windows verify
+  通过并合入；tag `v0.1.0-alpha.6-dev.10` 精确指向`0b3ac2fc91b7b9aa9b4e5a3ff22b540164b0c264`。
+  Windows tag CI run `43256384273` 于2026-11-13完成：2,295 passed、89 skipped、零失败/错误；
+  模型校验、worker/Windows ZIP构建、clean PATH与Unicode路径离线EXE、worker关停及报告上传
+  全部通过。CI包独立复核：ZIP 698,930,796字节，SHA-256
+  `affeeb90518477168bcc38322c3889c39770523e9ad2fa3c7b7e1b9cdc2474f6`；4,219个条目CRC
+  全过、无重复路径，GitHub资产digest与本地匹配。GitHub Pre-release已发布：
+  [ManiaLab alpha.6 dev.10](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.10)，
+  附Windows ZIP、SHA256SUMS和验证JSON。报告未声称音乐/Timing验收；本地39组听审仍待人工完成。
 
 ## Nova 人声乐句候选复核包
 
