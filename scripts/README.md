@@ -19,6 +19,12 @@ Windows Release CI 的正式入口为 `.github/workflows/windows.yml`；完整�
 - `prepare_*.py`、`train_*.py`、`evaluate_*.py`：数据准备、训练或评价流程。
 - 运行前阅读对应的 `docs/*-protocol.md`、`docs/PROGRESS.md` 和脚本参数；测试通过不等于音乐质量验收。
 
+## 《樱花草》候选差异听审
+
+- `build_chord_evidence_audio_review.py`：从冻结候选生成本地原混音听审包；不会运行模型或读取 Reference。
+- `summarize_chord_evidence_audio_review.py`：校验导出标签并汇总覆盖，不计算准确率或音乐质量。
+- 输入身份、固定播放范围和人工复核边界见 [`docs/chord-evidence-audio-review-protocol.md`](../docs/chord-evidence-audio-review-protocol.md)。
+
 ## 常用验证
 
 ```powershell

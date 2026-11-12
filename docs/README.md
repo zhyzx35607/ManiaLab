@@ -13,6 +13,7 @@
 ## 项目状态
 
 - [当前续接进度](PROGRESS.md)：已完成阶段、真实验证结果、产物位置和下一步。
+- [dev.12 发布说明](releases/0.1.0-alpha.6-dev.12.md)：当前主线对齐包及验证范围。
 - [dev.7 发布说明](releases/0.1.0-alpha.6-dev.7.md)：Windows 便携构建修复及验证范围。
 - [dev.6 发布说明](releases/0.1.0-alpha.6-dev.6.md)：模型下载回退及历史变更。
 - [开发测试版本记录](alpha5-validation.md)：早期发布验证历史。
@@ -23,6 +24,7 @@
 - LN 与表达：`*ln-*`、`*expression-*`、`*gesture-*`、`*sequence-*`。
 - 分离与转录：`*separation*`、`*transcription*`、`*mapper*`、`*tsumugi*`。
 - 数据、协议和复核：相同主题的 `*-protocol.md` 记录冻结条件；`*-results.md` 或 `*-research.md` 记录实际结果、退步和未验证项。
+- [《樱花草》候选差异听审协议](chord-evidence-audio-review-protocol.md)：本地原混音复核和标签边界。
 
 ## 目录约定
 
