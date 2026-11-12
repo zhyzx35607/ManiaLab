@@ -25,16 +25,32 @@ def reference_marks(text):
                 bookmarks.append(time)
         except ValueError:
             pass
-    green = []
+    green, timing_effects = [], {}
     for line in parts.get('TimingPoints', []):
         p = line.split(',')
-        if len(p) >= 8 and p[6].strip() == '0':
-            try:
-                green.append(dict(time_ms=round(float(p[0])), beat_length=float(p[1]),
-                                  volume=int(p[5]), kiai=bool(int(p[7]) & 1)))
-            except ValueError:
-                continue
-    return dict(bookmarks=sorted(set(bookmarks)), green_lines=green)
+        if len(p) < 8:
+            continue
+        try:
+            time = float(p[0])
+            beat_length = float(p[1])
+            volume = int(p[5])
+            effects = int(p[7])
+        except ValueError:
+            continue
+        if not math.isfinite(time) or not math.isfinite(beat_length):
+            continue
+        # Kiai flags can change on either red or inherited timing points.
+        timing_effects[time] = bool(effects & 1)
+        if p[6].strip() == '0':
+            green.append(dict(time_ms=round(time), beat_length=beat_length,
+                              volume=volume, kiai=bool(effects & 1)))
+    kiai_transitions, kiai = [], False
+    for time, enabled in sorted(timing_effects.items()):
+        if enabled != kiai:
+            kiai_transitions.append(round(time))
+            kiai = enabled
+    return dict(bookmarks=sorted(set(bookmarks)), green_lines=green,
+                kiai_transitions=sorted(set(kiai_transitions)))
 
 
 def acoustic_features(samples, sample_rate, candidates, duration_ms):

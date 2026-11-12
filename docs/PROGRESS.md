@@ -22,8 +22,19 @@
   其中按既有划分24张属train，
   但LN比均低于50%；另有14张跨键数holdout和10张未划分的6–10K选择对照。
   这些对照尚无Nova分轨和逐音LN证据，不能直接监督声部条件延长；范围和数据边界
-  见[LN表达音频样本清点](expression-audio-pair-inventory.md)。本轮没有改生成器
-  或训练数据。
+  见[LN表达音频样本清点](expression-audio-pair-inventory.md)。
+- 已加入参考谱 Kiai 状态切换导入：与书签分开选择，换算到音频时钟后作为可编辑
+  段落边界提示；不把 Kiai 或书签宣称为主歌／副歌识别。TimingPoints 中红线、
+  绿线的状态变化、重复状态、非有限时间、偏移和越界均有覆盖。
+  `tests/test_structure_expression.py` 定向验证 `27 passed`，Python 编译、
+  `node --check static/structure.js` 与 `git diff --check` 通过。代码提交为
+  `c728681`，PR #42 的 CI 正在运行。
+- v8训练实际仍在特征缓存准备阶段（PID 55024，自2026-11-12 08:41启动）；
+  截至12:22缓存目录有5,632个谱面特征文件，占预期7,083个非测试样本约79.5%，
+  大小约0.12GiB；训练输出目录尚未创建。进程仍存活，不能把它写成训练完成。
+  当前命令使用 `sequence-window-ln-phrase-context-v3`、`ln-transition-hard`、
+  排除test并跳过test评分；完成后还要检查训练/validation结果，只有验证收益稳定
+  才考虑后续接入。权重目前不影响应用默认。
 - 新增研究入口`scripts/research_expression_actions.py`，从作者谱的8拍局部窗口
   提取起音骨架，预测LN比例、LN拍长、LN和弦、错开放手、Hybrid、反键与独立放手
   等图形动作；8拍只是采样上下文，不是主歌/副歌或固定乐句标签。采用歌曲组等权
