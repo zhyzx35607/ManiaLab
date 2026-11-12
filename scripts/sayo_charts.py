@@ -11,9 +11,9 @@ import zipfile
 
 
 class RemoteZip(io.RawIOBase):
-    def __init__(self,sid,fetch):
+    def __init__(self,sid,fetch,url=None):
         self.fetch=fetch
-        self.url=f'https://txy1.sayobot.cn/beatmaps/download/mini/{sid}'
+        self.url=url or f'https://txy1.sayobot.cn/beatmaps/download/mini/{sid}'
         raw,headers,url=fetch(self.url,headers={'Range':'bytes=-65557'},include_headers=True)
         match=re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)',headers.get('Content-Range',''))
         if not match:raise ValueError('Sayo server did not honor ZIP byte range')
