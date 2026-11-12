@@ -3,7 +3,7 @@
 更新：2026-11-12，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
-## 项目整理与 dev.5/dev.6/dev.7 发布
+## 项目整理与 dev.5/dev.6/dev.7/dev.8 发布准备
 
 - 2026-11-12 从 `origin/main` 的 `e17fc1b` 开始整理，导航索引已通过 PR #48
   合并到 `main`（`ba17760416dabace44a693653624ba69ade809e9`）。没有搬迁
@@ -58,6 +58,14 @@
 - 现有长期目标仍是用 Nova 人声音轨逐段核验连续人声 LN 候选，再由真实音频听检和
   osu! 试打验收段落、声部与 LN 表达；研究权重保持关闭，不能重复已完成的模型实验
   或把 CI 通过当作音乐质量完成。
+- dev.7 tag 固定在 `ad6a398`，而 PR #52 合并后 `main` 已前移到 `0b5ddfe`；两者差异
+  仅为复核进度、协议、研究脚本和测试。为让新开发版的源码 tag 与当时 `main` 完全一致，
+  dev.8 只同步应用版本元数据与发布说明，不修改应用运行逻辑、模型或用户数据。该版本
+  目前仅准备中；本地 `.\.venv\Scripts\python.exe -m pytest -q` 为2275 passed、
+  89 skipped，`compileall -q manialab scripts tests`、dev.8版本断言和
+  `git diff --check` 通过。PR 检查、合并后的 tag CI、Windows 便携包/关停检查及
+  Release 资产均尚未验证/发布，完成前不得称 dev.8 已发布。发布后补录真实 tag SHA、
+  CI run、ZIP 校验和和报告 SHA。
 
 ## Nova 人声乐句候选复核包
 
