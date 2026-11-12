@@ -59,6 +59,33 @@
   osu! 试打验收段落、声部与 LN 表达；研究权重保持关闭，不能重复已完成的模型实验
   或把 CI 通过当作音乐质量完成。
 
+## Nova 人声乐句候选复核包
+
+- 2026-11-12 新增 `scripts/build_vocal_phrase_review.py` 和
+  [复核协议](vocal-phrase-audio-review-protocol.md)，从已冻结分析制作本地听审材料，
+  不重跑模型、不读取谱面真值、不改候选。构建前逐项校验冻结人声复核报告中的6个输入
+  SHA、分离来源、时长、样本数和采样率：Nova vocals 原始来源
+  `7b1f57f1c5756c51a1da14b0f60980a01d74b8478dbd869dc8280005d84706e7`，
+  对应 raw float WAV `638f56f5f3f25ff82fc0f6222dc1b4003239c6f167c80e53eaec96dfd51535b7`；
+  原混音来源 `2a82d46c43e43acb4f8e21de71573be1ae6b71b8cf5485364c9ed1d5d3b12765`，
+  对应 raw float WAV `dfd2e1581124db8255a347c8414411d1978e279d06116603df64dcfa60e8745e`。
+  两者均为22,050 Hz、6,258,672样本、283.84秒；同一分析时钟和来源哈希不证明分离轨内部
+  无偏移，仍须逐段试听核验。
+- 产物留在 ignored 目录
+  `test-data/sakura-benchmark/vocal-phrase-audio-review-v1/`：冻结97条候选，每条含
+  人声与原混音各一段，共194个PCM16音频片段，绝对时间前后各留1.5秒上下文；共13段，
+  第4–13段含候选。对两轨使用同一固定线性增益 `0.6262192773170971`，无逐片响度归一、
+  滤波、压缩、重采样或时间移动。`index.html` 支持回放、声源/边界人工标记、备注、
+  浏览器本地暂存和 JSON 导出；清单与机器报告记录输入/产物哈希。独立逐样本复核194/194
+  通过、200个产物哈希匹配、PCM峰值31129/32767，未削波。报告 SHA-256：
+  `1f61709cfde80f7a2211acaebfc00218f94bd710f7fe9cd08b50eb5f138f9eec`。
+- `tests/test_vocal_phrase_review.py` 为3 passed；本轮全量
+  `.\.venv\Scripts\python.exe -m pytest -q` 为2275 passed、89 skipped，
+  `compileall -q manialab scripts tests`、审核页内联 JavaScript 语法检查和
+  `git diff --check` 通过。
+  尚未由人试听或填写标签，不能称97条候选为真声，也未做 osu! 试打或音乐质量验收。
+  下一步需复核并导出标签，再基于人工声学证据检查连续 LN 的起止、声部和段落表达。
+
 ## 当前研究
 
 - 八拍LN乐句上下文仍是独立研究，不接入默认生成器。特征以累计红线拍位
