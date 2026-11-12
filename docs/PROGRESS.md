@@ -245,6 +245,14 @@
   对全部195个登记WAV资源的本机HEAD检查均返回200；只确认界面渲染和资源可达，未播放音频、
   修改标签或导出。页面首次加载时尚未选择音频，选择轨道按钮会调用播放。人工
   听审仍是下一步，未把页面检查或HTTP可达性算作听审结果。
+- 新增`scripts/summarize_expression_cohort_stem_review.py`，为上述导出JSON校验冻结
+  review key、case集合、字段和标签枚举、时区时间戳，以及包内200项登记产物SHA和195段
+  PCM16 WAV头；输出标签覆盖与分布、待复核case ID，不输出备注正文、不算准确率，
+  `musical_acceptance`固定为false。实际本地包只读校验通过：39组、39个case、195段、
+  200项产物匹配。新测试15 passed；与builder和既有人声审核器相关测试合计29 passed，
+  `py_compile`、CLI `--help`通过。当前 Downloads 中尚无
+  `expression-audio-stem-review-v1-labels.json`；导出后可运行
+  `.\.venv\Scripts\python.exe scripts\summarize_expression_cohort_stem_review.py --labels "$env:USERPROFILE\Downloads\expression-audio-stem-review-v1-labels.json" --output test-data\expression-audio-cohort-v3-stem-review-summary-v1.json`。
 - 新增研究入口`scripts/research_expression_actions.py`，从作者谱的8拍局部窗口
   提取起音骨架，预测LN比例、LN拍长、LN和弦、错开放手、Hybrid、反键与独立放手
   等图形动作；8拍只是采样上下文，不是主歌/副歌或固定乐句标签。采用歌曲组等权
