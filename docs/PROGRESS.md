@@ -3,6 +3,35 @@
 更新：2026-11-12，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
+## 项目整理与 dev.5 发布
+
+- 2026-11-12 从 `origin/main` 的 `e17fc1b` 建立分支
+  `codex/project-layout-and-dev5`。目录整理采用导航索引，不搬迁 `docs/` 或
+  `scripts/` 文件：研究记录、测试导入、历史命令和协议哈希广泛依赖现有路径。
+  新增 `docs/README.md` 与 `scripts/README.md`；不清理或提交被忽略的
+  `test-data/`、模型、音频、便携包和历史构建产物。
+- 版本准备升为 `0.1.0-alpha.6-dev.5`，承接已合并主线的 Kiai 边界提示导入和
+  段落级连续人声乐句控制。发布说明明确这些候选/提示不等于人声身份、主歌副歌
+  识别或音乐质量验收。最新公开版仍是 dev.4，dev.5 尚未打 tag 或发布。
+- 修正 `/api/import` 在上传中途失败后留下空项目目录的问题；随机新建目录的失败
+  路径现在会被清理，已有项目不受影响。`tests/test_server.py` 增加部分上传后失败
+  的回归测试。
+- Windows 构建按唯一 `MANIALAB_BUILD_ID` 写入
+  `build/portable/<run-id>/`，包括 PyInstaller 工作目录、便携目录、ZIP 和发布
+  证据；同 ID 已存在时退出，不覆盖 dev.4 或其他历史构建。校验文件按版本命名，
+  workflow 只上传该 run 的文件；tag 必须与源码 `__version__` 一致。
+  `scripts/collect_release_validation.py` 校验源码快照、ZIP CRC/EXE/manifest，
+  并汇总测试、离线便携检查和关停证据；报告不包含音频或逐音数据。
+- 本地验证：`.venv\Scripts\python.exe -m pytest -q` 为 `2268 passed, 89 skipped`
+  （2026-11-12）；`tests/test_server.py` 与发布证据收集器定向测试为
+  `16 passed`；`compileall -q manialab scripts tests`、全部 `static/*.js`
+  的 `node --check` 与 `git diff --check` 通过。尚未构建 Windows EXE，也未运行
+  tag CI、发布或进行音乐试听验收；这些必须从合并后的 main/tag 执行。
+- 下一步：推送并开 PR，等待 Windows validation；合并后推送
+  `v0.1.0-alpha.6-dev.5`，只在 tag CI 的测试、离线 EXE、关停和 ZIP/校验报告
+  全部通过后发布。发布后继续核对 Nova 人声音轨与逐段人声乐句候选，保持模型
+  研究权重关闭；音乐质量目标仍未完成。
+
 ## 当前研究
 
 - 八拍LN乐句上下文仍是独立研究，不接入默认生成器。特征以累计红线拍位

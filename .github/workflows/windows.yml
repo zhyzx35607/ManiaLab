@@ -19,6 +19,7 @@ jobs:
     env:
       PYTHONUTF8: '1'
       PYTHONIOENCODING: utf-8
+      MANIALAB_BUILD_ID: ${{ github.run_id }}-${{ github.run_attempt }}
       # Tagged releases, manual runs and explicit build commits exercise the EXE.
       BUILD_PORTABLE: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[portable]') }}
     defaults:
@@ -35,8 +36,19 @@ jobs:
           uv venv .venv --python 3.12.10
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           uv pip sync --python .venv/Scripts/python.exe requirements-lock.txt
+      - name: Verify release tag matches source version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $version = .venv/Scripts/python.exe -c "from manialab import __version__; print(__version__)"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $expectedTag = "v$version"
+          if ($env:GITHUB_REF_NAME -ne $expectedTag) {
+            throw "Tag $env:GITHUB_REF_NAME does not match source version $version."
+          }
       - name: Test timing, LN selection, layout and project APIs
-        run: .venv/Scripts/python.exe -m pytest -q
+        run: |
+          New-Item -ItemType Directory -Force test-data/release-ci | Out-Null
+          .venv/Scripts/python.exe -m pytest -q --junitxml=test-data/release-ci/junit.xml
       - name: Fetch verified audio models
         if: env.BUILD_PORTABLE == 'true'
         run: .venv/Scripts/python.exe scripts/fetch_audio_models.py
@@ -54,10 +66,22 @@ jobs:
         run: .venv/Scripts/python.exe scripts/build_windows.py
       - name: Verify actual EXE offline with clean PATH and Unicode data paths
         if: env.BUILD_PORTABLE == 'true'
-        run: .venv/Scripts/python.exe scripts/verify_portable.py dist/ManiaLab/ManiaLab.exe --work test-data/portable-ci
+        run: |
+          $exe = "build/portable/$env:MANIALAB_BUILD_ID/dist/ManiaLab/ManiaLab.exe"
+          .venv/Scripts/python.exe scripts/verify_portable.py $exe --work test-data/portable-ci
       - name: Verify closing the application stops its active audio worker
         if: env.BUILD_PORTABLE == 'true'
-        run: .venv/Scripts/python.exe scripts/verify_shutdown.py dist/ManiaLab/ManiaLab.exe --work test-data/shutdown-ci
+        run: |
+          $exe = "build/portable/$env:MANIALAB_BUILD_ID/dist/ManiaLab/ManiaLab.exe"
+          .venv/Scripts/python.exe scripts/verify_shutdown.py $exe --work test-data/shutdown-ci
+      - name: Collect release verification evidence
+        if: success() && env.BUILD_PORTABLE == 'true'
+        run: |
+          .venv/Scripts/python.exe scripts/collect_release_validation.py `
+            --build-root "build/portable/$env:MANIALAB_BUILD_ID" `
+            --pytest-report test-data/release-ci/junit.xml `
+            --portable-report test-data/portable-ci/report.json `
+            --shutdown-report test-data/shutdown-ci/report.json
       - name: Save portable verification report
         if: always() && env.BUILD_PORTABLE == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -68,6 +92,7 @@ jobs:
             test-data/portable-ci/launch-*.log
             test-data/shutdown-ci/report.json
             test-data/shutdown-ci/launch.log
+            test-data/release-ci/junit.xml
           retention-days: 7
           if-no-files-found: ignore
       - name: Save verified build
@@ -75,7 +100,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ManiaLab-windows-x64
-          path: release/*
+          path: build/portable/${{ github.run_id }}-${{ github.run_attempt }}/release/*
           compression-level: 0
           retention-days: 7
           if-no-files-found: error

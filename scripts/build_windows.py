@@ -1,9 +1,11 @@
 """Build a portable directory and ZIP using the current locked Python environment."""
+from datetime import datetime, timezone
 from pathlib import Path
 import hashlib
 import importlib.metadata as metadata
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -72,14 +74,29 @@ if not gpl.exists():gpl.write_bytes(urllib.request.urlopen('https://raw.githubus
 import imageio_ffmpeg
 info=subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(),'-version'],capture_output=True,text=True,check=True).stdout
 (ROOT/'licenses/FFmpeg-build-info.txt').write_text(info+'\nBinary provider: imageio-ffmpeg 0.8.1\nBuild distributor and source/build references: https://www.gyan.dev/ffmpeg/builds/\nFFmpeg source: https://ffmpeg.org/releases/\nBuild scripts: https://github.com/GyanD/codexffmpeg\n',encoding='utf-8')
+build_id=os.environ.get('MANIALAB_BUILD_ID') or datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+f'-{os.getpid()}'
+if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',build_id):
+    raise SystemExit('MANIALAB_BUILD_ID must be a simple path component.')
+build_root=ROOT/'build'/'portable'/build_id
+try:
+    build_root.mkdir(parents=True,exist_ok=False)
+except FileExistsError:
+    raise SystemExit(f'Build output already exists; choose a new MANIALAB_BUILD_ID: {build_root}')
+workpath=build_root/'work'
+distpath=build_root/'dist'
+specpath=build_root/'spec'
+package_path=build_root/'release'
+for directory in (workpath,distpath,specpath,package_path):
+    directory.mkdir()
 args=[sys.executable,'-m','PyInstaller','--noconfirm','--name','ManiaLab','--console',
       '--add-data','static;static','--add-data','assets;assets','--add-data','licenses;licenses',
       '--add-data','manialab/tsumugi-source.json;manialab',
       '--add-data','vendor/mapperatorinator/template.osu;vendor/mapperatorinator',
       '--copy-metadata','numpy','--copy-metadata','scipy','--copy-metadata','onnxruntime',
-      '--collect-all','imageio_ffmpeg','--collect-binaries','onnxruntime','--exclude-module','pytest','launcher.py']
+      '--collect-all','imageio_ffmpeg','--collect-binaries','onnxruntime','--exclude-module','pytest',
+      '--workpath',str(workpath),'--distpath',str(distpath),'--specpath',str(specpath),'launcher.py']
 subprocess.run(args,check=True)
-target=ROOT/'dist/ManiaLab'
+target=distpath/'ManiaLab'
 if source_snapshot()!=build_sources:
     raise SystemExit('Application sources changed during the build; rebuild before publishing.')
 bundled_worker=verify_worker(ROOT,target/'_internal/assets/deep')
@@ -101,10 +118,10 @@ for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
 shutil.copytree(ROOT/'licenses',target/'licenses',dirs_exist_ok=True)
 shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
 (target/'开始使用.txt').write_text(f'ManiaLab {__version__}\n完整解压后双击 ManiaLab.exe。\n程序会自动打开浏览器；关闭控制台窗口退出。\n深度采音模型已随包提供，无需安装 Python、Docker、CUDA 或下载模型。\n导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 检查段落及主声部表达 → 保存方案 → 生成 → 下载 .osz。\n旧项目可点击“检测音乐段落”使用新流程；若要应用低音重复触发修正，请重新分析，模型缓存可复用。\n新项目制谱提前量默认 22.5ms，可改为 0 使用原始音频时间。\n项目数据：%LOCALAPPDATA%\\ManiaLab\\projects\n这是开发测试版；采音与段落建议仍需试听，尚非端到端的 10K 制谱模型。可勾选贝斯与其他伴奏专用采音；默认只用起音，允许模型音尾参与长条需另行勾选。吉他有独立的专用采音和模型音尾开关，需六声部分离或导入吉他轨；人声保持原路径。使用方式见 docs/instrument-choices.md。未通过对照的采音取舍研究权重未启用。\n',encoding='utf-8-sig')
-release=ROOT/'release';release.mkdir(exist_ok=True)
 name=f'ManiaLab-{__version__}-windows-x64'
-archive=Path(shutil.make_archive(str(release/name),'zip',ROOT/'dist','ManiaLab'))
+archive=Path(shutil.make_archive(str(package_path/name),'zip',distpath,'ManiaLab'))
 with archive.open('rb') as stream:
     digest=hashlib.file_digest(stream,'sha256').hexdigest()
-(release/'SHA256SUMS.txt').write_text(f'{digest}  {archive.name}\n',encoding='utf-8')
-print(f'Built: {archive}\nSHA256: {digest}')
+checksums=package_path/f'{name}-SHA256SUMS.txt'
+checksums.write_text(f'{digest}  {archive.name}\n',encoding='utf-8')
+print(f'Portable directory: {target}\nBuilt: {archive}\nSHA256 file: {checksums}\nSHA256: {digest}')
