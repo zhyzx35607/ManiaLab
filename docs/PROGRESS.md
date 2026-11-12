@@ -27,10 +27,10 @@
   段落边界提示；不把 Kiai 或书签宣称为主歌／副歌识别。TimingPoints 中红线、
   绿线的状态变化、重复状态、非有限时间、偏移和越界均有覆盖。
   `tests/test_structure_expression.py` 定向验证 `27 passed`，Python 编译、
-  `node --check static/structure.js` 与 `git diff --check` 通过。代码提交为
-  `c728681`，PR #42 的 CI 正在运行。
+  `node --check static/structure.js` 与 `git diff --check` 通过。PR #42 已通过
+  两项 Windows CI 并合入 `main`，merge commit 为 `5c17e50`。
 - v8训练实际仍在特征缓存准备阶段（PID 55024，自2026-11-12 08:41启动）；
-  截至12:22缓存目录有5,632个谱面特征文件，占预期7,083个非测试样本约79.5%，
+  截至12:26缓存目录有5,731个谱面特征文件，占预期7,083个非测试样本约80.9%，
   大小约0.12GiB；训练输出目录尚未创建。进程仍存活，不能把它写成训练完成。
   当前命令使用 `sequence-window-ln-phrase-context-v3`、`ln-transition-hard`、
   排除test并跳过test评分；完成后还要检查训练/validation结果，只有验证收益稳定
