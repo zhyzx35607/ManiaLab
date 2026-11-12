@@ -754,8 +754,20 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   100.719–101.124及138.016–139.637秒；其中5个起音时间与新other起音重合，
   2个与新bass起音重合。六个8秒窗可覆盖`changes.json`全部27条增删起音记录；
   见[静态定位及候选表](chord-evidence-ties.md)。没有播放或解码音频样本，
-  未读取Reference或运行模型；任何取舍音乐影响仍未验收。下一步制作这些窗口的
-  本地原混音听审材料，再按实际声音复核并进行osu!试打，不以click或类别标签代替判断。
+  未读取Reference或运行模型；制作之前任何取舍音乐影响均未验收。
+- 本地原混音听审包已生成于ignored目录
+  `test-data/sakura-chord-evidence-audio-review-v1/`：6个固定8秒窗口、27条增删起音、
+  63条候选选择变化及14个PCM16片段。`review_key=13f7bf27e2445f8a69a1`，
+  manifest SHA-256为
+  `8bf989eacb607cb9a86c4c7e8a943a7d143a7c05cdbc42dd394ce32a4e24a6b2`；
+  原混音PCM SHA-256仍为
+  `dfd2e1581124db8255a347c8414411d1978e279d06116603df64dcfa60e8745e`。
+  页面逐窗提供原混音和适用的差异click，使用固定增益，不滤波、不重采样、
+  不移动时间、不峰值归一化。听审包构建不运行神经推理、不读取Reference。
+  `tests/test_chord_evidence_audio_review.py`为5 passed；三个新增Python文件
+  `py_compile`、页面内联JavaScript语法和14个片段的PCM16格式/采样数/哈希校验通过。
+  这些仅验证听审材料完整性，不代表已开始人工听审；声音判断、导出标签复核和
+  osu!试打仍待完成，不以click或类别标签代替音乐判断。
 - Mega53旧6秒与作者长窗均未支持默认接入；长窗44次分离前向及46个下游
   转录流程已完成，两个完整来源仍不及原混音。见[长窗结果](mega53-long-context-results.md)。
 - 鼓组修复后的《樱花草》固定候选10K选择为1499物件/373LN，已完成定轨
