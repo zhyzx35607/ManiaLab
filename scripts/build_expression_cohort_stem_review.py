@@ -9,11 +9,15 @@ import math
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 
 import numpy as np
 from scipy.io import wavfile
 from scipy.signal import resample_poly
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from manialab.domain import parse_osu
 from manialab.sequence_prior import sequence_beat_positions
@@ -29,9 +33,6 @@ from scripts.separate_expression_audio_cohort import (
     sha256_file,
     verify_completed,
 )
-
-
-ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_RATE = 22050
 INPUT_RATE = 44100
 WINDOW_BEATS = 8.0

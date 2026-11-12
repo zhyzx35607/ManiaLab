@@ -1,6 +1,8 @@
 import hashlib
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -173,6 +175,20 @@ def test_clip_bounds_and_pcm16_preserve_shared_gain():
         review.pcm16(np.asarray([1.0]), 1.1)
     with pytest.raises(ValueError, match="starts beyond"):
         review.clip_sample_bounds(5000, 5500, 5000)
+
+
+def test_script_help_runs_from_outside_repository(tmp_path):
+    result = subprocess.run(
+        [sys.executable, str(Path(review.__file__).resolve()), "--help"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "--cohort" in result.stdout
 
 
 def test_chart_windows_carry_only_authored_action_targets():
