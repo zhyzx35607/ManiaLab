@@ -139,6 +139,14 @@
   validation JSON 1,992字节、
   `53e266794dfd3f9a7e9b6dd3ef1e1d155c1717b46d6cf11f731b52f9ffa1fddd`。
   仅修改Release正文，没有移动tag、重建或重传资产。
+- 2026-11-13 准备dev.12，使Windows便携包源码快照重新对齐当前`main`。
+  dev.11 tag早于PR #71–#74；当前`main`为`6028a9520375e200646706f45ceae0f4c977bc05`，
+  这几项新增发布记录、静态审查记录及听审研究CLI/测试，不改变应用运行逻辑、
+  默认采音行为或模型。此次仅同步版本、README、发布说明和索引。当前源码验证：
+  `.\.venv\Scripts\python.exe -m pytest -q`为2,315 passed、89 skipped；
+  `compileall -q manialab scripts tests`及`git diff --check`通过。版本准备PR的Windows
+  检查、合并后tag精确指向main，以及完整Windows便携构建和独立资产复核仍待执行；
+  人工听审与osu!试打仍未完成。
 
 ## Nova 人声乐句候选复核包
 
@@ -834,6 +842,9 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 上述指标只说明模型能在固定起音、音符和LN尾端下，对局部可行轨道布局
   做高于随机水平的排序；不证明整谱键型、LN长度或音乐质量已提升。
   `sequence-window-v1`权重格式仍不兼容现有`manialab.pattern_prior` runtime。
-  下一阶段先修复beam状态去重对未来评分上下文的保留，再设计可选scorer，
-  做固定候选整谱A/B、《樱花草》片段审查、`.osu`回读和实际试打。
-  目前没有默认行为变化或新Release。
+  beam去重上下文修复已合并：`manialab.layout._state_signature`现纳入
+  `sequence_rows`；`tests/test_sequence_prior_runtime.py`覆盖不同历史布局必须保留为
+  不同状态。固定候选整谱A/B也已按歌曲组验证，未显示足以默认启用的平衡收益；
+  不重复这些状态修复或已完成的强度对照。当前下一步是完成人工原声听审包的标注，
+  再结合段落和声部角色复核候选，并做`.osu`回读与实际osu!试打。序列先验仍默认关闭，
+  当前没有因此启用默认行为；便携Release按dev.12当前main对齐任务单独验证。

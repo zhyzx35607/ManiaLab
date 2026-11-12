@@ -6,7 +6,7 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.11 · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.11)。本版源码快照对齐到当前 `main`，包含表达音频听审标签校验工具；该研究工具不改变应用运行行为、默认采音或识别能力。训练集声学听审构建器与本地复核包属于研究工具，听审包不包含在 Windows 便携包中。Kiai 和连续人声乐句仍是可编辑提示与候选，不等于主歌／副歌或人声身份识别；起音、Timing 和逐段表达仍需原声检查及 osu! 试打，尚无证据证明完整音乐性超过 Mapperatorinator。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.11说明](docs/releases/0.1.0-alpha.6-dev.11.md)。
+**0.1.0-alpha.6-dev.12 · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.12)。本版重新对齐当前 `main`，源码新增和弦候选差异听审包构建与标签汇总工具；这些是本地研究 CLI，不改变应用运行行为、默认采音或模型。听审音频、模型和逐曲研究产物均不包含在 Windows 便携包中。Kiai 和连续人声乐句仍是可编辑提示与候选，不等于主歌／副歌或人声身份识别；起音、Timing 和逐段表达仍需原声检查及 osu! 试打，尚无证据证明完整音乐性超过 Mapperatorinator。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.12说明](docs/releases/0.1.0-alpha.6-dev.12.md)。
 
 **开发测试版 `0.1.0-alpha.6-dev.2`**：在段落与声部表达流程上，加入已有声轨导入、可选钢琴专用采音、和弦减层保留起音，以及手动“连续起音优先”表达；重建音频程序并校验源码与包内模型身份。下载入口为 [开发测试包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.2)。这是对照测试版本，自动对音、复杂鼓音与LN音乐表达仍未完成验收，研究中的YourMT3伴奏模型和未通过对照的训练权重没有启用。常规alpha.5仍保留，原段落流程说明见 [采音与段落表达修订](docs/music-first-revision.md)。
 
