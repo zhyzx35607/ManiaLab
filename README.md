@@ -6,7 +6,7 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.5 · 开发测试版。** 新增参考谱 Kiai 状态切换导入，以及逐段可调的连续人声乐句 LN 表达；这类提示和候选仍需对照原声检查，不等于主歌／副歌或人声身份识别。仍需检查起音、Timing 和逐段表达，再到 osu! 试打；尚无证据证明完整音乐性超过 Mapperatorinator。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.5说明](docs/releases/0.1.0-alpha.6-dev.5.md)。
+**0.1.0-alpha.6-dev.6 · 开发测试版。** 延续参考谱 Kiai 状态切换导入与逐段可调的连续人声乐句 LN 表达；这类提示和候选仍需对照原声检查，不等于主歌／副歌或人声身份识别。本版修正便携构建的 HTDemucs 下载回退并继续校验权重哈希，不改变应用行为。仍需检查起音、Timing 和逐段表达，再到 osu! 试打；尚无证据证明完整音乐性超过 Mapperatorinator。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.6说明](docs/releases/0.1.0-alpha.6-dev.6.md)。
 
 **开发测试版 `0.1.0-alpha.6-dev.2`**：在段落与声部表达流程上，加入已有声轨导入、可选钢琴专用采音、和弦减层保留起音，以及手动“连续起音优先”表达；重建音频程序并校验源码与包内模型身份。下载入口为 [开发测试包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.2)。这是对照测试版本，自动对音、复杂鼓音与LN音乐表达仍未完成验收，研究中的YourMT3伴奏模型和未通过对照的训练权重没有启用。常规alpha.5仍保留，原段落流程说明见 [采音与段落表达修订](docs/music-first-revision.md)。
 
@@ -78,7 +78,7 @@
 
 ## 下载即用
 
-1. 从 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.6-dev.5-windows-x64.zip`。
+1. 从 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.6-dev.6-windows-x64.zip`。
 2. **完整解压**后双击 `ManiaLab.exe`。程序打开本机浏览器界面，关闭控制台窗口退出。
 3. 导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 选择本曲编排建议或手调参数 → 生成候选 → 下载 `.osz` → 拖入 osu!。
 

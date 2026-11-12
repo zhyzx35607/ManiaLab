@@ -22,15 +22,34 @@ def fetch(output):
             print(f"Verified: {entry['name']}", flush=True)
             continue
         temporary = target.with_suffix(target.suffix+'.pending')
-        print(f"Downloading: {entry['name']} ({entry['bytes'] / 1048576:.1f} MiB)", flush=True)
-        with urllib.request.urlopen(entry['url'], timeout=90) as response, temporary.open('wb') as stream:
-            while block := response.read(1024*1024):
-                stream.write(block)
-        if temporary.stat().st_size != entry['bytes'] or digest(temporary) != entry['sha256']:
-            temporary.unlink()
-            raise ValueError(f"Checksum mismatch: {entry['name']}")
-        temporary.replace(target)
-        print(f"Verified: {entry['name']}", flush=True)
+        sources = [entry['url'], *entry.get('mirror_urls', [])]
+        failures = []
+        for index, url in enumerate(sources, start=1):
+            print(
+                f"Downloading: {entry['name']} ({entry['bytes'] / 1048576:.1f} MiB), "
+                f"source {index}/{len(sources)}",
+                flush=True,
+            )
+            try:
+                with urllib.request.urlopen(url, timeout=90) as response:
+                    with temporary.open('wb') as stream:
+                        while block := response.read(1024*1024):
+                            stream.write(block)
+                if temporary.stat().st_size != entry['bytes']:
+                    raise ValueError(f"size mismatch: expected {entry['bytes']} bytes")
+                if digest(temporary) != entry['sha256']:
+                    raise ValueError("SHA-256 mismatch")
+                temporary.replace(target)
+                print(f"Verified: {entry['name']}", flush=True)
+                break
+            except Exception as exc:
+                temporary.unlink(missing_ok=True)
+                failures.append(f"{type(exc).__name__}: {exc}")
+                print(f"Download source failed: {failures[-1]}", flush=True)
+        else:
+            raise RuntimeError(
+                f"Unable to fetch verified model {entry['name']}: {'; '.join(failures)}"
+            )
 
 
 if __name__ == '__main__':
