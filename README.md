@@ -1,10 +1,12 @@
 # ManiaLab · 6–10K 制谱工作台
 
+项目导航见[文档索引](docs/README.md)与[脚本索引](scripts/README.md)。
+
 为 **6–10K osu!mania、尤其 10K 和 LN** 制作的本地 Windows 工作台。先分离和检查音乐，再选择起音、持续区间与轨道；支持从音频生成，也支持已有谱面的严格重定轨。
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.4 · 开发测试版。** 加入可选的吉他 FL 专用采音，并包含钢琴、贝斯与其他伴奏的专用入口。仍需检查起音、Timing和逐段表达，再到 osu! 试打；尚无证据证明完整音乐性超过 Mapperatorinator。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，运行验证见[吉他应用结果](docs/hf-guitar-application-results.md)。
+**0.1.0-alpha.6-dev.5 · 开发测试版。** 新增参考谱 Kiai 状态切换导入，以及逐段可调的连续人声乐句 LN 表达；这类提示和候选仍需对照原声检查，不等于主歌／副歌或人声身份识别。仍需检查起音、Timing 和逐段表达，再到 osu! 试打；尚无证据证明完整音乐性超过 Mapperatorinator。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.5说明](docs/releases/0.1.0-alpha.6-dev.5.md)。
 
 **开发测试版 `0.1.0-alpha.6-dev.2`**：在段落与声部表达流程上，加入已有声轨导入、可选钢琴专用采音、和弦减层保留起音，以及手动“连续起音优先”表达；重建音频程序并校验源码与包内模型身份。下载入口为 [开发测试包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.2)。这是对照测试版本，自动对音、复杂鼓音与LN音乐表达仍未完成验收，研究中的YourMT3伴奏模型和未通过对照的训练权重没有启用。常规alpha.5仍保留，原段落流程说明见 [采音与段落表达修订](docs/music-first-revision.md)。
 
@@ -76,7 +78,7 @@
 
 ## 下载即用
 
-1. 从 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.6-dev.4-windows-x64.zip`。
+1. 从 [Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载 `ManiaLab-0.1.0-alpha.6-dev.5-windows-x64.zip`。
 2. **完整解压**后双击 `ManiaLab.exe`。程序打开本机浏览器界面，关闭控制台窗口退出。
 3. 导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 选择本曲编排建议或手调参数 → 生成候选 → 下载 `.osz` → 拖入 osu!。
 
@@ -84,7 +86,7 @@
 
 完整包自带 CPU 运行时、四／六声部分离模型、节拍模型、音高模型和 FFmpeg。日常功能离线可用，不需要 Python、Docker、CUDA 或手动部署。仅 API 助手和可选 Mapperatorinator 原模型首次安装需要联网。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
 
-首次全曲深度分析会真实运行多个模型，耗时取决于长度与 CPU；再次调整门槛会复用已完成的模型结果。界面显示实际耗时和缓存状态。`SHA256SUMS.txt` 是校验文件，正常使用只需下载 ZIP。
+首次全曲深度分析会真实运行多个模型，耗时取决于长度与 CPU；再次调整门槛会复用已完成的模型结果。界面显示实际耗时和缓存状态。Release 中随 ZIP 提供的 `*-SHA256SUMS.txt` 是对应版本的校验文件，正常使用只需下载 ZIP。
 
 本轮使用方式见[乐器采音选择](docs/instrument-choices.md)，新增路径的真实运行见[吉他应用验证](docs/hf-guitar-application-results.md)及同一Release附带的验证JSON。此前[alpha.5](docs/alpha5-validation.md)和[alpha.4](docs/release-verification.md)的检查保留为历史记录。
 

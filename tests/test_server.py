@@ -15,6 +15,18 @@ from manialab.storage import Projects
 ROOT=Path(__file__).parents[1]
 
 
+def test_failed_import_removes_partial_project(tmp_path):
+    app=create_app(ROOT,tmp_path);client=app.test_client()
+    headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    response=client.post('/api/import',data={'files':[
+        (io.BytesIO(b'partial-audio'),'song.wav'),
+        (io.BytesIO(b'unsupported'),'notes.txt'),
+    ]},headers=headers)
+    assert response.status_code==400
+    assert list((tmp_path/'projects').iterdir())==[]
+    app.extensions['executor'].shutdown()
+
+
 def test_full_remap_export(tmp_path):
     app=create_app(ROOT,tmp_path); client=app.test_client(); headers={'X-ManiaLab-Token':app.config['TOKEN']}
     original=export_osu([Note(1000,4000,0),Note(1000,5000,3),Note(2000,2000,8)],10,ROOT/'vendor/mapperatorinator/template.osu',audio='song.wav')

@@ -7,6 +7,7 @@ import json
 import math
 from pathlib import Path
 import secrets
+import shutil
 import threading
 import time
 import traceback
@@ -133,37 +134,41 @@ def create_app(resources, data_root):
         if not files:
             raise ValueError("请选择音频、.osu 或 .osz 文件")
         pid, path = projects.create()
-        state = dict(id=pid, title="Untitled", artist="Unknown", mode="audio", settings=DEFAULTS.copy(),
-                     variants=[], active=-1, charts=[], audio=None, original=None, input_notes=[])
-        for file in files:
-            name = Path(file.filename.replace("\\", "/")).name
-            suffix = Path(name).suffix.lower()
-            if suffix == ".osz":
-                extract_osz(file.stream, path / "files")
-            elif suffix in AUDIO | {".osu"}:
-                target = safe_path(path / "files", name)
-                if target.exists():
-                    raise ValueError("同名上传文件，请分别导入")
-                file.save(target)
-            else:
-                raise ValueError("支持 MP3/WAV/FLAC/OGG/M4A/OPUS、.osu 和 .osz")
-        candidates = list((path / "files").rglob("*"))
-        audio = next((f for f in candidates if f.is_file() and f.suffix.lower() in AUDIO), None)
-        if audio:
-            state.update(audio=audio.relative_to(path / "files").as_posix(), title=audio.stem)
-        for chart in sorted(f for f in candidates if f.suffix.lower() == ".osu"):
-            try:
-                parsed = parse_osu(chart.read_text(encoding="utf-8-sig"))
-                state["charts"].append({"path": chart.relative_to(path / "files").as_posix(),
-                                        "label": f'{parsed["keys"]}K · {parsed["metadata"].get("Version", chart.stem)}'})
-            except (ValueError, UnicodeError, IndexError):
-                continue
-        if state["charts"]:
-            set_chart(state, state["charts"][0]["path"])
-        elif not state["audio"]:
-            raise ValueError("没有可用音频或原生 mania 谱面")
-        projects.save(state)
-        return jsonify(state)
+        try:
+            state = dict(id=pid, title="Untitled", artist="Unknown", mode="audio", settings=DEFAULTS.copy(),
+                         variants=[], active=-1, charts=[], audio=None, original=None, input_notes=[])
+            for file in files:
+                name = Path(file.filename.replace("\\", "/")).name
+                suffix = Path(name).suffix.lower()
+                if suffix == ".osz":
+                    extract_osz(file.stream, path / "files")
+                elif suffix in AUDIO | {".osu"}:
+                    target = safe_path(path / "files", name)
+                    if target.exists():
+                        raise ValueError("同名上传文件，请分别导入")
+                    file.save(target)
+                else:
+                    raise ValueError("支持 MP3/WAV/FLAC/OGG/M4A/OPUS、.osu 和 .osz")
+            candidates = list((path / "files").rglob("*"))
+            audio = next((f for f in candidates if f.is_file() and f.suffix.lower() in AUDIO), None)
+            if audio:
+                state.update(audio=audio.relative_to(path / "files").as_posix(), title=audio.stem)
+            for chart in sorted(f for f in candidates if f.suffix.lower() == ".osu"):
+                try:
+                    parsed = parse_osu(chart.read_text(encoding="utf-8-sig"))
+                    state["charts"].append({"path": chart.relative_to(path / "files").as_posix(),
+                                            "label": f'{parsed["keys"]}K · {parsed["metadata"].get("Version", chart.stem)}'})
+                except (ValueError, UnicodeError, IndexError):
+                    continue
+            if state["charts"]:
+                set_chart(state, state["charts"][0]["path"])
+            elif not state["audio"]:
+                raise ValueError("没有可用音频或原生 mania 谱面")
+            projects.save(state)
+            return jsonify(state)
+        except Exception:
+            shutil.rmtree(path, ignore_errors=True)
+            raise
 
     @app.get("/api/projects/<pid>")
     def get_project(pid):
