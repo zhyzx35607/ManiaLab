@@ -82,11 +82,26 @@
 - PR #55 将人工人声标签校验工具合入 `main`，merge commit 为
   `78335ad0e773e502903b2d9236290916e799323e`，两项 Windows `verify` 均通过。
   这使 dev.8 tag (`1fb9ef9`) 不再等于当前主线；因此只同步版本元数据和发布说明准备
-  dev.9，应用运行行为不变。dev.9 PR/CI、tag 与 Windows 便携产物尚待验证。
+  dev.9，应用运行行为不变。
 - dev.9 版本准备仅变更 `manialab.__version__`、README 当前版本/下载入口和发布说明。
   本地全量 `.\.venv\Scripts\python.exe -m pytest -q` 为
-  `2282 passed, 89 skipped`，`py_compile`、`git diff --check` 通过；尚未打 tag 或构建
-  Windows ZIP，待 PR 合并后从同一 `main` SHA 发布。
+  `2282 passed, 89 skipped`，`py_compile`、`git diff --check` 通过。tag
+  `v0.1.0-alpha.6-dev.9` 精确指向当时的 `main` 提交
+  `8857ba9c2bc9c46b34dd14e7224dfc545ef39ecf`。
+- dev.9 Windows tag CI run `43225453896` 于2026-11-12成功，耗时7分20秒：
+  tag/source版本检查、全量测试、模型校验下载、worker和Windows ZIP构建、clean
+  PATH与Unicode路径离线EXE、worker关停及报告/工件上传全部通过。JUnit记录
+  2,371项测试、89项跳过、零failures/errors；报告记录4,216个ZIP条目CRC通过。
+- CI工件下载并独立复核后保留在ignored目录
+  `build/portable/verified-dev9-43225453896/`。ZIP大小698,921,115字节，
+  SHA-256为`1180e5242033dfccf57d10e8cb11bdd5ef74025383127b2f069e51730fd55b8e`；
+  本地完整CRC检查和无重复条目检查通过，包内版本、EXE和manifest哈希相符，
+  ZIP与验证JSON的`SHA256SUMS`匹配。GitHub上传资产的大小和digest均与本地结果相同。
+- GitHub Pre-release已发布：
+  [ManiaLab alpha.6 dev.9](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.9)，
+  附Windows ZIP、SHA256SUMS和机器可读验证报告。验证和发布资产不构成音乐验收；
+  音乐质量、Timing、Nova人声候选人工听审与osu!试打仍未完成，checkpoint单独再分发
+  授权仍未核实。
 
 ## Nova 人声乐句候选复核包
 
