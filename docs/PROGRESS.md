@@ -139,14 +139,26 @@
   validation JSON 1,992字节、
   `53e266794dfd3f9a7e9b6dd3ef1e1d155c1717b46d6cf11f731b52f9ffa1fddd`。
   仅修改Release正文，没有移动tag、重建或重传资产。
-- 2026-11-13 准备dev.12，使Windows便携包源码快照重新对齐当前`main`。
-  dev.11 tag早于PR #71–#74；当前`main`为`6028a9520375e200646706f45ceae0f4c977bc05`，
-  这几项新增发布记录、静态审查记录及听审研究CLI/测试，不改变应用运行逻辑、
-  默认采音行为或模型。此次仅同步版本、README、发布说明和索引。当前源码验证：
-  `.\.venv\Scripts\python.exe -m pytest -q`为2,315 passed、89 skipped；
-  `compileall -q manialab scripts tests`及`git diff --check`通过。版本准备PR的Windows
-  检查、合并后tag精确指向main，以及完整Windows便携构建和独立资产复核仍待执行；
-  人工听审与osu!试打仍未完成。
+- 2026-11-13 dev.12已发布，使Windows便携包源码快照重新对齐当前`main`。
+  dev.11 tag早于PR #71–#74；版本准备PR #75合并后，tag
+  `v0.1.0-alpha.6-dev.12`精确指向`main`提交
+  `5bc3972ba79cf8d59f684361233edfa5aefb72cb`。此次仅同步版本、README、发布说明和索引，
+  不改变应用运行逻辑、默认采音行为或模型。源码验证为2,315 passed、89 skipped；
+  `compileall -q manialab scripts tests`及`git diff --check`通过。
+- Windows tag CI run `43291046336`成功：2,404项测试中2,315 passed、89 skipped、零失败/错误；
+  模型校验、worker/Windows ZIP构建、clean PATH与Unicode数据路径离线EXE、worker关停、
+  验证报告上传均通过。工件下载并复核于ignored目录
+  `build/portable/verified-dev12-43291046336/`。ZIP 698,937,720字节、
+  SHA-256 `0eadf4911a062f7d5a6929605f0a9ad7686d14ac0772f4ec494f41d228969bff`；
+  4,222个条目CRC通过且无重复路径。
+- GitHub Pre-release已发布：
+  [ManiaLab alpha.6 dev.12](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.12)。
+  三个资产的名称、大小及digest均已与本地复核结果比对；SHA256SUMS资产自身
+  SHA-256为`7ca14900c26e0db47825002c52e625f01b8e5bb60ad8fc15867cbabbb56cac93`，
+  验证JSON为1,992字节、SHA-256
+  `025ed271f5ef922028519410d480da098fcbe7d6c9a19aa6372dc69f2dae0725`。
+  CI使用合成音频，只验证软件与便携运行，不构成音乐或Timing验收；人工听审、
+  标签复核及osu!试打仍未完成，随包Demucs checkpoint单独再分发授权仍未核实。
 
 ## Nova 人声乐句候选复核包
 
