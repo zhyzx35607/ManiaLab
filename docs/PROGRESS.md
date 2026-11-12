@@ -3,7 +3,7 @@
 更新：2026-11-12，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
-## 项目整理与 dev.5/dev.6 发布
+## 项目整理与 dev.5/dev.6/dev.7 发布
 
 - 2026-11-12 从 `origin/main` 的 `e17fc1b` 开始整理，导航索引已通过 PR #48
   合并到 `main`（`ba17760416dabace44a693653624ba69ade809e9`）。没有搬迁
@@ -24,27 +24,37 @@
   权重；现已改为明确区分软件与 checkpoint。上游维护者说明预训练权重不由代码
   MIT 覆盖、限科学用途；本项目没有核实两个打包 checkpoint 的单独再分发授权。
   固定镜像 SHA 只证明字节一致，不证明授权；该权利状态是本版发布的已知风险。
-- dev.6 本地验证：`tests/test_fetch_audio_models.py` 为4 passed；全量
+- dev.6 正式 tag CI 前的本地验证：`tests/test_fetch_audio_models.py` 为4 passed；全量
   `.\.venv\Scripts\python.exe -m pytest -q` 为2272 passed、89 skipped；
   `compileall -q manialab scripts tests`、全部 `static/*.js` 的 `node --check`、
-  `assets/deep-models.json` JSON 解析与 `git diff --check`通过。Windows便携EXE、
-  在线模型镜像下载、离线运行和关停验证仍须由合并后 tag CI 完成。
+  `assets/deep-models.json` JSON 解析与 `git diff --check`通过。这组本地结果不覆盖
+  Windows 便携 EXE、在线模型镜像下载、离线运行和关停验证。
 - PR #49 已合并到 `main`（`300b22deed77fabf6277afa5845d6fdf09684fae`），
   tag `v0.1.0-alpha.6-dev.6` 指向该提交。tag CI `43194516944` 的测试、模型下载、
   音频 worker 构建均通过，但主程序打包在 PyInstaller 的 `--add-data static;static`
   上失败：生成的 spec 位于独立临时目录，`static` 被错误解析为 spec 旁边的路径。
   因此 EXE、完整 ZIP、离线运行、关停检查和发布验证报告没有生成，dev.6 没有 Release。
-- 修复分支 `fix/windows-pyinstaller-data-paths` 将所有 PyInstaller 数据源和入口脚本
-  改为仓库绝对路径。完整测试为 `2272 passed, 89 skipped`；`compileall`、全部
-  `static/*.js` 的 `node --check` 和 `git diff --check` 通过。Windows
-  `workflow_dispatch` run `43196428192` 对提交 `7603c3f` 完整通过：模型下载、
-  worker 与主程序构建、ZIP、真实 EXE 离线运行、关停检查、验证报告和 CI 构建产物
-  均成功。该手动构建时的版本仍为 dev.6，因此只作为路径修复验证，不作为 dev.7
-  发布文件。PR 检查 run `43196101819` 通过测试，但 PR 事件跳过便携步骤。
-- 为保留旧 tag、正确生成新包版本，PR #50 现在把应用版本和文档同步到 dev.7；README
-  下载步骤改为从 Releases 选最新已发布 ZIP，避免把 Tags 的源码归档误当 Windows 包。
-  PR #50 合并后需创建 `v0.1.0-alpha.6-dev.7` tag 并运行正式 tag CI；仅当它产出并
-  通过 Windows ZIP、SHA-256、离线/关停与验证报告检查后才创建 Release。
+- PR #50 已合并到 `main`（`9f43081cdb3fef80ac6838fea8acfa5d50135d28`），
+  将 PyInstaller 数据源与 `launcher.py` 改为仓库绝对路径，并把应用版本和发布文档
+  同步到 dev.7。README 下载步骤改为从 Releases 选最新已发布 ZIP，避免把 Tags 页面
+  自动生成的源码归档误当 Windows 安装包。保留 `v0.1.0-alpha.6-dev.6` 原 tag，
+  不移动或重写。
+- Windows `workflow_dispatch` run `43196428192` 对代码提交 `7603c3f` 完整通过，
+  验证了路径修复的模型下载、worker/主程序构建、ZIP、离线 EXE、关停与报告生成；
+  该运行的应用版本还是 dev.6，仅作为修复验证，不作为 dev.7 发布文件。最终 dev.7
+  tag CI `43199094591` 对合并提交完整通过，耗时8分04秒：tag/source 版本检查通过，
+  全量测试 `2272 passed, 89 skipped`，模型下载、worker 和 Windows ZIP 构建、clean
+  PATH 与 Unicode 路径下离线 EXE 检查、worker 关停、验证报告及工件上传均成功。
+  验证报告记录2361项测试（89 skipped、零 failures/errors）、4213个 ZIP 条目 CRC
+  通过；报告明确标注没有音乐或 Timing 质量验收。
+- 从 tag CI 下载并复核的产物留在忽略目录
+  `build/portable/verified-dev7-43199094591/ManiaLab-windows-x64/`。Windows ZIP 大小
+  698,916,155 字节，SHA-256 为
+  `2f91d87c30661977e9eef9ef2e377caa8ef9af936b08995347109422811082f1`；校验文件及验证
+  JSON 的 SHA 均匹配，独立 ZIP `testzip()` 通过。GitHub Pre-release 已发布：
+  [ManiaLab alpha.6 dev.7](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.7)，
+  附有 Windows ZIP、SHA256SUMS 和机器可读验证报告。Demucs checkpoint 单独再分发
+  授权仍未核实，见 `THIRD_PARTY_NOTICES.md`。
 - 现有长期目标仍是用 Nova 人声音轨逐段核验连续人声 LN 候选，再由真实音频听检和
   osu! 试打验收段落、声部与 LN 表达；研究权重保持关闭，不能重复已完成的模型实验
   或把 CI 通过当作音乐质量完成。
