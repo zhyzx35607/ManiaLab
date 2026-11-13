@@ -887,3 +887,23 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   不重复这些状态修复或已完成的强度对照。当前下一步是完成人工原声听审包的标注，
   再结合段落和声部角色复核候选，并做`.osu`回读与实际osu!试打。序列先验仍默认关闭，
   当前没有因此启用默认行为；便携Release按dev.12当前main对齐任务单独验证。
+
+## 起音保留账本
+
+- 2026-11-13新增`scripts/summarize_onset_retention.py`及
+  [协议](onset-retention-ledger-protocol.md)、[结果](onset-retention-ledger-results.md)，
+  只读四份冻结的《樱花草》10K JSON，不运行模型、选择器或音频处理。专项测试
+  `tests/test_onset_retention.py`为3 passed；全量pytest为2,318 passed、89 skipped，
+  `compileall`、输入SHA、scope候选覆盖和`git diff --check`通过。最终报告在ignored目录
+  `test-data/onset-retention-ledger-final-20261113/report.json`，SHA-256
+  `94b85ca856eccd3555fa02d218b520fd819c5979ac331889e93a5d5ccad2f96d`。
+- 6,053条分析候选中4,623条进入定轨，1,496条被选中；定轨候选内3,127条由
+  `duplicate_pitch`、`represented_by_chord`、`group_capacity_or_density`省略。
+  另有1,430条在进入定轨前被`weak_detection`或`voice_not_selected`排除。
+  按段落×声部×原始起音时刻去重后有5,276组；`other`的2,164条类别行对应
+  1,533组，其中232组带多个模型类别标签。类别、强度与省略原因都不是声源真值、
+  置信度、可闻性或音乐价值；未计算准确率或质量指标。
+- v1–v4中间输出均保留在ignored目录，不覆盖；同毫秒跨段落归组及ID一致性断言均由最终
+  报告覆盖。没有读取音频、参考谱、MAESTRO保留测试，
+  没有音乐/Timing验收或生产默认变化。下一步仍待人工听审导出，再结合原声复核重点
+  起音；账本只用于定位，不代替试听和osu!试打。
