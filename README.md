@@ -6,7 +6,7 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.13 · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.13)。本版只重新打包对齐包含 PR #76、#77 的当前 `main`；改动是进度与发布记录，不增加应用功能，不改变默认采音或模型。听审音频、模型和逐曲研究产物均不包含在 Windows 便携包中。起音、Timing 和逐段表达仍需原声检查及 osu! 试打，尚未完成音乐质量验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.13说明](docs/releases/0.1.0-alpha.6-dev.13.md)。
+**0.1.0-alpha.6-dev.14 · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.14)。本版重新打包对齐包含 PR #79、#80 的当前 `main`；起音保留账本是冻结输入上的独立研究 CLI，不改变应用功能、默认采音或模型。听审音频、模型和逐曲研究产物均不包含在 Windows 便携包中。起音、Timing 和逐段表达仍需原声检查及 osu! 试打，尚未完成音乐质量验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.14说明](docs/releases/0.1.0-alpha.6-dev.14.md)。
 
 **开发测试版 `0.1.0-alpha.6-dev.2`**：在段落与声部表达流程上，加入已有声轨导入、可选钢琴专用采音、和弦减层保留起音，以及手动“连续起音优先”表达；重建音频程序并校验源码与包内模型身份。下载入口为 [开发测试包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.2)。这是对照测试版本，自动对音、复杂鼓音与LN音乐表达仍未完成验收，研究中的YourMT3伴奏模型和未通过对照的训练权重没有启用。常规alpha.5仍保留，原段落流程说明见 [采音与段落表达修订](docs/music-first-revision.md)。
 
