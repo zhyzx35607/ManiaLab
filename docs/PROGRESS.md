@@ -179,14 +179,24 @@
   音乐质量、Timing、人工听审与osu!试打仍未完成；Demucs checkpoint单独再分发授权
   仍未核实。当前后续代码阶段先做冻结输入上的可解释起音保留账本，不重跑模型；
   人工听审结果仍须用户实际试听并导出。
-- 2026-11-13 准备dev.14，使新版本快照包含dev.13 tag之后已合入的PR #79/#80：
-  发布验证记录及冻结输入上的起音保留账本研究CLI、测试与文档。版本准备只改
-  `manialab.__version__`、README、进度、文档索引和发布说明，不改变应用运行逻辑、
-  默认采音或模型。源码全量
-  `.\.venv\Scripts\python.exe -m pytest -q`为2,318 passed、89 skipped；
-  `compileall -q manialab scripts tests`、版本导入和`git diff --check`通过。
-  PR Windows检查、合并后tag CI、Windows ZIP独立复核与Pre-release尚待完成；
-  不能将上述源码测试说成便携包已验证。人工听审、Timing及osu!试打仍未完成。
+- PR #81 合入 `main` 后准备dev.14，tag
+  `v0.1.0-alpha.6-dev.14` 精确指向 `4e9cb485d56a18a67dd5ebd7fcb538c3736afa70`。
+  Windows tag CI run `43348232249` 于2026-11-13成功，耗时5分15秒：2,407项测试中
+  2,318 passed、89 skipped、零失败/错误；模型校验、worker/Windows ZIP构建、clean PATH
+  与Unicode数据路径离线 EXE、worker关停、报告和工件上传均通过。ZIP保留于 ignored
+  目录 `build/portable/verified-dev14-43348232249/`，大小698,949,530字节，SHA-256
+  `a3842716fd20feaf47723297360edb1b36c49844c12b143df3e0d2baad627b23`；本地完整CRC
+  校验通过，4,226个条目无重复路径，验证报告、JUnit、便携报告、关停报告及包内版本、
+  EXE、manifest哈希一致。**没有创建dev.14 GitHub Release**：发布前复核发现 README
+  将模型概括为不随便携包分发，但 ZIP 实际包含应用所需固定模型。tag不移动或重写，
+  该工件只保留作历史验证记录。
+- 2026-11-13 准备dev.15修正打包范围说明，使 README 明确区分随包固定应用模型与
+  不进入源码/便携包的用户音频、参考谱、下载语料、本地研究权重和逐曲产物。相对dev.14
+  仍只改版本与文档，不改变应用运行逻辑、默认采音或模型。本地全量
+  `.\.venv\Scripts\python.exe -m pytest -q` 为2,318 passed、89 skipped；
+  `compileall -q manialab scripts tests`、版本导入和`git diff --check`通过。PR
+  Windows检查、合并后tag CI、Windows ZIP独立复核与GitHub Pre-release待完成；
+  人工听审、Timing及osu!试打仍未完成。
 
 ## Nova 人声乐句候选复核包
 
