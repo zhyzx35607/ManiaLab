@@ -949,3 +949,24 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   报告覆盖。没有读取音频、参考谱、MAESTRO保留测试，
   没有音乐/Timing验收或生产默认变化。下一步仍待人工听审导出，再结合原声复核重点
   起音；账本只用于定位，不代替试听和osu!试打。
+
+## 表达取舍静态审计
+
+- 2026-11-13新增`scripts/summarize_expression_tradeoffs.py`及
+  [协议](expression-tradeoff-audit-protocol.md)、[结果](expression-tradeoff-audit-results.md)。
+  只读冻结的《樱花草》10K分析、默认选择和执行计划JSON；不运行选择器、模型或音频
+  处理，不读取Reference，不改默认行为。三份输入SHA在协议和机器报告中固定。
+- 现有1,496个选中对象中，导出的382个LN分布在381个段落/声部/原始起点组。
+  另有1,886条被省略候选满足当前`min_ln=240ms`表达阶段的持续音资格条件；
+  按省略理由为`group_capacity_or_density` 1,370、`duplicate_pitch` 316、
+  `represented_by_chord` 200。折叠同段落、同声部、同原始起点的模型类别后为
+  1,357组，其中1,308组当前没有同起点的已选LN。它们不是可直接加回的音符或质量提升。
+- 声部组数：other 1,253组、bass 76组、piano 28组。ignored报告位于
+  `test-data/expression-tradeoff-audit-v1-20261113/report.json`，SHA-256
+  `c6fa144d3d03e320d6f227b6fa0844d8e6b26d99388126a242a50206b5858732`；
+  逐组区间只标出相对当前同声部LN的未覆盖分析时钟范围，不是可加时长或音乐价值排名。
+- 验证：`tests/test_expression_tradeoffs.py`为4 passed，全量
+  `.\.venv\Scripts\python.exe -m pytest -q`为2,322 passed、89 skipped；
+  `compileall -q manialab scripts tests`、`py_compile`及`git diff --check`通过。
+  未做人工试听、osu!试打、Timing或音乐验收。下一步应把结构队列作为日后人工复核
+  的定位工具；不得依审计排序直接调声部选择或LN默认值。

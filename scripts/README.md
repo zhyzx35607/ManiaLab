@@ -25,6 +25,11 @@ Windows Release CI 的正式入口为 `.github/workflows/windows.yml`；完整�
 - `summarize_chord_evidence_audio_review.py`：校验导出标签并汇总覆盖，不计算准确率或音乐质量。
 - 输入身份、固定播放范围和人工复核边界见 [`docs/chord-evidence-audio-review-protocol.md`](../docs/chord-evidence-audio-review-protocol.md)。
 
+## 《樱花草》表达取舍静态审计
+
+- `summarize_expression_tradeoffs.py`：从冻结的分析与选择 JSON 定位省略的持续音资格候选；不运行模型或选择器，不读音频或 Reference。
+- 输入哈希、候选折叠、区间重叠语义和验收限制见 [`docs/expression-tradeoff-audit-protocol.md`](../docs/expression-tradeoff-audit-protocol.md)。
+
 ## 常用验证
 
 ```powershell
