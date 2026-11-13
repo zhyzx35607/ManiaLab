@@ -23,6 +23,10 @@ from manialab.layout import SEQUENCE_SCORE_CANDIDATE_CAP
 from manialab.domain import export_osu, parse_osu, validate
 from manialab.ln_patterns import analyze_ln_patterns
 from manialab.sequence_prior import load_sequence_prior
+from scripts.evaluate_sequence_prior_groups import (
+    _validate_model_artifact,
+    _validate_report_config,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORT = Path("test-data/sequence-prior-v1/report.json")
@@ -57,6 +61,22 @@ def _sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def _load_prior_artifacts(report_path, model_path):
+    report = _read_json(report_path)
+    _validate_report_config(report)
+    model_artifact = _read_json(model_path)
+    _validate_model_artifact(report, model_artifact)
+    model_sha256 = _sha256(model_path)
+    reported_model_sha256 = report.get("model_sha256")
+    if (reported_model_sha256 is not None
+            and reported_model_sha256 != model_sha256):
+        raise ValueError("Training report model SHA256 does not match")
+    prior = load_sequence_prior(model_path)
+    if report.get("training_manifest_sha256") != prior.training_manifest_sha256:
+        raise ValueError("Model/report training manifest hash mismatch")
+    return report, prior, model_sha256
+
+
 def select_maps(report, keys, split):
     """Select exactly one frozen group split and reject ambiguous identities."""
     if split not in ("validation", "test"):
@@ -85,6 +105,42 @@ def select_maps(report, keys, split):
             raise ValueError(f"Map {beatmap_id} has incomplete frozen identity")
         seen.add(beatmap_id)
     return sorted(selected, key=lambda row: (row["group"], row["id"]))
+
+
+def _limit_maps_per_group(rows, limit_per_group, seed):
+    if limit_per_group is None:
+        return list(rows)
+    if (isinstance(limit_per_group, bool)
+            or not isinstance(limit_per_group, int)
+            or limit_per_group < 1):
+        raise ValueError("limit_per_group must be a positive integer")
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        raise ValueError("seed must be an integer")
+
+    grouped = defaultdict(list)
+    for row in rows:
+        grouped[(row["keys"], row["group"])].append(row)
+    selected = []
+    for (_, group), members in grouped.items():
+        ranked = sorted(
+            members,
+            key=lambda row: (
+                hashlib.sha256(
+                    f"sequence-remap-sample-v1:{seed}:{group}:"
+                    f"{row['keys']}:{row['id']}".encode("utf-8")
+                ).digest(),
+                row["keys"],
+                row["id"],
+            ),
+        )
+        selected.extend(ranked[:limit_per_group])
+    return sorted(selected, key=lambda row: (row["keys"], row["group"], row["id"]))
+
+
+def _selection_metadata(limit_per_group):
+    if limit_per_group is None:
+        return {}
+    return {"selection_limit_per_group": limit_per_group}
 
 
 def _non_lane_signature(notes):
@@ -312,6 +368,10 @@ def _validate_frozen_validation(artifact, report, model_sha256,
     if artifact.get("training_manifest_sha256") != report.get(
             "training_manifest_sha256"):
         raise ValueError("Frozen validation uses a different training manifest")
+    feature_schema = report.get("revision")
+    frozen_schema = artifact.get("feature_schema", "sequence-window-v1")
+    if frozen_schema != feature_schema:
+        raise ValueError("Frozen validation uses a different feature schema")
     if artifact.get("keys") != sorted(keys):
         raise ValueError("Frozen validation key counts do not match test keys")
     if artifact.get("seed") != seed:
@@ -324,7 +384,8 @@ def _validate_frozen_validation(artifact, report, model_sha256,
         raise ValueError("Frozen validation has no valid strength") from exc
     if not math.isclose(artifact_strength, strength, rel_tol=0, abs_tol=1e-12):
         raise ValueError("Test strength differs from the validation artifact")
-    if artifact.get("selection_limit") is not None:
+    if (artifact.get("selection_limit") is not None
+            or artifact.get("selection_limit_per_group") is not None):
         raise ValueError("A limited validation run cannot freeze test strength")
     validation_ids = []
     for key_count in keys:
@@ -353,9 +414,16 @@ def _write_atomic(path, value):
 def run(*, report_path=DEFAULT_REPORT, model_path=DEFAULT_MODEL,
         map_root=DEFAULT_MAPS, output=DEFAULT_OUTPUT, keys=(10,),
         split="validation", strength=0.35, seed=42, limit=None,
-        validation_artifact_path=None, resume=False):
+        limit_per_group=None, validation_artifact_path=None, resume=False):
     if split not in ("validation", "test"):
         raise ValueError("split must be validation or test")
+    if split == "test" and limit_per_group is not None:
+        raise ValueError("--limit-per-group is not allowed for the test split")
+    if (limit_per_group is not None
+            and (isinstance(limit_per_group, bool)
+                 or not isinstance(limit_per_group, int)
+                 or limit_per_group < 1)):
+        raise ValueError("limit_per_group must be a positive integer")
     _validate_strength(strength)
     if isinstance(seed, bool) or not isinstance(seed, int):
         raise ValueError("seed must be an integer")
@@ -369,13 +437,8 @@ def run(*, report_path=DEFAULT_REPORT, model_path=DEFAULT_MODEL,
             or any(isinstance(value, bool) or value not in range(6, 11)
                    for value in keys)):
         raise ValueError("keys must be unique values in the 6–10 range")
-    report = _read_json(report_path)
-    if report.get("revision") != "sequence-window-v1":
-        raise ValueError("Unexpected sequence-prior report revision")
-    prior = load_sequence_prior(model_path)
-    if report.get("training_manifest_sha256") != prior.training_manifest_sha256:
-        raise ValueError("Model/report training manifest hash mismatch")
-    model_sha256 = prior.sha256
+    report, prior, model_sha256 = _load_prior_artifacts(
+        report_path, model_path)
     report_sha256 = _sha256(report_path)
     frozen_validation_sha256 = None
     if split == "test":
@@ -411,6 +474,7 @@ def run(*, report_path=DEFAULT_REPORT, model_path=DEFAULT_MODEL,
             raise ValueError("keys must be in the 6–10 range")
         selected.extend(select_maps(report, key_count, split))
     selected.sort(key=lambda row: (row["keys"], row["group"], row["id"]))
+    selected = _limit_maps_per_group(selected, limit_per_group, seed)
     selected_ids = [row["id"] for row in selected]
     if len(set(selected_ids)) != len(selected_ids):
         raise ValueError("Selected map IDs must be unique across key counts")
@@ -442,6 +506,10 @@ def run(*, report_path=DEFAULT_REPORT, model_path=DEFAULT_MODEL,
         "selection_limit": limit,
         "selected_map_ids": selected_map_ids,
     }
+    selection_metadata = _selection_metadata(limit_per_group)
+    identity.update(selection_metadata)
+    if prior.feature_schema != "sequence-window-v1":
+        identity["feature_schema"] = prior.feature_schema
     if resume:
         result = _read_json(output)
         if result.get("run_identity") != identity:
@@ -471,6 +539,9 @@ def run(*, report_path=DEFAULT_REPORT, model_path=DEFAULT_MODEL,
             "status": "running",
             "rows": [],
         }
+        result.update(selection_metadata)
+        if prior.feature_schema != "sequence-window-v1":
+            result["feature_schema"] = prior.feature_schema
         _write_atomic(output, result)
 
     existing_rows = {
@@ -583,6 +654,10 @@ def main():
     parser.add_argument("--strength", type=float, required=True)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--limit", type=int)
+    parser.add_argument(
+        "--limit-per-group", type=int,
+        help="Deterministically select at most this many validation maps per song group.",
+    )
     parser.add_argument("--resume", action="store_true")
     parser.add_argument(
         "--validation-artifact", type=Path,
@@ -599,6 +674,7 @@ def main():
         strength=args.strength,
         seed=args.seed,
         limit=args.limit,
+        limit_per_group=args.limit_per_group,
         validation_artifact_path=args.validation_artifact,
         resume=args.resume,
     )
