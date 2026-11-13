@@ -1191,3 +1191,17 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 下一步从冻结的`timing_attacks`继续做自动拍线稳定性诊断，重点区分半速候选与偏移、
   分段覆盖问题；在Timing未有可靠证据前，不把吸附后的整齐谱面当作验收结果，也不要求
   用户逐首试听才能推进代码和自动评估。
+
+## dev.18版本准备
+
+- PR #94已于2026-11-13合并到`main`，merge commit为
+  `562e32be4f9a3fcdf12a830be17b8e29845fcf5a`；两项Windows `verify`均通过。
+  最新已发布版仍为dev.17，tag早于PR #92/#93及本次进度记录。
+- dev.18准备只同步`manialab.__version__`、README下载入口、文档索引和发布说明，
+  使便携包快照覆盖分段表达修复、Basic Pitch线程限制和生成API回归；不增加模型、
+  改默认生成偏好或打包本地用户数据。冻结分析诊断仅作为程序侧证据，不宣称音乐提升。
+- Windows包继续使用既有固定模型范围；`THIRD_PARTY_NOTICES.md`记录的checkpoint
+  单独再分发授权风险仍未核实。
+- 本地全量`pytest`为2,345 passed、89 skipped；`compileall -q manialab scripts tests`、
+  全部静态JS `node --check`、dev.18版本导入断言和`git diff --check`均通过。
+- 版本准备PR、tag CI、包体复核及GitHub Pre-release待完成。
