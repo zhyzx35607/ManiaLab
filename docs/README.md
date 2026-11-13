@@ -13,6 +13,7 @@
 ## 项目状态
 
 - [当前续接进度](PROGRESS.md)：已完成阶段、真实验证结果、产物位置和下一步。
+- [dev.16 发布说明](releases/0.1.0-alpha.6-dev.16.md)：当前主线对齐包、研究范围与验证边界。
 - [dev.15 发布说明](releases/0.1.0-alpha.6-dev.15.md)：当前主线对齐包及验证范围。
 - [起音保留账本协议](onset-retention-ledger-protocol.md)：冻结输入上的静态起音去留核对。
 - [起音保留账本结果](onset-retention-ledger-results.md)：《樱花草》10K候选、定轨与选择器去留的静态汇总。
