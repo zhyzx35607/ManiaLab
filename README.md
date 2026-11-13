@@ -6,7 +6,7 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.16 · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.16)。本版重新打包对齐当前 `main`；源码新增的表达取舍审计是冻结输入上的独立研究 CLI，不属于应用功能，也不改变默认采音或模型。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；便携包会附带应用运行所需的固定模型，来源、许可和已知限制见[第三方声明](THIRD_PARTY_NOTICES.md)。起音、Timing 和逐段表达仍需原声检查及 osu! 试打，尚未完成音乐质量验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.16说明](docs/releases/0.1.0-alpha.6-dev.16.md)。
+**0.1.0-alpha.6-dev.17 · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.17)。本版重新打包对齐当前 `main`；新增的序列先验批量编码只优化研究评估速度，不进入默认制谱，也不代表采音或音乐质量提升。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；便携包会附带应用运行所需的固定模型，来源、许可和已知限制见[第三方声明](THIRD_PARTY_NOTICES.md)。Demucs checkpoint 的单独再分发授权仍未核实。起音、Timing 和逐段表达仍需原声检查及 osu! 试打，尚未完成音乐质量验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.17说明](docs/releases/0.1.0-alpha.6-dev.17.md)。
 
 **开发测试版 `0.1.0-alpha.6-dev.2`**：在段落与声部表达流程上，加入已有声轨导入、可选钢琴专用采音、和弦减层保留起音，以及手动“连续起音优先”表达；重建音频程序并校验源码与包内模型身份。下载入口为 [开发测试包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.2)。这是对照测试版本，自动对音、复杂鼓音与LN音乐表达仍未完成验收，研究中的YourMT3伴奏模型和未通过对照的训练权重没有启用。常规alpha.5仍保留，原段落流程说明见 [采音与段落表达修订](docs/music-first-revision.md)。
 

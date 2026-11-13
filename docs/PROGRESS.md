@@ -1070,5 +1070,28 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   `test-data/sakura-chord-evidence-audio-review-v1`；未改标签或导出。
   本次没有发现神经推理任务，也没有试听；用户暂时无耳机，音乐与Timing验收仍开放。
 - 本阶段只更新第三方声明和本进度文档，不改应用、模型、音频、审核标签或默认行为。
-  后续若再次公开分发模型权重，应先取得权利人针对确切checkpoint的书面许可，
-  或另行决定权重不随包分发的产品方案；在此之前继续保留并明确披露该未决风险。
+  dev.17按既定开发测试版目标沿用dev.16中相同的固定模型文件，继续明确披露
+  checkpoint授权未核实；这不代表取得了授权，也不扩展模型范围或用途。
+  商业化或新增/更换模型权重的公开分发，仍须先核实权利人许可或调整打包方案。
+
+## dev.17 版本对齐准备
+
+- 2026-11-13以干净的 `main` `67c7fb761bdede3a4d09dd1f3a89c76631cae2e9`
+  为基础准备dev.17；最新已发布版本仍为dev.16，tag固定在
+  `42e5493ad17456d6d8b37c334162e226203126a9`。本次版本准备合并后将以准确的
+  tag target 和机器验证报告记录最终source commit。
+- dev.16 tag之后的功能性差异为PR #87序列先验LN互动特征批量编码及分组验证优化；
+  它是研究评估工具，不接入默认制谱，不重跑已完成的14组对照，不表示模型或音乐质量
+  提升。PR #86/#88/#89为发布、合并状态和第三方许可范围文档记录。
+- 只读检查dev.16 ZIP模型文件清单，确认包内含
+  `beat-this-final0.ckpt`（81,058,141字节）、
+  `hdemucs_high_trained.pt`（334,697,255字节）和
+  `htdemucs_6s.th`（54,996,327字节）；`scripts/build_windows.py`将完整`assets`
+  目录打入包并逐项校验模型SHA。dev.17继续沿用此范围，许可风险如实列入发布说明，
+  不声称授权已解决。
+- 当前版本准备仅变更`manialab.__version__`、README下载入口、文档索引及发布说明；
+  不改应用逻辑、默认行为、模型权重、音频或研究产物。人工听审、Timing与osu!试打
+  仍未完成，不能由CI代替。
+- 本地验证：`.\.venv\Scripts\python.exe -m pytest -q`为2,340 passed、89 skipped
+  （71.39秒）；`.\.venv\Scripts\python.exe -m compileall -q manialab scripts tests`、
+  dev.17版本断言及`git diff --check`通过。未运行模型推理或读取音频/参考谱。
