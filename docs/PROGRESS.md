@@ -1038,3 +1038,37 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   与osu!试打仍未完成；用户暂时没有耳机，本阶段不把静态检查或合成音频替代为试听结论。
   后续在不重复模型实验、不改写未验证默认行为的前提下，继续可离线验证的结构/工具工作，
   并保留人工音乐验收为开放目标。
+
+## dev.16 后续主线与 checkpoint 许可范围复核
+
+- 2026-11-13续接核对：工作区从 `main` 创建本阶段文档分支前干净，
+  `main`/`origin/main` 均为 `94c442ec13cd734b9ae205eee662f18ef05909b3`。
+  最新 Windows Pre-release 仍是 dev.16，tag 固定在 `42e5493ad17456d6d8b37c334162e226203126a9`；
+  PR #87 已将 LN 互动特征批量编码集成到当前主线，PR #88 补记合并状态。
+  #87 只优化研究评估运行时间，不接入默认生成，也不构成键型或音乐质量改善。
+- GitHub 记录的 #87 验证为序列定向测试112 passed、4 skipped，全量
+  `pytest` 为2,340 passed、89 skipped，`compileall`、定向 `py_compile`、
+  `git diff --check`通过；两项 Windows `verify`通过。没有重跑模型对照、
+  读取 test split、音频或本地研究产物。
+- checkpoint许可复核只读取模型清单、torchaudio 2.9.1随包源码及上游许可讨论，
+  没有读取权重内容或修改包内文件。四声部 `hdemucs_high_trained.pt` 的官方
+  torchaudio bundle说明训练数据包含MUSDB-HQ训练/测试集及150首Meta内部歌曲，
+  并指向原HDemucs训练仓库；该bundle文档/源码没有声明此checkpoint的单独许可。
+  Demucs issue #327 中维护者 `adefossez` 说明当时的预训练权重不受代码MIT覆盖、
+  仅供科学用途，但答复未点名torchaudio文件。2024年另一位贡献者在同一讨论中表示
+  MUSDB训练的模型应仅用于研究；这与torchaudio披露的训练来源相关，但仍不是精确到
+  `hdemucs_high_trained.pt` 的授权。该讨论中维护者的答复早于六声部v4 checkpoint
+  `htdemucs_6s.th`，后续贡献者评论也没有列出该文件；两者都是重要风险证据，
+  不是这两个具体文件的单独授权文本。
+  截至本次核对，两个随包checkpoint的单独再分发授权都未核实；这不是侵权结论，
+  也不能从Demucs MIT或torchaudio BSD-2-Clause推导模型权重许可。
+- 复核命令：`gh pr view 87 --json body,commits,files,reviewDecision,statusCheckRollup`、
+  `gh pr checks 87`、`gh release list --limit 5`、
+  `Get-NetTCPConnection -State Listen -LocalPort 8765,8766`。
+  当前 `127.0.0.1:8765` 和 `:8766` 仍是原有只读审核页HTTP服务，分别服务
+  `test-data/expression-audio-cohort-v3-stem-review-v1` 与
+  `test-data/sakura-chord-evidence-audio-review-v1`；未改标签或导出。
+  本次没有发现神经推理任务，也没有试听；用户暂时无耳机，音乐与Timing验收仍开放。
+- 本阶段只更新第三方声明和本进度文档，不改应用、模型、音频、审核标签或默认行为。
+  后续若再次公开分发模型权重，应先取得权利人针对确切checkpoint的书面许可，
+  或另行决定权重不随包分发的产品方案；在此之前继续保留并明确披露该未决风险。
