@@ -1152,3 +1152,42 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - PR #92与本端到端回归都不证明现实音乐中的候选正确、Timing可靠或谱面可玩；下一步继续
   检查固定音频分析经过完整生成路径时的声部和段落表达，保留用户试听作为独立验收，
   但不要求逐首听审才能继续开发。
+
+## 冻结分析推荐生成诊断
+
+- 2026-11-13使用已有`scripts/evaluate_recommendations.py`，将冻结的《樱花草》分析
+  经真实Flask项目API依次运行`recommendations`、`apply-recommendation`、`generate`、
+  `.osu`导出和解析回读。输入为283.84秒、6,053个候选、13个结构段落；分析文件SHA-256
+  `26a0250568b2ce149022c4aa1549af2d9dd49b045372959a6b26b5342ba5313a`，分析内检测拍线
+  标记为`stable=false`。
+- 命令：
+  `.\.venv\Scripts\python.exe scripts\evaluate_recommendations.py test-data\sakura-tsumugi-expression-onset-v3\analysis.json --output test-data\sakura-recommendation-generation-v1 --keys 10 --bpm 74 --offset 178 --shift 22.5`
+  使用诊断时钟74 BPM、chart offset 178ms、audio shift 22.5ms、4分拍内细分；脚本开启
+  吸附并显式确认该时钟。没有读取真实音频、Reference或MAESTRO保留测试，没有重新运行
+  音频采音/分离/转录或研究训练。生成使用应用既有轨道先验（SHA-256
+  `a7b60de4c9d8d4d86c9c16cc4b79001607fc6c069bfb6a752f743de1847fb12c`）与编排配置
+  （SHA-256 `f5ec85ffdd85afc6712577e263f8540a795631d9c513b74d05e13fc84160c29c`）。
+- 三种10K推荐均生成成功；API校验有效、导出再解析与保存音符一致、原始候选证据未变。
+  程序统计如下，手部压力和审查提醒是内部结构指标，不是质量分：
+
+  | 推荐 | 物件数 | LN比例 | 分段物件/秒范围 | 手部压力峰值 | 结构提醒 |
+  | --- | ---: | ---: | ---: | ---: | --- |
+  | melody | 1,050 | 63.1% | 1.55–4.17 | 6.076 | 无 |
+  | hybrid | 2,088 | 39.1% | 1.69–9.60 | 10.970 | 无 |
+  | layers | 2,965 | 44.5% | 2.40–13.33 | 15.721 | `held_hand_load` 3项、短连打37处 |
+
+- 这组数据下`melody`是较保守的自动候选：密度和内部手部压力最低、没有结构提醒；
+  `layers`最密且出现负载提醒。它们只用于程序侧比较，不证明哪一版更符合音乐，也没有
+  改变应用默认值。所有版本报告`off_grid=0`仅因为开启了吸附，不能作为Timing通过：
+  原始候选中5,085个起点被移动，1,338个候选原始起点距网格超过30ms；三个输出分别仍
+  有90、167、343个被选起点移动超过30ms。诊断时钟的24个12秒窗口中有5个可疑。
+- 输出保留在ignored目录`test-data/sakura-recommendation-generation-v1/`。报告SHA-256
+  `10a8eddd5e3df4a3ae6455a591d8a17e0ef505a8963d64db48d719ac379fd1f0`；三个诊断`.osu`
+  SHA-256依次为`10K-melody.osu`
+  `6c5e91f7391b07a7baa23e65d0ca2167b218dbe05f2abc9ac619d76717dde2f6`、
+  `10K-hybrid.osu` `a3c4d998d3248f72245a6fa5818fc49758678a7aca3bbb2d67903072f37cf01d`、
+  `10K-layers.osu` `89bcfe34e5a3563725b22f665f9e7b77e07ccb4c4ce0cfa548523911f39972b9`。
+  运行使用analysis-only占位音频且未导出音频包，不能直接作为可播放谱面交付。
+- 下一步从冻结的`timing_attacks`继续做自动拍线稳定性诊断，重点区分半速候选与偏移、
+  分段覆盖问题；在Timing未有可靠证据前，不把吸附后的整齐谱面当作验收结果，也不要求
+  用户逐首试听才能推进代码和自动评估。
