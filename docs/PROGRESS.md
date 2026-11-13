@@ -971,7 +971,7 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   未做人工试听、osu!试打、Timing或音乐验收。下一步应把结构队列作为日后人工复核
   的定位工具；不得依审计排序直接调声部选择或LN默认值。
 
-## dev.16 版本准备
+## dev.16 版本发布
 
 - 当前`main`为`43a2f0a3c15cb837dcab4e93ced2da693a476832`，最新已发布
   `v0.1.0-alpha.6-dev.15` tag为`ead17d5e07f2936025272463dc1a5d56678e4923`。
@@ -982,7 +982,29 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   应用路径。Demucs checkpoint单独再分发授权仍未核实，发布说明继续披露该风险。
 - 本地验证：`.\.venv\Scripts\python.exe -m pytest -q`为2,322 passed、89 skipped；
   `compileall -q manialab scripts tests`、版本导入`0.1.0-alpha.6-dev.16`及
-  `git diff --check`通过。该验证不覆盖tag CI的Windows便携构建、离线运行与关停检查。
-- 下一步先验证版本准备提交并经PR合入；随后在合并提交打
-  `v0.1.0-alpha.6-dev.16` tag，等待Windows tag CI，独立复核便携ZIP/报告/资产后发布
-  Pre-release。此阶段不代表音乐或Timing验收；人工听审、标签复核和osu!试打仍待完成。
+  `git diff --check`通过。PR #85的Windows验证通过并合入`main`，merge commit为
+  `42e5493ad17456d6d8b37c334162e226203126a9`；annotated tag
+  `v0.1.0-alpha.6-dev.16`精确指向该提交。
+- Windows tag CI run `43363747645`于2026-11-13成功，耗时6分46秒：2,411项测试中
+  2,322 passed、89 skipped、零失败/错误；模型校验、worker/Windows便携包构建、
+  clean PATH与Unicode数据路径离线EXE、便携分析/导出/取消/重启、worker关停及
+  验证报告上传均通过。CI报告明确标记没有音乐或Timing验收，测试夹具为合成音频。
+- 工件留在ignored目录`build/portable/verified-dev16-43363747645/`。Windows ZIP为
+  698,958,003字节，SHA-256
+  `e8c2f10eacc4b2dec0e0600f525c05b914b9a3fc91f15ede9dd6696d1bc22dfc`；本地4,230项
+  全量CRC通过且无重复路径。包内73项源码清单均与tag文件内容一致；本机
+  `manialab/planner.py`为CRLF而CI清单记录LF，按既有换行等价校验复核通过。
+- GitHub Pre-release已发布：
+  [ManiaLab alpha.6 dev.16](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.16)。
+  ZIP、SHA256SUMS和验证JSON三个远端资产的大小及digest与本地逐一相符：
+  ZIP 698,958,003字节、SHA-256
+  `e8c2f10eacc4b2dec0e0600f525c05b914b9a3fc91f15ede9dd6696d1bc22dfc`；
+  SHA256SUMS 226字节、SHA-256
+  `f9ee09ba685de12514f553f5db2e0ed5a828fc49d3a6b841f6fa1ee5deffc59a`；
+  验证JSON 1,992字节、SHA-256
+  `262be03d47a408c1a31ac71f85a81043f05d39138effc1a4a6f3bd0408b344d5`。
+  固定模型随包；Demucs checkpoint单独再分发授权仍未核实。
+- 本版没有音乐/Timing质量验收，也没有改变默认采音行为。人工听审、候选标签复核
+  与osu!试打仍未完成；用户暂时没有耳机，本阶段不把静态检查或合成音频替代为试听结论。
+  后续在不重复模型实验、不改写未验证默认行为的前提下，继续可离线验证的结构/工具工作，
+  并保留人工音乐验收为开放目标。
