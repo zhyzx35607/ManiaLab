@@ -84,10 +84,11 @@ def propose_expression(analysis, settings, segment_preferences=()):
         local_settings = settings_at(p, a, segment_preferences)
         evidence = {voice: section_activity(sources[voice], a, b) for voice in voices}
         active = [voice for voice in voices if evidence[voice]['present']
-                  and p.get(voice+'_weight', 1.) > 0]
+                  and local_settings.get(voice+'_weight', 1.) > 0]
         local = {identity: anchor for identity, anchor in anchors.items() if a <= anchor.start < b}
         phrase_voices = {phrase.voice for phrase in phrases
-            if (_phrase_eligible(phrase, local.get(phrase.id), segment, p['min_ln'])
+            if (_phrase_eligible(phrase, local.get(phrase.id), segment,
+                                 settings_at(p, phrase.start, segment_preferences)['min_ln'])
                 and settings_at(p, phrase.start, segment_preferences)['phrase_ln'] > 0)}
         melodic = [voice for voice in active if voice != 'drums']
         # Coverage, attack counts and model classes do not identify a lead.
@@ -99,11 +100,11 @@ def propose_expression(analysis, settings, segment_preferences=()):
         for voice in voices:
             if voice not in active:
                 mode = 'omit'
-            elif voice == 'drums' or p['ln_ratio'] == 0:
+            elif voice == 'drums' or local_settings['ln_ratio'] == 0:
                 mode = 'onsets'
             elif voice == 'vocals' and local_settings['phrase_ln'] > 0 and voice in phrase_voices:
                 mode = 'phrase'
-            elif voice in ('piano', 'guitar') and p['ln_ratio'] < .75:
+            elif voice in ('piano', 'guitar') and local_settings['ln_ratio'] < .75:
                 mode = 'articulation'
             else:
                 mode = 'sustain'
@@ -203,11 +204,11 @@ def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segme
         phrase_groups = defaultdict(list)
         for phrase in phrases:
             anchor = by_id.get(phrase.id)
-            if (not _phrase_eligible(phrase, anchor, section, p['min_ln']) or
+            phrase_settings = settings_at(p, phrase.start, segment_preferences)
+            if (not _phrase_eligible(phrase, anchor, section, phrase_settings['min_ln']) or
                     _expression_mode(section, anchor.voice, anchor.instrument_id) != 'phrase'):
                 continue
-            amount = section.get('phrase_ln',
-                settings_at(p, phrase.start, segment_preferences)['phrase_ln'])
+            amount = section.get('phrase_ln', phrase_settings['phrase_ln'])
             phrase_groups[(anchor.voice, anchor.instrument_id, amount)].append(phrase)
         for (_, _, amount), candidates in phrase_groups.items():
             for phrase in select_phrase_subset(candidates, amount):
@@ -230,8 +231,9 @@ def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segme
                         instrument_id=original.instrument_id, section=index, mode=mode, role=policy['role'],
                         voice_mode=policy['mode'],
                         instrument_mode=_instrument_mode(section, original.voice, original.instrument_id))
+            local_settings = settings_at(p, original.start, segment_preferences)
             reason = None
-            if mode == 'omit' or p.get(original.voice+'_weight', 1.) <= 0:
+            if mode == 'omit' or local_settings.get(original.voice+'_weight', 1.) <= 0:
                 reason = 'voice_not_selected'
             elif original.strength < .35:
                 reason = 'weak_detection'
@@ -242,7 +244,7 @@ def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segme
                 trace[original.id] = dict(base, decision='omitted', reason=reason)
                 continue
             n = replacements.get(original.id, original)
-            hold = n.source == 'pitch' and mode != 'onsets' and n.end-n.start >= p['min_ln']
+            hold = n.source == 'pitch' and mode != 'onsets' and n.end-n.start >= local_settings['min_ln']
             reason = 'supported_sustain' if hold else ('section_onsets' if mode == 'onsets' else 'short_duration')
             gesture=articulation.get(original.id) if mode=='articulation' else None
             if gesture is not None:

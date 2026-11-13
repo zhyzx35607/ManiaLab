@@ -6,6 +6,31 @@ from manialab.audio import SR, analyze, rhythmic_evidence
 from manialab.arrange import parameters
 
 
+def test_basic_pitch_inference_respects_cpu_thread_limits(monkeypatch):
+    from manialab import audio
+
+    captured = {}
+
+    class Options:
+        intra_op_num_threads = None
+        inter_op_num_threads = None
+
+    def session(model, sess_options, providers):
+        captured.update(intra=sess_options.intra_op_num_threads,
+                        inter=sess_options.inter_op_num_threads,
+                        providers=providers)
+        raise RuntimeError('captured configuration')
+
+    monkeypatch.setattr(audio, '_session', None)
+    monkeypatch.setattr(audio.ort, 'SessionOptions', Options)
+    monkeypatch.setattr(audio.ort, 'InferenceSession', session)
+    import pytest
+    with pytest.raises(RuntimeError, match='captured configuration'):
+        audio.infer(np.zeros(audio.SR, dtype=np.float32), Path('unused.onnx'))
+
+    assert captured == dict(intra=2, inter=1, providers=['CPUExecutionProvider'])
+
+
 def test_stem_eof_rounding_never_changes_the_attack_clock():
     import pytest
     from manialab.audio import align_stem_samples

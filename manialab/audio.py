@@ -54,7 +54,7 @@ def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):
     with _lock:
         if _session is None:
             options = ort.SessionOptions()
-            options.intra_op_num_threads = 3
+            options.intra_op_num_threads = 2
             options.inter_op_num_threads = 1
             _session = ort.InferenceSession(str(model), sess_options=options, providers=["CPUExecutionProvider"])
     padded = np.pad(samples, (OVERLAP // 2, 0))
