@@ -110,6 +110,46 @@ def wait_job(client, job):
     raise AssertionError('job timed out')
 
 
+def test_generation_applies_local_recommendation_expression_to_export(tmp_path):
+    from manialab.arrange import parameters
+    from manialab.recommendations import evidence_signature
+
+    app=create_app(ROOT,tmp_path)
+    client=app.test_client()
+    headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=state['id'];base=f'/api/projects/{pid}'
+    prefs=parameters({'keys':10,'ln_ratio':.55,'min_ln':240})
+    notes=[Note(1000,1600,pitch=60,source='pitch',voice='vocals',id='early').data(),
+           Note(7000,7600,pitch=64,source='pitch',voice='vocals',id='late').data()]
+    analysis=dict(revision=3,duration=12.,tempo=dict(bpm=120,offset=0,division=4,stable=True),
+        candidates=notes,phrase_candidates=[],timing_attacks=[],
+        structure=dict(segments=[dict(start_ms=0,end_ms=6000),dict(start_ms=6000,end_ms=12000)]))
+    segments=[
+        dict(start_ms=0,end_ms=6000,preferences=dict(ln_ratio=0,min_ln=100)),
+        dict(start_ms=6000,end_ms=12000,preferences=dict(ln_ratio=.9,min_ln=500)),
+    ]
+    state['settings']=prefs
+    state['analysis']=analysis
+    state['plan']=dict(source='local-audio-recommendation',preferences=prefs,
+        segments=segments,keys=10,bpm=120,evidence_signature=evidence_signature(analysis))
+    Projects(tmp_path/'projects').save(state)
+
+    try:
+        job=client.post(base+'/generate',json=dict(mode='audio',settings=prefs,bpm=120,
+            offset=0,division=4,timing_confirmed=True),headers=headers).json
+        result=wait_job(client,job)
+        assert result['status']=='done',result
+
+        variant=client.get(base).json['variants'][-1]
+        placed={n['id']:(n['start'],n['end']-n['start']) for n in variant['notes']}
+        assert placed=={'early':(1000,0),'late':(7000,625)}
+        exported=parse_osu(client.get(base+'/export/osu').data.decode())
+        assert sorted((n.start,n.end) for n in exported['notes'])==[(1000,1000),(7000,7625)]
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_path,monkeypatch):
     from manialab.upstream import MapperEngine
     app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
