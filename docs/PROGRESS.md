@@ -159,6 +159,26 @@
   `025ed271f5ef922028519410d480da098fcbe7d6c9a19aa6372dc69f2dae0725`。
   CI使用合成音频，只验证软件与便携运行，不构成音乐或Timing验收；人工听审、
   标签复核及osu!试打仍未完成，随包Demucs checkpoint单独再分发授权仍未核实。
+- dev.13 通过 PR #78 合入，merge commit、tag `v0.1.0-alpha.6-dev.13` 与发布时
+  `main` 均为 `1b8995f89d73403e9cdb678d83d6dd7ff4637208`。本次只同步版本元数据、
+  README 和发布说明，以包含 PR #76/#77 的当前源码快照重新打包；不改应用行为、
+  默认采音或模型。本地全量测试为2,315 passed、89 skipped，
+  `compileall -q manialab scripts tests`、版本导入及`git diff --check`通过；
+  PR 两项 Windows `verify` 均通过。
+- Windows tag CI run `43338859633` 于2026-11-13成功，耗时7分42秒：2,404项测试中
+  2,315 passed、89 skipped、零失败/错误；模型校验、worker/Windows ZIP构建、clean PATH
+  与Unicode数据路径离线EXE、worker关停、验证报告和工件上传全部通过。CI报告明确
+  未做音乐或Timing验收。
+- 工件下载复核于ignored目录`build/portable/verified-dev13-43338859633/`。
+  ZIP大小698,940,661字节，SHA-256
+  `4bfec96f3b2f1d1209dd57814a76615fb3c884ae9b997cc35ef29d769dfdf67b`；
+  4,223项全量CRC通过、无重复路径；包内版本、EXE及release manifest哈希与报告相符。
+  GitHub Pre-release 已发布：
+  [ManiaLab alpha.6 dev.13](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.13)，
+  Windows ZIP、SHA256SUMS、验证JSON三项资产的名称、大小和digest均与本地匹配。
+  音乐质量、Timing、人工听审与osu!试打仍未完成；Demucs checkpoint单独再分发授权
+  仍未核实。当前后续代码阶段先做冻结输入上的可解释起音保留账本，不重跑模型；
+  人工听审结果仍须用户实际试听并导出。
 
 ## Nova 人声乐句候选复核包
 
