@@ -117,3 +117,78 @@ def test_default_expression_depends_on_tendency_not_a_main_voice_slot(ratio):
         holds = [n.hold for n in result if n.voice == voice]
         expected = [False, False, False] if ratio == 0 else [False, False, True] if ratio < .75 and voice in ('piano', 'guitar') else [True, True, True]
         assert holds == expected
+
+
+def test_automatic_expression_uses_local_sustain_tendency_and_minimum_length():
+    rows = [note(1000, 1600, 'piano', 'below-local-minimum'),
+            note(5000, 5600, 'piano', 'above-local-minimum'),
+            note(9000, 9600, 'piano', 'locally-tap-only')]
+    a = analysis(rows)
+    a['structure']['segments'] = [dict(start_ms=0, end_ms=4000),
+                                  dict(start_ms=4000, end_ms=8000),
+                                  dict(start_ms=8000, end_ms=12000)]
+    settings = parameters({'ln_ratio': .55, 'min_ln': 240})
+    segments = [
+        dict(start_ms=0, end_ms=4000, preferences=dict(ln_ratio=.9, min_ln=800)),
+        dict(start_ms=4000, end_ms=8000, preferences=dict(ln_ratio=.9, min_ln=500)),
+        dict(start_ms=8000, end_ms=12000, preferences=dict(ln_ratio=0, min_ln=100)),
+    ]
+
+    plan = propose_expression(a, settings, segment_preferences=segments)
+    evidence, _, _ = expression_evidence(a, plan, settings, segment_preferences=segments)
+
+    assert [section['voices']['piano']['mode'] for section in plan['sections']] == [
+        'sustain', 'sustain', 'onsets']
+    assert [(n.id, n.hold) for n in evidence] == [
+        ('below-local-minimum', False),
+        ('above-local-minimum', True),
+        ('locally-tap-only', False),
+    ]
+
+
+def test_automatic_expression_respects_a_local_voice_mute():
+    rows = [note(1000, 1600, 'piano', 'muted'),
+            note(7000, 7600, 'piano', 'active')]
+    a = analysis(rows)
+    a['structure']['segments'] = [dict(start_ms=0, end_ms=6000),
+                                  dict(start_ms=6000, end_ms=12000)]
+    settings = parameters({'ln_ratio': .9})
+    segments = [dict(start_ms=0, end_ms=6000, preferences=dict(piano_weight=0)),
+                dict(start_ms=6000, end_ms=12000, preferences=dict(piano_weight=1))]
+
+    plan = propose_expression(a, settings, segment_preferences=segments)
+    evidence, _, decisions = expression_evidence(
+        a, plan, settings, segment_preferences=segments)
+
+    assert [section['voices']['piano']['mode'] for section in plan['sections']] == [
+        'omit', 'sustain']
+    assert [(n.id, n.hold) for n in evidence] == [('active', True)]
+    assert decisions['muted']['reason'] == 'voice_not_selected'
+
+
+def test_automatic_vocal_phrases_use_each_sections_minimum_length():
+    rows = [note(1000, 1100, 'vocals', 'short-anchor'),
+            note(5000, 5100, 'vocals', 'long-anchor')]
+    a = analysis(rows)
+    a['structure']['segments'] = [dict(start_ms=0, end_ms=4000),
+                                  dict(start_ms=4000, end_ms=8000),
+                                  dict(start_ms=8000, end_ms=12000)]
+    a['phrase_candidates'] = [
+        dict(rows[0].data(), end=1700, phrase=True, support=['short-anchor'],
+             support_coverage=1., release_reason='vocal_activity_decay'),
+        dict(rows[1].data(), end=6000, phrase=True, support=['long-anchor'],
+             support_coverage=1., release_reason='vocal_activity_decay'),
+    ]
+    settings = parameters({'ln_ratio': .9, 'phrase_ln': 1, 'min_ln': 240})
+    segments = [
+        dict(start_ms=0, end_ms=4000, preferences=dict(min_ln=800)),
+        dict(start_ms=4000, end_ms=8000, preferences=dict(min_ln=500)),
+    ]
+
+    plan = propose_expression(a, settings, segment_preferences=segments)
+    evidence, _, trace = expression_evidence(a, plan, settings, segment_preferences=segments)
+
+    assert [section['voices']['vocals']['mode'] for section in plan['sections']] == [
+        'sustain', 'phrase', 'omit']
+    assert [(n.id, n.end) for n in evidence] == [('short-anchor', 1000), ('long-anchor', 6000)]
+    assert trace['short-anchor']['reason'] == 'short_duration'
