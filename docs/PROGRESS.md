@@ -179,6 +179,14 @@
   音乐质量、Timing、人工听审与osu!试打仍未完成；Demucs checkpoint单独再分发授权
   仍未核实。当前后续代码阶段先做冻结输入上的可解释起音保留账本，不重跑模型；
   人工听审结果仍须用户实际试听并导出。
+- 2026-11-13 准备dev.14，使新版本快照包含dev.13 tag之后已合入的PR #79/#80：
+  发布验证记录及冻结输入上的起音保留账本研究CLI、测试与文档。版本准备只改
+  `manialab.__version__`、README、进度、文档索引和发布说明，不改变应用运行逻辑、
+  默认采音或模型。源码全量
+  `.\.venv\Scripts\python.exe -m pytest -q`为2,318 passed、89 skipped；
+  `compileall -q manialab scripts tests`、版本导入和`git diff --check`通过。
+  PR Windows检查、合并后tag CI、Windows ZIP独立复核与Pre-release尚待完成；
+  不能将上述源码测试说成便携包已验证。人工听审、Timing及osu!试打仍未完成。
 
 ## Nova 人声乐句候选复核包
 
