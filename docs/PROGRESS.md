@@ -613,6 +613,9 @@
   2,340 passed、89 skipped；`compileall -q manialab scripts tests`、
   定向`py_compile`和`git diff --check`通过。此次仅验证代码集成，不重跑14组模型
   对照或读取test split，不读取音频/模型/本地研究产物，也不接入默认生成。
+- PR #87的两项Windows `verify`均通过并合入`main`，merge commit为
+  `fe8e728d97976d7e68e25e3a7985ad73437db270`；旧PR #36因基线过期关闭并注明由
+  #87替代。该集成仅优化研究评估运行时间，不代表LN键型或音乐质量改善。
 - 当前研究仍未解决LN尾端/长度决策、整谱布局和实际可玩性。
 - 该验证固定LN尾端，所以不能证明LN长度、音频声部角色、乐句分段或实际可玩性；
   strength排序指标不能代替《樱花草》共同bookmark人工检查与实际试打。
