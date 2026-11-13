@@ -1074,12 +1074,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   checkpoint授权未核实；这不代表取得了授权，也不扩展模型范围或用途。
   商业化或新增/更换模型权重的公开分发，仍须先核实权利人许可或调整打包方案。
 
-## dev.17 版本对齐准备
+## dev.17 版本发布
 
-- 2026-11-13以干净的 `main` `67c7fb761bdede3a4d09dd1f3a89c76631cae2e9`
-  为基础准备dev.17；最新已发布版本仍为dev.16，tag固定在
-  `42e5493ad17456d6d8b37c334162e226203126a9`。本次版本准备合并后将以准确的
-  tag target 和机器验证报告记录最终source commit。
+- 2026-11-13从干净的 `main` `67c7fb761bdede3a4d09dd1f3a89c76631cae2e9`
+  准备dev.17。版本准备PR #90两项Windows `verify`通过并合并，merge commit、
+  annotated tag `v0.1.0-alpha.6-dev.17` 与发布时 `main` 均精确为
+  `3a5f0be09a27613d220e5fa91590863d5d7a2db0`。
 - dev.16 tag之后的功能性差异为PR #87序列先验LN互动特征批量编码及分组验证优化；
   它是研究评估工具，不接入默认制谱，不重跑已完成的14组对照，不表示模型或音乐质量
   提升。PR #86/#88/#89为发布、合并状态和第三方许可范围文档记录。
@@ -1095,3 +1095,26 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 本地验证：`.\.venv\Scripts\python.exe -m pytest -q`为2,340 passed、89 skipped
   （71.39秒）；`.\.venv\Scripts\python.exe -m compileall -q manialab scripts tests`、
   dev.17版本断言及`git diff --check`通过。未运行模型推理或读取音频/参考谱。
+- Windows tag CI run `43373546222` 于2026-11-13成功，耗时7分14秒。JUnit记录
+  2,429项测试、2,340 passed、89 skipped、零失败/错误；tag/source版本检查、
+  模型校验下载、隔离音频环境、worker与Windows ZIP构建、clean PATH及Unicode路径
+  离线EXE、分析/导出、取消/重启、worker关停、验证报告和工件上传均通过。
+  报告说明合成音频夹具不构成音乐或Timing验收。
+- 工件下载并独立复核于ignored目录
+  `build/portable/verified-dev17-43373546222/`。正式Windows ZIP为698,968,541字节，
+  SHA-256 `082c33977d6b2c8bc7d950f4240ff52bc879ade2cea1da0a9a275651b670d97b`；
+  4,232项全量CRC通过、无重复路径。三个模型SHA分别与 `assets/deep-models.json`
+  一致；包内EXE SHA为
+  `55c7b2a65dfead84710e0455117e5d6cf3e0d9d44e32afd6921c8d3940357ede`，
+  release manifest、源码版本及CI验证JSON相符。
+- GitHub Pre-release已发布：
+  [ManiaLab alpha.6 dev.17](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.17)。
+  三个资产名称、大小和digest均与本地复核一致：ZIP 698,968,541字节，
+  SHA-256 `082c33977d6b2c8bc7d950f4240ff52bc879ade2cea1da0a9a275651b670d97b`；
+  SHA256SUMS 226字节，SHA-256
+  `4c97bc3a66105a58cd0bc4b8b99a8fd69b7b47da07eddf4a875c12cbfbf3cd8b`；
+  验证JSON 1,992字节，SHA-256
+  `d9f8a148cb5fe59d72d2820d2ccff44a1343cbc0d5d07722eb15496ab53a42c8`。
+- 此版继续沿用dev.16的固定模型范围，checkpoint单独再分发授权未核实；这不是已获
+  授权或商业用途声明。PR #87仅为研究评估加速，不表示准确率提升。人工听审、
+  Timing和osu!试打仍未完成，用户暂时没有耳机。
