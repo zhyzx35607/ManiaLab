@@ -970,3 +970,19 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   `compileall -q manialab scripts tests`、`py_compile`及`git diff --check`通过。
   未做人工试听、osu!试打、Timing或音乐验收。下一步应把结构队列作为日后人工复核
   的定位工具；不得依审计排序直接调声部选择或LN默认值。
+
+## dev.16 版本准备
+
+- 当前`main`为`43a2f0a3c15cb837dcab4e93ced2da693a476832`，最新已发布
+  `v0.1.0-alpha.6-dev.15` tag为`ead17d5e07f2936025272463dc1a5d56678e4923`。
+  tag之后的主线变更为PR #83发布记录和PR #84表达取舍静态审计；没有应用运行逻辑、
+  默认采音或模型变化。
+- 准备dev.16只同步`manialab.__version__`、README当前下载入口、文档索引和发布说明，
+  以使新tag/Windows包源码快照准确对齐合并后的main。源码中的新审计CLI不进入默认
+  应用路径。Demucs checkpoint单独再分发授权仍未核实，发布说明继续披露该风险。
+- 本地验证：`.\.venv\Scripts\python.exe -m pytest -q`为2,322 passed、89 skipped；
+  `compileall -q manialab scripts tests`、版本导入`0.1.0-alpha.6-dev.16`及
+  `git diff --check`通过。该验证不覆盖tag CI的Windows便携构建、离线运行与关停检查。
+- 下一步先验证版本准备提交并经PR合入；随后在合并提交打
+  `v0.1.0-alpha.6-dev.16` tag，等待Windows tag CI，独立复核便携ZIP/报告/资产后发布
+  Pre-release。此阶段不代表音乐或Timing验收；人工听审、标签复核和osu!试打仍待完成。
