@@ -14,6 +14,8 @@
 
 - [当前续接进度](PROGRESS.md)：已完成阶段、真实验证结果、产物位置和下一步。
 - [dev.13 发布说明](releases/0.1.0-alpha.6-dev.13.md)：当前主线对齐包及验证范围。
+- [起音保留账本协议](onset-retention-ledger-protocol.md)：冻结输入上的静态起音去留核对。
+- [起音保留账本结果](onset-retention-ledger-results.md)：《樱花草》10K候选、定轨与选择器去留的静态汇总。
 - [dev.7 发布说明](releases/0.1.0-alpha.6-dev.7.md)：Windows 便携构建修复及验证范围。
 - [dev.6 发布说明](releases/0.1.0-alpha.6-dev.6.md)：模型下载回退及历史变更。
 - [开发测试版本记录](alpha5-validation.md)：早期发布验证历史。
