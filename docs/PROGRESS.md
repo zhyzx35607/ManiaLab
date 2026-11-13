@@ -194,9 +194,33 @@
   不进入源码/便携包的用户音频、参考谱、下载语料、本地研究权重和逐曲产物。相对dev.14
   仍只改版本与文档，不改变应用运行逻辑、默认采音或模型。本地全量
   `.\.venv\Scripts\python.exe -m pytest -q` 为2,318 passed、89 skipped；
-  `compileall -q manialab scripts tests`、版本导入和`git diff --check`通过。PR
-  Windows检查、合并后tag CI、Windows ZIP独立复核与GitHub Pre-release待完成；
-  人工听审、Timing及osu!试打仍未完成。
+  `compileall -q manialab scripts tests`、版本导入和`git diff --check`通过。PR #82
+  两项Windows `verify`通过并合入；merge commit与`main`为
+  `ead17d5e07f2936025272463dc1a5d56678e4923`，annotated tag
+  `v0.1.0-alpha.6-dev.15`精确指向该提交。
+- Windows tag CI run `43352716618` 于2026-11-13成功，耗时6分54秒：2,407项测试中
+  2,318 passed、89 skipped、零失败/错误；模型校验、Windows构建、clean PATH与Unicode
+  数据路径离线EXE、便携启动/分析/导出、重启与取消行为、worker关停、验证报告和工件
+  上传均通过。CI夹具使用合成音频，不构成音乐或Timing验收。
+- 工件及便携包独立复核保留在ignored目录
+  `build/portable/verified-dev15-43352716618/`。GitHub Actions工件
+  `14004881832`为698,952,215字节，SHA-256
+  `1a84d7397fadac0fd621d6a9f029a4016df2eaa6d27572489a6d76b43e45f612`；外层ZIP含3个文件、
+  无重复路径且完整CRC通过。正式Windows ZIP为698,949,407字节，SHA-256
+  `b5a4257172c0b1febe827c8967e766544853824da5931e32504bbc4a5784c1aa`；本地4,227项CRC
+  全过、无重复路径，包内版本、EXE与release manifest哈希和验证JSON相符。固定
+  `htdemucs_6s.th`随包模型SHA-256为清单值
+  `34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd`；未发现用户音频、
+  参考谱、下载语料、本地研究权重或逐曲产物。
+- GitHub Pre-release已于2026-11-13发布：
+  [ManiaLab alpha.6 dev.15](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.15)。
+  Windows ZIP、SHA256SUMS与验证JSON均已上传；GitHub资产大小和digest分别与本地文件
+  一致。验证JSON为1,992字节、SHA-256
+  `bfa9d4604dbefc7b99facbb040fe9fcec4c54295f95c6d320b822ca1bdbe243b`；
+  SHA256SUMS为226字节、SHA-256
+  `2c2616290a1c5a8dc258006b805eaf760e6045ae257477d3bb0f3d3997a8b075`。
+  本版不代表采音准确率、Timing或音乐质量提升；人工听审、标签复核和osu!试打仍未完成，
+  Demucs checkpoint单独再分发授权仍未核实。
 
 ## Nova 人声乐句候选复核包
 
