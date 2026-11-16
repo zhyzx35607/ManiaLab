@@ -1191,3 +1191,38 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 下一步从冻结的`timing_attacks`继续做自动拍线稳定性诊断，重点区分半速候选与偏移、
   分段覆盖问题；在Timing未有可靠证据前，不把吸附后的整齐谱面当作验收结果，也不要求
   用户逐首试听才能推进代码和自动评估。
+
+## 2026-11-16 项目目录与 Git 清理
+
+- `docs/README.md` 和 `scripts/README.md` 已有目录/入口索引，因此没有迁移
+  `docs/`、`scripts/` 或实验文件；历史命令、复现协议和测试导入仍依赖这些路径。
+- 本机开始整理时有72个本地分支：68个分支已包含于`origin/main`，4个未合并。
+  经逐个确认提交可从`origin/main`到达后，清除了67个已合入的本地旧分支；保留
+  `main`、当前dev.18 PR分支、3个其他未合并分支和本次独立清理分支。不删除远端分支。
+- 清除18个可再生的`__pycache__/`和`.pytest_cache/`目录。检查发现根目录
+  `dist/ManiaLab/`不是空缓存，而是dev.4便携构建快照，含钢琴和吉他ONNX、乐器worker
+  与发布manifest，因此保留。`.venv/`、`.venv-audio/`、`build/`、`release/`、
+  `test-data/`、本地模型目录和`ManiaLab.spec`也均保留。
+- GitHub 于本日核对时，最新预发布为dev.17，dev.18版本准备PR #95仍打开且Windows
+  `verify`通过。该状态只记录核对时点，不表示dev.18已打tag或发布。
+
+## 钢琴专用模型与发布包范围审计
+
+- 只读对比本地保留ZIP中央目录及发布manifest，未解压或读取模型权重。alpha.6
+  dev.2、dev.3、dev.4包含`piano-regression.onnx`；dev.4 ZIP为1,354,151,023字节，
+  piano manifest非空。alpha.5起该文件未稳定进入包。
+- dev.7 ZIP为698,916,155字节，dev.17 ZIP为698,968,541字节；两者均保留
+  `manialab/piano.py`、Piano detector前端配置和ONNX Runtime，但都没有
+  `piano-regression.onnx`，发布manifest的`piano_model`为`null`。dev.17相对dev.7
+  仅增52,386字节，不能据此说近期每版都持续删减钢琴功能；更准确地说，CI包一直缺少
+  专用权重，因此依赖该模型的钢琴专用采音不可用。
+- 差异来源是打包输入范围不固定：`assets/deep/`和`assets/instruments/`被Git忽略；
+  `scripts/fetch_audio_models.py`只获取`assets/deep-models.json`中的固定三种音频模型，
+  Windows workflow没有获取钢琴/吉他模型或构建乐器worker；`scripts/build_windows.py`
+  则在本地可选模型存在时才验证并打入包。dev.4还有2,667项`assets/instruments/`
+  内容、吉他模型和乐器worker，dev.7/dev.17没有这些可选组件。dev.4到dev.17体积差为
+  655,182,482字节，主要可见差异包括instrument子树压缩后约351.5 MiB、压缩后的钢琴
+  模型139,908,297字节和吉他模型88,306,215字节；这不是全部差额的完整分摊。
+- 因此当前首先是“源码保留功能入口、CI便携包没有可选权重”的发布可复现性问题，
+  不是最新源码彻底删除钢琴分析。若后续决定恢复该能力，应单独确定模型下载/校验、
+  许可和便携验收策略；本阶段不下载、生成或打包模型，也不改变应用功能或默认行为。
