@@ -1330,6 +1330,23 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   **2,363 passed、89 skipped**（59.95秒）；`compileall -q manialab scripts tests`、
   全部静态JS `node --check`、JSON解析及`git diff --check`通过。未读取用户音频、参考谱或
   MAESTRO保留测试，未做音乐质量验收。
-- 当前PR #98仍打开。下一步提交并推送后，在干净Windows runner重新执行完整
-  `workflow_dispatch`：必须通过模型重建、完整ZIP、离线便携EXE、关停验证和报告核对；
-  在这些步骤全部通过前不合并PR，也不把本机旧模型覆盖为新文件。
+- 新身份由`fetch_piano_model.py`严格校验接受（`already_verified`）；ignored原模型仍保持
+  旧SHA `7488435a...`，本次没有覆盖本地模型，也没有把任何 ONNX/音频/研究产物加入Git。
+- 提交`616363e`推送至PR #98。Windows `workflow_dispatch` run `43808668376`于
+  2026-11-16成功，耗时11分14秒：全量测试、固定音频模型下载、隔离依赖、钢琴ONNX复建、
+  音频worker、Windows ZIP、clean PATH + Unicode路径实际EXE离线验证、关停检查、报告和
+  工件上传全部通过。报告记录2,452项测试（89 skipped、零failures/errors），钢琴模型
+  CPU smoke输出契约通过；便携夹具为合成音频，音乐/Timing验收标记为false。对应 PR
+  `verify` run `43808625349`也对同一提交成功；push run `43808620246`因同组
+  `workflow_dispatch`触发并发取消而结束为cancelled，不是测试失败。
+- 手动run便携包下载到ignored目录`build/portable/verified-piano-43808668376/`并独立复核：
+  ZIP 888,431,751字节，SHA-256
+  `11a75d9273f3575acad77c11171100038cb627c9798b0636a6fe5e48e5055029`；4,280项CRC全过、
+  无重复路径。包内钢琴ONNX为154,223,955字节、SHA-256
+  `31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f`，与随包清单及验证
+  报告一致；EXE SHA-256 `5f07de6ebb095c73ca5409c7fece0d49235df6a9a34d5c8210e624fe6497044d`
+  与验证报告一致。validation JSON把源码提交记为`616363e`、版本记为dev.17，符合当前
+  PR尚未包含dev.18版本准备的状态；这只是验证工件，不是Release。
+- 模型重建、ZIP与实际EXE/关停验证已满足合并门槛；合并PR #98后，dev.18 PR #95须重新
+  对齐新`main`并另行完成版本准备验证。钢琴真实音频质量和音乐/Timing验收仍未完成。
+
