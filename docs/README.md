@@ -21,6 +21,8 @@
 - [起音保留账本结果](onset-retention-ledger-results.md)：《樱花草》10K候选、定轨与选择器去留的静态汇总。
 - [表达取舍静态审计协议](expression-tradeoff-audit-protocol.md)：按段落、声部定位被省略的持续音候选，不估算音乐收益。
 - [表达取舍静态审计结果](expression-tradeoff-audit-results.md)：《樱花草》10K默认候选的LN资格与现有覆盖关系。
+- [《樱花草》Timing 歧义静态诊断协议](sakura-timing-ambiguity-protocol.md)：固定候选网格、半速/倍速相位和局部覆盖。
+- [《樱花草》Timing 歧义静态结果](sakura-timing-ambiguity-results.md)：74/148/296 BPM 候选的网格相容与未解决边界。
 - [dev.7 发布说明](releases/0.1.0-alpha.6-dev.7.md)：Windows 便携构建修复及验证范围。
 - [dev.6 发布说明](releases/0.1.0-alpha.6-dev.6.md)：模型下载回退及历史变更。
 - [开发测试版本记录](alpha5-validation.md)：早期发布验证历史。
@@ -42,3 +44,21 @@
 - `tests/`：自动化测试。
 - `docs/`：使用说明、设计、研究协议与进度；研究文件保留原路径。
 - `build/`、`dist/`、`release/`、`test-data/`：忽略的本地构建或研究产物。音频、参考谱、模型权重和逐音结果不进入源码提交。
+
+## 本地目录清理规则
+
+这些目录虽然不进入 Git，但不都属于缓存：
+
+| 路径 | 用途 | 清理规则 |
+| --- | --- | --- |
+| `build/portable/<run-id>/` | 隔离的构建、验证和历史 Release ZIP | 保留已验证产物；新构建使用新 run ID，不覆盖旧目录。 |
+| `release/` | 早期便携包、校验记录和发布辅助材料 | 作为版本对照保留，不批量删除。 |
+| `test-data/` | 用户音频、参考谱、下载语料、逐曲研究输入和输出 | 保留；不得加入源码提交，也不要按缓存清理。 |
+| `assets/deep/`、`assets/instruments/`、`assets/runtime/` | 本地模型和便携运行依赖 | 保留。部分构建入口会按这些忽略目录是否存在来选择可选组件，不能据目录名推断内容可丢弃。 |
+| `.venv/`、`.venv-audio/` | 项目运行和音频研究环境 | 保留，除非已计划重建对应环境。 |
+| `__pycache__/`、`.pytest_cache/` | Python 字节码和 pytest 缓存 | 可再生；没有相关任务运行时可以删除。 |
+| 根目录 `dist/` | 旧式或手动 PyInstaller 输出位置 | 当前 `scripts/build_windows.py` 使用 `build/portable/<run-id>/`。若根目录 `dist/` 非空，先检查具体产物再决定；空目录可移除。 |
+
+清理 Git 分支时，只删除已确认包含于 `origin/main` 的本地分支；保留当前工作分支、`main` 和所有未合并分支。清理本地分支不会删除远端分支。
+
+打包还依赖可选模型和 worker 的存在性；发布前应核对验证报告中的模型身份，而不能只看源码里仍有对应功能入口。详见[钢琴专用模型的发布范围审计](PROGRESS.md#钢琴专用模型与发布包范围审计)。

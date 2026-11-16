@@ -5,6 +5,7 @@
 ## 构建与便携验证
 
 - `fetch_audio_models.py`：获取并校验打包需要的模型资源。
+- `fetch_piano_model.py`：从固定上游权重与源码重新导出并校验可选钢琴模型。
 - `build_audio_worker.py`：构建便携音频工作进程。
 - `build_windows.py`：构建隔离的 Windows 包，产物位于 `build/portable/<run-id>/`。
 - `verify_portable.py`：用干净 PATH 和离线数据目录验证实际 EXE。
@@ -29,6 +30,11 @@ Windows Release CI 的正式入口为 `.github/workflows/windows.yml`；完整�
 
 - `summarize_expression_tradeoffs.py`：从冻结的分析与选择 JSON 定位省略的持续音资格候选；不运行模型或选择器，不读音频或 Reference。
 - 输入哈希、候选折叠、区间重叠语义和验收限制见 [`docs/expression-tradeoff-audit-protocol.md`](../docs/expression-tradeoff-audit-protocol.md)。
+
+## 《樱花草》Timing 候选静态诊断
+
+- `diagnose_sakura_timing_ambiguity.py`：复用冻结分析里已保存的 74/148/296 BPM 候选，在同一批起音上对比固定网格覆盖、候选相位和 12 秒窗口；不重估 Timing、不读音频或 Reference。
+- 输入哈希、折返相位及拍点/细分覆盖语义见 [`docs/sakura-timing-ambiguity-protocol.md`](../docs/sakura-timing-ambiguity-protocol.md)。
 
 ## 常用验证
 
