@@ -1226,3 +1226,35 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 因此当前首先是“源码保留功能入口、CI便携包没有可选权重”的发布可复现性问题，
   不是最新源码彻底删除钢琴分析。若后续决定恢复该能力，应单独确定模型下载/校验、
   许可和便携验收策略；本阶段不下载、生成或打包模型，也不改变应用功能或默认行为。
+
+## 《樱花草》Timing 半速/倍速静态诊断
+
+- 2026-11-16 续接后确认工作树原为干净 `main`，HEAD 与 `origin/main` 同为
+  `ba3c512`；没有发现 ManiaLab 推理或 pytest 任务。既有 `127.0.0.1:8765`、
+  `:8766` 音频审核页服务保持运行。冻结输入
+  `test-data/sakura-tsumugi-expression-onset-v3/analysis.json` SHA-256 与记录一致：
+  `26a0250568b2ce149022c4aa1549af2d9dd49b045372959a6b26b5342ba5313a`。
+- 新增 `scripts/diagnose_sakura_timing_ambiguity.py`：读取该 JSON 已存的
+  `tempo.comparisons` 与 `timing_attacks`，不调用 `estimate_timing`；对 74、148、
+  296 BPM 固定网格计算拍点、半拍、细分及 12 秒局部支持，比较折返相位。
+  脚本校验输入 SHA，输出目录存在时拒绝覆盖。新增协议、结果文档和测试；不改
+  `manialab/timing.py`、Timing 默认算法或稳定性门槛。
+- 诊断显示应用原选 148 BPM/204ms，得分 0.7100；296 BPM 为 0.7047，74 BPM
+  为 0.6397，三者均有重叠的网格支持。鼓轨 148 BPM 有 4/24 个可疑窗口，集中
+  于 0–36 秒及 192–204 秒；相位误差范围约 -14.25 至 +4.22ms。Offset 跨来源在
+  同候选拍速折返后相差约 1–2ms，未显示明显内部全局相位冲突，但绝对物理 Offset
+  未验证。半拍/拍点覆盖成对相近，不能仅靠起音定强拍或听感 BPM；`stable` 仍为
+  false，生成确认门槛不变。
+- 协议、结果页分别为
+  [诊断协议](sakura-timing-ambiguity-protocol.md)和
+  [诊断结果](sakura-timing-ambiguity-results.md)。机器报告保留在新的 ignored
+  目录 `test-data/sakura-timing-ambiguity-v1-20261116/report.json`，SHA-256 为
+  `b56d3d8a3dffe5936a98a4b64f0a0d40dc4b911d576d12af6aa9ee326568122e`。报告固定输入
+  SHA，记录脚本 SHA `660fcb3b487d5292d2301d96af49d1c561cb14635e14dc3502cb56594c7b4341`
+  和 `manialab/timing.py` SHA
+  `6e8bf724db50aafd70af4fee9260d4bdee5ac6917c0063fb29fb6c854cb40e2b`。
+  定向测试 `tests/test_diagnose_sakura_timing_ambiguity.py` 为3 passed；
+  全量 `pytest -q` 为2,348 passed、89 skipped（75.56秒），
+  `compileall -q manialab scripts tests`、`git diff --check`通过。提交/PR/Windows
+  CI状态仍待执行。未读取音频、Reference 或保留测试；未运行模型、重新估计 Timing
+  或生成谱面。
