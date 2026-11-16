@@ -24,12 +24,65 @@ def file_hash(path, algorithm="sha256"):
 
 def verify_file(path, *, byte_count, sha256, md5=None):
     path = Path(path)
-    if not path.is_file() or path.stat().st_size != byte_count:
-        raise ValueError(f"Unexpected file size: {path.name}")
-    if file_hash(path) != sha256:
-        raise ValueError(f"Unexpected SHA-256: {path.name}")
+    if not path.is_file():
+        raise ValueError(f"Expected file is missing: {path.name}")
+    actual_bytes = path.stat().st_size
+    actual_sha256 = file_hash(path)
+    if actual_bytes != byte_count:
+        raise ValueError(
+            f"Unexpected file size: {path.name}; expected={byte_count}, "
+            f"actual={actual_bytes}, sha256={actual_sha256}"
+        )
+    if actual_sha256 != sha256:
+        raise ValueError(
+            f"Unexpected SHA-256: {path.name}; expected={sha256}, "
+            f"actual={actual_sha256}, bytes={actual_bytes}"
+        )
     if md5 is not None and file_hash(path, "md5") != md5:
         raise ValueError(f"Unexpected MD5: {path.name}")
+
+
+def onnx_export_diagnostic(path):
+    import onnx
+    from onnx import numpy_helper
+
+    path = Path(path)
+    model = onnx.load(str(path), load_external_data=False)
+    graph = model.graph
+    initializers = []
+    for tensor in graph.initializer:
+        data = tensor.raw_data or numpy_helper.to_array(tensor).tobytes()
+        initializers.append(
+            dict(
+                name=tensor.name,
+                dims=list(tensor.dims),
+                data_type=tensor.data_type,
+                bytes=len(data),
+                sha256=hashlib.sha256(data).hexdigest(),
+            )
+        )
+    initializers.sort(key=lambda item: item["name"])
+    return dict(
+        bytes=path.stat().st_size,
+        sha256=file_hash(path),
+        graph_sha256=hashlib.sha256(
+            graph.SerializeToString(deterministic=True)
+        ).hexdigest(),
+        ir_version=model.ir_version,
+        producer_name=model.producer_name,
+        producer_version=model.producer_version,
+        opset_imports=[
+            dict(domain=item.domain, version=item.version)
+            for item in model.opset_import
+        ],
+        input_names=[item.name for item in graph.input],
+        output_names=[item.name for item in graph.output],
+        nodes=[
+            dict(name=item.name, domain=item.domain, op_type=item.op_type)
+            for item in graph.node
+        ],
+        initializers=initializers,
+    )
 
 
 def download_verified(urls, target, *, byte_count, sha256, md5=None):
@@ -214,7 +267,33 @@ def prepare(output, work, checkpoint=None, source_archive=None):
     source_dir = extract_upstream_source(source_archive, work / "source", identity)
     exported = work / identity["filename"]
     export_onnx(checkpoint, source_dir, exported, identity)
-    verify_file(exported, byte_count=identity["bytes"], sha256=identity["sha256"])
+    try:
+        verify_file(exported, byte_count=identity["bytes"], sha256=identity["sha256"])
+    except ValueError as exc:
+        diagnostic = onnx_export_diagnostic(exported)
+        diagnostic.update(
+            expected_bytes=identity["bytes"],
+            expected_sha256=identity["sha256"],
+            verification_error=str(exc),
+        )
+        diagnostic_path = work / "export-diagnostic.json"
+        diagnostic_path.write_text(
+            json.dumps(diagnostic, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(
+            json.dumps(
+                dict(
+                    status="model_identity_mismatch",
+                    diagnostic=str(diagnostic_path),
+                    bytes=diagnostic["bytes"],
+                    sha256=diagnostic["sha256"],
+                ),
+                ensure_ascii=True,
+            ),
+            flush=True,
+        )
+        raise
     output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite an existing model: {output}")

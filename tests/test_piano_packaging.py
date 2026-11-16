@@ -3,6 +3,8 @@ import io
 import json
 from pathlib import Path
 import shutil
+import sys
+from types import SimpleNamespace
 from urllib.error import URLError
 import zipfile
 
@@ -53,6 +55,76 @@ def test_piano_packaging_rejects_missing_or_changed_model(model_root):
     model.write_bytes(b"changed graph")
     with pytest.raises(ValueError, match="size or checksum"):
         build_provenance.verify_piano_model(root)
+
+
+def test_verify_file_reports_actual_identity_on_checksum_mismatch(tmp_path):
+    payload = b"actual model"
+    target = tmp_path / "piano.onnx"
+    target.write_bytes(payload)
+    expected_sha256 = hashlib.sha256(b"expected model").hexdigest()
+    actual_sha256 = hashlib.sha256(payload).hexdigest()
+
+    with pytest.raises(ValueError) as error:
+        fetch_piano_model.verify_file(
+            target,
+            byte_count=len(payload),
+            sha256=expected_sha256,
+        )
+
+    assert expected_sha256 in str(error.value)
+    assert actual_sha256 in str(error.value)
+    assert f"bytes={len(payload)}" in str(error.value)
+
+
+def test_onnx_export_diagnostic_records_graph_and_initializer_identity(
+    tmp_path, monkeypatch
+):
+    payload = b"exported graph"
+    target = tmp_path / "model.onnx"
+    target.write_bytes(payload)
+    tensor_data = b"initializer data"
+    tensor = SimpleNamespace(
+        name="weight",
+        dims=(2, 2),
+        data_type=1,
+        raw_data=tensor_data,
+    )
+    graph = SimpleNamespace(
+        initializer=[tensor],
+        input=[SimpleNamespace(name="audio")],
+        output=[SimpleNamespace(name="notes")],
+        node=[SimpleNamespace(name="conv", domain="", op_type="Conv")],
+        SerializeToString=lambda deterministic: b"graph",
+    )
+    model = SimpleNamespace(
+        graph=graph,
+        ir_version=8,
+        producer_name="pytorch",
+        producer_version="2.9.1",
+        opset_import=[SimpleNamespace(domain="", version=17)],
+    )
+    fake_onnx = SimpleNamespace(
+        load=lambda *_args, **_kwargs: model,
+        numpy_helper=SimpleNamespace(),
+    )
+    monkeypatch.setitem(sys.modules, "onnx", fake_onnx)
+
+    result = fetch_piano_model.onnx_export_diagnostic(target)
+
+    assert result["sha256"] == hashlib.sha256(payload).hexdigest()
+    assert result["graph_sha256"] == hashlib.sha256(b"graph").hexdigest()
+    assert result["input_names"] == ["audio"]
+    assert result["output_names"] == ["notes"]
+    assert result["nodes"] == [dict(name="conv", domain="", op_type="Conv")]
+    assert result["initializers"] == [
+        dict(
+            name="weight",
+            dims=[2, 2],
+            data_type=1,
+            bytes=len(tensor_data),
+            sha256=hashlib.sha256(tensor_data).hexdigest(),
+        )
+    ]
 
 
 @pytest.mark.parametrize("damage", ["metadata", "license_missing", "license_changed"])
