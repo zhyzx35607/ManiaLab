@@ -1371,12 +1371,13 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 为继续PR #95，在本地`codex/prepare-dev18-20261113`分支合入最新`main`，仅
   `docs/PROGRESS.md`发生内容冲突；保留两边阶段记录，并更新 README 和 dev.18 发布说明，
   把PR #98恢复的钢琴模型能力及默认关闭/验收限制准确纳入版本范围。
-- dev.18仍只是源码版本准备，必须等该分支Windows检查通过并合入`main`后，才能对精确
-  main提交创建tag；之后需完成tag Windows CI、下载包独立核验，方可创建Pre-release。
+- PR #95 已完成 Windows 验证并合并；其 main merge commit 为
+  `dbc4c04ac1dda528b6ac637ff432f79fe154bbd6`。后续精确 tag、tag CI 与包体验证结果见
+  下方“dev.18 tag CI 与便携包复核”。
 - 对齐后的本地全量`pytest -q`为2,363 passed、89 skipped（55.24秒）；
   `compileall -q manialab scripts tests`、全部静态JS `node --check`、dev.18版本与新钢琴
-  模型身份断言、`git diff --cached --check`均通过。PR head Windows `verify`、tag CI、
-  最终便携包独立复核和Pre-release仍待完成；真实音乐、Timing与人工试听验收仍开放。
+  模型身份断言、`git diff --cached --check`均通过。PR head Windows 检查、tag CI、最终
+  便携包独立复核和 Pre-release 均已完成；真实音乐、Timing 与人工试听验收仍开放。
 
 ## dev.18 tag CI 与便携包复核
 
@@ -1395,7 +1396,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   `99e91298bf4efe396f7d076adc53a1c2f0e0a0c1fd2be51c0f5628d3ff36be27`；钢琴模型为
   154,223,955字节，SHA-256 `31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f`。
   报告的源码提交、版本、模型身份均与 tag 和包内 manifest 一致；SHA256SUMS 两项均匹配。
-  GitHub Pre-release 尚未创建，下一步是上传这三项已复核资产。原本机 ignored 模型与研究
-  产物未覆盖或提交。
+- GitHub Pre-release 已发布：[ManiaLab alpha.6 dev.18](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.18)，
+  附上述 Windows ZIP、SHA256SUMS 与机器验证 JSON。远端资产 digest 与本地完全一致：ZIP
+  `d148f42f0b4b057bb44caab35a14343aca88acb200c5168f3d3105e90d5350cc`、SHA256SUMS
+  `7794b51a328021a31cb48b55771aadeefa1603e30f5cbade70923de467e61496`、validation JSON
+  `4f606b869465ddce4349cd81b5e59787edd944de49f9e44ff6d568f889cea05e`。原本机 ignored 模型
+  与研究产物未覆盖或提交。
 - 当前 release 说明和进度只记录构建/运行验证；音乐质量、Timing、人工试听与 osu! 试打
   仍未验收，钢琴模型默认关闭，Demucs checkpoint 单独再分发授权仍未核实。
