@@ -13,6 +13,9 @@
       "name": "Beat This! final0",
       "filename": "beat-this-final0.ckpt",
       "url": "https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/final0.ckpt",
+      "mirror_urls": [
+        "https://huggingface.co/AEmotionStudio/muscriptor-models/resolve/f864b9916e54ab70a6dfae0f7fbe8e37cd7fa68a/shared/beat_this_final0.ckpt"
+      ],
       "sha256": "8c328b45f59d8dd3dff219253ff6a8d6482be57d0133a29140e2febbf8eb8331",
       "bytes": 81058141,
       "purpose": "Beat-unit candidates, never the millisecond offset"

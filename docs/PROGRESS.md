@@ -1281,9 +1281,18 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   manifest 身份一致。该烟测只验证打包模型可以在 CPU 上加载和运行，不是音频或音乐质量
   验收；模型仍为显式选择、默认关闭。
 - 第三方声明已明确钢琴模型随 Windows 包分发但默认关闭。依赖锁增加固定导出依赖。
-  本地全量测试为2,359 passed、89 skipped；`compileall`、全部静态 JS `node --check`
+  本地全量测试为2,360 passed、89 skipped；`compileall`、全部静态 JS `node --check`
   和 `git diff --check`通过。Windows 干净 runner 的来源下载、模型复建、EXE/ZIP、
-  离线便携检查及发布验证报告尚待 workflow_dispatch 验证；目前未提交或推送，也未创建 PR。
+  离线便携检查及发布验证报告尚待 workflow_dispatch 验证。PR #98 已创建；第一次
+  `workflow_dispatch` run `43800741956` 的 attempt 1、2 都在既有
+  `Fetch verified audio models` 步骤获取 `Beat This! final0` 时遇到上游 HTTP 500，
+  钢琴模型复建步骤尚未运行。
+- 为解除该既有下载阻塞，增加了固定 revision 的校验后备用镜像。镜像仓库固定提交
+  `f864b9916e54ab70a6dfae0f7fbe8e37cd7fa68a`；本机新建 ignored 验证目录后下载的文件为
+  81,058,141字节，SHA-256 与现有 `assets/deep-models.json` 官方权重身份一致
+  （`8c328b45f59d8dd3dff219253ff6a8d6482be57d0133a29140e2febbf8eb8331`）。获取脚本仅在
+  原地址失败时尝试该镜像，并仍执行相同字节数及 SHA-256 校验，因此不改变打包模型内容。
+  将随钢琴模型恢复阶段一并提交并重新触发完整 Windows 验证。
 - PR #95（dev.18 版本准备）仍为 open，当前 GitHub 状态为 `DIRTY/CONFLICTING`；最新
   预发布仍为 dev.17。后续先验证并合并本阶段 PR，再把 #95 对齐当前主线后另行验证发布。
   此阶段不重跑已完成的模型实验；钢琴音频质量、Timing 和真实音乐验收仍未完成。
