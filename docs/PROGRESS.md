@@ -1377,3 +1377,25 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   `compileall -q manialab scripts tests`、全部静态JS `node --check`、dev.18版本与新钢琴
   模型身份断言、`git diff --cached --check`均通过。PR head Windows `verify`、tag CI、
   最终便携包独立复核和Pre-release仍待完成；真实音乐、Timing与人工试听验收仍开放。
+
+## dev.18 tag CI 与便携包复核
+
+- PR #95 已于2026-11-16合并，merge commit 为
+  `dbc4c04ac1dda528b6ac637ff432f79fe154bbd6`。PR head 的 Windows `verify` run
+  `43887395734`与 push run `43887382182` attempt 2 均通过；后者全量测试用时1分31秒。
+- annotated tag `v0.1.0-alpha.6-dev.18` 精确指向上述 `main` 提交。Windows tag CI
+  run `43901369558`于2026-11-17完整通过，耗时11分04秒：tag/source 版本检查、2,452项
+  测试（89 skipped、零 failures/errors）、固定音频模型下载、钢琴 ONNX 确定性复建、
+  worker 与 Windows ZIP 构建、clean PATH 和 Unicode 路径离线 EXE、worker 关停、报告及
+  工件上传全部成功。报告的合成音频夹具只验证软件与便携运行，不是音乐或 Timing 验收。
+- run `43901369558`的便携产物下载并独立复核于 ignored 目录
+  `build/portable/verified-dev18-43901369558/`。ZIP 888,433,245字节，SHA-256
+  `d148f42f0b4b057bb44caab35a14343aca88acb200c5168f3d3105e90d5350cc`；4,281个条目 CRC
+  全过且无重复路径。包内 EXE SHA-256 为
+  `99e91298bf4efe396f7d076adc53a1c2f0e0a0c1fd2be51c0f5628d3ff36be27`；钢琴模型为
+  154,223,955字节，SHA-256 `31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f`。
+  报告的源码提交、版本、模型身份均与 tag 和包内 manifest 一致；SHA256SUMS 两项均匹配。
+  GitHub Pre-release 尚未创建，下一步是上传这三项已复核资产。原本机 ignored 模型与研究
+  产物未覆盖或提交。
+- 当前 release 说明和进度只记录构建/运行验证；音乐质量、Timing、人工试听与 osu! 试打
+  仍未验收，钢琴模型默认关闭，Demucs checkpoint 单独再分发授权仍未核实。
