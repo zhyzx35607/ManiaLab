@@ -158,6 +158,92 @@ def extract_upstream_source(archive_path, destination, identity):
     return destination
 
 
+def fuse_conv_batch_norm_parameters(
+    weight, bias, running_mean, running_var, gamma, beta, epsilon, np
+):
+    weight = np.asarray(weight, dtype=np.float32)
+    bias = np.asarray(bias, dtype=np.float32)
+    running_mean = np.asarray(running_mean, dtype=np.float32)
+    running_var = np.asarray(running_var, dtype=np.float32)
+    gamma = np.asarray(gamma, dtype=np.float32)
+    beta = np.asarray(beta, dtype=np.float32)
+    variance_root = np.sqrt(
+        np.add(running_var, np.float32(epsilon), dtype=np.float32),
+        dtype=np.float32,
+    )
+    scale = np.divide(gamma, variance_root, dtype=np.float32)
+    broadcast = scale.reshape((-1,) + (1,) * (weight.ndim - 1))
+    fused_weight = np.ascontiguousarray(
+        np.multiply(weight, broadcast, dtype=np.float32)
+    )
+    fused_bias = np.ascontiguousarray(
+        np.add(
+            np.multiply(
+                np.subtract(bias, running_mean, dtype=np.float32),
+                scale,
+                dtype=np.float32,
+            ),
+            beta,
+            dtype=np.float32,
+        )
+    )
+    return fused_weight, fused_bias
+
+
+def fuse_conv_batch_norm_for_export(model, torch, np):
+    fused_pairs = 0
+    for block in list(model.modules()):
+        for conv_name, batch_norm_name in (("conv1", "bn1"), ("conv2", "bn2")):
+            conv = getattr(block, conv_name, None)
+            batch_norm = getattr(block, batch_norm_name, None)
+            if not isinstance(conv, torch.nn.Conv2d) or not isinstance(
+                batch_norm, torch.nn.BatchNorm2d
+            ):
+                continue
+            if batch_norm.running_mean is None or batch_norm.running_var is None:
+                raise ValueError("Piano Conv/BatchNorm fusion requires running statistics")
+
+            weight = conv.weight.detach().cpu().numpy()
+            if conv.bias is None:
+                bias = np.zeros(conv.out_channels, dtype=np.float32)
+            else:
+                bias = conv.bias.detach().cpu().numpy()
+            running_mean = batch_norm.running_mean.detach().cpu().numpy()
+            running_var = batch_norm.running_var.detach().cpu().numpy()
+            gamma = (
+                batch_norm.weight.detach().cpu().numpy()
+                if batch_norm.affine
+                else np.ones(conv.out_channels, dtype=np.float32)
+            )
+            beta = (
+                batch_norm.bias.detach().cpu().numpy()
+                if batch_norm.affine
+                else np.zeros(conv.out_channels, dtype=np.float32)
+            )
+            fused_weight, fused_bias = fuse_conv_batch_norm_parameters(
+                weight,
+                bias,
+                running_mean,
+                running_var,
+                gamma,
+                beta,
+                batch_norm.eps,
+                np,
+            )
+            conv.weight = torch.nn.Parameter(
+                torch.from_numpy(fused_weight), requires_grad=False
+            )
+            conv.bias = torch.nn.Parameter(
+                torch.from_numpy(fused_bias), requires_grad=False
+            )
+            setattr(block, batch_norm_name, torch.nn.Identity())
+            fused_pairs += 1
+
+    if fused_pairs != 56:
+        raise ValueError(f"Unexpected piano Conv/BatchNorm pair count: {fused_pairs}")
+    return fused_pairs
+
+
 def export_onnx(checkpoint_path, source_dir, output_path, identity):
     os.environ.update(TORCH_FORCE_WEIGHTS_ONLY_LOAD="1", MPLBACKEND="Agg")
     sys.path.insert(0, str(Path(source_dir).resolve()))
@@ -182,6 +268,7 @@ def export_onnx(checkpoint_path, source_dir, output_path, identity):
     model.load_state_dict(checkpoint["model"], strict=True)
     del checkpoint
     model.eval()
+    fused_pairs = fuse_conv_batch_norm_for_export(model, torch, np)
     output_names = [
         "reg_onset_output",
         "reg_offset_output",
@@ -212,6 +299,7 @@ def export_onnx(checkpoint_path, source_dir, output_path, identity):
         opset_version=exporter["opset"],
     )
     onnx.checker.check_model(str(output_path))
+    return fused_pairs
 
 
 def prepare(output, work, checkpoint=None, source_archive=None):
@@ -266,7 +354,7 @@ def prepare(output, work, checkpoint=None, source_archive=None):
 
     source_dir = extract_upstream_source(source_archive, work / "source", identity)
     exported = work / identity["filename"]
-    export_onnx(checkpoint, source_dir, exported, identity)
+    fused_pairs = export_onnx(checkpoint, source_dir, exported, identity)
     try:
         verify_file(exported, byte_count=identity["bytes"], sha256=identity["sha256"])
     except ValueError as exc:
@@ -311,6 +399,11 @@ def prepare(output, work, checkpoint=None, source_archive=None):
         source_archive_sha256=identity["source_archive_sha256"],
         onnx_sha256=identity["sha256"],
         bytes=identity["bytes"],
+        conv_batch_norm_pairs_fused=fused_pairs,
+        fusion_arithmetic=(
+            "float32 gamma / sqrt(float32 variance + epsilon), then float32 "
+            "weight and bias operations"
+        ),
         input="all-zero synthetic 10-second tensor used only to trace the fixed graph",
         musical_acceptance=False,
     )

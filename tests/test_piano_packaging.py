@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from urllib.error import URLError
 import zipfile
 
+import numpy as np
 import pytest
 
 from manialab import piano
@@ -74,6 +75,32 @@ def test_verify_file_reports_actual_identity_on_checksum_mismatch(tmp_path):
     assert expected_sha256 in str(error.value)
     assert actual_sha256 in str(error.value)
     assert f"bytes={len(payload)}" in str(error.value)
+
+
+def test_conv_batch_norm_fusion_uses_fixed_float32_operation_order():
+    weight = np.array([0.123456789, -0.7654321, 1.3333333], dtype=np.float32).reshape(
+        3, 1, 1, 1
+    )
+    bias = np.array([0.25, -0.5, 0.125], dtype=np.float32)
+    running_mean = np.array([0.1, -0.25, 0.5], dtype=np.float32)
+    running_var = np.array([0.3, 1.7, 0.0001], dtype=np.float32)
+    gamma = np.array([0.9, -1.2, 0.0005], dtype=np.float32)
+    beta = np.array([-0.2, 0.7, 0.3], dtype=np.float32)
+
+    fused_weight, fused_bias = fetch_piano_model.fuse_conv_batch_norm_parameters(
+        weight, bias, running_mean, running_var, gamma, beta, 1e-5, np
+    )
+
+    assert fused_weight.reshape(-1).view(np.uint32).tolist() == [
+        0x3E4FB9B2,
+        0x3F34581D,
+        0x3D822DEF,
+    ]
+    assert fused_bias.view(np.uint32).tolist() == [
+        0x3D3E5868,
+        0x3F6E1A4D,
+        0x3E90725F,
+    ]
 
 
 def test_onnx_export_diagnostic_records_graph_and_initializer_identity(

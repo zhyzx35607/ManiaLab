@@ -1304,3 +1304,32 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   导出校验失败时生成小型 ONNX 节点/初始化器哈希摘要；workflow 仅上传该摘要（7天），
   不上传模型权重。下一步重新运行完整 Windows workflow_dispatch，根据摘要定位字节差异，
   然后再决定确定性导出修复。
+
+## 钢琴 ONNX 跨机器确定性修复
+
+- 继续分析 run `43804348688` 的导出诊断：旧本地基准 ONNX 与 CI 图均为154,214,195字节、
+  566个节点和222个 initializer，但CI中107个 initializer payload 与基准不同，差异集中
+  在Conv/BatchNorm融合权重。按名称比较会被不同导出路径误导，因此另按数据类型、shape
+  和payload SHA多重集核查。
+- 首轮高精度 Decimal 融合试验没有匹配基准（111/222个payload不同），已弃用其算法；
+  原试验文件留在ignored目录，不覆盖。以固定上游checkpoint直接对照后，改用锁定NumPy
+  的明确 float32 运算顺序：`float32 gamma / sqrt(float32 variance + epsilon)`，之后以
+  float32计算卷积权重和偏置。该公式的56组Conv/BatchNorm权重与偏置都逐位匹配本机旧图。
+- 两次独立的新目录导出均生成154,223,955字节、SHA-256
+  `31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f`。新旧图的222个
+  initializer `(dtype, shape, payload SHA-256)`多重集相同，566个节点的顺序、名称、算子
+  与属性一致；值名称/连接的序列化不同，因此文件身份独立固定，不放宽SHA校验。
+- ONNX Runtime CPU（算子线程2、跨算子线程1）对旧图和新图分别运行全零输入及固定种子的
+  合成输入；七路输出形状均为四路`[1,1001,88]`和三路`[1,1001,1]`、所有值有限，逐元素
+  bitwise equal。该项只证明导出等价与运行契约，不是钢琴音频或音乐质量验收。
+- `assets/piano-model.json` 与 `manialab/piano.py` 当前固定身份更新为上述新 SHA/大小。
+  原本机ignored ONNX仍保留旧SHA `7488435a...`，未覆盖；历史研究与dev.2验证文档中的旧
+  SHA继续保留，以准确描述它们实际使用的文件。诊断artifact名增加`github.run_attempt`，
+  避免同一run重跑时重名。
+- 本地验证：`tests/test_piano_packaging.py`为13 passed；全量`pytest -q`为
+  **2,363 passed、89 skipped**（59.95秒）；`compileall -q manialab scripts tests`、
+  全部静态JS `node --check`、JSON解析及`git diff --check`通过。未读取用户音频、参考谱或
+  MAESTRO保留测试，未做音乐质量验收。
+- 当前PR #98仍打开。下一步提交并推送后，在干净Windows runner重新执行完整
+  `workflow_dispatch`：必须通过模型重建、完整ZIP、离线便携EXE、关停验证和报告核对；
+  在这些步骤全部通过前不合并PR，也不把本机旧模型覆盖为新文件。

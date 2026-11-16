@@ -16,8 +16,8 @@
   "license_sha256": "9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94",
   "modification": "Fixed batch-1, 10-second ONNX graph exported from the verified original weights; no fine-tuning. ManiaLab provides overlap stitching and release provenance.",
   "filename": "piano-regression.onnx",
-  "sha256": "7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa",
-  "bytes": 154214195,
+  "sha256": "31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f",
+  "bytes": 154223955,
   "sample_rate": 16000,
   "input_samples": 160000,
   "export": {
