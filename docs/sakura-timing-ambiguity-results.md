@@ -43,6 +43,7 @@ Offset 204ms、四分细分，得分 0.7100、细分覆盖 0.8629、中位误差
   `6e8bf724db50aafd70af4fee9260d4bdee5ac6917c0063fb29fb6c854cb40e2b`
 - 定向测试：`tests/test_diagnose_sakura_timing_ambiguity.py`，3 passed。
 - 全量测试：2,348 passed、89 skipped（75.56秒）；`compileall` 和
-  `git diff --check` 通过。PR/Windows CI 验证仍待执行。
+  `git diff --check` 通过。
+- PR #97 的两项 Windows `verify` 均通过：runs `43795303419`、`43795336438`。
 
 无法从此报告判定正确听感 BPM、强拍或真实音频 Offset；也没有音乐质量验收。

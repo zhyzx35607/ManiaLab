@@ -1255,6 +1255,7 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   `6e8bf724db50aafd70af4fee9260d4bdee5ac6917c0063fb29fb6c854cb40e2b`。
   定向测试 `tests/test_diagnose_sakura_timing_ambiguity.py` 为3 passed；
   全量 `pytest -q` 为2,348 passed、89 skipped（75.56秒），
-  `compileall -q manialab scripts tests`、`git diff --check`通过。提交/PR/Windows
-  CI状态仍待执行。未读取音频、Reference 或保留测试；未运行模型、重新估计 Timing
-  或生成谱面。
+  `compileall -q manialab scripts tests`、`git diff --check`通过。提交`3d9f001`，
+  PR #97 的两项 Windows `verify` run `43795303419`、
+  `43795336438`均通过。未读取音频、Reference 或保留测试；未运行模型、重新估计
+  Timing 或生成谱面。
