@@ -1259,3 +1259,93 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   PR #97 的两项 Windows `verify` run `43795303419`、
   `43795336438`均通过。未读取音频、Reference 或保留测试；未运行模型、重新估计
   Timing 或生成谱面。
+
+## 恢复钢琴模型的 Windows 包复现
+
+- 2026-11-16 从干净 `main` `2663084` 新建分支
+  `fix/restore-piano-model-package-20261116`。仅检查既有进程和产物：没有活动的
+  ManiaLab 推理或 pytest；`127.0.0.1:8765`、`:8766` 仍是原有静态音频审核页服务。
+  `assets/deep/piano-regression.onnx` 与 `assets/piano-model.json` 记录一致，大小
+  154,214,195 字节、SHA-256
+  `7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa`。
+- 新增固定来源的 `scripts/fetch_piano_model.py`：下载并校验 Zenodo 原始 checkpoint、
+  固定上游源码归档及许可证证据，使用锁定的 PyTorch/ONNX/NumPy 依赖在 CPU 上从全零
+  合成张量导出图；输出目录存在或身份不符时拒绝覆盖。以忽略目录中既有、经哈希核验的
+  权重/源码隔离复建，结果与本地 ONNX 字节级一致；未读取歌曲音频或谱面，未运行音乐模型
+  推理。checkpoint SHA-256 为
+  `c3fa9730725bf4a762f1c14bc80cd5986eacda01b026f5a4a2525cd607876141`，源码提交为
+  `0226e74cbc805660e34bbd6a8fed2083890ebb88`，模型许可记录为 CC-BY-4.0。
+- Windows 便携构建现在将此钢琴 ONNX 作为必需资源，并核对模型、来源元数据和随包许可；
+  workflow 在便携构建时从固定来源复建模型。实际便携 EXE 验证增加 ONNX Runtime CPU
+  零输入烟测，要求输入/七路输出契约、输出形状及有限值正确；发布报告核对烟测与包内
+  manifest 身份一致。该烟测只验证打包模型可以在 CPU 上加载和运行，不是音频或音乐质量
+  验收；模型仍为显式选择、默认关闭。
+- 第三方声明已明确钢琴模型随 Windows 包分发但默认关闭。依赖锁增加固定导出依赖。
+  本地全量测试为2,360 passed、89 skipped；`compileall`、全部静态 JS `node --check`
+  和 `git diff --check`通过。Windows 干净 runner 的来源下载、模型复建、EXE/ZIP、
+  离线便携检查及发布验证报告尚待 workflow_dispatch 验证。PR #98 已创建；第一次
+  `workflow_dispatch` run `43800741956` 的 attempt 1、2 都在既有
+  `Fetch verified audio models` 步骤获取 `Beat This! final0` 时遇到上游 HTTP 500，
+  钢琴模型复建步骤尚未运行。
+- 为解除该既有下载阻塞，增加了固定 revision 的校验后备用镜像。镜像仓库固定提交
+  `f864b9916e54ab70a6dfae0f7fbe8e37cd7fa68a`；本机新建 ignored 验证目录后下载的文件为
+  81,058,141字节，SHA-256 与现有 `assets/deep-models.json` 官方权重身份一致
+  （`8c328b45f59d8dd3dff219253ff6a8d6482be57d0133a29140e2febbf8eb8331`）。获取脚本仅在
+  原地址失败时尝试该镜像，并仍执行相同字节数及 SHA-256 校验，因此不改变打包模型内容。
+  将随钢琴模型恢复阶段一并提交并重新触发完整 Windows 验证。
+- PR #95（dev.18 版本准备）仍为 open，当前 GitHub 状态为 `DIRTY/CONFLICTING`；最新
+  预发布仍为 dev.17。后续先验证并合并本阶段 PR，再把 #95 对齐当前主线后另行验证发布。
+  此阶段不重跑已完成的模型实验；钢琴音频质量、Timing 和真实音乐验收仍未完成。
+- 后续核对 PR #98：workflow_dispatch run `43801902532` 已通过全量测试、固定音频模型
+  获取和隔离依赖安装，但生成的钢琴 ONNX 在 SHA 校验时失败；按校验顺序，它的大小已
+  符合 `154,214,195` 字节，实际哈希没有记录。PR 检查 run `43801833398`虽通过测试，
+  但便携构建步骤因不是手动/发布事件而全部跳过；本阶段仍没有 CI ZIP 或真实 EXE 烟测
+  证据。不得因此放宽固定模型身份。本次诊断改动让错误显示期望/实际大小与 SHA，并在
+  导出校验失败时生成小型 ONNX 节点/初始化器哈希摘要；workflow 仅上传该摘要（7天），
+  不上传模型权重。下一步重新运行完整 Windows workflow_dispatch，根据摘要定位字节差异，
+  然后再决定确定性导出修复。
+
+## 钢琴 ONNX 跨机器确定性修复
+
+- 继续分析 run `43804348688` 的导出诊断：旧本地基准 ONNX 与 CI 图均为154,214,195字节、
+  566个节点和222个 initializer，但CI中107个 initializer payload 与基准不同，差异集中
+  在Conv/BatchNorm融合权重。按名称比较会被不同导出路径误导，因此另按数据类型、shape
+  和payload SHA多重集核查。
+- 首轮高精度 Decimal 融合试验没有匹配基准（111/222个payload不同），已弃用其算法；
+  原试验文件留在ignored目录，不覆盖。以固定上游checkpoint直接对照后，改用锁定NumPy
+  的明确 float32 运算顺序：`float32 gamma / sqrt(float32 variance + epsilon)`，之后以
+  float32计算卷积权重和偏置。该公式的56组Conv/BatchNorm权重与偏置都逐位匹配本机旧图。
+- 两次独立的新目录导出均生成154,223,955字节、SHA-256
+  `31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f`。新旧图的222个
+  initializer `(dtype, shape, payload SHA-256)`多重集相同，566个节点的顺序、名称、算子
+  与属性一致；值名称/连接的序列化不同，因此文件身份独立固定，不放宽SHA校验。
+- ONNX Runtime CPU（算子线程2、跨算子线程1）对旧图和新图分别运行全零输入及固定种子的
+  合成输入；七路输出形状均为四路`[1,1001,88]`和三路`[1,1001,1]`、所有值有限，逐元素
+  bitwise equal。该项只证明导出等价与运行契约，不是钢琴音频或音乐质量验收。
+- `assets/piano-model.json` 与 `manialab/piano.py` 当前固定身份更新为上述新 SHA/大小。
+  原本机ignored ONNX仍保留旧SHA `7488435a...`，未覆盖；历史研究与dev.2验证文档中的旧
+  SHA继续保留，以准确描述它们实际使用的文件。诊断artifact名增加`github.run_attempt`，
+  避免同一run重跑时重名。
+- 本地验证：`tests/test_piano_packaging.py`为13 passed；全量`pytest -q`为
+  **2,363 passed、89 skipped**（59.95秒）；`compileall -q manialab scripts tests`、
+  全部静态JS `node --check`、JSON解析及`git diff --check`通过。未读取用户音频、参考谱或
+  MAESTRO保留测试，未做音乐质量验收。
+- 新身份由`fetch_piano_model.py`严格校验接受（`already_verified`）；ignored原模型仍保持
+  旧SHA `7488435a...`，本次没有覆盖本地模型，也没有把任何 ONNX/音频/研究产物加入Git。
+- 提交`616363e`推送至PR #98。Windows `workflow_dispatch` run `43808668376`于
+  2026-11-16成功，耗时11分14秒：全量测试、固定音频模型下载、隔离依赖、钢琴ONNX复建、
+  音频worker、Windows ZIP、clean PATH + Unicode路径实际EXE离线验证、关停检查、报告和
+  工件上传全部通过。报告记录2,452项测试（89 skipped、零failures/errors），钢琴模型
+  CPU smoke输出契约通过；便携夹具为合成音频，音乐/Timing验收标记为false。对应 PR
+  `verify` run `43808625349`也对同一提交成功；push run `43808620246`因同组
+  `workflow_dispatch`触发并发取消而结束为cancelled，不是测试失败。
+- 手动run便携包下载到ignored目录`build/portable/verified-piano-43808668376/`并独立复核：
+  ZIP 888,431,751字节，SHA-256
+  `11a75d9273f3575acad77c11171100038cb627c9798b0636a6fe5e48e5055029`；4,280项CRC全过、
+  无重复路径。包内钢琴ONNX为154,223,955字节、SHA-256
+  `31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f`，与随包清单及验证
+  报告一致；EXE SHA-256 `5f07de6ebb095c73ca5409c7fece0d49235df6a9a34d5c8210e624fe6497044d`
+  与验证报告一致。validation JSON把源码提交记为`616363e`、版本记为dev.17，符合当前
+  PR尚未包含dev.18版本准备的状态；这只是验证工件，不是Release。
+- 模型重建、ZIP与实际EXE/关停验证已满足合并门槛；合并PR #98后，dev.18 PR #95须重新
+  对齐新`main`并另行完成版本准备验证。钢琴真实音频质量和音乐/Timing验收仍未完成。

@@ -20,6 +20,7 @@ def make_release_fixture(root):
         "version": __version__,
         "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
         "sources": {},
+        "piano_model": {"sha256": "expected-model-sha", "bytes": 123},
     }
     (executable.parent / "release-manifest.json").write_text(
         json.dumps(manifest), encoding="utf-8"
@@ -41,12 +42,16 @@ def make_release_fixture(root):
     )
     portable_report = reports / "portable.json"
     portable_report.write_text(json.dumps([
-        {"check": name} for name in (
-            "release_manifest",
-            "deep_analysis",
-            "six_stem_analysis_export",
-            "cancel_and_failure",
-        )
+        {"check": "release_manifest"},
+        {
+            "check": "piano_onnx_runtime",
+            "sha256": "expected-model-sha",
+            "bytes": 123,
+            "providers": ["CPUExecutionProvider"],
+        },
+        {"check": "deep_analysis"},
+        {"check": "six_stem_analysis_export"},
+        {"check": "cancel_and_failure"},
     ]), encoding="utf-8")
     shutdown_report = reports / "shutdown.json"
     shutdown_report.write_text(
@@ -66,6 +71,7 @@ def test_collect_release_validation_writes_hashes_and_sanitized_summary(tmp_path
     assert report["verification"]["pytest"]["tests"] == 3
     assert report["verification"]["pytest"]["skipped"] == 1
     assert report["verification"]["shutdown"]["passed"] is True
+    assert report["verification"]["piano_model"]["cpu_smoke_passed"] is True
     assert report["limitations"]["musical_acceptance"] is False
     assert "song.wav" not in output.read_text(encoding="utf-8")
     assert archive.name in checksums.read_text(encoding="utf-8")
@@ -76,4 +82,15 @@ def test_collect_release_validation_rejects_missing_portable_checks(tmp_path):
     portable_report.write_text(json.dumps([{"check": "release_manifest"}]), encoding="utf-8")
 
     with pytest.raises(SystemExit, match="missing required checks"):
+        collect(build_root, pytest_report, portable_report, shutdown_report)
+
+
+def test_collect_release_validation_rejects_piano_smoke_for_other_model(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _ = make_release_fixture(tmp_path)
+    checks = json.loads(portable_report.read_text(encoding="utf-8"))
+    piano_check = next(item for item in checks if item["check"] == "piano_onnx_runtime")
+    piano_check["sha256"] = "different-model-sha"
+    portable_report.write_text(json.dumps(checks), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="Piano runtime smoke does not match"):
         collect(build_root, pytest_report, portable_report, shutdown_report)

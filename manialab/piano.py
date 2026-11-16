@@ -14,7 +14,8 @@ from scipy.signal import resample_poly
 
 RATE, WINDOW, HOP, FPS = 16000, 160000, 80000, 100
 OUTPUTS = ('reg_onset_output', 'reg_offset_output', 'frame_output', 'velocity_output')
-MODEL_SHA256 = '7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa'
+MODEL_SHA256 = '31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f'
+MODEL_BYTES = 154223955
 
 
 def infer(samples, sample_rate, session, progress=lambda p,s:None, cancelled=lambda:False,

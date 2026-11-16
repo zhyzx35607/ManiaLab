@@ -14,6 +14,61 @@ def worker_sources(root):
             ('scripts/separate_audio.py', 'scripts/worker_lifetime.py')}
 
 
+def validate_piano_model_metadata(root):
+    from manialab.piano import MODEL_BYTES, MODEL_SHA256
+
+    root = Path(root)
+    manifest = root/'assets/piano-model.json'
+    if not manifest.is_file():
+        raise ValueError('Piano model metadata is missing')
+    identity = json.loads(manifest.read_text(encoding='utf-8'))
+    expected = dict(
+        name='High-resolution Piano Transcription with Pedals by Regressing Onsets and Offsets Times',
+        authors=['Qiuqiang Kong', 'Bochen Li', 'Xuchen Song', 'Yuan Wan', 'Yuxuan Wang'],
+        model_record='https://zenodo.org/records/4034264',
+        upstream_checkpoint_url='https://zenodo.org/api/records/4034264/files/CRNN_note_F1=0.9677_pedal_F1=0.9186.pth/content',
+        upstream_checkpoint_bytes=171966578,
+        upstream_checkpoint_md5='22b961b77c1878239fec963362097045',
+        upstream_checkpoint_sha256='c3fa9730725bf4a762f1c14bc80cd5986eacda01b026f5a4a2525cd607876141',
+        source_commit='0226e74cbc805660e34bbd6a8fed2083890ebb88',
+        source_repository='https://github.com/qiuqiangkong/piano_transcription_inference',
+        source_archive_url='https://codeload.github.com/qiuqiangkong/piano_transcription_inference/zip/0226e74cbc805660e34bbd6a8fed2083890ebb88',
+        source_archive_bytes=411788,
+        source_archive_sha256='ac7062720a03feb965ffc9e48e6246497c415d90a60780ea98206fb89cbff7e7',
+        license='CC-BY-4.0',
+        license_file='licenses/PianoRegression-CC-BY-4.0.txt',
+        license_sha256='9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94',
+        modification='Fixed batch-1, 10-second ONNX graph exported from the verified original weights; no fine-tuning. ManiaLab provides overlap stitching and release provenance.',
+        filename='piano-regression.onnx',
+        sha256=MODEL_SHA256,
+        bytes=MODEL_BYTES,
+        sample_rate=16000,
+        input_samples=160000,
+        export=dict(torch='2.9.1+cpu', onnx='1.19.1', numpy='2.3.5', opset=17),
+        intended_source='isolated piano',
+        default_enabled=False,
+        research_validation='docs/piano-acoustic-research.md',
+    )
+    if identity != expected:
+        raise ValueError('Piano model identity differs from the reviewed release contract')
+    license_path = root/identity['license_file']
+    if not license_path.is_file() or sha256(license_path) != identity['license_sha256']:
+        raise ValueError('Piano model license/attribution evidence is missing or changed')
+    return identity
+
+
+def verify_piano_model(root):
+    """Verify the required optional piano graph and its source/license identity."""
+    root = Path(root)
+    identity = validate_piano_model_metadata(root)
+    model = root/'assets/deep'/identity['filename']
+    if not model.is_file():
+        raise ValueError('Required piano model is missing; run scripts/fetch_piano_model.py')
+    if model.stat().st_size != identity['bytes'] or sha256(model) != identity['sha256']:
+        raise ValueError('Piano model size or checksum differs from the verified export')
+    return identity
+
+
 def verify_worker(root, directory):
     directory = Path(directory)
     manifest = json.loads((directory/'manifest.json').read_text(encoding='utf-8'))

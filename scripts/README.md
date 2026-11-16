@@ -5,6 +5,7 @@
 ## 构建与便携验证
 
 - `fetch_audio_models.py`：获取并校验打包需要的模型资源。
+- `fetch_piano_model.py`：从固定上游权重与源码重新导出并校验可选钢琴模型。
 - `build_audio_worker.py`：构建便携音频工作进程。
 - `build_windows.py`：构建隔离的 Windows 包，产物位于 `build/portable/<run-id>/`。
 - `verify_portable.py`：用干净 PATH 和离线数据目录验证实际 EXE。

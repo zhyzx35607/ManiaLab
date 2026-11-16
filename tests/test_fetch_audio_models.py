@@ -27,6 +27,25 @@ def test_six_source_mirror_uses_a_pinned_revision():
     assert model["sha256"] == "34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd"
 
 
+def test_beat_this_mirror_uses_pinned_bytes_from_the_upstream_checkpoint():
+    manifest = json.loads(
+        (fetch_audio_models.ROOT / "assets" / "deep-models.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    model = next(
+        item for item in manifest["models"] if item["name"] == "Beat This! final0"
+    )
+
+    assert model["mirror_urls"] == [
+        "https://huggingface.co/AEmotionStudio/muscriptor-models/resolve/"
+        "f864b9916e54ab70a6dfae0f7fbe8e37cd7fa68a/"
+        "shared/beat_this_final0.ckpt"
+    ]
+    assert model["bytes"] == 81_058_141
+    assert model["sha256"] == "8c328b45f59d8dd3dff219253ff6a8d6482be57d0133a29140e2febbf8eb8331"
+
+
 def _model_manifest(root, payload, sources):
     assets = root / "assets"
     assets.mkdir()

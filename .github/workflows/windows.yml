@@ -58,6 +58,18 @@ jobs:
           uv venv .venv-audio --python 3.12.10
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           uv pip sync --python .venv-audio/Scripts/python.exe --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match requirements-deep-lock.txt
+      - name: Build and verify the fixed piano model
+        id: piano_model
+        if: env.BUILD_PORTABLE == 'true'
+        run: .venv-audio/Scripts/python.exe scripts/fetch_piano_model.py --work "build/piano-model-$env:MANIALAB_BUILD_ID"
+      - name: Save failed piano export diagnostics
+        if: always() && steps.piano_model.outcome == 'failure'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: piano-export-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/piano-model-${{ github.run_id }}-${{ github.run_attempt }}/export-diagnostic.json
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Build portable audio worker
         if: env.BUILD_PORTABLE == 'true'
         run: .venv-audio/Scripts/python.exe scripts/build_audio_worker.py
