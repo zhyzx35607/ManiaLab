@@ -1192,6 +1192,19 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   分段覆盖问题；在Timing未有可靠证据前，不把吸附后的整齐谱面当作验收结果，也不要求
   用户逐首试听才能推进代码和自动评估。
 
+## dev.18版本准备
+
+- PR #94已于2026-11-13合并到`main`，merge commit为
+  `562e32be4f9a3fcdf12a830be17b8e29845fcf5a`；两项Windows `verify`均通过。
+  最新已发布版仍为dev.17，tag早于PR #92/#93及本次进度记录。
+- dev.18准备只同步`manialab.__version__`、README下载入口、文档索引和发布说明，
+  使便携包快照覆盖分段表达修复、Basic Pitch线程限制和生成API回归；不增加模型、
+  改默认生成偏好或打包本地用户数据。冻结分析诊断仅作为程序侧证据，不宣称音乐提升。
+- Windows包继续使用既有固定模型范围；`THIRD_PARTY_NOTICES.md`记录的checkpoint
+  单独再分发授权风险仍未核实。
+- 本地全量`pytest`为2,345 passed、89 skipped；`compileall -q manialab scripts tests`、
+  全部静态JS `node --check`、dev.18版本导入断言和`git diff --check`均通过。
+- 版本准备PR、tag CI、包体复核及GitHub Pre-release待完成。
 ## 2026-11-16 项目目录与 Git 清理
 
 - `docs/README.md` 和 `scripts/README.md` 已有目录/入口索引，因此没有迁移
@@ -1349,3 +1362,18 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   PR尚未包含dev.18版本准备的状态；这只是验证工件，不是Release。
 - 模型重建、ZIP与实际EXE/关停验证已满足合并门槛；合并PR #98后，dev.18 PR #95须重新
   对齐新`main`并另行完成版本准备验证。钢琴真实音频质量和音乐/Timing验收仍未完成。
+
+## dev.18 PR 重对齐
+
+- PR #98 已于2026-11-16合并到`main`，merge commit为
+  `7280819529ff139e111ede02d834d4756b729028`。手动便携验证来源提交`616363e`，完整
+  模型重建、ZIP、EXE、关停检查及独立包体复核详见上节；这不代表音乐质量验收。
+- 为继续PR #95，在本地`codex/prepare-dev18-20261113`分支合入最新`main`，仅
+  `docs/PROGRESS.md`发生内容冲突；保留两边阶段记录，并更新 README 和 dev.18 发布说明，
+  把PR #98恢复的钢琴模型能力及默认关闭/验收限制准确纳入版本范围。
+- dev.18仍只是源码版本准备，必须等该分支Windows检查通过并合入`main`后，才能对精确
+  main提交创建tag；之后需完成tag Windows CI、下载包独立核验，方可创建Pre-release。
+- 对齐后的本地全量`pytest -q`为2,363 passed、89 skipped（55.24秒）；
+  `compileall -q manialab scripts tests`、全部静态JS `node --check`、dev.18版本与新钢琴
+  模型身份断言、`git diff --cached --check`均通过。PR head Windows `verify`、tag CI、
+  最终便携包独立复核和Pre-release仍待完成；真实音乐、Timing与人工试听验收仍开放。
