@@ -23,7 +23,55 @@ sys.path.insert(0, str(ROOT))
 from manialab import __version__
 from manialab.domain import parse_osu, validate
 from manialab.timing import grid_report
-from scripts.build_provenance import sha256, verify_worker, verify_instrument_worker
+from scripts.build_provenance import (
+    sha256,
+    verify_worker,
+    verify_instrument_worker,
+    verify_piano_model,
+)
+
+
+def verify_piano_onnx_runtime(model_path, identity):
+    import numpy as np
+    import onnxruntime as ort
+
+    options = ort.SessionOptions()
+    options.intra_op_num_threads = 2
+    options.inter_op_num_threads = 1
+    session = ort.InferenceSession(
+        str(model_path), sess_options=options, providers=["CPUExecutionProvider"]
+    )
+    if [(item.name, item.shape) for item in session.get_inputs()] != [
+        ("audio", [1, identity["input_samples"]])
+    ]:
+        raise AssertionError("Bundled piano model input contract changed")
+    names = [item.name for item in session.get_outputs()]
+    expected = [
+        "reg_onset_output",
+        "reg_offset_output",
+        "frame_output",
+        "velocity_output",
+        "reg_pedal_onset_output",
+        "reg_pedal_offset_output",
+        "pedal_frame_output",
+    ]
+    if names != expected:
+        raise AssertionError("Bundled piano model outputs changed")
+    outputs = session.run(names, {"audio": np.zeros((1, identity["input_samples"]), dtype=np.float32)})
+    shapes = [list(output.shape) for output in outputs]
+    expected_shapes = [[1, 1001, 88]] * 4 + [[1, 1001, 1]] * 3
+    if shapes != expected_shapes or not all(
+        np.isfinite(output).all() for output in outputs
+    ):
+        raise AssertionError("Bundled piano model CPU smoke test failed")
+    return dict(
+        check="piano_onnx_runtime",
+        sha256=identity["sha256"],
+        bytes=identity["bytes"],
+        providers=session.get_providers(),
+        output_shapes=shapes,
+        input="all-zero synthetic 10-second tensor; runtime smoke test only",
+    )
 
 
 def synthetic(path, seconds=30):
@@ -111,8 +159,8 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert release_manifest['worker_sha256']==hashlib.sha256((executable.parent/'_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe').read_bytes()).hexdigest()
         worker=verify_worker(ROOT,executable.parent/'_internal/assets/deep')
         assert release_manifest['worker_sources']==worker['worker_sources']
-        if release_manifest.get('piano_model'):
-            assert sha256(executable.parent/'_internal/assets/deep/piano-regression.onnx')==release_manifest['piano_model']['sha256']
+        piano_identity=verify_piano_model(executable.parent/'_internal')
+        assert release_manifest.get('piano_model')==piano_identity
         if release_manifest.get('guitar_model'):
             from scripts.build_provenance import verify_guitar_model
             assert verify_guitar_model(executable.parent/'_internal')==release_manifest['guitar_model']
@@ -128,6 +176,11 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         checks.append(dict(check='bundled_arrangement_profiles',sha256=expected_profiles))
         start();status=request('/api/status')
         assert status['version']==__version__ and status['separator']['available'],status
+        assert status['piano']['available'] and not status['piano']['default'],status['piano']
+        checks.append(verify_piano_onnx_runtime(
+            executable.parent/'_internal/assets/deep/piano-regression.onnx',
+            piano_identity,
+        ))
         checks.append(dict(check='startup',version=status['version'],separator=status['separator'],prior=status['pattern_prior']))
         if guitar_only:
             if guitar_probe is None:

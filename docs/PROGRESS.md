@@ -1259,3 +1259,31 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   PR #97 的两项 Windows `verify` run `43795303419`、
   `43795336438`均通过。未读取音频、Reference 或保留测试；未运行模型、重新估计
   Timing 或生成谱面。
+
+## 恢复钢琴模型的 Windows 包复现
+
+- 2026-11-16 从干净 `main` `2663084` 新建分支
+  `fix/restore-piano-model-package-20261116`。仅检查既有进程和产物：没有活动的
+  ManiaLab 推理或 pytest；`127.0.0.1:8765`、`:8766` 仍是原有静态音频审核页服务。
+  `assets/deep/piano-regression.onnx` 与 `assets/piano-model.json` 记录一致，大小
+  154,214,195 字节、SHA-256
+  `7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa`。
+- 新增固定来源的 `scripts/fetch_piano_model.py`：下载并校验 Zenodo 原始 checkpoint、
+  固定上游源码归档及许可证证据，使用锁定的 PyTorch/ONNX/NumPy 依赖在 CPU 上从全零
+  合成张量导出图；输出目录存在或身份不符时拒绝覆盖。以忽略目录中既有、经哈希核验的
+  权重/源码隔离复建，结果与本地 ONNX 字节级一致；未读取歌曲音频或谱面，未运行音乐模型
+  推理。checkpoint SHA-256 为
+  `c3fa9730725bf4a762f1c14bc80cd5986eacda01b026f5a4a2525cd607876141`，源码提交为
+  `0226e74cbc805660e34bbd6a8fed2083890ebb88`，模型许可记录为 CC-BY-4.0。
+- Windows 便携构建现在将此钢琴 ONNX 作为必需资源，并核对模型、来源元数据和随包许可；
+  workflow 在便携构建时从固定来源复建模型。实际便携 EXE 验证增加 ONNX Runtime CPU
+  零输入烟测，要求输入/七路输出契约、输出形状及有限值正确；发布报告核对烟测与包内
+  manifest 身份一致。该烟测只验证打包模型可以在 CPU 上加载和运行，不是音频或音乐质量
+  验收；模型仍为显式选择、默认关闭。
+- 第三方声明已明确钢琴模型随 Windows 包分发但默认关闭。依赖锁增加固定导出依赖。
+  本地全量测试为2,359 passed、89 skipped；`compileall`、全部静态 JS `node --check`
+  和 `git diff --check`通过。Windows 干净 runner 的来源下载、模型复建、EXE/ZIP、
+  离线便携检查及发布验证报告尚待 workflow_dispatch 验证；目前未提交或推送，也未创建 PR。
+- PR #95（dev.18 版本准备）仍为 open，当前 GitHub 状态为 `DIRTY/CONFLICTING`；最新
+  预发布仍为 dev.17。后续先验证并合并本阶段 PR，再把 #95 对齐当前主线后另行验证发布。
+  此阶段不重跑已完成的模型实验；钢琴音频质量、Timing 和真实音乐验收仍未完成。

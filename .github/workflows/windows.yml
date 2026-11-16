@@ -58,6 +58,9 @@ jobs:
           uv venv .venv-audio --python 3.12.10
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           uv pip sync --python .venv-audio/Scripts/python.exe --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match requirements-deep-lock.txt
+      - name: Build and verify the fixed piano model
+        if: env.BUILD_PORTABLE == 'true'
+        run: .venv-audio/Scripts/python.exe scripts/fetch_piano_model.py --work "build/piano-model-$env:MANIALAB_BUILD_ID"
       - name: Build portable audio worker
         if: env.BUILD_PORTABLE == 'true'
         run: .venv-audio/Scripts/python.exe scripts/build_audio_worker.py

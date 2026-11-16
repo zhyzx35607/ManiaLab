@@ -73,6 +73,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
     portable = json.loads(Path(portable_report).read_text(encoding="utf-8"))
     required_checks = {
         "release_manifest",
+        "piano_onnx_runtime",
         "deep_analysis",
         "six_stem_analysis_export",
         "cancel_and_failure",
@@ -82,6 +83,18 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
     portable_checks = [item.get("check") for item in portable if isinstance(item, dict)]
     if not required_checks.issubset(portable_checks):
         raise SystemExit("Portable verification report is missing required checks.")
+    piano_check = next(
+        item for item in portable
+        if isinstance(item, dict) and item.get("check") == "piano_onnx_runtime"
+    )
+    piano_model = manifest.get("piano_model")
+    if (
+        not isinstance(piano_model, dict)
+        or piano_check.get("sha256") != piano_model.get("sha256")
+        or piano_check.get("bytes") != piano_model.get("bytes")
+        or "CPUExecutionProvider" not in piano_check.get("providers", [])
+    ):
+        raise SystemExit("Piano runtime smoke does not match the release manifest.")
 
     shutdown = json.loads(Path(shutdown_report).read_text(encoding="utf-8"))
     if shutdown.get("worker_stopped_on_parent_exit") is not True:
@@ -111,6 +124,11 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
                 "passed": True,
                 "checks": portable_checks,
                 "report_sha256": sha256(portable_report),
+            },
+            "piano_model": {
+                "sha256": piano_check["sha256"],
+                "bytes": piano_check["bytes"],
+                "cpu_smoke_passed": True,
             },
             "shutdown": {
                 "passed": True,

@@ -14,7 +14,13 @@ import urllib.request
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from manialab import __version__
-from build_provenance import sha256, verify_worker, verify_instrument_worker, verify_guitar_model
+from build_provenance import (
+    sha256,
+    verify_worker,
+    verify_instrument_worker,
+    verify_guitar_model,
+    verify_piano_model,
+)
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
 def source_snapshot():
@@ -26,23 +32,16 @@ def source_snapshot():
     return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
 build_sources=source_snapshot()
 required=['basic-pitch.onnx','pattern-prior.json','arrangement-profiles.json','deep/ManiaLabAudio/ManiaLabAudio.exe','deep/htdemucs_6s.th',
-          'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json']
+          'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json',
+          'deep/piano-regression.onnx']
 for relative in required:
     if not (ROOT/'assets'/relative).is_file():raise SystemExit(f'Missing release component: assets/{relative}')
+piano_identity=verify_piano_model(ROOT)
 worker_identity=verify_worker(ROOT,ROOT/'assets/deep')
 instrument_identity=None
 if (ROOT/'assets/instruments').exists():
     instrument_identity=verify_instrument_worker(ROOT,ROOT/'assets/instruments')
 guitar_identity=verify_guitar_model(ROOT)
-optional_piano=ROOT/'assets/deep/piano-regression.onnx'
-piano_identity=None
-if optional_piano.exists():
-    piano_identity=json.loads((ROOT/'assets/piano-model.json').read_text(encoding='utf-8'))
-    with optional_piano.open('rb') as stream:
-        if hashlib.file_digest(stream,'sha256').hexdigest()!=piano_identity['sha256']:
-            raise SystemExit('Unexpected piano model checksum')
-    if not (ROOT/piano_identity['license_file']).is_file():
-        raise SystemExit('Missing piano model attribution/license')
 for model in json.loads((ROOT/'assets/deep-models.json').read_text(encoding='utf-8'))['models']:
     with (ROOT/'assets/deep'/model['filename']).open('rb') as stream:
         if hashlib.file_digest(stream,'sha256').hexdigest()!=model['sha256']:
@@ -105,8 +104,9 @@ if source_snapshot()!=build_sources:
 bundled_worker=verify_worker(ROOT,target/'_internal/assets/deep')
 if bundled_worker!=worker_identity:
     raise SystemExit('Audio worker changed during the build; rebuild before publishing.')
-if piano_identity and sha256(target/'_internal/assets/deep/piano-regression.onnx')!=piano_identity['sha256']:
-    raise SystemExit('Piano model changed during the build; rebuild before publishing.')
+bundled_piano_identity=verify_piano_model(target/'_internal')
+if bundled_piano_identity!=piano_identity:
+    raise SystemExit('Piano model identity changed during the build; rebuild before publishing.')
 if instrument_identity and verify_instrument_worker(ROOT,target/'_internal/assets/instruments')!=instrument_identity:
     raise SystemExit('Instrument worker changed during the build; rebuild before publishing.')
 if verify_guitar_model(target/'_internal')!=guitar_identity:
