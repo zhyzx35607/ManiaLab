@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 import io
 import json
@@ -9,7 +8,6 @@ import math
 from pathlib import Path
 import secrets
 import shutil
-import threading
 import time
 from urllib.parse import urlparse
 import zipfile
@@ -36,6 +34,7 @@ from .domain import clean_meta, export_osu, note_from, parse_osu, upstream_event
 from .planner import plan
 from .playback_routes import register_playback_routes
 from .storage import AUDIO, Projects, extract_osz, safe_path, validate_import_paths
+from .task_service import ProjectTasks
 from .upstream import MapperEngine
 
 
@@ -48,14 +47,14 @@ def create_app(resources, data_root):
     app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024
     app.config["TOKEN"] = secrets.token_urlsafe(32)
     projects = Projects(Path(data_root) / "projects")
-    executor, mutex = ThreadPoolExecutor(max_workers=1), threading.RLock()
-    jobs = {}
+    task_service = ProjectTasks(projects, logger)
     engine = MapperEngine(data_root, resources)
     separator = Separator(resources)
     piano_detector = PianoDetector(resources)
     guitar_detector = GuitarDetector(resources)
     instrument_detector = InstrumentDetector(resources)
-    app.extensions.update(projects=projects, jobs=jobs, executor=executor)
+    app.extensions.update(projects=projects, jobs=task_service.jobs, executor=task_service.executor,
+                          task_service=task_service)
 
     @app.before_request
     def protect():
@@ -93,10 +92,6 @@ def create_app(resources, data_root):
                        capabilities={"audio": True, "remap": True, "api_planner": True, "trained_10k": False},
                        engine=engine.status(), separator=separator.status(), piano=piano_detector.status(),
                        guitar=guitar_detector.status(), instruments=instrument_detector.status(), pattern_prior=prior_status())
-
-    def busy(pid):
-        if any(j["project"] == pid and j["status"] in ("queued", "running") for j in jobs.values()):
-            raise ValueError("该项目已有任务运行，请等待或取消")
 
     def current_audio(state):
         if state.get("audio"):
@@ -181,8 +176,8 @@ def create_app(resources, data_root):
 
     @app.post("/api/projects/<pid>/chart")
     def choose_chart(pid):
-        with mutex:
-            busy(pid)
+        with task_service.lock:
+            task_service.ensure_project_idle(pid)
             state = projects.load(pid)
             relative = request.json["path"]
             if relative not in [c["path"] for c in state["charts"]]:
@@ -193,8 +188,8 @@ def create_app(resources, data_root):
 
     @app.post("/api/projects/<pid>/variant")
     def choose_variant(pid):
-        with mutex:
-            busy(pid)
+        with task_service.lock:
+            task_service.ensure_project_idle(pid)
             state = projects.load(pid)
             index = request.json["index"]
             if type(index) is not int or not 0 <= index < len(state["variants"]):
@@ -205,62 +200,19 @@ def create_app(resources, data_root):
             return jsonify(state)
 
     def submit(pid, operation, *, identity=None, cleanup=None):
-        with mutex:
-            busy(pid)
-            if any(j["status"] in ("queued", "running") for j in jobs.values()):
-                raise ValueError("已有计算任务运行，请完成后再启动新任务")
-            jid = secrets.token_hex(10)
-            job = dict(id=jid, project=pid, status="queued", progress=0, message="等待运行", cancel=False)
-            if identity is not None:
-                job['identity'] = identity
-            jobs[jid] = job
-            def progress(p, message):
-                with mutex:
-                    job.update(progress=p, message=message)
-            def run():
-                started = time.perf_counter()
-                job["status"] = "running"
-                committed = False
-                try:
-                    state = projects.load(pid)
-                    result = operation(state, progress, lambda: job["cancel"])
-                    with mutex:
-                        if job["cancel"]:
-                            raise InterruptedError("已取消，原有谱面已保留")
-                        projects.save(state)
-                        committed = True
-                    outcome = dict(status="done", progress=100, message="完成", result=result, elapsed_seconds=round(time.perf_counter() - started, 2))
-                except InterruptedError as error:
-                    outcome = dict(status="cancelled", message=str(error))
-                except Exception as error:
-                    logger.exception("Project task failed: project=%s job=%s", pid, jid)
-                    outcome = dict(status="error", message=str(error) if isinstance(error, ValueError) else "任务失败，请查看本地日志")
-                finally:
-                    if cleanup is not None:
-                        try:
-                            cleanup(committed)
-                        except Exception:
-                            logger.exception("Project task cleanup failed: %s", pid)
-                with mutex:
-                    job.update(outcome)
-            executor.submit(run)
-            return jsonify(job)
+        return jsonify(task_service.submit(pid, operation, identity=identity, cleanup=cleanup))
 
     @app.get("/api/jobs/<jid>")
     def get_job(jid):
-        with mutex:
-            job = jobs.get(jid)
-            if job is None:
-                return jsonify(error="任务不存在"), 404
-            return jsonify(job)
+        job = task_service.get(jid)
+        if job is None:
+            return jsonify(error="任务不存在"), 404
+        return jsonify(job)
 
     @app.post("/api/jobs/<jid>/cancel")
     def cancel(jid):
-        with mutex:
-            job = jobs.get(jid)
-            if job is None:
-                return jsonify(error="任务不存在"), 404
-            job["cancel"] = True
+        if not task_service.cancel(jid):
+            return jsonify(error="任务不存在"), 404
         return jsonify(ok=True)
 
     @app.post("/api/projects/<pid>/analyze")
@@ -297,7 +249,7 @@ def create_app(resources, data_root):
             if not instrument_detector.status()['available']:
                 raise ValueError('当前安装包未包含贝斯与其他伴奏专用组件')
             if analysis_engine=='provided':
-                with mutex:
+                with task_service.lock:
                     provided=projects.load(pid).get('provided_stems',{})
                     if not any(v in ('bass','other') for v in provided.get('voices',[])):
                         raise ValueError('已导入声轨中没有贝斯或其他伴奏')
@@ -307,7 +259,7 @@ def create_app(resources, data_root):
             if not guitar_detector.status()['available']:
                 raise ValueError('当前安装包未包含吉他专用采音模型')
             if analysis_engine=='provided':
-                with mutex:
+                with task_service.lock:
                     provided=projects.load(pid).get('provided_stems',{})
                     if 'guitar' not in provided.get('voices',[]):
                         raise ValueError('已导入声轨中没有吉他')
@@ -353,10 +305,9 @@ def create_app(resources, data_root):
 
     @app.post('/api/projects/<pid>/provided-stems')
     def import_provided_stems(pid):
-        with mutex:
-            busy(pid)
-            if any(j['status'] in ('queued','running') for j in jobs.values()):
-                raise ValueError('已有计算任务运行，请完成后再导入声轨')
+        with task_service.lock:
+            task_service.ensure_project_idle(pid)
+            task_service.ensure_idle('已有计算任务运行，请完成后再导入声轨')
             state=projects.load(pid);current_audio(state)
             if not request.files or set(request.files)-set(VOICES):raise ValueError('请选择并标明声部文件')
             # Preserve old sets and analyses; each upload has an isolated path.
@@ -499,8 +450,8 @@ def create_app(resources, data_root):
 
     @app.post("/api/projects/<pid>/clear-plan")
     def clear_plan(pid):
-        with mutex:
-            busy(pid)
+        with task_service.lock:
+            task_service.ensure_project_idle(pid)
             state = projects.load(pid)
             state.pop("plan", None)
             projects.save(state)
@@ -510,7 +461,7 @@ def create_app(resources, data_root):
     def local_recommendations(pid):
         from .recommendations import recommend
         payload=request.get_json() or {}
-        with mutex:
+        with task_service.lock:
             state=projects.load(pid)
             prefs=parameters(state['settings'] | payload.get('settings',{}))
             result=recommend(state.get('analysis'),prefs,resources,payload.get('bpm'))
@@ -567,8 +518,8 @@ def create_app(resources, data_root):
     def source_expression(pid):
         from .expression import validate_expression, propose_expression
         payload = request.get_json() or {}
-        with mutex:
-            busy(pid)
+        with task_service.lock:
+            task_service.ensure_project_idle(pid)
             state = projects.load(pid)
             if not state.get('analysis', {}).get('structure'):
                 raise ValueError('请先检测音乐段落')
@@ -588,8 +539,8 @@ def create_app(resources, data_root):
     def apply_recommendation(pid):
         from .recommendations import recommend
         payload=request.get_json() or {}
-        with mutex:
-            busy(pid)
+        with task_service.lock:
+            task_service.ensure_project_idle(pid)
             state=projects.load(pid)
             prefs=parameters(state['settings'] | payload.get('settings',{}))
             result=recommend(state.get('analysis'),prefs,resources,payload.get('bpm'))
@@ -614,8 +565,8 @@ def create_app(resources, data_root):
 
     @app.post("/api/projects/<pid>/reference-style")
     def reference_style(pid):
-        with mutex:
-            busy(pid)
+        with task_service.lock:
+            task_service.ensure_project_idle(pid)
             state = projects.load(pid)
             file = request.files.get('file')
             if not file or Path(file.filename or '').suffix.lower() != '.osu':
