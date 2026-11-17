@@ -43,6 +43,7 @@ Windows Release CI 的正式入口为 `.github/workflows/windows.yml`；完整�
 `replay_frozen_generation.py` 读取固定SHA的分析和计划，通过真实生成、导出回读核对行为；
 `--baseline`比较同计划的ID、起止、轨道及证据字段。输入与逐音产物保留在ignored目录，
 不运行神经模型。范围见[协议](../docs/frozen-generation-regression-protocol.md)。
+完整歌曲的默认/无人声6–10K计划、音尾来源与位移字段见[LN复核结果](../docs/ln-evidence-review-results.md)。
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q

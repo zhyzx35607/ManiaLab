@@ -399,7 +399,7 @@ def align_candidates(notes, tempo, enabled=True, tolerance=30, confirmed=False):
             collapsed += end == start
         if start != n.start:
             deltas.append(abs(start - n.start))
-        aligned.append(replace(n, start=start, end=end, raw="",
+        aligned.append(replace(n, start=start, end=end, phrase=n.phrase and end>start, raw="",
             evidence_start=n.evidence_start if n.evidence_start is not None else n.start,
             evidence_end=n.evidence_end if n.evidence_end is not None else n.end))
     return aligned, dict(enabled=True, moved=len(deltas), tails_moved=sum(d > 0 for d in tail_deltas),

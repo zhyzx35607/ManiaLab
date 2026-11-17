@@ -34,6 +34,18 @@ def test_diagnostic_generation_preserves_rejected_automatic_timing():
     assert variant['timing_confirmed'] is True
     assert summary['timing_diagnostics'] == dict(status='insufficient',window_clock='audio',
         assessed_windows=0,insufficient_windows=1,fallback_windows=0)
+    assert summary['source_snapshot_notes'] == 1
+
+
+def test_release_summary_distinguishes_grid_movement_from_detection_provenance():
+    analysis = dict(revision=13,duration=5,candidates=[Note(1000,1940,source='pitch',id='a',
+        release_reason='model_predicted_offset').data()],phrase_candidates=[],timing_attacks=[])
+    _,summary,_ = replay_case(analysis,dict(settings=dict(keys=6,ln_ratio=1),
+        tempo=dict(bpm=120,offset=0,division=4,stable=True,audio_shift_ms=0)))
+    voice = summary['voices']['mix']
+    assert voice['large_release_shifts'] == 1 and voice['max_release_shift_ms'] == 60
+    assert voice['later_release_shifts'] == 1 and voice['earlier_release_shifts'] == 0
+    assert voice['release_sources'] == {'model_predicted_offset':1}
 
 
 def test_compare_preserves_ids_and_distinguishes_lane_and_tail_changes():

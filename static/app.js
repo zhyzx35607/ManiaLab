@@ -23,30 +23,6 @@ function updateKeys(){document.querySelectorAll('[data-key]').forEach(b=>b.class
 function options(el,items){el.replaceChildren(...items.map(([value,text])=>{const o=document.createElement('option');o.value=value;o.textContent=text;return o;}));}
 function showTempoChoices(){options($('tempoCandidates'),[['','选择其他节拍解释…'],...tempoChoices.map((c,i)=>[i,`${c.precision_suggestion?'精确候选 · ':''}${c.bpm} BPM · 偏移 ${c.offset} ms · 匹配 ${(c.coverage*100).toFixed(0)}%${c.precision_suggestion?` · 取整漂移约 ${c.rounding_drift_ms}ms`:''}`])]);}
 function variant(){return state&&state.active>=0?state.variants[state.active]:null;}
-function renderReview(){
-  const v=variant(),body=$('reviewVoices'),events=$('reviewEvents');body.replaceChildren();events.replaceChildren();
-  if(!v){$('reviewSummary').textContent='生成后显示声部取舍、长条和需要回听的位置。';return;}
-  const notes=v.notes,names={mix:'混音 / 原谱',drums:'鼓 / 打击',bass:'贝斯',vocals:'人声',other:'其余伴奏',guitar:'吉他',piano:'钢琴'};
-  for(const voice of [...new Set(notes.map(n=>n.voice||'mix'))]){
-    const group=notes.filter(n=>(n.voice||'mix')===voice),holds=group.filter(n=>n.end>n.start),row=document.createElement('tr');
-    for(const value of [names[voice]||voice,group.length,holds.length,Math.max(0,...holds.map(n=>n.end-n.start))+' ms']){const cell=document.createElement('td');cell.textContent=value;row.append(cell);}body.append(row);
-  }
-  const shifted=notes.filter(n=>Number.isFinite(n.evidence_start)&&Math.abs(n.start-n.evidence_start)>30).sort((a,b)=>Math.abs(b.start-b.evidence_start)-Math.abs(a.start-a.evidence_start));
-  const phrase=notes.filter(n=>n.phrase&&n.end>n.start).length;
-  $('reviewSummary').textContent=v.mode==='remap'?'严格保时：原谱起止时间和 LN 类型保留。手感与声部表达仍需试听。':`保留 ${phrase} 段跨音高人声长条；${shifted.length} 个起音与原始检测相差超过 30 ms（含量化和手工修正）。点击下方位置回听；这些是检查线索，不是质量评分。`;
-  for(const n of shifted.slice(0,12)){
-    const button=document.createElement('button');button.className='quiet';button.textContent=`${fmt(n.start/1000)} · ${n.start-n.evidence_start>0?'+':''}${n.start-n.evidence_start} ms`;
-    button.onclick=guarded(async()=>{seek(Math.max(0,n.start/1000-.3));setView('chart');inspectNote(n);if(window.loadWaveDetail)await loadWaveDetail(waveChartTime(n.start,waveCandidateShift(),waveShift()));});events.append(button);
-  }
-  const review=v.report.review;
-  if(review){
-    const c=review.counts||{};$('reviewSummary').textContent+=` 手感检查：${c.short_release||0} 次短放键接续、${c.fast_repeat||0} 次快速同轨、${c.held_hand_load||0} 处同手 LN 配合密集。它们可能是有意设计，请结合目标难度试打。`;
-    for(const item of (review.locations||[]).slice(0,16)){
-      const button=document.createElement('button');button.className='quiet';button.textContent=`${fmt(item.start_ms/1000)} · ${item.text}`;
-      button.onclick=()=>{setView('chart');seek(Math.max(0,item.start_ms/1000-.4));const n=notes.find(n=>n.start===item.start_ms&&(item.lane===null||n.lane===item.lane));if(n)inspectNote(n);};events.append(button);
-    }
-  }
-}
 function duration(){return Math.max(state?.analysis?.duration||0,Number.isFinite(audio.duration)?audio.duration:0,displayed.reduce((m,n)=>Math.max(m,n.end/1000),0),(state?.input_notes||[]).reduce((m,n)=>Math.max(m,n.end/1000),0));}
 function currentTime(){return audio.src&&Number.isFinite(audio.currentTime)?audio.currentTime:manualTime;}
 function currentTimingClock(){return {bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),audio_shift_ms:clockShift()};}
@@ -181,16 +157,6 @@ function draw(){
   drawBeatGrid(c,left,width,bottom,scale,t,span);
   for(const n of displayed){if(n.end/1000<t-.2||n.start/1000>t+span)continue;const lane=view==='evidence'?(n.source==='transient'?2:n.pitch-21):n.lane;if(lane<0||lane>=k)continue;const x=left+lane*cw+Math.min(3,cw*.1),bw=Math.max(2,cw-Math.min(6,cw*.2));const y=bottom-(n.start/1000-t)*scale,ye=bottom-(n.end/1000-t)*scale;const hold=n.end>n.start;c.fillStyle=n.id===selected?'#ffffff':hold?'#78e4c4':'#ffb978';c.globalAlpha=hold?.8:.95;const top=Math.max(25,ye),end=Math.min(bottom+5,y);if(end>=25&&top<=bottom+5){c.fillRect(x,hold?top:end-4,bw,hold?Math.max(5,end-top):5);hitboxes.push({n,x,y:hold?top:end-6,w:bw,h:hold?Math.max(7,end-top):9});}c.globalAlpha=1;}
   c.strokeStyle='#d4f9ef';c.lineWidth=1.5;c.beginPath();c.moveTo(left,bottom);c.lineTo(width-12,bottom);c.stroke();
-}
-function inspectNote(n){
-  selected=n.id;window.renderNoteEditor?.(n);
-  const movement=variant()?.edits?.some(e=>e.after?.id===n.id)?'修正后与检测差':'量化移动';
-  const shift=n.evidence_start===null||n.evidence_start===undefined?'':` · 制谱基准下的原始起音 ${n.evidence_start} ms（${movement} ${n.start-n.evidence_start>0?'+':''}${n.start-n.evidence_start} ms）`;
-  const tail=n.end>n.start&&Number.isFinite(n.evidence_end)?` · 检测音尾 ${n.evidence_end} ms（${movement} ${n.end-n.evidence_end>0?'+':''}${n.end-n.evidence_end} ms）`:'';
-  $('inspector').textContent=`${n.end>n.start?'LN / 持续音':'短键 / 瞬态'} · 起点 ${n.start} ms · 终点 ${n.end} ms · 长度 ${n.end-n.start} ms · ${n.source==='import'?'原谱物件':n.source==='pitch'?`检测音高 MIDI ${n.pitch} · 激活强度 ${n.strength}`:'频谱瞬态'}${n.lane>=0?' · 轨道 '+(n.lane+1):''} · 声部 ${n.voice||'mix'}${n.phrase?' · 跨音高持续段 · 支持 '+((n.support_coverage||0)*100).toFixed(0)+'%':''}${shift}`;
-  $('inspector').textContent+=tail+(n.phrase?` · 支撑音高候选 ${(n.support||[]).length} 个`:'');
-  if(n.release_reason){const reasons={release_regression:'检测到释放',frame_decay:'持续激活消退',frame_inactive:'仅有起音候选，持续激活未成立，未确认音尾',reattack:'同音高重新起音',duration_limit:'达到模型时长上限，未确认音尾',input_boundary:'到达音频边界，未确认音尾'};$('inspector').textContent+=' · 音尾依据：'+(reasons[n.release_reason]||n.release_reason);}
-  draw();
 }
 $('roll').onclick=e=>{const rect=$('roll').getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;const hit=[...hitboxes].reverse().find(b=>x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h);if(hit)inspectNote(hit.n);};
 const cueClock=new ManiaAudioClock(audio,(from,to)=>{

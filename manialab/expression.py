@@ -270,7 +270,8 @@ def resolve_phrase_decisions(trace):
     for entry in trace.values():
         if entry.get('reason') == 'represented_by_phrase':
             representative = trace.get(entry['represented_by'], {})
-            if representative.get('decision') != 'selected':
+            if (representative.get('decision') != 'selected' or
+                    representative.get('chart_end', 0) <= representative.get('chart_start', 0)):
                 entry['reason'] = 'phrase_not_selected'
 
 

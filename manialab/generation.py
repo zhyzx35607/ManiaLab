@@ -3,6 +3,7 @@
 The caller owns serialization and commits state only after successful completion.
 """
 from dataclasses import replace
+from copy import deepcopy
 import math
 import time
 
@@ -13,6 +14,7 @@ from .voices import apply_phrase_evidence
 from .review import review_chart
 from .ln_patterns import analyze_ln_patterns
 from .preferences import ChartPreferences
+from .evidence import capture_source_evidence
 
 
 def generate_variant(state, payload, prefs, tempo, progress, cancelled):
@@ -69,6 +71,8 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
         if not selected:
             raise ValueError("未找到可生成的采音候选，请检查声部权重、检测阈值或音源")
     locked = []
+    previous_evidence = None
+    locked_edits = []
     region = payload.get("region")
     if region is not None:
         if state["active"] < 0:
@@ -84,7 +88,13 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
         a, b = region
         previous = [note_from(n) for n in variant["notes"]]
         locked = [n for n in previous if not a <= n.start < b]
+        previous_evidence = variant.get('source_evidence')
+        locked_ids = {n.id for n in locked}
+        locked_edits = [deepcopy(edit) for edit in variant.get('edits', [])
+            if (edit.get('after') or {}).get('id') in locked_ids]
         selected = [n for n in selected if a <= n.start < b]
+        if locked_ids & {n.id for n in selected}:
+            raise ValueError('局部采音与保留物件的标识冲突；请重新生成整谱，避免混用不同分析的音符')
     progress(45, "分配轨道并检查 LN 占轨")
     original_timing = state.get("input_timing", []) if mode == "remap" else []
     output = assign_lanes(selected, prefs, locked, beat_ms=60000 / tempo["bpm"], progress=progress, cancelled=cancelled,
@@ -112,6 +122,11 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
                    snap=payload.get("snap", True) is True, timing_confirmed=payload.get("timing_confirmed", False) is True,
                    elapsed_seconds=round(time.perf_counter() - started, 2), created=time.time(), region=region,
                    event_count=len(upstream_events(output)))
+    if mode == 'audio':
+        variant['source_evidence'] = capture_source_evidence(state['analysis'], evidence, output,
+            locked=locked, previous=previous_evidence)
+    if locked_edits:
+        variant['edits'] = locked_edits
     state["variants"] = (state["variants"] + [variant])[-8:]
     state["active"] = len(state["variants"]) - 1
     state["settings"] = prefs

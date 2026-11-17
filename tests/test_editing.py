@@ -65,6 +65,8 @@ def test_http_edit_persists_new_candidate_and_exports_actual_correction(tmp_path
     project=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'audio.wav')},headers=headers).json
     project['analysis']=dict(revision=6,duration=5,candidates=[dict(sentinel='original')])
     project['variants']=[candidate()];project['active']=0
+    project['variants'][0]['source_evidence']={'a':dict(detected={'start':1000,'end':1800},
+        expressed={'start':1000,'end':2000})}
     store=Projects(tmp_path/'projects');store.save(project);base='/api/projects/'+project['id']
     project=client.get(base).json
     def run(payload):
@@ -81,6 +83,7 @@ def test_http_edit_persists_new_candidate_and_exports_actual_correction(tmp_path
         saved=client.get(base).json
         assert saved['analysis']==project['analysis'] and saved['variants'][0]==project['variants'][0]
         assert saved['active']==1 and len(saved['variants'][1]['edits'])==1
+        assert saved['variants'][1]['source_evidence']==project['variants'][0]['source_evidence']
         assert saved['variants'][1]['report']['ln_patterns']['counts']['releases']==1
         text=client.get(base+'/export/osu').data.decode()
         n=next(n for n in parse_osu(text)['notes'] if n.lane==4)

@@ -103,11 +103,17 @@ def summarize(analysis, variant, segments=()):
         input_notes = [n for n in analysis['candidates'] if n.get('voice', 'mix') == voice]
         omitted = [d for d in decisions if d.get('voice') == voice and d.get('decision') == 'omitted']
         shifts = sorted(abs(n.start-n.evidence_start) for n in output if n.evidence_start is not None)
+        tail_shifts = [n.end-n.evidence_end for n in output if n.hold and n.evidence_end is not None]
         voices[voice] = dict(candidates=len(input_notes), selected=len(output),
             retained_raw_ids=sum(n['id'] in selected for n in input_notes),
             ln=sum(n.hold for n in output), union_ln_ms=union_ms(output),
             unknown_release_ln=sum(n.hold and not n.release_reason for n in output),
             large_attack_shifts=sum(s > 30 for s in shifts), max_attack_shift_ms=max(shifts, default=0),
+            large_release_shifts=sum(abs(s) > 30 for s in tail_shifts),
+            max_release_shift_ms=max(map(abs, tail_shifts), default=0),
+            later_release_shifts=sum(s > 0 for s in tail_shifts),
+            earlier_release_shifts=sum(s < 0 for s in tail_shifts),
+            release_sources=dict(Counter(n.release_reason or 'unknown' for n in output if n.hold)),
             omitted_reasons=dict(Counter(d['reason'] for d in omitted)))
     sections = []
     for i, section in enumerate(analysis.get('structure', {}).get('segments', [])):
@@ -118,6 +124,7 @@ def summarize(analysis, variant, segments=()):
     forbidden = [n.id for n in notes if n.hold and n.release_reason in UNOBSERVED_RELEASES]
     diagnostics = variant.get('timing_diagnostics') or {}
     return dict(notes=len(notes), ln=sum(n.hold for n in notes), voices=voices, sections=sections,
+        source_snapshot_notes=len(set(variant.get('source_evidence', {})) & selected),
         capacity=capacity_report(notes, variant['settings'], segments), unsupported_release_ln=forbidden,
         structural=variant['report']['valid'], off_grid=variant['report']['grid']['off_grid'],
         timing_suspect_windows=sum(s.get('suspect', False) for s in variant['timing_sections']),
