@@ -4,7 +4,7 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 
 | 层 | 入口 | 职责 |
 | --- | --- | --- |
-| 启动与 HTTP | `launcher.py`、`manialab/server.py`、`manialab/task_service.py`、`manialab/project_routes.py`、`manialab/playback_routes.py` | 本机访问、任务生命周期、项目导入/读取/谱面选择、播放、试听、波形响应 |
+| 启动与 HTTP | `launcher.py`、`manialab/server.py`、`manialab/task_service.py`、`manialab/project_routes.py`、`manialab/export_routes.py`、`manialab/playback_routes.py` | 本机访问、任务生命周期、项目导入/读取/谱面选择、JSON/OSU/OSZ导出、播放、试听、波形响应 |
 | 制谱服务 | `manialab/generation.py` | 组合证据、表达、量化、选音、定轨和报告；不依赖 Flask 或磁盘 |
 | 音乐领域 | `domain.py`、`timing.py`、`preferences.py`、`expression.py`、`arrange.py`、`layout.py` | 音符与谱面、时钟、分段策略、占轨约束和轨道搜索 |
 | 音频组件 | `audio.py`、`separation.py`、`piano.py`、`guitar.py`、`instrument_detector.py` | 分离、采音、模型身份、独立缓存和 CPU 推理 |

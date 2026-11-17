@@ -15,7 +15,8 @@
 - PR #113修复最近项目快速切换时的旧响应覆盖，已合并为`dd83a1b0ffd0e6c9f4bca141c99ef9899bc1d6c9`；PR run `44070209976`与合并后main run `44070802839`成功，普通push run `44070113643`为成功跳过。
 - PR #114将播放、独立声部读取、试听与波形HTTP路由从`server.py`提取到`playback_routes.py`，已合并为`7b9c7ef23e7aff45f5f5bb099d97415b6d6f8fd9`。PR run `44071878909`成功、重复push run `44071832433`跳过，合并后main run `44073069913`成功。
 - PR #115 将任务状态、串行执行、取消与项目提交边界提取到`task_service.py`，已合并为`cfddeeb`；PR run `44075974260`与合并后main run `44076507773`成功，普通push run成功跳过。
-- 当前分支`codex/project-routes-20261117`正在把导入、项目读取、谱面切换和候选切换路由迁入`project_routes.py`；本阶段验证与PR状态见下方第十七阶段。
+- PR #116 将导入、项目读取、谱面切换和候选切换路由提取到`project_routes.py`，已合并为`d7a6f7db1cc4c515acfcd0985a53c93c8c356064`；PR run `44079580314`与合并后main run `44080283011`的Python/API和合成浏览器验证均成功，功能分支push run `44079484962`成功跳过。
+- 当前分支`codex/export-routes-20261117`准备将 JSON、OSU 与 OSZ 下载处理从`server.py`提取到独立路由模块；状态见下方第十八阶段。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1735,4 +1736,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`/api/import`、项目读取、谱面切换和候选切换从`server.py`移入`manialab/project_routes.py`。通过`create_app`注册到同一个Flask app，保留URL、HTTP方法、endpoint名称、应用级鉴权与错误处理，以及任务服务共享锁和写入前项目空闲检查。
 - 增加回归验证导入后切谱同步音频引用并清理声部/分析/预览缓存、旧项目`input_timing`读取回填、未知谱面拒绝，以及非法候选索引不改变项目状态。
-- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_project_routes.py`为7 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（65.62秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。完整Edge `npm run test:ui`为31 passed（1.3分钟）；本阶段Windows PR CI待运行。未运行模型、读取用户音频或修改研究脚本/产物。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_project_routes.py`为7 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（65.62秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。完整Edge `npm run test:ui`为31 passed（1.3分钟）；PR Windows run `44079580314`与合并后main run `44080283011`成功。CI未下载音频模型或构建便携包；没有读取用户音频或修改研究脚本/产物。
+
+## 2026-11-17 第十八阶段：导出路由模块边界
+
+- 将`/api/projects/<pid>/export/<kind>`从`server.py`提取到`manialab/export_routes.py`，由应用组合层显式传入项目仓库、资源目录和当前音频解析器；保留`export` endpoint、JSON/OSU/OSZ格式和应用级鉴权、异常映射及响应头处理。
+- 保留音频候选`timing_revision`拦截、固定Timing一致性校验、原谱引用、6–10K导出参数、偏移书签、嵌套谱面目录和缺失音频补包行为。只读对照未发现迁移兼容差异。
+- 定向`tests/test_server.py tests/test_import_reliability.py tests/test_editing.py`为45 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（62.42秒）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。完整Edge `npm run test:ui`为31 passed（1.2分钟）。本阶段Windows PR CI待运行；未运行模型、读取用户音频或修改研究脚本/产物。
