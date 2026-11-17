@@ -10,6 +10,8 @@
 
 当前稳定入口： [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
+2026-11-17 后续源码的结构与可靠性改动见[检查与优化记录](docs/project-review-20261117.md)；已发布的 dev.18 ZIP 不会自动包含这些改动。
+
 ![ManiaLab 界面](docs/screenshot.png)
 
 ## 下载即用
