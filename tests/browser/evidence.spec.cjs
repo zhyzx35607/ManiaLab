@@ -4,6 +4,7 @@ async function generateEvidence(page, title) {
   await page.goto('/');
   await expect(page.locator('#recent option')).toContainText([title]);
   await page.locator('#recent').selectOption({ label:title });
+  await expect(page.locator('#projectTitle')).toHaveText(title);
   await page.locator('#timingConfirmed').check();
   await page.locator('#generate').click();
   await expect(page.locator('#message')).toContainText('结构检查通过');
@@ -11,13 +12,20 @@ async function generateEvidence(page, title) {
 }
 
 async function selectNote(page, id, time) {
-  await page.evaluate(time => seek(time), time);
-  const box = await page.evaluate(id => {
-    draw();const b = hitboxes.find(b => b.n.id === id);
-    return b ? {x:b.x+b.w/2,y:b.y+b.h/2} : null;
-  }, id);
-  expect(box).not.toBeNull();
+  let box;
+  await expect.poll(async()=>{
+    box=await page.evaluate(({id,time})=>{
+      seek(time);draw();const b=hitboxes.find(b=>b.n.id===id);
+      return b?{x:b.x+b.w/2,y:b.y+b.h/2}:null;
+    },{id,time});
+    return box!==null;
+  }).toBe(true);
   await page.locator('#roll').click({position:box});
+}
+
+async function reopenProject(page,pid){
+  await page.reload();await page.locator('#recent').selectOption(pid);
+  await expect.poll(()=>page.evaluate(pid=>state?.id===pid&&!!variant(),pid)).toBe(true);
 }
 
 test('head and tail review locations use candidate time and the corresponding stem', async ({ page }) => {
@@ -85,7 +93,7 @@ test('saved evidence survives changed analysis and legacy gaps remain unknown', 
     await route.fulfill({response,json:data});
   });
   async function reopen() {
-    await page.reload();await page.locator('#recent').selectOption(pid);
+    await reopenProject(page,pid);
     await selectNote(page,'evidence0',.8);
   }
   await reopen();
@@ -107,6 +115,7 @@ test('regional rewrites never substitute fresh decisions for locked legacy evide
   await page.goto('/');
   await expect(page.locator('#recent option')).toContainText(['UI evidence legacy region']);
   await page.locator('#recent').selectOption({label:'UI evidence legacy region'});
+  await expect(page.locator('#projectTitle')).toHaveText('UI evidence legacy region');
   await selectNote(page,'evidence0',.8);
   await expect(page.locator('#inspector')).toContainText('原始候选尾（原音频）1710 ms');
   const before=await page.evaluate(()=>variant().notes.find(n=>n.id==='evidence0'));
@@ -134,7 +143,7 @@ test('regional rewrites never substitute fresh decisions for locked legacy evide
     v.selection=v.selection.proposal;delete v.selection.scope;delete v.source_evidence;
     await route.fulfill({response,json:data});
   });
-  await page.reload();await page.locator('#recent').selectOption(pid);
+  await reopenProject(page,pid);
   await selectNote(page,'evidence0',.8);
   await expect(page.locator('#inspector')).toContainText('原始候选尾：未知');
   await expect(page.locator('#inspector')).not.toContainText('2310 ms');
