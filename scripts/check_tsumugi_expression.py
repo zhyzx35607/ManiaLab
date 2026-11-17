@@ -16,7 +16,7 @@ import zipfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 from scipy.io import wavfile
-from manialab.audio import SR, source_evidence
+from manialab.audio_evidence import SR, source_evidence
 from manialab.arrange import parameters, assign_lanes, layout_metrics
 from manialab.domain import UNOBSERVED_RELEASES, note_from, validate, export_osu, parse_osu
 from manialab.expression import propose_expression, expression_evidence, select_expression, signature
