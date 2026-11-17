@@ -1807,5 +1807,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 ## 2026-11-17 第二十八阶段：Timing 拟合原语边界
 
 - 将 BPM 常见拍速归一化、相位估计、网格拟合/评分、固定 BPM 偏移重拟合、精确拍速建议及模型拍间隔支持移入`manialab/timing_fitting.py`。`timing.py`保留公共时钟、诊断、自动估速和候选对齐，并继续重导出旧拟合入口。
-- 定向 Timing/诊断/生成时钟/边界测试为72 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,513 passed、89 skipped（60.75秒）；Edge `npm run test:ui`在`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`下为31 passed（1.2分钟）；`compileall`与`git diff --check`通过。PR 与 main CI待运行。
+- 定向 Timing/诊断/生成时钟/边界测试为72 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,513 passed、89 skipped（60.75秒）；Edge `npm run test:ui`在`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`下为31 passed（1.2分钟）；`compileall`与`git diff --check`通过。PR #127 Windows run `44111017307`与合并后 main run `44112344487`均成功，合并提交`c7af19cad28391a7f9e737be3d56dba949851e06`。
 - 只移动纯拟合实现，未更改算法、音频输入或模型实验；未读取用户音频/参考谱或访问保留的 MAESTRO 测试。音乐质量与 osu! 试打仍待独立验收。
+
+## 2026-11-17 第二十九阶段：音频证据轻量边界
+
+- 将共享采样参数移入`manialab/audio_config.py`；将声部末尾采样对齐、局部能量归属、拍速证据比较与跨声部串音拒绝移入不导入 ONNX Runtime 的`manialab/audio_evidence.py`。`audio.py`原路径重导出常量和函数，`analyze_deep`仍按原模块全局查找函数，测试与外部脚本 monkeypatch 入口不变。
+- 两个只执行证据核验的研究脚本直接依赖轻量模块。定向音频、导入声轨、模型调用替身和兼容边界测试为62 passed（6.67秒）；Edge `npm run test:ui`在`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`下为31 passed（1.2分钟）；`compileall`与`git diff --check`通过。PR CI待运行。
+- 未调用真实模型、读取用户音频/参考谱或访问保留的 MAESTRO 测试；不更改音频算法或研究产物。音乐质量与 osu! 试打仍待独立验收。

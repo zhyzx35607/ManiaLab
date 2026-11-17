@@ -12,7 +12,7 @@ import numpy as np
 from scipy.io import wavfile
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from manialab.audio import source_evidence,SR
+from manialab.audio_evidence import source_evidence,SR
 from manialab.arrange import parameters,assign_lanes,layout_metrics
 from manialab.domain import UNOBSERVED_RELEASES,validate,export_osu,parse_osu
 from manialab.expression import propose_expression,expression_evidence,select_expression
