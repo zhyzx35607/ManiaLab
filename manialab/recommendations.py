@@ -14,7 +14,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .arrange import parameters
+from .arrange_config import parameters
 from .domain import UNOBSERVED_RELEASES
 
 MODES = {
