@@ -7,6 +7,7 @@
 
 - 已发布的 Windows 包为 `v0.1.0-alpha.6-dev.18`；后续主线修复不自动进入该已发布包。
 - 2026-11-17 工程整理与可靠性修复已完成两个阶段的代码和验证；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
+- 跨段落选择修复已完成本地66例冻结对照：默认26例与推荐30例输出完全不变，10例压力配置中4例发生可追溯取舍；见[结果](frozen-generation-regression-results.md)。分支 `codex/frozen-generation-regression-20261117` 待PR检查与合并；恢复时先核对实际Git状态。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1442,3 +1443,33 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 最终代码 `6ff49743e440551368e8538eaa1f4153fd06d1bc` 的完整 Windows run `44006822579` 于2026-11-17成功，普通PR run `44006831028`同样成功。完整run记录2,416 passed、89 skipped（70.20秒），Chromium两项通过（9.6秒）；固定钢琴复建、2,360个worker运行文件清单核验、标准包EXE/ZIP、离线clean PATH、Unicode路径、6–10K导出、失败取消和关闭停止worker全部通过。
 - CI ZIP为888,687,430字节、SHA `b56110625d473ade02f124f684d7c5abba8727670ea65bc378f3d2b3216c39a6`，EXE SHA `250d721f5848ec7353523c6f754a08b74e9351dcf70b25d056ff2dbe7710a7a9`。小型报告、JUnit与完整日志已保存到 ignored `build/structure-20261117-validation/ci-44006822579/`；未下载整包作本机独立复核。后续提交仅补文档与验证结果，不更改已验证的应用/构建代码。本轮没有创建Release，已发布dev.18仍是先前tag产物。
 - 当前进一步研究入口：冻结多曲起音的Timing偏差/歧义、按段落声部的省略原因、LN音尾/占轨回归；见[检查与优化记录](project-review-20261117.md)及[架构入口](architecture.md)。扩展包新清单契约、真实音乐质量、Timing与最终osu!试打仍未验收，不重跑已完成神经模型队列。
+
+## 2026-11-17 第三阶段：冻结多曲回归与容量边界
+
+- 从 PR #102 合并后的 `85b1d6a1d30b7aa063cc2eb714706023774a4c84` 新建
+  `codex/frozen-generation-regression-20261117`。沿用10个已知开发片段的 revision 8
+  分析，未读取其音频或参考谱，没有运行模型；默认26例和分段40例在改生产代码前保存。
+- 新增 `scripts/replay_frozen_generation.py`：核对计划、输入、基线和源码SHA，串行调用
+  真实生成与导出回读，保存声部/段落省略、LN、Timing门槛、输出容量及逐ID差异。
+  旧目录拒绝覆盖，所有逐音产物保留在ignored `test-data/`。
+- 10个定向用例首先失败，证明两类不同问题：结构化路径只在本组起音检查自身可行性，
+  因未来低持条边界或其他声部候选时刻而整组省略；无结构路径只在起音约束LN，漏掉
+  后续段落的低持条上限。现在结构化路径先冻结实际可选音集合，再使用最终求解器同样的
+  起音/段落检查点判断是否按起音拆组；无结构路径把段落起止加入LN约束。
+- 不改变纯边界密度语义，不裁短保留LN来绕过占轨；旧路径保持已选起音。补充原音频段
+  量化合排、永久裁去的和弦层不能收紧其他声部、边界放键和正负提前量回归。
+- 本地全量 `.venv/Scripts/python.exe -m pytest -q` 为 **2,440 passed、89 skipped
+  （58.06秒）**；Edge两项浏览器流程通过（14.0秒）；`compileall`和`git diff --check`
+  通过。独立复核157项相关测试通过，并用500组合成条件核对组内可行性与完整事件检查一致。
+- 两次对照均完成，默认26例及三推荐30例的ID、起止、轨道和证据全部不变。10例压力配置
+  中4例变化：新增23个、删除15个ID，共享音起止和证据不变，432个共享音重新定轨。
+  压力取舍同时包含人声/鼓点减少，完整披露于[结果](frozen-generation-regression-results.md)，
+  不以增加LN或求解目标值代表听感改善。全部66例结构、网格、输出容量和导出回读通过。
+- 产物：`test-data/frozen-generation-fixed-20261117/`（报告SHA
+  `88e24c5b64a7daf6074acfedd3fcb34726f8ceb05ab49f350efccadb821948f7`）及
+  `test-data/frozen-generation-sections-fixed-20261117/`（报告SHA
+  `67a77fe2d354ae5be800613706e947b49f2cf5a2f8ef8ebe649082bb6682525a`）。
+  运行命令见协议：两个固定计划分别使用 `--baseline` 指向同名baseline目录，线程上限2。
+- 自动Timing门槛仍仅3/10片段接受；诊断显式确认时钟不等于自动成功。全部选中LN均缺
+  历史音尾来源字段，明确记作unknown；分段累计大起音移动为5,078→5,080，不声称采音改善。
+  本阶段尚未合并。下一步先完成PR检查，再继续审查Timing确认与诊断状态的真实契约。

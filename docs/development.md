@@ -17,6 +17,11 @@ git diff --check
 
 `scripts/ui_*.cjs` 保留为历史研究入口；常规 CI 使用新的合成测试，不依赖私人 `test-data` 音频或已安装 Edge。
 
+已有冻结分析可通过 `scripts/replay_frozen_generation.py` 回归真实生成流程，无需重新运行模型。
+计划固定输入SHA、Timing与参数；修改前后使用同一计划、不同输出目录，并用 `--baseline`
+保存逐ID对照。协议与局限见[冻结回归](frozen-generation-regression-protocol.md)，本轮结果见
+[多曲对照](frozen-generation-regression-results.md)。逐音产物不加入Git。
+
 ## 模型与构建
 
 `scripts/build_windows.py --profile standard` 明确包含通用音高、四／六声部分离、节拍及钢琴组件。`--profile extended` 额外要求通过来源与运行验证的吉他 FL 模型、Tsumugi worker；缺失时构建失败，不默默降级。`scripts/package_assets.py` 按清单暂存资源，排除本地历史模型、额外实验文件及未声明组件。
