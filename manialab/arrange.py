@@ -302,16 +302,17 @@ def select_notes(candidates, settings=None, segment_preferences=()):
                              selected_voices={v: sum(n.voice == v for n in result) for v in sorted({n.voice for n in pool})},
                              phrase_attacks=sum(n.phrase for n in result),
                              selected_large_attack_shifts=sum(abs(n.start-n.evidence_start)>30 for n in result if n.evidence_start is not None))
-    selected, report = choose_holds(result, local_preferences, p)
+    selected, report = choose_holds(result, local_preferences, p, segment_preferences)
     return selected, {"candidates": len(candidates), "selected": len(result), "omitted": len(candidates) - len(result),
                       "muted_voice_candidates": muted, **attack_report, **report}
 
 
-def choose_holds(notes, local, settings):
+def choose_holds(notes, local, settings, segment_preferences=()):
     """Choose a target count of evidence-backed LNs, keeping the attack set fixed.
 
     Binary interval constraints reserve room at *every future attack*, including
-    the release gap. They also enforce the simultaneous-hold limit. First solve
+    the release gap. They enforce simultaneous-hold limits at section boundaries
+    even without a new attack. First solve
     for the achievable count, then optimize sustain quality at the target count.
     """
     count = len(notes)
@@ -322,9 +323,10 @@ def choose_holds(notes, local, settings):
     target_ratio = sum(p["ln_ratio"] for p in local) / max(1, count)
     chosen, attainable, optimal = set(), 0, True
     if eligible:
-        starts = sorted(set(n.start for n in notes))
+        starts = sorted({n.start for n in notes} |
+                        {s[k] for s in segment_preferences for k in ('start_ms', 'end_ms')})
         chord_sizes = {t: 0 for t in starts}
-        limits = {t: settings["max_held"] for t in starts}
+        limits = {t: settings_at(settings, t, segment_preferences)["max_held"] for t in starts}
         for n, pref in zip(notes, local):
             chord_sizes[n.start] += 1
             limits[n.start] = min(limits[n.start], pref["max_held"])

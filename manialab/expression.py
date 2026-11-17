@@ -6,6 +6,7 @@ geometry. Every decision refers to an existing audio candidate ID.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from bisect import bisect_left
 from dataclasses import replace
 import hashlib
 import json
@@ -350,6 +351,30 @@ def drum_group_anchor(notes, settings, segment_preferences):
                                     n.start, n.id))
 
 
+def _group_fits(notes, settings, segments, times, attack_times, row_preferences):
+    """Check a lightest group against the same checkpoints as the final solve.
+
+    Other offered voices can impose tighter row limits even if later omitted.
+    A boundary without an attack changes held capacity, not rolling density.
+    """
+    starts = sorted(n.start for n in notes)
+    holds = [(n, settings_at(settings, n, segments)['release_gap']) for n in notes if n.hold]
+    stop = max(starts[-1]+1000, max((n.end+gap for n, gap in holds), default=0))
+    for t in times[bisect_left(times, starts[0]):bisect_left(times, stop)]:
+        chart_pref = settings_at(settings, t, segments)
+        pref = row_preferences.get(t, chart_pref)
+        if sum(n.start <= t < n.end for n, _ in holds) > min(pref['max_held'], chart_pref['max_held']):
+            return False
+        if t not in attack_times:
+            continue
+        chord = sum(n.start == t for n in notes)
+        if (sum(t-1000 < n.start <= t for n in notes) > math.ceil(pref['density'])
+                or chord > pref['chord_size']
+                or chord+sum(n.start < t < n.end+gap for n, gap in holds) > settings['keys']):
+            return False
+    return True
+
+
 def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferences, check_times, row_preferences=None):
     """Use residual capacity only; every already selected note stays fixed."""
     if not anchors:
@@ -438,14 +463,15 @@ def select_expression(
             trace[n.id]['reason'] = 'duration_collapsed_on_grid'
         by_voice[(meta['section'], n.voice, n.instrument_id, meta['role'])].append(n)
     units, roles, families = [], [], []
-    def family(group, role):
+    def family(group, role, options=None):
         indices = []
-        for option in chord_layer_options(group, p, segment_preferences):
+        for option in options if options is not None else chord_layer_options(group, p, segment_preferences):
             indices.append(len(units))
             units.append(option)
             roles.append(role)
         families.append((group, indices))
     source_group_index, rhythm_check_times = 0, set()
+    source_groups, row_notes = [], defaultdict(dict)
     for (section, voice, instrument_id, role), notes in by_voice.items():
         notes.sort(key=lambda n: (n.start, -n.strength, n.pitch))
         groups, current = [], []
@@ -475,24 +501,28 @@ def select_expression(
                 source_group_index += 1
                 if not group:
                     continue
-            # Test the lightest expression, not the number of MIDI pitches.
-            # A five-pitch chord must not force an entire phrase to disappear
-            # when the configured chart chord limit is only two notes.
-            base = chord_layer_options(group, p, segment_preferences)[0]
-            impossible = any(
-                sum(t.start-1000 < n.start <= t.start for n in base) > math.ceil(pref['density']) or
-                sum(n.hold and n.start <= t.start < n.end for n in base) > pref['max_held'] or
-                sum(n.start == t.start for n in base) > pref['chord_size'] or
-                sum(n.start == t.start for n in base) + sum(n.hold and n.start < t.start < n.end+pref['release_gap'] for n in base) > p['keys']
-                for t in base for pref in (settings_at(p, t, segment_preferences),))
-            if impossible:
-                attacks = defaultdict(list)
-                for n in group:
-                    attacks[n.start].append(n)
-                for attack in attacks.values():
-                    family(attack, role)
-            else:
-                family(group, role)
+            options = chord_layer_options(group, p, segment_preferences)
+            source_groups.append((group, role, options))
+            # Only offered notes own row preferences. Muted, duplicate,
+            # rhythm-masked and permanently trimmed pitches cannot tighten them.
+            for option in options:
+                for n in option:
+                    row_notes[n.start][n.id] = n
+    boundaries = {s[k] for s in segment_preferences for k in ('start_ms', 'end_ms')}
+    attack_times = set(row_notes) | rhythm_check_times
+    check_times = sorted(attack_times | boundaries)
+    row_preferences = {t: row_settings(p, notes.values(), segment_preferences) for t, notes in row_notes.items()}
+    for group, role, options in source_groups:
+        # Test the lightest expression across all offered rows and future
+        # capacity boundaries before deciding whether to split its attacks.
+        if _group_fits(options[0], p, segment_preferences, check_times, attack_times, row_preferences):
+            family(group, role, options)
+        else:
+            attacks = defaultdict(list)
+            for n in group:
+                attacks[n.start].append(n)
+            for attack in attacks.values():
+                family(attack, role)
     if not units:
         resolve_phrase_decisions(trace)
         report = dict(message='当前段落方案没有可用音符。', decisions=list(trace.values()), selected=0)
@@ -502,11 +532,9 @@ def select_expression(
             report['rhythm_policy'] = rhythm_report
         return [], report
     by_start, holds, total = defaultdict(Counter), [], []
-    row_notes = defaultdict(dict)
     for unit, group in enumerate(units):
         for n in group:
             by_start[n.start][unit] += 1
-            row_notes[n.start][n.id] = n
             total.append((n.start, unit))
             if n.hold:
                 holds.append((n, unit))
@@ -528,7 +556,6 @@ def select_expression(
         events[n.end].append((unit, -1, 0))
         events[n.end+pref['release_gap']].append((unit, 0, -1))
     live, reserved = Counter(), Counter()
-    boundaries = {s[k] for s in segment_preferences for k in ('start_ms', 'end_ms')}
     times = sorted(set(events) | set(by_start) | boundaries | rhythm_check_times)
     recent, pos = Counter(), 0
     total.sort()
@@ -540,8 +567,7 @@ def select_expression(
             live[unit] += delta; reserved[unit] += gap_delta
             if delta > 0:
                 new_holds[unit] += delta
-        pref = (row_settings(p, row_notes[t].values(), segment_preferences) if t in row_notes
-                else settings_at(p, t, segment_preferences))
+        pref = row_preferences.get(t) or settings_at(p, t, segment_preferences)
         # Occupancy belongs to chart time even if quantization moved a note
         # from a less constrained audio section onto this exact boundary.
         constraint(live, min(pref['max_held'], settings_at(p, t, segment_preferences)['max_held']))
@@ -635,7 +661,7 @@ def select_expression(
                 trace[n.id].update(chart_start=n.start, chart_end=n.end)
     added_drums, fallback_solver = _select_drum_anchors(
         selected, anchors, metadata, p, segment_preferences, set(by_start) | rhythm_check_times,
-        {t: row_settings(p, notes.values(), segment_preferences) for t, notes in row_notes.items()})
+        row_preferences)
     for n in added_drums:
         for member in anchor_groups[n.id]:
             trace[member.id]['group_simplification'] = 'strongest_drum_attack'
