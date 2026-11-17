@@ -140,22 +140,34 @@ def decode(activations, *, onset_threshold=.3, offset_threshold=.3, frame_thresh
     return events
 
 
+def piano_model_path(resources):
+    directory=Path(resources)/'assets/deep'
+    versioned=directory/f'piano-regression-{MODEL_SHA256}.onnx'
+    return versioned if versioned.is_file() else directory/'piano-regression.onnx'
+
+
 class PianoDetector:
     """Optional, explicitly selected piano-only detector with independent caches."""
     def __init__(self,resources):
-        self.model=Path(resources)/'assets/deep/piano-regression.onnx'
+        from .model_identity import VerifiedModel
+        # A versioned runtime graph can coexist with historical research models.
+        self.model=piano_model_path(resources)
+        self.identity=VerifiedModel(self.model,MODEL_BYTES,MODEL_SHA256)
 
-    def status(self):
-        return dict(available=self.model.is_file(),label='钢琴专用采音（测试）',
-                    voice='piano',default=False)
+    def status(self, *, refresh=False):
+        status=self.identity.state(refresh=refresh)
+        messages=dict(missing='当前包未包含钢琴专用组件。',
+            mismatched='钢琴模型版本或校验不匹配，请准备当前版本的模型。',
+            unreadable='钢琴模型无法读取，请检查文件访问权限。',
+            changed='钢琴模型正在变更，请稍后刷新。',verified='钢琴模型身份已验证。')
+        return dict(available=status=='verified',state=status,message=messages[status],
+                    label='钢琴专用采音（测试）',voice='piano',default=False)
 
     def analyze(self,samples,sample_rate,cache,stem_identity,progress=lambda p,s:None,cancelled=lambda:False):
         from .domain import Note
-        if not self.model.is_file():
-            raise ValueError('当前安装包未包含钢琴专用采音模型')
-        with self.model.open('rb') as stream:
-            if hashlib.file_digest(stream,'sha256').hexdigest()!=MODEL_SHA256:
-                raise ValueError('钢琴专用模型校验失败，请使用完整测试包')
+        status=self.status(refresh=True)
+        if not status['available']:
+            raise ValueError(status['message'])
         identity=dict(revision=2,model_sha256=MODEL_SHA256,stem_identity=stem_identity,
                       pcm_sha256=hashlib.sha256(np.asarray(samples,dtype='<f4').tobytes()).hexdigest(),
                       sample_rate=sample_rate,samples=len(samples))

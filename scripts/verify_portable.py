@@ -161,6 +161,11 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert release_manifest['worker_sources']==worker['worker_sources']
         piano_identity=verify_piano_model(executable.parent/'_internal')
         assert release_manifest.get('piano_model')==piano_identity
+        from scripts.package_assets import capabilities
+        declared=capabilities(release_manifest['build_profile'])
+        assert release_manifest['capabilities']==declared
+        assert bool(release_manifest.get('guitar_model'))==declared['guitar']
+        assert bool(release_manifest.get('instrument_worker'))==declared['instruments']
         if release_manifest.get('guitar_model'):
             from scripts.build_provenance import verify_guitar_model
             assert verify_guitar_model(executable.parent/'_internal')==release_manifest['guitar_model']
@@ -175,6 +180,8 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert hashlib.sha256((executable.parent/'_internal/assets/arrangement-profiles.json').read_bytes()).hexdigest()==expected_profiles
         checks.append(dict(check='bundled_arrangement_profiles',sha256=expected_profiles))
         start();status=request('/api/status')
+        assert bool(status['guitar']['available'])==declared['guitar'],status['guitar']
+        assert bool(status['instruments']['available'])==declared['instruments'],status['instruments']
         assert status['version']==__version__ and status['separator']['available'],status
         assert status['piano']['available'] and not status['piano']['default'],status['piano']
         checks.append(verify_piano_onnx_runtime(

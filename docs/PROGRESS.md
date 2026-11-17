@@ -1422,3 +1422,16 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - README 聚焦当前使用入口，历史实验归档 `docs/research-history.md`；新增 `docs/architecture.md`，修正快速开始的旧分段描述与构建缺失的钢琴准备步骤。研究脚本及协议原路径不变。
 - 首轮全量 `python -m pytest -q`：2,395 passed、89 skipped（63.74秒）。之后补全跨上传目录冲突与合排容量检查，相关组合回归122 passed；`compileall`、静态 JS 语法与 `git diff --check`通过。最终全量为 **2,398 passed、89 skipped（66.54秒）**；以 PR head CI 为合并依据。
 - 本阶段是软件可靠性修复，不声称提升真实音频采音准确率或完成音乐验收。下一阶段：组件身份缓存、构建能力清单、前端候选状态和可复用浏览器回归。
+
+
+## 2026-11-17 第二阶段：组件契约与浏览器回归
+
+- 第一阶段 PR #101 已合并，main merge commit `9784525101c33743c77d94b43649a8da4c37d8dd`；head `1f1da33` 的两项 Windows verify 均成功。
+- 后续独立复核发现更窄的容量边界：前段 LN 量化到下一段开始时，原段偏好可能覆盖下一段更低的 max_held。本阶段将实际持续占轨约束独立按制谱时间计算，加入原5990ms→6000ms边界、两条LN而下一段上限1的回归。
+- 钢琴状态验证大小/SHA，区分 missing/mismatched/verified/读取错误；文件签名变化或30秒过期重新校验，推理前强制校验。模型来源选择支持当前完整SHA命名的版本文件，历史模型原路径不变；构建规范为包内固定文件名。
+- 本机从已验证的 `build/piano-model-deterministic-20261116-c-work/piano-regression.onnx` 复制到 ignored `assets/deep/piano-regression-31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f.onnx`，API状态与构建校验均通过。原模型仍为SHA `7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa`，未覆盖；没有重新导出或进行真实音频推理。
+- 新增 `scripts/package_assets.py`：standard/extended 明确构建范围，源码资源按清单暂存；额外历史模型不进入包。extended必须具有已验证吉他与Tsumugi组件，不能因本地目录碰巧存在就改变标准包。manifest、随包帮助、发布验证共享能力声明。
+- 修复目标键数改变后的旧候选导出/编辑状态；预览继续使用候选自己的键数。普通 PR 增加锁定 Playwright 合成回归，覆盖音频生成→换键数→编辑→重开→导出，以及原谱严格保时；不需要私人语料、Edge或模型下载。
+- Mapperatorinator 的 OMP/MKL 统一2线程，实际运行器显式设置 PyTorch 算子2、跨算子1。主环境无torch的进程生命周期夹具显式提供线程契约替身；真实模型运行仍要求原独立环境。
+- 本地专项68 passed；两条真实Edge浏览器回归通过（14.8秒），原有静态服务不受影响。一次全量捕获生命周期夹具没有torch的问题，修正夹具后11项进程/原模型测试通过；最终全量 **2,405 passed、89 skipped（67.48秒）**。完整Windows构建结果待追加。
+- 文档补充 `docs/development.md`，当前乐器能力表对齐dev.18，历史实验继续保留。以上为工程验证，不代表采音或音乐质量通过验收；本阶段不创建新的Release标签。

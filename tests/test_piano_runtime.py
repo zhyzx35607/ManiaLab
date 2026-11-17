@@ -75,10 +75,11 @@ def test_specialist_cache_tracks_input_and_does_not_overwrite_general_activation
     import hashlib
     import onnxruntime as ort
     from manialab import piano
+    monkeypatch.setattr(piano,'MODEL_SHA256',hashlib.sha256(b'fake-model').hexdigest())
+    monkeypatch.setattr(piano,'MODEL_BYTES',len(b'fake-model'))
     detector=piano.PianoDetector(tmp_path)
     detector.model.parent.mkdir(parents=True)
     detector.model.write_bytes(b'fake-model')
-    monkeypatch.setattr(piano,'MODEL_SHA256',hashlib.sha256(b'fake-model').hexdigest())
     monkeypatch.setattr(ort,'InferenceSession',lambda *a,**k:object())
     calls=[]
     def prediction(*args):

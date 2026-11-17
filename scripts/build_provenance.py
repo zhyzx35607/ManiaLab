@@ -61,7 +61,8 @@ def verify_piano_model(root):
     """Verify the required optional piano graph and its source/license identity."""
     root = Path(root)
     identity = validate_piano_model_metadata(root)
-    model = root/'assets/deep'/identity['filename']
+    from manialab.piano import piano_model_path
+    model = piano_model_path(root)
     if not model.is_file():
         raise ValueError('Required piano model is missing; run scripts/fetch_piano_model.py')
     if model.stat().st_size != identity['bytes'] or sha256(model) != identity['sha256']:

@@ -542,7 +542,9 @@ def select_expression(
                 new_holds[unit] += delta
         pref = (row_settings(p, row_notes[t].values(), segment_preferences) if t in row_notes
                 else settings_at(p, t, segment_preferences))
-        constraint(live, pref['max_held'])
+        # Occupancy belongs to chart time even if quantization moved a note
+        # from a less constrained audio section onto this exact boundary.
+        constraint(live, min(pref['max_held'], settings_at(p, t, segment_preferences)['max_held']))
         if t not in by_start and t not in rhythm_check_times:
             continue
         chord = by_start[t]

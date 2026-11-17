@@ -24,6 +24,11 @@ def test_worker_exits_after_its_parent_is_terminated(tmp_path,worker_kind):
            "pending=marker.with_suffix('.pending'); pending.write_text(str(os.getpid())); pending.replace(marker); time.sleep(120)")
     parent=("import subprocess,time; subprocess.Popen(["+repr(executable)+",'-c',"+repr(child)+"]); time.sleep(120)")
     if worker_kind=='mapper':
+        # The main test environment excludes torch; exercise the runtime
+        # bootstrap contract without importing a neural stack in this test.
+        (tmp_path/'torch.py').write_text(
+            'def set_num_threads(value):\n    assert value == 2\n'
+            'def set_num_interop_threads(value):\n    assert value == 1\n')
         script=tmp_path/'inference.py'
         script.write_text("import os,time;from pathlib import Path;marker=Path("+repr(str(marker))+");"
             "pending=marker.with_suffix('.pending');pending.write_text(str(os.getpid()));pending.replace(marker);time.sleep(120)")

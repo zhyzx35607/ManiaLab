@@ -308,8 +308,9 @@ def create_app(resources, data_root):
         if piano_engine=='specialist':
             if analysis_engine not in ('deep6','provided'):
                 raise ValueError('钢琴专用采音需要六声部分离或已导入的钢琴声轨')
-            if not piano_detector.status()['available']:
-                raise ValueError('当前安装包未包含钢琴专用采音模型')
+            piano_status=piano_detector.status()
+            if not piano_status['available']:
+                raise ValueError(piano_status.get('message','当前安装包未包含钢琴专用采音模型'))
         def operation(state, progress, cancelled):
             if analysis_engine in ('deep','deep6','provided'):
                 selected_separator=(ProvidedStemSeparator(state.get('provided_stems')) if analysis_engine=='provided'

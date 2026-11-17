@@ -89,11 +89,13 @@ uv pip sync --python .venv\Scripts\python.exe requirements-lock.txt
 .venv\Scripts\python.exe scripts\fetch_audio_models.py
 uv venv .venv-audio --python 3.12
 uv pip sync --python .venv-audio\Scripts\python.exe --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match requirements-deep-lock.txt
-.venv-audio\Scripts\python.exe scripts\fetch_piano_model.py --work build\piano-model-local-20261117
+.venv-audio\Scripts\python.exe scripts\fetch_piano_model.py
 .venv-audio\Scripts\python.exe scripts\build_audio_worker.py
 .venv\Scripts\python.exe launcher.py
 .venv\Scripts\python.exe -m pytest -q
-.venv\Scripts\python.exe scripts\build_windows.py
+.venv\Scripts\python.exe scripts\build_windows.py --profile standard
 ```
 
-浏览器脚本需 Playwright 和 Edge，可用 `MANIALAB_URL` 指定本地服务。验证范围、真实音频对照与不足见 [验证记录](docs/validation.md)。本地语料审计用 `scripts/audit_corpus.py`；采集与训练脚本见 [训练计划](docs/training-plan.md)。
+以上用于干净检出；已有旧钢琴模型时先保留旧文件，按[模型与构建说明](docs/development.md)准备当前版本，构建会把选定模型规范为包内固定路径。
+
+浏览器回归独立使用合成项目，不需要模型下载：`npm ci --ignore-scripts` → `npx playwright install chromium` → `npm run test:ui`。详见[开发与验证](docs/development.md)。验证范围、真实音频对照与不足见 [验证记录](docs/validation.md)。本地语料审计用 `scripts/audit_corpus.py`；采集与训练脚本见 [训练计划](docs/training-plan.md)。

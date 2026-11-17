@@ -115,11 +115,12 @@ def test_cache_revision_and_context_trace_are_persisted_and_recovered(tmp_path,m
     import json
     import onnxruntime as ort
     from manialab import piano
+    monkeypatch.setattr(piano,'MODEL_SHA256',hashlib.sha256(b'model').hexdigest())
+    monkeypatch.setattr(piano,'MODEL_BYTES',len(b'model'))
     detector=piano.PianoDetector(tmp_path)
     detector.model.parent.mkdir(parents=True)
     detector.model.write_bytes(b'model')
     model_sha=hashlib.sha256(b'model').hexdigest()
-    monkeypatch.setattr(piano,'MODEL_SHA256',model_sha)
     monkeypatch.setattr(ort,'InferenceSession',lambda *a,**k:object())
     samples=np.zeros(16000,np.float32)
     cache=tmp_path/'cached.npz'

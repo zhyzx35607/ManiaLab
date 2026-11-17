@@ -7,7 +7,8 @@
 - `fetch_audio_models.py`：获取并校验打包需要的模型资源。
 - `fetch_piano_model.py`：从固定上游权重与源码重新导出并校验可选钢琴模型。
 - `build_audio_worker.py`：构建便携音频工作进程。
-- `build_windows.py`：构建隔离的 Windows 包，产物位于 `build/portable/<run-id>/`。
+- `build_windows.py --profile standard`：按明确组件清单构建隔离的 Windows 包，产物位于 `build/portable/<run-id>/`；`extended` 要求额外完整组件。
+- `package_assets.py`：维护构建范围、暂存资源和随包使用说明，避免夹带历史模型及研究文件。
 - `verify_portable.py`：用干净 PATH 和离线数据目录验证实际 EXE。
 - `verify_shutdown.py`：验证关闭应用时音频子进程结束。
 - `collect_release_validation.py`：核对 ZIP、测试报告和实际 EXE，并生成去除音频/逐音数据的发布验证摘要。
@@ -46,3 +47,5 @@ git diff --check
 ```
 
 研究推理按项目续接规则串行执行，CPU 算子线程数设为 2；不要重复已完成队列，也不要修改正在运行或排队的研究脚本。
+
+可重复的浏览器回归使用 `npm run test:ui`，隔离服务与合成夹具位于 `tests/browser/`；准备命令及边界见 [开发与验证](../docs/development.md)。

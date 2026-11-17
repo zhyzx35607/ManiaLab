@@ -106,6 +106,8 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
         "schema": "manialab-release-validation-v1",
         "version": __version__,
         "source_commit": commit,
+        "build_profile": manifest.get("build_profile"),
+        "capabilities": manifest.get("capabilities"),
         "archive": {
             "filename": archive_path.name,
             "bytes": size,

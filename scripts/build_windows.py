@@ -1,6 +1,7 @@
 """Build a portable directory and ZIP using the current locked Python environment."""
 from datetime import datetime, timezone
 from pathlib import Path
+import argparse
 import hashlib
 import importlib.metadata as metadata
 import json
@@ -14,6 +15,11 @@ import urllib.request
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from manialab import __version__
+from package_assets import PROFILES, capabilities, stage_assets, start_guide
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--profile",choices=sorted(PROFILES),default="standard")
+profile=parser.parse_args().profile
+enabled=capabilities(profile)
 from build_provenance import (
     sha256,
     verify_worker,
@@ -24,7 +30,7 @@ from build_provenance import (
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
 def source_snapshot():
-    files=[ROOT/'launcher.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
+    files=[ROOT/'launcher.py',ROOT/'scripts/package_assets.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
            *sorted(p for p in (ROOT/'static').rglob('*') if p.is_file()),
            ROOT/'assets/pattern-prior.json',ROOT/'assets/arrangement-profiles.json',
            ROOT/'assets/piano-model.json',ROOT/'assets/guitar-model.json',ROOT/'assets/deep-models.json',ROOT/'manialab/tsumugi-source.json',
@@ -33,15 +39,17 @@ def source_snapshot():
 build_sources=source_snapshot()
 required=['basic-pitch.onnx','pattern-prior.json','arrangement-profiles.json','deep/ManiaLabAudio/ManiaLabAudio.exe','deep/htdemucs_6s.th',
           'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json',
-          'deep/piano-regression.onnx']
+          ]
 for relative in required:
     if not (ROOT/'assets'/relative).is_file():raise SystemExit(f'Missing release component: assets/{relative}')
 piano_identity=verify_piano_model(ROOT)
 worker_identity=verify_worker(ROOT,ROOT/'assets/deep')
 instrument_identity=None
-if (ROOT/'assets/instruments').exists():
+if enabled['instruments']:
     instrument_identity=verify_instrument_worker(ROOT,ROOT/'assets/instruments')
-guitar_identity=verify_guitar_model(ROOT)
+guitar_identity=verify_guitar_model(ROOT) if enabled['guitar'] else None
+if enabled['guitar'] and guitar_identity is None:
+    raise SystemExit('Extended profile requires the guitar model.')
 for model in json.loads((ROOT/'assets/deep-models.json').read_text(encoding='utf-8'))['models']:
     with (ROOT/'assets/deep'/model['filename']).open('rb') as stream:
         if hashlib.file_digest(stream,'sha256').hexdigest()!=model['sha256']:
@@ -87,9 +95,11 @@ specpath=build_root/'spec'
 package_path=build_root/'release'
 for directory in (workpath,distpath,specpath,package_path):
     directory.mkdir()
+staged_assets=build_root/'assets'
+stage_assets(ROOT,staged_assets,profile)
 args=[sys.executable,'-m','PyInstaller','--noconfirm','--name','ManiaLab','--console',
       '--add-data',f'{ROOT / "static"};static',
-      '--add-data',f'{ROOT / "assets"};assets',
+      '--add-data',f'{staged_assets};assets',
       '--add-data',f'{ROOT / "licenses"};licenses',
       '--add-data',f'{ROOT / "manialab/tsumugi-source.json"};manialab',
       '--add-data',f'{ROOT / "vendor/mapperatorinator/template.osu"};vendor/mapperatorinator',
@@ -111,7 +121,7 @@ if instrument_identity and verify_instrument_worker(ROOT,target/'_internal/asset
     raise SystemExit('Instrument worker changed during the build; rebuild before publishing.')
 if verify_guitar_model(target/'_internal')!=guitar_identity:
     raise SystemExit('Guitar model or attribution changed during the build; rebuild before publishing.')
-release_manifest=dict(version=__version__,sources=build_sources,
+release_manifest=dict(version=__version__,sources=build_sources,build_profile=profile,capabilities=enabled,
     executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
     worker_sha256=bundled_worker['worker_sha256'],worker_sources=bundled_worker['worker_sources'],
     piano_model=piano_identity,guitar_model=guitar_identity,instrument_worker=instrument_identity)
@@ -120,7 +130,7 @@ for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
     shutil.copy2(ROOT/name,target/name)
 shutil.copytree(ROOT/'licenses',target/'licenses',dirs_exist_ok=True)
 shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
-(target/'开始使用.txt').write_text(f'ManiaLab {__version__}\n完整解压后双击 ManiaLab.exe。\n程序会自动打开浏览器；关闭控制台窗口退出。\n深度采音模型已随包提供，无需安装 Python、Docker、CUDA 或下载模型。\n导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 检查段落及主声部表达 → 保存方案 → 生成 → 下载 .osz。\n旧项目可点击“检测音乐段落”使用新流程；若要应用低音重复触发修正，请重新分析，模型缓存可复用。\n新项目制谱提前量默认 22.5ms，可改为 0 使用原始音频时间。\n项目数据：%LOCALAPPDATA%\\ManiaLab\\projects\n这是开发测试版；采音与段落建议仍需试听，尚非端到端的 10K 制谱模型。可勾选贝斯与其他伴奏专用采音；默认只用起音，允许模型音尾参与长条需另行勾选。吉他有独立的专用采音和模型音尾开关，需六声部分离或导入吉他轨；人声保持原路径。使用方式见 docs/instrument-choices.md。未通过对照的采音取舍研究权重未启用。\n',encoding='utf-8-sig')
+(target/'开始使用.txt').write_text(start_guide(__version__,enabled),encoding='utf-8-sig')
 name=f'ManiaLab-{__version__}-windows-x64'
 archive=Path(shutil.make_archive(str(package_path/name),'zip',distpath,'ManiaLab'))
 with archive.open('rb') as stream:
