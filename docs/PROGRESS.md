@@ -1762,4 +1762,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`POST /api/projects/<pid>/analyze`和`provided-stems`迁入`manialab/analysis_routes.py`。项目仓库、任务服务、当前音频解析、任务提交、分离器及各检测器由应用组合层显式注入；分析函数与声轨处理工厂集中在`app.extensions['analysis_services']`，测试可替换单个依赖而不触发真实模型。
 - 保持现有endpoint、请求校验、专用模型/声部兼容检查、共享任务锁、异步提交身份、旧结果保留，以及导入失败/取消时新上传与解码文件的清理行为。
-- 定向API与可靠性验证为66 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（87.83秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。Windows PR CI待运行；未运行模型、读取用户音频或修改研究脚本/产物。
+- 定向API与可靠性验证为66 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（87.83秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。PR #120 Windows run `44091644703`成功并合并为`754530c76da46a57bfdbe8b6e62050b501412ec9`；合并后main run `44092230242`成功，API/领域测试及合成浏览器通过，模型与便携构建步骤跳过。未运行模型、读取用户音频或修改研究脚本/产物。
+
+## 2026-11-17 第二十二阶段：Mapperatorinator路由边界
+
+- 将`POST /api/projects/<pid>/engine-install`和`engine-generate`迁入`manialab/upstream_routes.py`。应用组合层注入共享`MapperEngine`、项目仓库、异步提交器、当前音频解析器和Timing闭包；路由模块承接原模型输入、输出谱面修正与remap报告。
+- 保持endpoint及视图函数名、请求校验、模型任务生命周期、Timing确认门槛、原始键型、固定时钟对齐和候选状态提交语义。
+- 定向`tests/test_server.py tests/test_upstream.py`为26 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（87.72秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。独立对照未发现路由语义差异；Windows PR CI待运行。
+- 未运行模型、读取用户音频或修改研究脚本/产物。

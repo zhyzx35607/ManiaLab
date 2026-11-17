@@ -29,13 +29,14 @@ from .ln_patterns import analyze_ln_patterns
 from .editing import edit_notes
 from .style import describe_chart
 from .analysis_routes import register_analysis_routes
-from .domain import clean_meta, note_from, parse_osu, upstream_events, validate
+from .domain import note_from, parse_osu, upstream_events, validate
 from .export_routes import register_export_routes
 from .planner import plan
 from .playback_routes import register_playback_routes
 from .project_routes import register_project_routes
 from .arrangement_routes import register_arrangement_routes
 from .timing_routes import register_timing_routes
+from .upstream_routes import register_upstream_routes
 from .storage import Projects, safe_path
 from .task_service import ProjectTasks
 from .upstream import MapperEngine
@@ -240,78 +241,14 @@ def create_app(resources, data_root):
             projects.save(state)
         return jsonify(state)
 
-    @app.post("/api/projects/<pid>/engine-install")
-    def engine_install(pid):
-        def operation(state, progress, cancelled):
-            engine.install(progress, cancelled)
-            return engine.status()
-        return submit(pid, operation)
-
-    @app.post("/api/projects/<pid>/engine-generate")
-    def engine_generate(pid):
-        payload = request.get_json() or {}
-        prefs = parameters(payload.get("settings", {}))
-        seconds = payload.get("seconds", 30)
-        if type(seconds) not in (int, float) or not math.isfinite(seconds) or not 0 <= seconds <= 1200:
-            raise ValueError("时长应为 0–1200 秒；0 表示全曲")
-        def operation(state, progress, cancelled):
-            # Supply decoded WAV so upstream pydub needs no global ffmpeg installation.
-            from .audio import decode
-            work = projects.path(pid)
-            if not (work / "preview.wav").exists():
-                decode(current_audio(state), work)
-            tempo=requested_tempo(payload,state) if payload.get('use_timing') is True else None
-            if tempo is not None and not (tempo.get('stable') or payload.get('timing_confirmed') is True):
-                raise ValueError('请先检查并确认当前 BPM / Offset，再传入原模型')
-            raw = engine.generate(work / "preview.wav", work / ("engine-" + secrets.token_hex(4)), prefs, progress, cancelled, seconds, tempo)
-            text = raw.read_text(encoding="utf-8-sig")
-            import re
-            text = re.sub(r"(?m)^AudioFilename:.*$", lambda _: "AudioFilename: " + state["audio"], text)
-            for field, value in {"Title": state["title"], "TitleUnicode": state["title"], "Artist": state["artist"], "ArtistUnicode": state["artist"]}.items():
-                text = re.sub(r"(?m)^" + field + r":.*$", lambda _, f=field, v=value: f + ":" + clean_meta(v), text)
-            alignment = None
-            if tempo:
-                from .upstream import fixed_timing_output
-                text, model_notes, alignment = fixed_timing_output(text, tempo)
-            parsed = parse_osu(text)
-            selected = model_notes if tempo else parsed['notes']
-            # This is the model comparison path. Reassigning every column here
-            # erases the learned LN layout before the user can inspect it.
-            # The ordinary remap action remains available after generation.
-            assigned = selected
-            name = "Mapperatorinator-" + secrets.token_hex(4) + ".osu"
-            (work / "files" / name).write_text(text, encoding="utf-8")
-            state.update(original=name, input_notes=[n.data() for n in selected], input_keys=parsed["keys"], input_timing=parsed["timing"], mode="remap", settings=prefs)
-            state["charts"].append({"path": name, "label": f'Mapperatorinator V32 · {prefs["keys"]}K'})
-            report = validate(assigned, prefs["keys"])
-            beat=60000/tempo['bpm'] if tempo else 500
-            report['layout']=layout_metrics(assigned,prefs['keys'],beat,parsed['timing'])
-            report['review']=review_chart(assigned,prefs['keys'],beat,parsed['timing'])
-            report['ln_patterns']=analyze_ln_patterns(assigned,prefs['keys'],beat,parsed['timing'])
-            warnings = getattr(engine, "last_warnings", [])
-            message = "已保留 mania 模型生成的键型。当前应用仍使用原版权重；需要重新定轨时可另行生成候选。"
-            if not report['valid']:
-                message += f" 原始键型存在 {report['issue_count']} 项结构冲突，请先检查或重新定轨。"
-            if tempo:
-                report['grid'] = grid_report(assigned, tempo)
-                message += (f" 已按确认的 BPM / Offset 及细分量化模型输出：移动 {alignment['moved']} 个起点、"
-                    f"{alignment['tails_moved']} 个音尾，{alignment['collapsed_holds']} 个不足一格的 LN 转为短键。"
-                    f" {alignment['large_attack_shifts']} 个起音移动超过 30ms，需要回听；落线不代表采音正确。")
-            if warnings:
-                message += "\n原模型警告（可能包含未配对并被上游丢弃的 LN）：\n" + "\n".join(warnings)
-            # Source reference is project-level, so discard variants belonging to an older source.
-            state["variants"] = [dict(notes=[n.data() for n in assigned], settings=prefs, mode="remap", report=report,
-                selection={"message": message, "upstream_warnings": warnings, 'alignment': alignment,
-                           'layout_origin': 'mapperatorinator'},
-                bpm=tempo['bpm'] if tempo else 120, offset=tempo['offset'] if tempo else 0,
-                division=tempo.get('division',4) if tempo else 4,
-                audio_shift_ms=tempo.get('audio_shift_ms',0) if tempo else 0,
-                timing_confirmed=bool(tempo),
-                provided_timing=tempo,created=time.time(), region=None, event_count=len(upstream_events(assigned)))]
-            state["active"] = 0
-            return report
-        return submit(pid, operation)
-
+    register_upstream_routes(
+        app,
+        engine=engine,
+        projects=projects,
+        submit=submit,
+        current_audio=current_audio,
+        requested_tempo=requested_tempo,
+    )
     register_export_routes(app, projects=projects, resources=resources, current_audio=current_audio)
     register_playback_routes(
         app,
