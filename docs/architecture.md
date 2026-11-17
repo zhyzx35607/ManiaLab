@@ -6,7 +6,7 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 | --- | --- | --- |
 | 启动与 HTTP | `launcher.py`、`manialab/server.py`、`manialab/task_service.py`、`manialab/project_routes.py`、`manialab/analysis_routes.py`、`manialab/arrangement_routes.py`、`manialab/candidate_routes.py`、`manialab/upstream_routes.py`、`manialab/export_routes.py`、`manialab/timing_routes.py`、`manialab/playback_routes.py` | 本机访问、任务生命周期、项目读写/谱面偏好导入、采音与导入声轨、编排建议/段落/表达、候选生成与编辑、Mapperatorinator集成、Timing检查/重拟合、JSON/OSU/OSZ导出、播放、试听、波形响应 |
 | 制谱服务 | `manialab/generation.py` | 组合证据、表达、量化、选音、定轨和报告；不依赖 Flask 或磁盘 |
-| 音乐领域 | `domain.py`、`timing.py`、`preferences.py`、`expression.py`、`arrange.py`、`layout.py`、`solver.py`、`sequence_schema.py`、`sequence_windows.py`、`sequence_prior.py` | 音符与谱面、时钟、分段策略、占轨约束、轨道搜索、共享求解与序列窗口先验 |
+| 音乐领域 | `domain.py`、`timing.py`、`timing_fitting.py`、`preferences.py`、`expression.py`、`arrange.py`、`layout.py`、`solver.py`、`sequence_schema.py`、`sequence_windows.py`、`sequence_prior.py` | 音符与谱面、时钟、Timing 拟合、分段策略、占轨约束、轨道搜索、共享求解与序列窗口先验 |
 | 音频组件 | `audio.py`、`separation.py`、`piano.py`、`guitar.py`、`instrument_detector.py` | 分离、采音、模型身份、独立缓存和 CPU 推理 |
 | 项目与文件 | `storage.py`、`provided_stems.py` | 原子保存、安全路径、上传冲突检查、声轨来源与失败清理 |
 | 浏览器 | `static/` | 当前候选、待应用参数、试听与编辑；不重新解释模型能力 |
@@ -17,6 +17,8 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 `solver.py`统一封装进程级 HiGHS 调度锁、MILP 单线程选项与 SciPy 警告过滤。定轨、表达和研究规划直接依赖该基础模块，不再借用`arrange.py`作为求解运行时入口。
 
 `sequence_schema.py`独立定义序列模型的版本化字段、维度和修订号；`pattern_sequence.py`继续重导出这些名字并实现编码。`sequence_windows.py`负责候选窗口行、节拍位置和单窗/批窗编码；`sequence_prior.py`保留模型校验与评分并重导出旧窗口 API。运行布局直接导入各自职责，研究与训练脚本继续使用兼容入口。
+
+`timing_fitting.py`持有节拍相位、BPM 归一化、拟合、评分和固定 BPM 偏移重拟合原语；`timing.py`保留公共音频时钟、拍线诊断、自动估速和候选对齐入口，并重导出旧拟合 API。
 
 `upstream_routes.py`集中Mapperatorinator安装与生成接口；应用组合层传入共享`MapperEngine`、项目仓库、异步任务提交及当前项目Timing闭包。原模型生成保留输入键型、经确认的固定时钟对齐和完整remap报告。
 
