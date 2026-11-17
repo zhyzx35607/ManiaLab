@@ -141,7 +141,7 @@ def install_fixture_planner(app):
             waiting.clear()
         return validate_plan(dict(preferences={'density':11}, segments=[],
             explanation='Deterministic fixture plan'), segments)
-    server.plan = fixture_plan
+    app.extensions['planner'] = fixture_plan
     @app.get('/__fixture/planner-state')
     def planner_state():
         return dict(waiting=waiting.is_set())
