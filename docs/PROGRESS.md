@@ -1854,5 +1854,6 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 ## 2026-11-18 第三十五阶段：LN 批量特征边界
 
 - 将`_sequence_windows_ln_interactions`从`sequence_windows.py`迁入`manialab/sequence_window_interactions.py`，新模块只依赖 NumPy 与`sequence_schema.py`；窗口模块仍导出同一函数对象，`sequence_prior.py`旧兼容入口不变。
-- 更新窗口边界测试，检查旧导出对象身份，并验证独立导入新模块不加载`sequence_windows.py`或`sequence_prior.py`。本机资源不足期间，定向 pytest 在收集阶段未能运行；`git diff --check`通过。完整特征一致性、全量Python与Edge UI验证交由PR Windows CI。
-- 未运行研究训练、模型或用户音频；未访问保留的 MAESTRO 测试，未改动研究脚本或研究产物。PR和CI待运行；音乐质量与 osu! 试打仍独立验收。
+- 更新窗口边界测试，检查旧导出对象身份，并验证独立导入新模块不加载`sequence_windows.py`或`sequence_prior.py`。本机资源不足期间，定向 pytest 在收集阶段未能运行；`git diff --check`通过。
+- PR #134 Windows run `44133239396`通过：全量Python/API为2,527 passed、89 skipped，Edge UI为31 passed；模型及便携构建步骤按条件跳过。该干净runner结果完成本地资源不足时未能执行的运行时与训练编码兼容验证。
+- 未运行研究训练、模型或用户音频；未访问保留的 MAESTRO 测试，未改动研究脚本或研究产物。结构迁移不代表序列模型或音乐质量提升；osu! 试打仍独立验收。
