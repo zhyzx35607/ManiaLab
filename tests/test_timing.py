@@ -20,7 +20,9 @@ def test_mapping_clock_is_explicit_and_keeps_raw_audio_evidence():
     converted = chart_clock_notes(notes, 22.5)
     assert [(n.start,n.end) for n in converted] == [(93,843),(0,0)]
     assert [n.data() for n in notes] == before
-    assert chart_clock_notes(notes,0) == notes
+    zero_shift = chart_clock_notes(notes, 0)
+    assert [(n.start, n.end) for n in zero_shift] == [(n.start, n.end) for n in notes]
+    assert [n.audio_start for n in zero_shift] == [115, 5]
     with pytest.raises(ValueError):
         chart_clock_notes(notes,float('nan'))
 

@@ -14,13 +14,18 @@ def digest(path):
     with Path(path).open('rb') as stream:return hashlib.file_digest(stream,'sha256').hexdigest()
 
 
+def provided_stem_identity(mix, sources):
+    origin={voice:dict(filename=path.name,sha256=digest(path)) for voice,path in sources.items()}
+    identity=dict(revision=1,audio_sha256=digest(mix),sources=origin)
+    key=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()
+    return identity,key
+
+
 def prepare_provided_stems(mix, sources, work, progress=lambda p,s:None, cancelled=lambda:False):
     """Decode an immutable set; a failed or cancelled import cannot select it."""
     if not sources or set(sources)-set(VOICES):raise ValueError('至少选择一个有效声部')
     work=Path(work)
-    origin={voice:dict(filename=path.name,sha256=digest(path)) for voice,path in sources.items()}
-    identity=dict(revision=1,audio_sha256=digest(mix),sources=origin)
-    key=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()
+    identity,key=provided_stem_identity(mix,sources)
     folder=work/'stems-provided'/key
     manifest=folder/'separation.json'
     if manifest.exists():

@@ -14,6 +14,7 @@ from scipy.sparse import csc_matrix, vstack
 
 from .domain import UNOBSERVED_RELEASES, Note, invariant, validate
 from .timing import BeatClock
+from .preferences import settings_at, row_settings
 
 
 _solver_lock = threading.Lock()
@@ -70,14 +71,6 @@ def hand_weights(keys, lane):
     if keys % 2 and lane == keys // 2:
         return (.5, .5)
     return (1., 0.) if lane < keys // 2 else (0., 1.)
-
-
-def settings_at(settings, time, segments):
-    local = settings.copy()
-    for segment in segments:
-        if segment["start_ms"] <= time < segment["end_ms"]:
-            local.update(segment["preferences"])
-    return local
 
 
 def layout_metrics(notes, keys, beat_ms=500, timing_points=()):
@@ -178,7 +171,7 @@ def _assign_once(notes, settings=None, locked=(), beat_ms=500, cancelled=lambda:
     clock = BeatClock(timing_points, beat_ms)
     for start, chord in sorted(groups.items()):
         beat_ms = clock(start)
-        local = settings_at(p, start, segment_preferences)
+        local = row_settings(p, chord, segment_preferences)
         if cancelled():
             raise InterruptedError("已取消定轨搜索")
         load = [v * math.exp(-(start - previous_start) / max(500, beat_ms * 4)) for v in load]
@@ -244,8 +237,9 @@ def select_notes(candidates, settings=None, segment_preferences=()):
     muted = 0
     for chord in grouped:
         start = min(n.start for n in chord)
-        local = settings_at(p, start, segment_preferences)
+        local = row_settings(p, chord, segment_preferences)
         def priority(n):
+            local = settings_at(p, n, segment_preferences)
             weight = local.get(n.voice + "_weight", 1.)
             if local["focus"] == "pitched" and n.source == "pitch":
                 weight *= 1.6
@@ -264,13 +258,14 @@ def select_notes(candidates, settings=None, segment_preferences=()):
         used_pitches = set()
         first = len(pool)
         for n in sorted(chord, key=priority, reverse=True):
-            if local.get(n.voice + "_weight", 1.) <= 0:
+            note_preferences = settings_at(p, n, segment_preferences)
+            if note_preferences.get(n.voice + "_weight", 1.) <= 0:
                 muted += 1
                 continue
             if (n.pitch, n.source, n.voice, n.instrument_id) in used_pitches:
                 continue
             pool.append(n)
-            preferences.append(local)
+            preferences.append(note_preferences)
             scores.append(priority(n))
             used_pitches.add((n.pitch, n.source, n.voice, n.instrument_id))
         chord_ranges.append((first, len(pool), min(local["chord_size"], p["keys"])))
@@ -288,8 +283,8 @@ def select_notes(candidates, settings=None, segment_preferences=()):
             rows.extend([row] * (last - first)); cols.extend(range(first, last)); values.extend([1.] * (last - first))
         for time in sorted(set(time_values)):
             a, b = bisect_right(time_values, time - 1000), bisect_right(time_values, time)
-            at = order[b - 1]
-            cap = math.ceil(preferences[at]["density"])
+            row_start = bisect_left(time_values, time)
+            cap = math.ceil(min(preferences[order[i]]["density"] for i in range(row_start, b)))
             indices = order[a:b]
             row = len(upper); upper.append(cap)
             rows.extend([row] * len(indices)); cols.extend(indices); values.extend([1.] * len(indices))

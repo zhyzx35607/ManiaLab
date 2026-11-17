@@ -16,6 +16,7 @@ from scipy.optimize import Bounds, LinearConstraint
 from scipy.sparse import csc_matrix
 
 from .arrange import _solve_binary, parameters, settings_at
+from .preferences import row_settings
 from .domain import UNOBSERVED_RELEASES,note_from
 from .expression_articulation import articulation_policy
 from .expression_activity import section_activity
@@ -286,11 +287,11 @@ def chord_layer_options(notes, settings, segment_preferences):
     rows = []
     depth = 1
     for time, row in sorted(attacks.items()):
-        pref = settings_at(settings, time, segment_preferences)
+        pref = row_settings(settings, row, segment_preferences)
         cap = min(pref['chord_size'], math.ceil(pref['density']))
         pitched = all(n.source == 'pitch' for n in row)
         aligned = pitched and all(n.evidence_start is not None for n in row)
-        row.sort(key=lambda n: (-n.strength, -_attack_value(n, pref) if aligned else 0,
+        row.sort(key=lambda n: (-n.strength, -_attack_value(n, settings_at(settings, n, segment_preferences)) if aligned else 0,
                                 n.pitch, n.id))
         if pitched:
             depth = max(depth, min(len(row), cap))
@@ -328,8 +329,8 @@ def _deduplicate_pitches(notes, trace, settings, segment_preferences):
                 and all(getattr(n, key) == getattr(first, key) for key in fields)
                 and all(trace[n.id].get(key) == trace[first.id].get(key)
                         for key in ('mode', 'reason', 'articulation'))]
-            pref = settings_at(settings, first.start, segment_preferences)
-            winner = min(compatible, key=lambda n: (-_attack_value(n, pref), n.id))
+            pref = settings_at(settings, first, segment_preferences)
+            winner = min(compatible, key=lambda n: (-_attack_value(n, settings_at(settings, n, segment_preferences)), n.id))
         kept.append(winner)
         for note in options:
             if note.id != winner.id:
@@ -345,11 +346,11 @@ def drum_group_anchor(notes, settings, segment_preferences):
     """
     if len(notes) <= 1 or any(n.voice != 'drums' or n.source != 'transient' or n.hold for n in notes):
         return None
-    return min(notes, key=lambda n: (-_attack_value(n, settings_at(settings, n.start, segment_preferences)),
+    return min(notes, key=lambda n: (-_attack_value(n, settings_at(settings, n, segment_preferences)),
                                     n.start, n.id))
 
 
-def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferences, check_times):
+def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferences, check_times, row_preferences=None):
     """Use residual capacity only; every already selected note stays fixed."""
     if not anchors:
         return [], None
@@ -362,12 +363,12 @@ def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferen
             limits.append(remaining)
             for index in indices:
                 rows.append(row); cols.append(index); values.append(1)
-    holds = [(n, settings_at(settings, n.start, segment_preferences)['release_gap'])
+    holds = [(n, settings_at(settings, n, segment_preferences)['release_gap'])
              for n in selected if n.hold]
     # Original candidate times can carry a tighter section limit even when
     # the candidate itself was omitted. Keep the original solver's checks.
     for time in sorted(set(check_times) | {n.start for n in selected+anchors}):
-        pref = settings_at(settings, time, segment_preferences)
+        pref = (row_preferences or {}).get(time) or settings_at(settings, time, segment_preferences)
         existing = sum(n.start == time for n in selected)
         onsets = [i for i, n in enumerate(anchors) if n.start == time]
         constraint(onsets, pref['chord_size']-existing)
@@ -376,7 +377,7 @@ def _select_drum_anchors(selected, anchors, metadata, settings, segment_preferen
         recent = sum(time-1000 < n.start <= time for n in selected)
         constraint([i for i, n in enumerate(anchors) if time-1000 < n.start <= time],
                    math.ceil(pref['density'])-recent)
-    utility = np.asarray([_attack_value(n, settings_at(settings, n.start, segment_preferences))
+    utility = np.asarray([_attack_value(n, settings_at(settings, n, segment_preferences))
                           * (2 if metadata[n.id]['role'] == 'primary' else 1) for n in anchors])
     matrix = csc_matrix((values, (rows, cols)), shape=(len(limits), len(anchors)))
     solved = _solve_binary(-utility, integrality=np.ones(len(anchors)), bounds=Bounds(0, 1),
@@ -430,7 +431,7 @@ def select_expression(
     by_voice = defaultdict(list)
     for n in candidates:
         meta = metadata[n.id]
-        if settings_at(p, n.start, segment_preferences).get(n.voice+'_weight', 1.) <= 0:
+        if settings_at(p, n, segment_preferences).get(n.voice+'_weight', 1.) <= 0:
             trace[n.id].update(decision='omitted', reason='voice_not_selected')
             continue
         if trace[n.id].get('expression_end', n.end) > trace[n.id]['start'] and not n.hold:
@@ -483,7 +484,7 @@ def select_expression(
                 sum(n.hold and n.start <= t.start < n.end for n in base) > pref['max_held'] or
                 sum(n.start == t.start for n in base) > pref['chord_size'] or
                 sum(n.start == t.start for n in base) + sum(n.hold and n.start < t.start < n.end+pref['release_gap'] for n in base) > p['keys']
-                for t in base for pref in (settings_at(p, t.start, segment_preferences),))
+                for t in base for pref in (settings_at(p, t, segment_preferences),))
             if impossible:
                 attacks = defaultdict(list)
                 for n in group:
@@ -501,9 +502,11 @@ def select_expression(
             report['rhythm_policy'] = rhythm_report
         return [], report
     by_start, holds, total = defaultdict(Counter), [], []
+    row_notes = defaultdict(dict)
     for unit, group in enumerate(units):
         for n in group:
             by_start[n.start][unit] += 1
+            row_notes[n.start][n.id] = n
             total.append((n.start, unit))
             if n.hold:
                 holds.append((n, unit))
@@ -520,7 +523,7 @@ def select_expression(
     # before attacks at the same millisecond, matching layout feasibility.
     events = defaultdict(list)
     for n, unit in holds:
-        pref = settings_at(p, n.start, segment_preferences)
+        pref = settings_at(p, n, segment_preferences)
         events[n.start].append((unit, 1, 1))
         events[n.end].append((unit, -1, 0))
         events[n.end+pref['release_gap']].append((unit, 0, -1))
@@ -537,7 +540,8 @@ def select_expression(
             live[unit] += delta; reserved[unit] += gap_delta
             if delta > 0:
                 new_holds[unit] += delta
-        pref = settings_at(p, t, segment_preferences)
+        pref = (row_settings(p, row_notes[t].values(), segment_preferences) if t in row_notes
+                else settings_at(p, t, segment_preferences))
         constraint(live, pref['max_held'])
         if t not in by_start and t not in rhythm_check_times:
             continue
@@ -557,7 +561,7 @@ def select_expression(
     for unit, (role, group) in enumerate(zip(roles, units)):
         attack_scores = defaultdict(list)
         for n in group:
-            pref = settings_at(p, n.start, segment_preferences)
+            pref = settings_at(p, n, segment_preferences)
             key = (metadata[n.id]['section'], n.voice, n.start)
             value = _attack_value(n, pref)
             attack_scores[key].append(value * (2 if role == 'primary' else 1))
@@ -586,10 +590,10 @@ def select_expression(
             constraint({coverage: 1, **{unit: -1 for unit, value in maxima.items() if value >= level}}, 0)
             previous = level
     links = group_links(families, metadata, beat_ms, coherence,
-        lambda n: _attack_value(n, settings_at(p, n.start, segment_preferences)), boundaries)
+        lambda n: _attack_value(n, settings_at(p, n, segment_preferences)), boundaries)
     add_costs(links, families, utility, constraint)
     sustain_intervals = expression_sustain.coverage_intervals(units, metadata, trace, beat_ms,
-        sustain_coverage, lambda n: _attack_value(n, settings_at(p, n.start, segment_preferences)))
+        sustain_coverage, lambda n: _attack_value(n, settings_at(p, n, segment_preferences)))
     expression_sustain.add_rewards(sustain_intervals, utility, constraint)
     matrix = csc_matrix((vals, (rows, cols)), shape=(len(upper), len(utility)))
     # A song-wide relative gap can hide the value of several short figures.
@@ -628,7 +632,8 @@ def select_expression(
                 selected.append(n)
                 trace[n.id].update(chart_start=n.start, chart_end=n.end)
     added_drums, fallback_solver = _select_drum_anchors(
-        selected, anchors, metadata, p, segment_preferences, set(by_start) | rhythm_check_times)
+        selected, anchors, metadata, p, segment_preferences, set(by_start) | rhythm_check_times,
+        {t: row_settings(p, notes.values(), segment_preferences) for t, notes in row_notes.items()})
     for n in added_drums:
         for member in anchor_groups[n.id]:
             trace[member.id]['group_simplification'] = 'strongest_drum_attack'

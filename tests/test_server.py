@@ -165,7 +165,7 @@ def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_p
             ROOT/'vendor/mapperatorinator/template.osu',bpm=tempo['bpm'],offset=tempo['offset']),encoding='utf-8')
         return target
     monkeypatch.setattr(MapperEngine,'generate',model)
-    monkeypatch.setattr('manialab.server.assign_lanes',lambda *a,**k:pytest.fail('Model layout was overwritten'))
+    monkeypatch.setattr('manialab.generation.assign_lanes',lambda *a,**k:pytest.fail('Model layout was overwritten'))
     payload=dict(use_timing=True,bpm=120,offset=93,division=4,audio_shift_ms=22.5,settings={'keys':10})
     try:
         rejected=wait_job(client,client.post(base+'/engine-generate',json=payload,headers=headers).json)
@@ -204,7 +204,7 @@ def test_original_model_conflicts_are_reported_without_silent_reassignment(tmp_p
         output.mkdir();target=output/'generated.osu';target.write_text(text,encoding='utf-8')
         return target
     monkeypatch.setattr(MapperEngine,'generate',model)
-    monkeypatch.setattr('manialab.server.assign_lanes',lambda *a,**k:pytest.fail('Model conflict was hidden'))
+    monkeypatch.setattr('manialab.generation.assign_lanes',lambda *a,**k:pytest.fail('Model conflict was hidden'))
     try:
         result=wait_job(client,client.post(base+'/engine-generate',json={'settings':{'keys':10}},headers=headers).json)
         assert result['status']=='done',result
