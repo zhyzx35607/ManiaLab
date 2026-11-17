@@ -21,7 +21,6 @@ from . import __version__
 from .arrange import DEFAULTS, parameters, layout_metrics
 from .timing import DIVISIONS, align_candidates, chart_clock_notes, analysis_timing_diagnostics, grid_report, refit_offset
 from .audio import analyze, analyze_deep
-from .audition import grid_events, render_audition, waveform_window
 from .separation import Separator
 from .provided_stems import ProvidedStemSeparator,prepare_provided_stems,provided_stem_identity
 from .piano import PianoDetector
@@ -31,10 +30,11 @@ from .pattern_prior import prior_status
 from .review import review_chart
 from .ln_patterns import analyze_ln_patterns
 from .editing import edit_notes
-from .stems import VOICES,stem_path
+from .stems import VOICES
 from .style import describe_chart
 from .domain import clean_meta, export_osu, note_from, parse_osu, upstream_events, validate
 from .planner import plan
+from .playback_routes import register_playback_routes
 from .storage import AUDIO, Projects, extract_osz, safe_path, validate_import_paths
 from .upstream import MapperEngine
 
@@ -709,63 +709,6 @@ def create_app(resources, data_root):
             return report
         return submit(pid, operation)
 
-    @app.get("/api/projects/<pid>/audio")
-    def audio(pid):
-        state = projects.load(pid)
-        preview = projects.path(pid) / "preview.wav"
-        return send_file(preview if preview.exists() else current_audio(state), conditional=True)
-
-    @app.get("/api/projects/<pid>/stem/<voice>")
-    def stem_audio(pid, voice):
-        state=projects.load(pid)
-        return send_file(stem_path(projects.path(pid),state.get('analysis'),voice),conditional=True)
-
-    @app.post("/api/projects/<pid>/audition")
-    def audition(pid):
-        state = projects.load(pid)
-        payload = request.json
-        voice = payload.get("voice", "mix")
-        preview = projects.path(pid)/'preview.wav' if voice=='mix' else stem_path(projects.path(pid),state.get('analysis'),voice)
-        if not preview.is_file():
-            raise ValueError("请先分析音频，再生成同步试听片段")
-        start = float(payload.get("start_ms", 0))
-        length = float(payload.get("duration_ms", 12000))
-        if not math.isfinite(start) or not math.isfinite(length) or start < 0 or not 1000 <= length <= 30000:
-            raise ValueError("试听范围必须为 1–30 秒，起点不能为负")
-        mode = payload.get("mode", "beats")
-        if mode == "beats":
-            tempo = requested_tempo(payload, state)
-            events = grid_events(tempo["bpm"], tempo["offset"], start, length)
-        elif mode in ("chart", "evidence"):
-            if mode == "chart":
-                if state["active"] < 0:
-                    raise ValueError("请先生成候选谱面")
-                source = state["variants"][state["active"]]["notes"]
-            else:
-                source = state.get("analysis", {}).get("candidates", [])
-            if voice != "mix":
-                source = [n for n in source if n.get("voice", "mix") == voice]
-            events = [(n["start"], "head") for n in source]
-            if payload.get("releases", True) is True:
-                events.extend((n["end"], "tail") for n in source if n["end"] > n["start"])
-        else:
-            raise ValueError("试听模式无效")
-        buffer, report = render_audition(preview, start, length, events,
-            music_volume=float(payload.get("music_volume", .7)), click_volume=float(payload.get("click_volume", .3)))
-        response = send_file(buffer, mimetype="audio/wav", download_name="ManiaLab-timing-audition.wav")
-        response.headers["X-ManiaLab-Audition-Events"] = str(len(report["events"]))
-        return response
-
-    @app.get("/api/projects/<pid>/waveform")
-    def waveform(pid):
-        state=projects.load(pid)
-        voice = request.args.get("voice", "mix")
-        preview = projects.path(pid)/'preview.wav' if voice=='mix' else stem_path(projects.path(pid),state.get('analysis'),voice)
-        if not preview.is_file():
-            raise ValueError("请先分析音频，再查看波形细节")
-        return jsonify(waveform_window(preview, float(request.args.get("start_ms", 0)),
-                                       float(request.args.get("duration_ms", 2000))))
-
     @app.get("/api/projects/<pid>/export/<kind>")
     def export(pid, kind):
         state = projects.load(pid)
@@ -820,4 +763,10 @@ def create_app(resources, data_root):
         buffer.seek(0)
         return send_file(buffer, download_name="ManiaLab.osz", as_attachment=True, mimetype="application/octet-stream")
 
+    register_playback_routes(
+        app,
+        projects=projects,
+        current_audio=current_audio,
+        requested_tempo=requested_tempo,
+    )
     return app

@@ -12,7 +12,8 @@
 - PR #110已合并为`035816c4d048e5743ddf6807b7c4650104c2ba60`，包含集成便携验证记录与冻结输入哈希更正。
 - PR #111已于2026-11-17合并到`main`，合并提交`cca4a21f831c3aa5b2cad989b6c287b7dbe50f01`。普通功能分支push run `44064879215`为成功跳过，PR run `44064888429`通过，合并后的main run `44065394291`通过；现有分支已从该main提交续接。
 - PR #112修复了未知任务查询/取消的API状态码，已合并为`c386eac8c423ee47707c63e24743e78541a40492`；PR run `44068195710`与合并后main run `44068922008`成功，普通push run `44068133938`为成功跳过。
-- 当前后续分支`codex/recent-project-race-20261117`修复最近项目快速切换时的旧响应覆盖；完整Edge浏览器套件31 passed，正在进行PR验证。
+- PR #113修复最近项目快速切换时的旧响应覆盖，已合并为`dd83a1b0ffd0e6c9f4bca141c99ef9899bc1d6c9`；PR run `44070209976`与合并后main run `44070802839`成功，普通push run `44070113643`为成功跳过。
+- 当前分支`codex/playback-routes-20261117`将播放、试听与波形HTTP路由从`server.py`提取到`playback_routes.py`；全量Python与Edge套件均通过，正在准备PR。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1713,3 +1714,9 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 只读前端审查发现快速连续选择最近项目时，旧GET响应无条件调用`loadState`，可能覆盖较晚选择。新增可控延迟的Edge回归：先请求`UI timing clock`并挂起响应，再加载`UI timing wave`，最后放回旧响应；修复前页面被旧项目覆盖，真实复现通过。
 - `loadState`及最近项目请求共用单调请求序号；每次选择发出新序号，所有成功项目载入都会使旧请求失效。迟到响应不能覆盖最新项目，也不影响现有载入路径。
 - 单项Edge回归通过；完整`npm run test:ui`使用`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`，31 passed（1.3分钟）。静态JavaScript与新测试文件`node --check`、`git diff --check`通过；Windows PR CI尚未运行。未改服务端、模型或研究输入。
+
+## 2026-11-17 第十五阶段：播放路由模块边界
+
+- `server.py`继续承载项目与任务 API，但播放、独立声部读取、试听渲染和波形窗口处理集中在嵌套路由中。将这四个路由搬到`manialab/playback_routes.py`，由`create_app`显式传入`projects`、`current_audio`和`requested_tempo`。
+- 保留同一Flask app、URL、视图函数名、鉴权和错误处理；未把依赖更广的谱面/ZIP导出一并迁移。架构导航同步更新。
+- 定向`tests/test_server.py tests/test_audition.py`为20 passed；全量Python为2,495 passed、89 skipped（64.41秒），`compileall -q manialab`通过；完整Edge `npm run test:ui`为31 passed（1.2分钟）。`git diff --check`通过。Windows PR CI待运行；未运行模型或改变音频数据。
