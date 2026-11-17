@@ -10,7 +10,7 @@ import time
 
 import imageio_ffmpeg
 
-from .audio import run_hidden
+from .audio_io import run_hidden
 from .stems import PROFILES, profile_for
 
 MODEL_SHA256 = "a004b2790d73ffeaa535db458a1a79b539dfdbafbccc31f275d07e632ebd7816"

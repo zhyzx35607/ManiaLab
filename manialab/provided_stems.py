@@ -6,7 +6,9 @@ from pathlib import Path
 import numpy as np
 from scipy.io import wavfile
 
-from .audio import SR,align_stem_samples,decode
+from .audio_config import SR
+from .audio_evidence import align_stem_samples
+from .audio_io import decode
 from .stems import VOICES,stem_path,separation_voices
 
 
