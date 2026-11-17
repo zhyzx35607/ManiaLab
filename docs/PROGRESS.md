@@ -10,7 +10,8 @@
 - PR #109已合并到`main`，九阶段代码在2026-11-17完成完整Windows便携验证；run `44057633497`通过，源码树与合并提交`3dc0705`一致。报告保存在ignored `build/structure-20261117-validation/ci-44057633497/`，没有创建新Release。
 - 已有66例[冻结片段对照](frozen-generation-regression-results.md)及10例[完整歌曲来源对照](ln-evidence-review-results.md)。第十阶段完成整合便携验证，另完成声部取舍静态复核与协议哈希更正；没有重复已完成的模型实验。
 - PR #110已合并为`035816c4d048e5743ddf6807b7c4650104c2ba60`，包含集成便携验证记录与冻结输入哈希更正。
-- 当前分支`codex/deduplicate-ci-runs-20261117`调整Windows验证的job条件，减少普通功能分支push与PR重复运行；保留`[portable]`入口。第十二阶段代码提交已通过PR验证，进度记录更新后将复查CI并合并。
+- PR #111已于2026-11-17合并到`main`，合并提交`cca4a21f831c3aa5b2cad989b6c287b7dbe50f01`。普通功能分支push run `44064879215`为成功跳过，PR run `44064888429`通过，合并后的main run `44065394291`通过；现有分支已从该main提交续接。
+- 当前后续分支`codex/structure-followup-20261117`修复了未知任务查询/取消的API状态码；本地全量Python为2,495 passed、89 skipped，正在进行PR验证。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1697,3 +1698,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 同一提交因push与pull_request同时触发`.github/workflows/windows.yml`，重复运行Python和浏览器测试。取消其中一条后，GitHub将取消状态显示为失败检查，必须重跑才能合并。
 - `verify` job现仅对PR、`main`、tag、手动触发和提交信息带`[portable]`的push执行；普通功能分支push跳过job，避免重复计算且返回成功跳过状态。没有移除`[portable]`便携构建入口。
 - `docs/development.md`已同步说明触发规则。提交`30d01ce9021c5763dd0bbab66ce1348ad77a3a7c`的push run `44064113519`为`skipped`，PR run `44064156960`的Python与浏览器测试通过，验证普通push不再留下失败检查。没有重新触发`[portable]`便携构建；其完整验证已有run `44057633497`和PR #105 push run `44018546073`作为证据。未改音乐算法或模型输入。
+- PR #111已合并为`cca4a21f831c3aa5b2cad989b6c287b7dbe50f01`。合并后复核确认run `44064879215`为`skipped`、PR run `44064888429`与main run `44065394291`均成功。
+- 对`Projects.save`及应用写入串行边界做只读复核：同目录临时文件加`os.replace`保留当前单进程原子替换语义，服务写路由由`RLock`保护；没有复现缺陷，不据测试盲区改写保存实现。定向`tests/test_editing.py tests/test_import_reliability.py`为28 passed。未来多进程共享数据目录仍无锁与专门回归，且原子替换不等于断电级`fsync`持久性；这些是边界说明，不是当前已确认故障。
+
+## 2026-11-17 第十三阶段：未知任务的 API 状态
+
+- 只读复核发现`GET /api/jobs/<jid>`与`POST /api/jobs/<jid>/cancel`对未知ID直接索引任务字典，抛出的`KeyError`被全局处理器误映射为400。新增两个API回归后先复现2项失败，响应均为`400`。
+- 两个路由现在在任务锁内显式查找；任务不存在返回`404 {"error":"任务不存在"}`，已知任务行为不变。
+- `.venv/Scripts/python.exe -m pytest -q tests/test_server.py`为17 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,495 passed、89 skipped（60.82秒）。`compileall -q manialab scripts tests`、`node --check`全部静态JavaScript文件及`git diff --check`通过。等待PR Windows CI；未运行模型、读取音频或改变研究产物。

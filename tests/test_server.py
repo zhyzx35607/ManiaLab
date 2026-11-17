@@ -15,6 +15,24 @@ from manialab.storage import Projects
 ROOT=Path(__file__).parents[1]
 
 
+@pytest.mark.parametrize(('method', 'path'), [
+    ('get', '/api/jobs/missing'),
+    ('post', '/api/jobs/missing/cancel'),
+])
+def test_unknown_job_returns_not_found(tmp_path, method, path):
+    app = create_app(ROOT, tmp_path)
+    try:
+        response = app.test_client().open(
+            path,
+            method=method,
+            headers={'X-ManiaLab-Token': app.config['TOKEN']},
+        )
+        assert response.status_code == 404
+        assert response.json == {'error': '任务不存在'}
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 def test_failed_import_removes_partial_project(tmp_path):
     app=create_app(ROOT,tmp_path);client=app.test_client()
     headers={'X-ManiaLab-Token':app.config['TOKEN']}

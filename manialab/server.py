@@ -249,12 +249,18 @@ def create_app(resources, data_root):
     @app.get("/api/jobs/<jid>")
     def get_job(jid):
         with mutex:
-            return jsonify(jobs[jid])
+            job = jobs.get(jid)
+            if job is None:
+                return jsonify(error="任务不存在"), 404
+            return jsonify(job)
 
     @app.post("/api/jobs/<jid>/cancel")
     def cancel(jid):
         with mutex:
-            jobs[jid]["cancel"] = True
+            job = jobs.get(jid)
+            if job is None:
+                return jsonify(error="任务不存在"), 404
+            job["cancel"] = True
         return jsonify(ok=True)
 
     @app.post("/api/projects/<pid>/analyze")
