@@ -19,8 +19,10 @@ from .pattern_prior import preference_cost
 from .preferences import row_settings
 from .sequence_prior import (
     SequencePrior,
-    SequenceRow,
     score_sequence_windows,
+)
+from .sequence_windows import (
+    SequenceRow,
     sequence_beat_clock,
     sequence_beat_positions,
 )
