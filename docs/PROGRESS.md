@@ -1833,5 +1833,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`resolve_phrase_decisions`、和弦层级选项、候选去重、容量预检、鼓点回退与`select_expression`移入`manialab/expression_selection.py`。`expression.py`继续负责声部方案生成、校验和证据转换，并重导出原选择辅助函数。
 - `expression.select_expression`保留原签名，通过包装层将`expression._solve_binary`转交新模块，两阶段求解均继续使用既有可替换求解器入口。AST 对照确认六个辅助函数实现不变，旧选择函数签名一致。
-- 定向表达、solver、LN、Timing 生成和声部容量测试共364 passed（6.94秒）；全量`.venv/Scripts/python.exe -m pytest -q`为2,522 passed、89 skipped（63.52秒）；完整Edge `npm run test:ui`为31 passed（1.2分钟）。`.venv/Scripts/python.exe -m compileall -q manialab tests`与`git diff --check`通过。独立导入测试确认选择模块不反向导入`expression.py`或`audio.py`。未运行真实模型或用户音频；PR CI待运行。
-- 下一步审查`sequence_prior.py`窗口构造/特征编码与模型评分之间的边界，确认训练和布局调用兼容后再决定迁移范围；长期音乐质量与 osu! 试打仍独立验收。
+- 定向表达、solver、LN、Timing 生成和声部容量测试共364 passed（6.94秒）；全量`.venv/Scripts/python.exe -m pytest -q`为2,522 passed、89 skipped（63.52秒）；完整Edge `npm run test:ui`为31 passed（1.2分钟）。`.venv/Scripts/python.exe -m compileall -q manialab tests`与`git diff --check`通过。独立导入测试确认选择模块不反向导入`expression.py`或`audio.py`。未运行真实模型或用户音频。
+- PR #131 Windows run `44121345391`通过并合并为`6f814dcbdab9ede914f6a86b5d84147e96a1d901`；合并后 main run `44122130127`成功。后续架构审查确认`sequence_prior.py`已是模型加载/评分门面，窗口编码已在阶段 26 拆出；下一步转为按版本职责整理`pattern_sequence.py`的基础、LN交互和长上下文编码，保留旧入口并冻结特征定义。长期音乐质量与 osu! 试打仍独立验收。
+
+## 2026-11-18 第三十三阶段：序列特征编码边界
+
+- 将版本化特征实现拆到`sequence_features_common.py`、`sequence_features_base.py`、`sequence_features_interactions.py`、`sequence_features_phrase_context.py`和`sequence_features_mirror.py`。`pattern_sequence.py`保留 schema、常量、编码器及原辅助函数的兼容重导出；模型输入字段、顺序和计算逻辑不作更改。
+- AST 对照确认迁移的12个函数定义与原实现一致。新增边界测试验证旧导入名仍指向同一函数/schema 对象，并确保编码实现模块不反向导入兼容门面。
+- 序列特征、schema、窗口、训练编码、运行时、布局与评估定向测试为135 passed、4 skipped（8.67秒）；全量`.venv/Scripts/python.exe -m pytest -q`为2,524 passed、89 skipped（65.48秒）；完整Edge `npm run test:ui`为31 passed（1.1分钟）。`.venv/Scripts/python.exe -m compileall -q manialab tests`和`git diff --check`通过。未运行研究训练、模型、用户音频或参考谱。
+- PR CI待运行；长期音乐质量与 osu! 试打仍独立验收。后续继续只读审查剩余领域模块，依据实际函数职责和调用/测试边界选择下一阶段。
