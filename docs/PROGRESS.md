@@ -17,7 +17,8 @@
 - PR #115 将任务状态、串行执行、取消与项目提交边界提取到`task_service.py`，已合并为`cfddeeb`；PR run `44075974260`与合并后main run `44076507773`成功，普通push run成功跳过。
 - PR #116 将导入、项目读取、谱面切换和候选切换路由提取到`project_routes.py`，已合并为`d7a6f7db1cc4c515acfcd0985a53c93c8c356064`；PR run `44079580314`与合并后main run `44080283011`的Python/API和合成浏览器验证均成功，功能分支push run `44079484962`成功跳过。
 - PR #117 将 JSON、OSU 与 OSZ 导出处理提取到`export_routes.py`，已合并为`374caf536c269632df2967de641ae792d2fba171`；PR run `44082425764`与合并后main run `44082995836`的Python/API和合成浏览器验证均成功，功能分支push run `44082374845`成功跳过。
-- 当前分支`codex/timing-routes-20261117`正在评估并提取 Timing 检查与Offset重拟合 HTTP 路由；状态见下方第十九阶段。
+- PR #118 将 Timing 检查与Offset重拟合路由提取到`timing_routes.py`，已合并为`fbd47e6f5d5c7009bda4dd921fc34a7009adeb43`；PR run `44085269448`与合并后main run `44085905987`的Python/API和合成浏览器验证均成功，功能分支push run `44085216977`成功跳过。
+- 当前分支`codex/plan-expression-routes-20261117`正在迁移编排建议、段落和表达路由；状态见下方第二十阶段。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1749,4 +1750,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`POST /api/projects/<pid>/timing-refit`和`timing-check`迁入`manialab/timing_routes.py`。模块注入项目仓库与原有`requested_tempo`闭包；BPM/Offset校验和共享时钟策略继续由应用组合层维护。
 - 保留endpoint与HTTP方法、稀疏攻击证据拒绝、音频时钟攻击点转换、Offset重拟合及诊断报告合并；只读对照未发现行为差异。
-- 定向`tests/test_timing_diagnostic_clock.py tests/test_server.py`为31 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（62.36秒）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。完整Edge `npm run test:ui`为31 passed（1.2分钟）。Windows PR CI待运行；未运行模型、读取用户音频或修改研究脚本/产物。
+- 定向`tests/test_timing_diagnostic_clock.py tests/test_server.py`为31 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（62.36秒）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。完整Edge `npm run test:ui`为31 passed（1.2分钟）。PR Windows run `44085269448`与合并后main run `44085905987`成功；未运行模型、读取用户音频或修改研究脚本/产物。
+
+## 2026-11-17 第二十阶段：编排、段落与表达路由边界
+
+- 将`/plan`、`/clear-plan`、`/recommendations`、`/structure`、`/expression`及`/apply-recommendation`迁入`manialab/arrangement_routes.py`。保持 endpoint 名、路径、HTTP 方法、异步任务提交、共享锁、项目忙碌检查、证据签名校验和计划/表达状态联动。
+- planner通过应用组合层显式注入`app.extensions["planner"]`，浏览器fixture沿用该注入点隔离外部请求；段落检测继续使用原音频解析器与偏移转换闭包。
+- 全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（84.66秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。Windows PR CI待运行；未运行模型、读取用户音频或修改研究脚本/产物。
