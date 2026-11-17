@@ -1756,4 +1756,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`/plan`、`/clear-plan`、`/recommendations`、`/structure`、`/expression`及`/apply-recommendation`迁入`manialab/arrangement_routes.py`。保持 endpoint 名、路径、HTTP 方法、异步任务提交、共享锁、项目忙碌检查、证据签名校验和计划/表达状态联动。
 - planner通过应用组合层显式注入`app.extensions["planner"]`，浏览器fixture沿用该注入点隔离外部请求；段落检测继续使用原音频解析器与偏移转换闭包。
-- 全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（84.66秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。Windows PR CI待运行；未运行模型、读取用户音频或修改研究脚本/产物。
+- 全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（84.66秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。PR #119 Windows run `44088189406`、合并后main run `44088861668`成功；未运行模型、读取用户音频或修改研究脚本/产物。
+
+## 2026-11-17 第二十一阶段：采音与导入声轨路由边界
+
+- 将`POST /api/projects/<pid>/analyze`和`provided-stems`迁入`manialab/analysis_routes.py`。项目仓库、任务服务、当前音频解析、任务提交、分离器及各检测器由应用组合层显式注入；分析函数与声轨处理工厂集中在`app.extensions['analysis_services']`，测试可替换单个依赖而不触发真实模型。
+- 保持现有endpoint、请求校验、专用模型/声部兼容检查、共享任务锁、异步提交身份、旧结果保留，以及导入失败/取消时新上传与解码文件的清理行为。
+- 定向API与可靠性验证为66 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（87.83秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。Windows PR CI待运行；未运行模型、读取用户音频或修改研究脚本/产物。

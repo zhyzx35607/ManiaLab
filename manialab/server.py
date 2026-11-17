@@ -6,8 +6,8 @@ import logging
 import math
 from pathlib import Path
 import secrets
-import shutil
 import time
+from types import SimpleNamespace
 from urllib.parse import urlparse
 import zipfile
 
@@ -27,8 +27,8 @@ from .pattern_prior import prior_status
 from .review import review_chart
 from .ln_patterns import analyze_ln_patterns
 from .editing import edit_notes
-from .stems import VOICES
 from .style import describe_chart
+from .analysis_routes import register_analysis_routes
 from .domain import clean_meta, note_from, parse_osu, upstream_events, validate
 from .export_routes import register_export_routes
 from .planner import plan
@@ -36,7 +36,7 @@ from .playback_routes import register_playback_routes
 from .project_routes import register_project_routes
 from .arrangement_routes import register_arrangement_routes
 from .timing_routes import register_timing_routes
-from .storage import AUDIO, Projects, safe_path
+from .storage import Projects, safe_path
 from .task_service import ProjectTasks
 from .upstream import MapperEngine
 
@@ -56,8 +56,17 @@ def create_app(resources, data_root):
     piano_detector = PianoDetector(resources)
     guitar_detector = GuitarDetector(resources)
     instrument_detector = InstrumentDetector(resources)
+    analysis_services = SimpleNamespace(
+        parameters=parameters,
+        analyze=analyze,
+        analyze_deep=analyze_deep,
+        Separator=Separator,
+        ProvidedStemSeparator=ProvidedStemSeparator,
+        prepare_provided_stems=prepare_provided_stems,
+        provided_stem_identity=provided_stem_identity,
+    )
     app.extensions.update(projects=projects, jobs=task_service.jobs, executor=task_service.executor,
-                          task_service=task_service)
+                          task_service=task_service, analysis_services=analysis_services)
     register_project_routes(app, projects, task_service)
 
     @app.before_request
@@ -118,137 +127,6 @@ def create_app(resources, data_root):
             return jsonify(error="任务不存在"), 404
         return jsonify(ok=True)
 
-    @app.post("/api/projects/<pid>/analyze")
-    def analyze_audio(pid):
-        payload = request.json
-        if not isinstance(payload,dict):
-            raise ValueError('采音请求必须是对象')
-        prefs = parameters(payload.get("settings", {}))
-        analysis_engine = payload.get("engine", "basic")
-        piano_engine = payload.get('piano_engine','general')
-        guitar_engine = payload.get('guitar_engine','general')
-        allow_guitar_releases = payload.get('allow_guitar_predicted_releases',False)
-        instrument_engine = payload.get('instrument_engine','general')
-        allow_releases = payload.get('allow_predicted_releases',False)
-        if analysis_engine not in ("basic", "deep", "deep6", "provided"):
-            raise ValueError("采音引擎无效")
-        if piano_engine not in ('general','specialist'):
-            raise ValueError('钢琴采音方式无效')
-        if guitar_engine not in ('general','fl'):
-            raise ValueError('吉他采音方式无效')
-        if type(allow_guitar_releases) is not bool:
-            raise ValueError('吉他模型音尾选项必须是布尔值')
-        if allow_guitar_releases and guitar_engine!='fl':
-            raise ValueError('请先选择吉他专用采音，再启用吉他模型音尾')
-        if instrument_engine not in ('general','tsumugi'):
-            raise ValueError('贝斯与伴奏采音方式无效')
-        if type(allow_releases) is not bool:
-            raise ValueError('模型音尾选项必须是布尔值')
-        if allow_releases and instrument_engine!='tsumugi':
-            raise ValueError('请先选择贝斯与其他伴奏专用采音，再启用模型音尾')
-        if instrument_engine=='tsumugi':
-            if analysis_engine not in ('deep','deep6','provided'):
-                raise ValueError('专用采音需要分离或导入的贝斯、其他伴奏声轨')
-            if not instrument_detector.status()['available']:
-                raise ValueError('当前安装包未包含贝斯与其他伴奏专用组件')
-            if analysis_engine=='provided':
-                with task_service.lock:
-                    provided=projects.load(pid).get('provided_stems',{})
-                    if not any(v in ('bass','other') for v in provided.get('voices',[])):
-                        raise ValueError('已导入声轨中没有贝斯或其他伴奏')
-        if guitar_engine=='fl':
-            if analysis_engine not in ('deep6','provided'):
-                raise ValueError('吉他专用采音需要六声部分离或已导入的吉他声轨')
-            if not guitar_detector.status()['available']:
-                raise ValueError('当前安装包未包含吉他专用采音模型')
-            if analysis_engine=='provided':
-                with task_service.lock:
-                    provided=projects.load(pid).get('provided_stems',{})
-                    if 'guitar' not in provided.get('voices',[]):
-                        raise ValueError('已导入声轨中没有吉他')
-        if piano_engine=='specialist':
-            if analysis_engine not in ('deep6','provided'):
-                raise ValueError('钢琴专用采音需要六声部分离或已导入的钢琴声轨')
-            piano_status=piano_detector.status()
-            if not piano_status['available']:
-                raise ValueError(piano_status.get('message','当前安装包未包含钢琴专用采音模型'))
-        def operation(state, progress, cancelled):
-            if analysis_engine in ('deep','deep6','provided'):
-                selected_separator=(ProvidedStemSeparator(state.get('provided_stems')) if analysis_engine=='provided'
-                    else Separator(resources,'six') if analysis_engine=='deep6' else separator)
-                state["analysis"] = analyze_deep(current_audio(state), projects.path(pid), resources / "assets/basic-pitch.onnx",
-                    prefs, selected_separator, progress, cancelled,
-                    piano_detector=piano_detector if piano_engine=='specialist' else None,
-                    guitar_detector=guitar_detector if guitar_engine=='fl' else None,
-                    allow_guitar_predicted_releases=allow_guitar_releases,
-                    instrument_detector=instrument_detector if instrument_engine=='tsumugi' else None,
-                    allow_predicted_releases=allow_releases)
-            else:
-                state["analysis"] = analyze(current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx", prefs, progress, cancelled)
-            state["settings"] = prefs
-            state['analysis_options'] = dict(engine=analysis_engine,piano_engine=piano_engine,
-                instrument_engine=instrument_engine,allow_predicted_releases=allow_releases,
-                guitar_engine=guitar_engine,allow_guitar_predicted_releases=allow_guitar_releases)
-            state["audio_shift_ms"] = requested_shift(payload, state)
-            from .expression import propose_expression
-            if state['analysis'].get('structure'):
-                state['expression'] = propose_expression(state['analysis'], prefs)
-            else:
-                state.pop('expression', None)
-            if state.get('plan',{}).get('source')=='local-audio-recommendation':
-                state.pop('plan',None)
-            # Keep old variants selectable, but never mask a fresh timing result
-            # with the previously selected candidate's BPM / Offset.
-            if state["mode"] == "audio":
-                state["active"] = -1
-            return {"candidates": len(state["analysis"]["candidates"])}
-        return submit(pid, operation, identity=dict(engine=analysis_engine,piano_engine=piano_engine,
-            instrument_engine=instrument_engine,allow_predicted_releases=allow_releases,
-            guitar_engine=guitar_engine,allow_guitar_predicted_releases=allow_guitar_releases))
-
-    @app.post('/api/projects/<pid>/provided-stems')
-    def import_provided_stems(pid):
-        with task_service.lock:
-            task_service.ensure_project_idle(pid)
-            task_service.ensure_idle('已有计算任务运行，请完成后再导入声轨')
-            state=projects.load(pid);current_audio(state)
-            if not request.files or set(request.files)-set(VOICES):raise ValueError('请选择并标明声部文件')
-            # Preserve old sets and analyses; each upload has an isolated path.
-            folder=projects.path(pid)/'provided-uploads'/secrets.token_hex(16)
-            uploads_to_save=[]
-            for voice in request.files:
-                uploads=request.files.getlist(voice)
-                if len(uploads)!=1:raise ValueError('每个声部只能选择一个文件')
-                upload=uploads[0]
-                name=Path(upload.filename.replace('\\','/')).name
-                if Path(name).suffix.lower() not in AUDIO:raise ValueError('声部文件必须是音频')
-                target=safe_path(folder/voice,name)
-                uploads_to_save.append((voice,upload,target))
-            sources={}
-            new_decoded_folder=None
-            def cleanup(committed):
-                if not committed:
-                    shutil.rmtree(folder,ignore_errors=True)
-                    if new_decoded_folder is not None:
-                        shutil.rmtree(new_decoded_folder,ignore_errors=True)
-            def operation(state,progress,cancelled):
-                nonlocal new_decoded_folder
-                _,key=provided_stem_identity(current_audio(state),sources)
-                decoded_folder=projects.path(pid)/'stems-provided'/key
-                if not decoded_folder.exists():new_decoded_folder=decoded_folder
-                report=prepare_provided_stems(current_audio(state),sources,projects.path(pid),progress,cancelled)
-                state['provided_stems']=report
-                return {'voices':report['voices'],'duration_seconds':report['duration_seconds']}
-            try:
-                for voice,upload,target in uploads_to_save:
-                    target.parent.mkdir(parents=True,exist_ok=True)
-                    with target.open('xb') as destination:upload.save(destination)
-                    sources[voice]=target
-                return submit(pid,operation,cleanup=cleanup)
-            except Exception:
-                cleanup(False)
-                raise
-
     def requested_shift(payload, state):
         shift = float(payload.get("audio_shift_ms", state.get("audio_shift_ms", 0)))
         if not math.isfinite(shift) or abs(shift) > 100:
@@ -270,6 +148,12 @@ def create_app(resources, data_root):
         return detected | dict(bpm=bpm, offset=round(offset), division=division, audio_shift_ms=shift,
                                stable=bool(unchanged and detected.get("stable") and coverage_checked))
 
+    register_analysis_routes(
+        app, projects=projects, task_service=task_service, resources=resources,
+        current_audio=current_audio, submit=submit, requested_shift=requested_shift,
+        separator=separator, piano_detector=piano_detector, guitar_detector=guitar_detector,
+        instrument_detector=instrument_detector, services=analysis_services,
+    )
     register_timing_routes(app, projects=projects, requested_tempo=requested_tempo)
     register_arrangement_routes(
         app,

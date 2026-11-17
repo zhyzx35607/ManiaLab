@@ -94,8 +94,8 @@ def test_api_requires_explicit_valid_mode_and_persists_job_options(tmp_path,monk
         return dict(candidates=[],duration=1,tempo=dict(bpm=120,offset=0),
             instrument_engine='tsumugi' if kwargs['instrument_detector'] else 'general',
             allow_predicted_releases=kwargs['allow_predicted_releases'])
-    monkeypatch.setattr(server,'analyze_deep',analyze)
     app,client,headers,state=create_project(tmp_path,monkeypatch)
+    monkeypatch.setattr(app.extensions['analysis_services'],'analyze_deep',analyze)
     url=f'/api/projects/{state["id"]}/analyze'
     try:
         assert client.get('/api/status').json['instruments']['default'] is False
@@ -139,8 +139,8 @@ def test_api_requires_explicit_valid_mode_and_persists_job_options(tmp_path,monk
 @pytest.mark.parametrize('failure',[ValueError('worker failed'),InterruptedError('cancelled')])
 def test_failed_or_cancelled_specialist_keeps_saved_analysis_and_options(tmp_path,monkeypatch,failure):
     def analyze(*args,**kwargs):raise failure
-    monkeypatch.setattr(server,'analyze_deep',analyze)
     app,client,headers,state=create_project(tmp_path,monkeypatch)
+    monkeypatch.setattr(app.extensions['analysis_services'],'analyze_deep',analyze)
     state['analysis']={'sentinel':'old analysis'}
     state['analysis_options']={'instrument_engine':'general','allow_predicted_releases':False}
     Projects(tmp_path/'projects').save(state)
