@@ -32,6 +32,9 @@ if __name__=='__main__':
     watch_owner(owner)
     sys.argv=[str(script),*sys.argv[3:]]
     sys.path.insert(0,str(script.parent))
+    import torch
+    torch.set_num_threads(2)
+    torch.set_num_interop_threads(1)
     codec_flags=[arg for arg in sys.argv[1:] if arg.startswith('--mania-sketch-context=')]
     if codec_flags:
         from mapper_sketch_context import CODEC,install_runtime

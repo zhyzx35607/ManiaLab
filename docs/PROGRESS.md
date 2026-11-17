@@ -6,7 +6,7 @@
 ## 当前状态（先读）
 
 - 已发布的 Windows 包为 `v0.1.0-alpha.6-dev.18`；后续主线修复不自动进入该已发布包。
-- 当前按 2026-11-17 审查推进工程整理与可靠性修复，分阶段记录在本文件末尾。
+- 2026-11-17 工程整理与可靠性修复已完成两个阶段的代码和验证；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1422,3 +1422,23 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - README 聚焦当前使用入口，历史实验归档 `docs/research-history.md`；新增 `docs/architecture.md`，修正快速开始的旧分段描述与构建缺失的钢琴准备步骤。研究脚本及协议原路径不变。
 - 首轮全量 `python -m pytest -q`：2,395 passed、89 skipped（63.74秒）。之后补全跨上传目录冲突与合排容量检查，相关组合回归122 passed；`compileall`、静态 JS 语法与 `git diff --check`通过。最终全量为 **2,398 passed、89 skipped（66.54秒）**；以 PR head CI 为合并依据。
 - 本阶段是软件可靠性修复，不声称提升真实音频采音准确率或完成音乐验收。下一阶段：组件身份缓存、构建能力清单、前端候选状态和可复用浏览器回归。
+
+
+## 2026-11-17 第二阶段：组件契约与浏览器回归
+
+- 第一阶段 PR #101 已合并，main merge commit `9784525101c33743c77d94b43649a8da4c37d8dd`；head `1f1da33` 的两项 Windows verify 均成功。
+- 后续独立复核发现更窄的容量边界：前段 LN 量化到下一段开始时，原段偏好可能覆盖下一段更低的 max_held。本阶段将实际持续占轨约束独立按制谱时间计算，加入原5990ms→6000ms边界、两条LN而下一段上限1的回归。
+- 钢琴状态验证大小/SHA，区分 missing/mismatched/verified/读取错误；文件签名变化或30秒过期重新校验，推理前强制校验。模型来源选择支持当前完整SHA命名的版本文件，历史模型原路径不变；构建规范为包内固定文件名。
+- 本机从已验证的 `build/piano-model-deterministic-20261116-c-work/piano-regression.onnx` 复制到 ignored `assets/deep/piano-regression-31c5d8c87fd8cccaf98b85d8c97821c587c52c2495800ba3c41925912f06ad0f.onnx`，API状态与构建校验均通过。原模型仍为SHA `7488435a431ba2863de16c56be24f3626dc75e38cc22f3103e193a677494fafa`，未覆盖；没有重新导出或进行真实音频推理。
+- 新增 `scripts/package_assets.py`：standard/extended 明确构建范围，源码资源按清单暂存；额外历史模型不进入包。extended必须具有已验证吉他与Tsumugi组件，不能因本地目录碰巧存在就改变标准包。manifest、随包帮助、发布验证共享能力声明。
+- 修复目标键数改变后的旧候选导出/编辑状态；预览继续使用候选自己的键数。普通 PR 增加锁定 Playwright 合成回归，覆盖音频生成→换键数→编辑→重开→导出，以及原谱严格保时；不需要私人语料、Edge或模型下载。
+- Mapperatorinator 的 OMP/MKL 统一2线程，实际运行器显式设置 PyTorch 算子2、跨算子1。主环境无torch的进程生命周期夹具显式提供线程契约替身；真实模型运行仍要求原独立环境。
+- 本地专项68 passed；两条真实Edge浏览器回归通过（14.8秒），原有静态服务不受影响。一次全量捕获生命周期夹具没有torch的问题，修正夹具后11项进程/原模型测试通过；最终全量 **2,405 passed、89 skipped（67.48秒）**。完整Windows构建结果待追加。
+- 文档补充 `docs/development.md`，当前乐器能力表对齐dev.18，历史实验继续保留。以上为工程验证，不代表采音或音乐质量通过验收；本阶段不创建新的Release标签。
+- `a330647` 的完整 Windows run `44004762861` 已成功：Python 2,405 passed、89 skipped（59.29秒），Chromium 两项通过（8.7秒），固定钢琴复建、worker/EXE/ZIP、离线 clean PATH、Unicode 数据路径及关停均通过。CI 记录 ZIP 888,441,706 字节、SHA `49136f93b69ee89447a980c1c5329cbabd9b8c35b4eb517f09abba101f98e617`。小型报告与完整日志下载至 ignored `build/structure-20261117-validation/ci-44004762861/`；未下载整包作本机独立复核。该记录仅对应这个源码提交。
+- 合并前独立复核发现 worker 子树仍使用 `copytree`，可夹入额外文件；本地目录未发现私有文件，但旧校验只覆盖 EXE，不能证明依赖树未改变。补充两个 builder 的完整 `worker_files` 清单，暂存前后与包后验证文件集合、大小、SHA，并拒绝链接；实际复制只遍历已核验清单。Tsumugi 运行验证前后也核对依赖树，报告绑定完整清单，不能沿用另一组 DLL 的旧报告。历史清单缺失时要求重建，不修改旧产物或给它补写身份。
+- 新增回归覆盖 worker 额外私有文件、复制期间新增文件、依赖内容变化、缺失文件、不安全路径和旧运行报告复用；相关构建专项32 passed。此补充尚需新的完整 Windows 验证；前一个成功 run 不作为新提交已完成打包验证的证据。
+- 补充后的本地全量 `.venv/Scripts/python.exe -m pytest -q` 为 **2,416 passed、89 skipped（59.46秒）**；`compileall -q manialab scripts tests` 与 `git diff --check`通过。两次独立代码复核均已结束；当前没有模型队列，仅保留原有8765/8766静态服务。
+- 最终代码 `6ff49743e440551368e8538eaa1f4153fd06d1bc` 的完整 Windows run `44006822579` 于2026-11-17成功，普通PR run `44006831028`同样成功。完整run记录2,416 passed、89 skipped（70.20秒），Chromium两项通过（9.6秒）；固定钢琴复建、2,360个worker运行文件清单核验、标准包EXE/ZIP、离线clean PATH、Unicode路径、6–10K导出、失败取消和关闭停止worker全部通过。
+- CI ZIP为888,687,430字节、SHA `b56110625d473ade02f124f684d7c5abba8727670ea65bc378f3d2b3216c39a6`，EXE SHA `250d721f5848ec7353523c6f754a08b74e9351dcf70b25d056ff2dbe7710a7a9`。小型报告、JUnit与完整日志已保存到 ignored `build/structure-20261117-validation/ci-44006822579/`；未下载整包作本机独立复核。后续提交仅补文档与验证结果，不更改已验证的应用/构建代码。本轮没有创建Release，已发布dev.18仍是先前tag产物。
+- 当前进一步研究入口：冻结多曲起音的Timing偏差/歧义、按段落声部的省略原因、LN音尾/占轨回归；见[检查与优化记录](project-review-20261117.md)及[架构入口](architecture.md)。扩展包新清单契约、真实音乐质量、Timing与最终osu!试打仍未验收，不重跑已完成神经模型队列。

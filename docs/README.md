@@ -13,12 +13,14 @@
 ## 项目状态
 
 - [架构与开发入口](architecture.md)：模块职责、音频/制谱时钟、提交边界与开发顺序。
+- [开发与验证](development.md)：锁定浏览器回归、构建 profile 与历史模型共存。
+- [2026-11-17 检查与结构优化](project-review-20261117.md)：问题处理、验证证据及尚未完成的音乐目标。
 - [历史开发与研究导航](research-history.md)：从首页归档的版本与研究记录；不是当前包的功能清单。
 - [当前续接进度](PROGRESS.md)：已完成阶段、真实验证结果、产物位置和下一步。
-- [dev.18 发布说明](releases/0.1.0-alpha.6-dev-18.md)：当前主线对齐包、变更范围与验证边界。
-- [dev.17 发布说明](releases/0.1.0-alpha.6-dev.17.md)：当前主线对齐包、研究范围与验证边界。
-- [dev.16 发布说明](releases/0.1.0-alpha.6-dev.16.md)：当前主线对齐包、研究范围与验证边界。
-- [dev.15 发布说明](releases/0.1.0-alpha.6-dev.15.md)：当前主线对齐包及验证范围。
+- [dev.18 发布说明](releases/0.1.0-alpha.6-dev-18.md)：已发布包的变更范围与验证边界，不含后续主线修复。
+- [dev.17 发布说明](releases/0.1.0-alpha.6-dev.17.md)：历史包的研究范围与验证边界。
+- [dev.16 发布说明](releases/0.1.0-alpha.6-dev.16.md)：历史包的研究范围与验证边界。
+- [dev.15 发布说明](releases/0.1.0-alpha.6-dev.15.md)：历史包及验证范围。
 - [起音保留账本协议](onset-retention-ledger-protocol.md)：冻结输入上的静态起音去留核对。
 - [起音保留账本结果](onset-retention-ledger-results.md)：《樱花草》10K候选、定轨与选择器去留的静态汇总。
 - [表达取舍静态审计协议](expression-tradeoff-audit-protocol.md)：按段落、声部定位被省略的持续音候选，不估算音乐收益。
@@ -56,11 +58,11 @@
 | `build/portable/<run-id>/` | 隔离的构建、验证和历史 Release ZIP | 保留已验证产物；新构建使用新 run ID，不覆盖旧目录。 |
 | `release/` | 早期便携包、校验记录和发布辅助材料 | 作为版本对照保留，不批量删除。 |
 | `test-data/` | 用户音频、参考谱、下载语料、逐曲研究输入和输出 | 保留；不得加入源码提交，也不要按缓存清理。 |
-| `assets/deep/`、`assets/instruments/`、`assets/runtime/` | 本地模型和便携运行依赖 | 保留。部分构建入口会按这些忽略目录是否存在来选择可选组件，不能据目录名推断内容可丢弃。 |
+| `assets/deep/`、`assets/instruments/`、`assets/runtime/` | 本地模型和便携运行依赖 | 保留。当前构建按明确 profile 选取并核验资源；目录中仍可能保存历史研究所需文件，不能据目录名推断内容可丢弃。 |
 | `.venv/`、`.venv-audio/` | 项目运行和音频研究环境 | 保留，除非已计划重建对应环境。 |
 | `__pycache__/`、`.pytest_cache/` | Python 字节码和 pytest 缓存 | 可再生；没有相关任务运行时可以删除。 |
 | 根目录 `dist/` | 旧式或手动 PyInstaller 输出位置 | 当前 `scripts/build_windows.py` 使用 `build/portable/<run-id>/`。若根目录 `dist/` 非空，先检查具体产物再决定；空目录可移除。 |
 
 清理 Git 分支时，只删除已确认包含于 `origin/main` 的本地分支；保留当前工作分支、`main` 和所有未合并分支。清理本地分支不会删除远端分支。
 
-打包还依赖可选模型和 worker 的存在性；发布前应核对验证报告中的模型身份，而不能只看源码里仍有对应功能入口。详见[钢琴专用模型的发布范围审计](PROGRESS.md#钢琴专用模型与发布包范围审计)。
+打包按明确的组件与 worker 文件清单核验；发布前应核对对应报告中的能力及模型身份，不能只看源码里有对应功能入口。当前操作见[开发与验证](development.md)，历史问题见[钢琴专用模型的发布范围审计](PROGRESS.md#钢琴专用模型与发布包范围审计)。

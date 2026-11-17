@@ -2,6 +2,7 @@
 import hashlib
 import json
 from pathlib import Path
+from scripts.worker_inventory import verify_worker_inventory
 
 
 def sha256(path):
@@ -61,7 +62,8 @@ def verify_piano_model(root):
     """Verify the required optional piano graph and its source/license identity."""
     root = Path(root)
     identity = validate_piano_model_metadata(root)
-    model = root/'assets/deep'/identity['filename']
+    from manialab.piano import piano_model_path
+    model = piano_model_path(root)
     if not model.is_file():
         raise ValueError('Required piano model is missing; run scripts/fetch_piano_model.py')
     if model.stat().st_size != identity['bytes'] or sha256(model) != identity['sha256']:
@@ -76,6 +78,7 @@ def verify_worker(root, directory):
         raise ValueError('Audio worker sources changed or are unrecorded; rebuild scripts/build_audio_worker.py')
     if manifest.get('worker_sha256') != sha256(directory/'ManiaLabAudio/ManiaLabAudio.exe'):
         raise ValueError('Audio worker executable does not match its build manifest')
+    verify_worker_inventory(directory/'ManiaLabAudio', manifest.get('worker_files'))
     return manifest
 
 
@@ -127,6 +130,7 @@ def verify_instrument_worker(root, directory):
     executable = directory/'ManiaLabInstrument/ManiaLabInstrument.exe'
     if manifest.get('worker_sha256') != sha256(executable):
         raise ValueError('Instrument worker executable changed')
+    verify_worker_inventory(executable.parent, manifest.get('worker_files'))
     if manifest.get('portable_runtime_verified') is not True:
         raise ValueError('Instrument worker requires successful packaged real-audio parity checks')
     if set(manifest.get('verified_models',[])) != set(MODELS):
@@ -137,6 +141,7 @@ def verify_instrument_worker(root, directory):
     verification = json.loads(verification_path.read_text(encoding='utf-8'))
     if (verification.get('worker_sha256') != manifest['worker_sha256']
             or verification.get('worker_sources') != manifest['worker_sources']
+            or verification.get('worker_files') != manifest['worker_files']
             or verification.get('models') != MODELS
             or verification.get('portable_runtime_verified') is not True):
         raise ValueError('Instrument verification belongs to another build')

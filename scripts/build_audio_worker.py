@@ -10,7 +10,9 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-from build_provenance import sha256, worker_sources
+sys.path.insert(0, str(ROOT))
+from scripts.build_provenance import sha256, worker_sources
+from scripts.worker_inventory import worker_inventory
 
 os.chdir(ROOT)
 if os.name != "nt":
@@ -78,6 +80,7 @@ manifest = dict(model="Hybrid Demucs MUSDB+", model_sha256=expected,
     beat_model_url="https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/final0.ckpt",
     sources=["drums", "bass", "other", "vocals"], sample_rate=44100,
     profiles=['four','six'],six_source_model_sha256=six_expected,
-    worker_sources=build_sources,worker_sha256=sha256(output/'ManiaLabAudio/ManiaLabAudio.exe'))
+    worker_sources=build_sources,worker_sha256=sha256(output/'ManiaLabAudio/ManiaLabAudio.exe'),
+    worker_files=worker_inventory(output/'ManiaLabAudio'))
 (output / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 print(json.dumps(manifest), flush=True)

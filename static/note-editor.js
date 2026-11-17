@@ -1,7 +1,7 @@
 'use strict';
 let editorNoteId=null;
 function updateEditorLocks(){
-  const v=variant(),strict=v?.mode==='remap',disabled=busy||!v;
+  const v=variant(),strict=v?.mode==='remap',disabled=busy||!v||keys!==v.settings.keys;
   ['editStart','editEnd','editTap','editAdd','editWaveStart','editWaveEnd'].forEach(id=>$(id).disabled=disabled||strict);
   $('editLane').disabled=disabled;
   $('editSave').disabled=disabled||!editorNoteId;

@@ -174,7 +174,7 @@ class MapperEngine:
         log.parent.mkdir(parents=True, exist_ok=True)
         env = os.environ.copy()
         env.update(PYTHONUTF8="1", PYTHONIOENCODING="utf-8", HF_HUB_DISABLE_SYMLINKS_WARNING="1",
-                   TOKENIZERS_PARALLELISM="false", UV_LINK_MODE="copy", OMP_NUM_THREADS="4", MKL_NUM_THREADS="4")
+                   TOKENIZERS_PARALLELISM="false", UV_LINK_MODE="copy", OMP_NUM_THREADS="2", MKL_NUM_THREADS="2")
         with log.open("a", encoding="utf-8") as out:
             out.write("\n" + message + "\n");out.flush()
             log_start = log.stat().st_size

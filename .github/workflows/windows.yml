@@ -52,6 +52,18 @@ jobs:
       - name: Fetch verified audio models
         if: env.BUILD_PORTABLE == 'true'
         run: .venv/Scripts/python.exe scripts/fetch_audio_models.py
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked browser checks
+        # Browser checks are synthetic and do not depend on release models.
+        run: |
+          npm ci --ignore-scripts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npx playwright install chromium
+      - name: Test synthetic browser workflows
+        run: npm run test:ui
       - name: Install isolated audio environment
         if: env.BUILD_PORTABLE == 'true'
         run: |
@@ -75,7 +87,7 @@ jobs:
         run: .venv-audio/Scripts/python.exe scripts/build_audio_worker.py
       - name: Build complete Windows archive
         if: env.BUILD_PORTABLE == 'true'
-        run: .venv/Scripts/python.exe scripts/build_windows.py
+        run: .venv/Scripts/python.exe scripts/build_windows.py --profile standard
       - name: Verify actual EXE offline with clean PATH and Unicode data paths
         if: env.BUILD_PORTABLE == 'true'
         run: |

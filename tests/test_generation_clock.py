@@ -93,3 +93,17 @@ def test_layout_uses_original_onset_for_section_preferences(engine):
 def test_invalid_original_audio_onset_is_rejected(bad):
     with pytest.raises(ValueError, match='原始音频起点'):
         note_from(dict(start=100, end=100, audio_start=bad))
+
+
+def test_quantized_attack_at_boundary_cannot_mask_chart_hold_capacity():
+    from manialab.expression import propose_expression, expression_evidence, select_expression
+    prefs = parameters({'ln_ratio': 1})
+    notes = [Note(5990, 6500, id=str(pitch), pitch=pitch, source='pitch', voice='piano').data() for pitch in (60, 64)]
+    segments = [dict(start_ms=0, end_ms=6000, preferences={'max_held': 5}),
+                dict(start_ms=6000, end_ms=12000, preferences={'max_held': 1})]
+    analysis = dict(candidates=notes, phrase_candidates=[], structure=dict(segments=segments))
+    expression = propose_expression(analysis, prefs, segments)
+    evidence, metadata, trace = expression_evidence(analysis, expression, prefs, segment_preferences=segments)
+    candidates, _ = align_candidates(chart_clock_notes(evidence, 0), dict(bpm=120, offset=0, stable=True))
+    selected, _ = select_expression(candidates, metadata, trace, prefs, 500, ChartPreferences(segments, 0))
+    assert sum(n.start <= 6000 < n.end for n in selected) <= 1

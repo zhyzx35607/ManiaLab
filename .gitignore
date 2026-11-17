@@ -2,6 +2,8 @@
 .venv-audio/
 __pycache__/
 .pytest_cache/
+node_modules/
+playwright-report/
 build/
 dist/
 release/

@@ -10,6 +10,8 @@
 
 当前稳定入口： [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
+2026-11-17 后续源码的结构与可靠性改动见[检查与优化记录](docs/project-review-20261117.md)；已发布的 dev.18 ZIP 不会自动包含这些改动。
+
 ![ManiaLab 界面](docs/screenshot.png)
 
 ## 下载即用
@@ -89,11 +91,13 @@ uv pip sync --python .venv\Scripts\python.exe requirements-lock.txt
 .venv\Scripts\python.exe scripts\fetch_audio_models.py
 uv venv .venv-audio --python 3.12
 uv pip sync --python .venv-audio\Scripts\python.exe --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match requirements-deep-lock.txt
-.venv-audio\Scripts\python.exe scripts\fetch_piano_model.py --work build\piano-model-local-20261117
+.venv-audio\Scripts\python.exe scripts\fetch_piano_model.py
 .venv-audio\Scripts\python.exe scripts\build_audio_worker.py
 .venv\Scripts\python.exe launcher.py
 .venv\Scripts\python.exe -m pytest -q
-.venv\Scripts\python.exe scripts\build_windows.py
+.venv\Scripts\python.exe scripts\build_windows.py --profile standard
 ```
 
-浏览器脚本需 Playwright 和 Edge，可用 `MANIALAB_URL` 指定本地服务。验证范围、真实音频对照与不足见 [验证记录](docs/validation.md)。本地语料审计用 `scripts/audit_corpus.py`；采集与训练脚本见 [训练计划](docs/training-plan.md)。
+以上用于干净检出；已有旧钢琴模型时先保留旧文件，按[模型与构建说明](docs/development.md)准备当前版本，构建会把选定模型规范为包内固定路径。
+
+浏览器回归独立使用合成项目，不需要模型下载：`npm ci --ignore-scripts` → `npx playwright install chromium` → `npm run test:ui`。详见[开发与验证](docs/development.md)。验证范围、真实音频对照与不足见 [验证记录](docs/validation.md)。本地语料审计用 `scripts/audit_corpus.py`；采集与训练脚本见 [训练计划](docs/training-plan.md)。
