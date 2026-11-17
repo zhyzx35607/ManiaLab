@@ -1768,5 +1768,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`POST /api/projects/<pid>/engine-install`和`engine-generate`迁入`manialab/upstream_routes.py`。应用组合层注入共享`MapperEngine`、项目仓库、异步提交器、当前音频解析器和Timing闭包；路由模块承接原模型输入、输出谱面修正与remap报告。
 - 保持endpoint及视图函数名、请求校验、模型任务生命周期、Timing确认门槛、原始键型、固定时钟对齐和候选状态提交语义。
-- 定向`tests/test_server.py tests/test_upstream.py`为26 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（87.72秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。独立对照未发现路由语义差异；Windows PR CI待运行。
+- 定向`tests/test_server.py tests/test_upstream.py`为26 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（87.72秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。独立对照未发现路由语义差异；PR #121 Windows run `44093748990`和合并后main run `44094348023`均成功，合并提交`34e3ece8322a1283250532c80ca228ae183c5ddb`。CI的模型与便携构建步骤按触发条件跳过。
 - 未运行模型、读取用户音频或修改研究脚本/产物。
+
+## 2026-11-17 第二十三阶段：候选生成与编辑路由边界
+
+- 将`POST /api/projects/<pid>/generate`和`edit`迁入`manialab/candidate_routes.py`。应用组合层注入现有参数规范器、Timing解析闭包及异步任务提交器；纯候选生成继续委托`generation.py`。
+- 保留候选版本冲突检查、编辑基准时间戳、旧候选继承、落线门槛、编辑历史、报告刷新和最近8个候选状态更新；参考谱风格导入保持独立。
+- 本阶段定向API/编辑/生成时钟与完整验证待运行；未运行模型、读取用户音频或修改研究脚本/产物。
