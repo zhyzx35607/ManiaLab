@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import replace
-import json
 import logging
 import math
 from pathlib import Path
@@ -26,7 +25,6 @@ from .pattern_prior import prior_status
 from .style import describe_chart
 from .analysis_routes import register_analysis_routes
 from .candidate_routes import register_candidate_routes
-from .domain import parse_osu
 from .export_routes import register_export_routes
 from .planner import plan
 from .playback_routes import register_playback_routes
@@ -65,7 +63,7 @@ def create_app(resources, data_root):
     )
     app.extensions.update(projects=projects, jobs=task_service.jobs, executor=task_service.executor,
                           task_service=task_service, analysis_services=analysis_services)
-    register_project_routes(app, projects, task_service)
+    register_project_routes(app, projects, task_service, parameters=parameters, describe_chart=describe_chart)
 
     @app.before_request
     def protect():
@@ -170,31 +168,6 @@ def create_app(resources, data_root):
         parameters=parameters,
         requested_tempo=requested_tempo,
     )
-
-    @app.post("/api/projects/<pid>/reference-style")
-    def reference_style(pid):
-        with task_service.lock:
-            task_service.ensure_project_idle(pid)
-            state = projects.load(pid)
-            file = request.files.get('file')
-            if not file or Path(file.filename or '').suffix.lower() != '.osu':
-                raise ValueError('请选择一份 .osu 参考谱面')
-            raw = file.stream.read(10*1024*1024+1)
-            if len(raw) > 10*1024*1024:
-                raise ValueError('参考谱面超过 10MB')
-            try:
-                profile = describe_chart(parse_osu(raw.decode('utf-8-sig')))
-            except UnicodeError:
-                raise ValueError('参考谱面必须为 UTF-8 文本') from None
-            draft = json.loads(request.form.get('settings', '{}'))
-            if not isinstance(draft, dict):
-                raise ValueError('当前偏好必须为参数对象')
-            prefs = parameters(parameters(state['settings'] | draft) | profile['preferences'])
-            state['reference_style'] = profile
-            # The current target key count remains the user's explicit choice.
-            state['settings'] = prefs
-            projects.save(state)
-        return jsonify(state)
 
     register_upstream_routes(
         app,

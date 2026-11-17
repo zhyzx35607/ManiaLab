@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import shutil
 
 from flask import jsonify, request
@@ -8,7 +9,7 @@ from .domain import parse_osu
 from .storage import AUDIO, extract_osz, safe_path, validate_import_paths
 
 
-def register_project_routes(app, projects, task_service):
+def register_project_routes(app, projects, task_service, *, parameters, describe_chart):
     def set_chart(state, relative):
         previous_audio = state.get("audio")
         base = projects.path(state["id"]) / "files"
@@ -109,9 +110,35 @@ def register_project_routes(app, projects, task_service):
             projects.save(state)
             return jsonify(state)
 
+    def reference_style(pid):
+        with task_service.lock:
+            task_service.ensure_project_idle(pid)
+            state = projects.load(pid)
+            file = request.files.get("file")
+            if not file or Path(file.filename or "").suffix.lower() != ".osu":
+                raise ValueError("请选择一份 .osu 参考谱面")
+            raw = file.stream.read(10 * 1024 * 1024 + 1)
+            if len(raw) > 10 * 1024 * 1024:
+                raise ValueError("参考谱面超过 10MB")
+            try:
+                profile = describe_chart(parse_osu(raw.decode("utf-8-sig")))
+            except UnicodeError:
+                raise ValueError("参考谱面必须为 UTF-8 文本") from None
+            draft = json.loads(request.form.get("settings", "{}"))
+            if not isinstance(draft, dict):
+                raise ValueError("当前偏好必须为参数对象")
+            prefs = parameters(parameters(state["settings"] | draft) | profile["preferences"])
+            state["reference_style"] = profile
+            # The current target key count remains the user's explicit choice.
+            state["settings"] = prefs
+            projects.save(state)
+        return jsonify(state)
+
     app.add_url_rule("/api/import", endpoint="import_files", view_func=import_files, methods=["POST"])
     app.add_url_rule("/api/projects/<pid>", endpoint="get_project", view_func=get_project, methods=["GET"])
     app.add_url_rule("/api/projects/<pid>/chart", endpoint="choose_chart", view_func=choose_chart,
                      methods=["POST"])
     app.add_url_rule("/api/projects/<pid>/variant", endpoint="choose_variant", view_func=choose_variant,
                      methods=["POST"])
+    app.add_url_rule("/api/projects/<pid>/reference-style", endpoint="reference_style",
+                     view_func=reference_style, methods=["POST"])
