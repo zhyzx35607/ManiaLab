@@ -20,7 +20,7 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 
 `recommendation_plan.py`负责本地编排计划的证据池、签名、有效性检查与分段偏好调整；`recommendations.py`保留建议生成并重导出这些旧入口。生成与编排路由直接依赖计划模块，独立导入计划逻辑不加载建议生成实现。
 
-`sequence_schema.py`独立定义序列模型的版本化字段、维度和修订号；`pattern_sequence.py`重导出 schema 与编码入口。`sequence_windows.py`负责候选窗口行、节拍位置和单窗/批窗编码；`sequence_prior.py`保留模型校验与评分并重导出旧窗口 API。运行布局直接导入各自职责，研究与训练脚本继续使用兼容入口。
+`sequence_schema.py`独立定义序列模型的版本化字段、维度和修订号；`pattern_sequence.py`重导出 schema 与编码入口。`sequence_windows.py`负责候选窗口行、节拍位置和基础单窗/批窗编码；`sequence_window_interactions.py`负责 LN interaction 批量编码，窗口模块保留该函数的兼容导出。`sequence_prior.py`保留模型校验与评分并重导出旧窗口 API。运行布局直接导入各自职责，研究与训练脚本继续使用兼容入口。
 
 `pattern_sequence.py`是稳定的特征编码兼容门面。`sequence_features_common.py`负责共享输入校验；`sequence_features_base.py`、`sequence_features_interactions.py`和`sequence_features_phrase_context.py`分别实现基础、LN交互和LN长上下文编码；`sequence_features_mirror.py`负责各版本共用的镜像变换。模型特征顺序与数值定义由`sequence_schema.py`持有。
 
