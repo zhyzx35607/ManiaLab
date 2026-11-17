@@ -9,6 +9,8 @@
 - 2026-11-17 工程整理、跨段落容量、Timing诊断、LN来源、草稿保护、局部报告与乐句边界已分九阶段合并（PR #101–#109）；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
 - PR #109已合并到`main`，九阶段代码在2026-11-17完成完整Windows便携验证；run `44057633497`通过，源码树与合并提交`3dc0705`一致。报告保存在ignored `build/structure-20261117-validation/ci-44057633497/`，没有创建新Release。
 - 已有66例[冻结片段对照](frozen-generation-regression-results.md)及10例[完整歌曲来源对照](ln-evidence-review-results.md)。第十阶段完成整合便携验证，另完成声部取舍静态复核与协议哈希更正；没有重复已完成的模型实验。
+- PR #110已合并为`035816c4d048e5743ddf6807b7c4650104c2ba60`，包含集成便携验证记录与冻结输入哈希更正。
+- 当前分支`codex/deduplicate-ci-runs-20261117`调整Windows验证的job条件，减少普通功能分支push与PR重复运行；保留`[portable]`入口。第十二阶段CI待验证。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1688,3 +1690,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   `main_voice`，且`salience_estimated=false`。这些静态证据可确认容量约束造成跨声部取舍，
   不能证明具体取舍是音乐错误；没有据此改选音权重、重跑模型或重读音频。
 - 真实音频采音、重要声部判断、LN音乐性和osu!试打仍是开放验收，不以静态审计或构建通过代替。
+- PR #110的PR run `44060991936`与push run `44060934067`最终均通过并合并；push run曾取消后重跑，期间取消状态在PR检查中显示失败，促成本阶段避免依赖取消去重。
+
+## 2026-11-17 第十二阶段：Windows验证去重
+
+- 同一提交因push与pull_request同时触发`.github/workflows/windows.yml`，重复运行Python和浏览器测试。取消其中一条后，GitHub将取消状态显示为失败检查，必须重跑才能合并。
+- `verify` job现仅对PR、`main`、tag、手动触发和提交信息带`[portable]`的push执行；普通功能分支push跳过job，避免重复计算且返回成功跳过状态。没有移除`[portable]`便携构建入口。
+- `docs/development.md`已同步说明触发规则。PR检查与实际push跳过状态待CI核验；未改音乐算法或模型输入。

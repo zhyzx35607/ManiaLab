@@ -32,4 +32,4 @@ git diff --check
 
 已有历史 `assets/deep/piano-regression.onnx` 时不覆盖它。可将已验证的当前模型复制到 `assets/deep/piano-regression-<当前完整SHA256>.onnx`；运行和构建优先使用该版本文件。SHA 和大小从 `assets/piano-model.json` 读取并严格核对。需要重新准备时，可把该版本文件路径传给 `scripts/fetch_piano_model.py --output <路径>`；其默认工作目录按时间生成，已有输出不覆盖。发布包中统一命名为 `piano-regression.onnx`，历史文件不进入包。
 
-正式流水线见 `.github/workflows/windows.yml`。普通 PR 运行 Python 和浏览器测试；tag、手动触发或带 `[portable]` 的构建提交继续执行模型准备、EXE、离线 clean PATH、Unicode 数据路径、worker 退出及 ZIP 身份验证。检查通过和构建完成只证明对应的软件契约，音乐质量仍单独记录。
+正式流水线见 `.github/workflows/windows.yml`。PR 始终运行 Python 和浏览器测试；普通功能分支 push 跳过重复的验证 job。`main`、tag、手动触发或带 `[portable]` 的 push 仍运行检查；tag、手动触发和 `[portable]` push 继续执行模型准备、EXE、离线 clean PATH、Unicode 数据路径、worker 退出及 ZIP 身份验证。检查通过和构建完成只证明对应的软件契约，音乐质量仍单独记录。
