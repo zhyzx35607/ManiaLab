@@ -14,7 +14,8 @@
 - PR #112修复了未知任务查询/取消的API状态码，已合并为`c386eac8c423ee47707c63e24743e78541a40492`；PR run `44068195710`与合并后main run `44068922008`成功，普通push run `44068133938`为成功跳过。
 - PR #113修复最近项目快速切换时的旧响应覆盖，已合并为`dd83a1b0ffd0e6c9f4bca141c99ef9899bc1d6c9`；PR run `44070209976`与合并后main run `44070802839`成功，普通push run `44070113643`为成功跳过。
 - PR #114将播放、独立声部读取、试听与波形HTTP路由从`server.py`提取到`playback_routes.py`，已合并为`7b9c7ef23e7aff45f5f5bb099d97415b6d6f8fd9`。PR run `44071878909`成功、重复push run `44071832433`跳过，合并后main run `44073069913`成功。
-- 当前分支`codex/task-service-20261117`将任务状态、串行执行、取消与项目提交边界提取到`task_service.py`；定向46项、全量Python 2,498 passed/89 skipped，Edge UI复跑31项通过，等待PR Windows CI。
+- PR #115 将任务状态、串行执行、取消与项目提交边界提取到`task_service.py`，已合并为`cfddeeb`；PR run `44075974260`与合并后main run `44076507773`成功，普通push run成功跳过。
+- 当前分支`codex/project-routes-20261117`正在把导入、项目读取、谱面切换和候选切换路由迁入`project_routes.py`；本阶段验证与PR状态见下方第十七阶段。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1729,3 +1730,9 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 新增`tests/test_task_service.py`覆盖成功持久化、失败不落盘、取消不落盘、清理标记和并发任务阻止。服务端、导入清理与吉他任务组合定向 **46 passed（12.29秒）**；全量`.venv/Scripts/python.exe -m pytest -q`为 **2,498 passed、89 skipped（67.69秒）**。`compileall`与`git diff --check`通过。
 - 本机Edge完整`npm run test:ui`初次为30 passed、1项“段落草稿恢复”勾选状态断言失败；该用例单项重跑通过，随后完整复跑为 **31 passed（1.2分钟）**。默认Chromium尝试因本机未安装Playwright对应headless二进制，使用`MANIALAB_TEST_BROWSER=msedge`完成浏览器验证。Windows PR CI待运行。
 - 检查时本地8765与8766端口仍由既有听审材料HTTP服务占用，本阶段未停止或改写这些进程；没有运行模型、读取音频或修改研究脚本/产物。
+
+## 2026-11-17 第十七阶段：项目路由模块边界
+
+- 将`/api/import`、项目读取、谱面切换和候选切换从`server.py`移入`manialab/project_routes.py`。通过`create_app`注册到同一个Flask app，保留URL、HTTP方法、endpoint名称、应用级鉴权与错误处理，以及任务服务共享锁和写入前项目空闲检查。
+- 增加回归验证导入后切谱同步音频引用并清理声部/分析/预览缓存、旧项目`input_timing`读取回填、未知谱面拒绝，以及非法候选索引不改变项目状态。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_project_routes.py`为7 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（65.62秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。完整Edge `npm run test:ui`为31 passed（1.3分钟）；本阶段Windows PR CI待运行。未运行模型、读取用户音频或修改研究脚本/产物。
