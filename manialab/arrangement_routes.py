@@ -1,4 +1,5 @@
 from flask import jsonify, request
+from .recommendation_plan import adjusted_segments
 
 
 def register_arrangement_routes(app, *, projects, task_service, resources, submit,
@@ -109,8 +110,6 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
                 raise ValueError("请先检测音乐段落")
             if payload.get("action") == "automatic":
                 prefs = parameters(state["settings"] | payload.get("settings", {}))
-                from .recommendations import adjusted_segments
-
                 value = propose_expression(
                     state["analysis"], prefs,
                     segment_preferences=adjusted_segments(state.get("plan", {}), prefs),
