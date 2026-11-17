@@ -26,7 +26,8 @@ def chart_clock_notes(notes, audio_shift_ms=0):
     """
     if not math.isfinite(audio_shift_ms) or abs(audio_shift_ms) > 100:
         raise ValueError("制谱提前量必须在 -100–100 ms 内")
-    return [replace(n, start=max(0, math.floor(n.start-audio_shift_ms+.5)),
+    return [replace(n, audio_start=n.audio_start if n.audio_start is not None else n.start,
+                    start=max(0, math.floor(n.start-audio_shift_ms+.5)),
                     end=max(0, math.floor(n.end-audio_shift_ms+.5))) for n in notes]
 
 

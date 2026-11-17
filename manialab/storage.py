@@ -25,29 +25,47 @@ def safe_path(root, name):
     return path
 
 
+def validate_import_paths(root, entries):
+    """Reserve case-insensitive file/directory names before writing uploads."""
+    root = Path(root).resolve()
+    occupied = {str(path.resolve()).casefold(): path.is_dir() for path in root.rglob("*")}
+    targets = []
+    for name, is_directory in entries:
+        target = safe_path(root, name)
+        if target == root:
+            raise ValueError("导入文件路径无效")
+        for parent in reversed(target.relative_to(root).parents):
+            directory = root / parent
+            key = str(directory).casefold()
+            if key in occupied and not occupied[key]:
+                raise ValueError("导入文件与目录路径冲突")
+            occupied[key] = True
+        key = str(target).casefold()
+        if key in occupied and not (is_directory and occupied[key]):
+            raise ValueError("导入存在同名文件或文件与目录路径冲突")
+        occupied[key] = is_directory
+        targets.append(target)
+    return targets
+
+
 def extract_osz(stream, root):
     with zipfile.ZipFile(stream) as archive:
         infos = archive.infolist()
         if len(infos) > 3000 or sum(i.file_size for i in infos) > 512 * 1024 * 1024:
             raise ValueError("谱包解压大小超过 512MB 或文件过多")
-        seen = set()
         # Validate the entire archive before writing even its first member.
         for i in infos:
-            target = safe_path(root, i.filename)
-            if i.is_dir():
-                continue
             if (i.external_attr >> 16) & 0o170000 == 0o120000:
                 raise ValueError("谱包不能包含符号链接")
-            normalized = str(target).casefold()
-            if normalized in seen:
-                raise ValueError("谱包存在重复文件名")
-            seen.add(normalized)
-        for i in infos:
-            target = safe_path(root, i.filename)
-            if i.is_dir() or target.suffix.lower() not in ASSETS:
+        targets = validate_import_paths(root, [(i.filename, i.is_dir()) for i in infos])
+        for i, target in zip(infos, targets):
+            if i.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            if target.suffix.lower() not in ASSETS:
                 continue
             target.parent.mkdir(parents=True, exist_ok=True)
-            with archive.open(i) as source, target.open("wb") as destination:
+            with archive.open(i) as source, target.open("xb") as destination:
                 shutil.copyfileobj(source, destination)
 
 

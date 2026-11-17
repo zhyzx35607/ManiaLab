@@ -16,7 +16,7 @@ import numpy as np
 
 from .domain import invariant, validate
 from .pattern_prior import preference_cost
-from .arrange import settings_at
+from .preferences import row_settings
 from .sequence_prior import (
     SequencePrior,
     SequenceRow,
@@ -213,7 +213,7 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
             float(phrase_positions[row_index])
             if phrase_context_prior else None
         )
-        local = settings_at(settings, start, segment_preferences)
+        local = row_settings(settings, chord, segment_preferences)
         if cancelled():
             raise InterruptedError("已取消键型搜索")
         chord = sorted(chord, key=lambda n: (n.pitch if n.source == "pitch" else n.lane, n.id, n.end))
