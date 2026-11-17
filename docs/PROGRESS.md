@@ -1503,3 +1503,41 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   **12 passed（28.0秒）**，运行 `npm run test:ui`，环境
   `MANIALAB_TEST_BROWSER=msedge`、`MANIALAB_TEST_PORT=8978`。静态JS语法、编译与差异检查通过。
   未重新构建便携包，未改变自动Timing接受门槛；下一阶段复用完整歌曲已有候选检查6–10K声部与LN。
+- PR #104 head `1bdf9543fb751ee40412012d1529e85107a5a603` 的Windows push
+  run `44015311356`、PR run `44015375676` 均通过，于2026-11-17合并为
+  `9bf9f5347e728b2a9b3c2dbda1d803b4e6015e42`。没有创建新Release。
+
+## 2026-11-17 第五阶段：LN来源快照与完整歌曲
+
+- 从PR #104合并后的main创建`codex/ln-evidence-review-20261117`。完整歌曲冻结计划
+  `test-data/frozen-fullsong-plan-20261117/plan.json` SHA
+  `749dc371b73cbf52406fa52e6ef58a89f0cb5d57bf89e034eecc643d6ea334ee`：
+  revision 13《樱花草》既有6,053候选，默认/历史无人声设置各6–10K；未读音频、Reference或保留测试，未跑模型。
+- 原始10例生成、导出回读和容量全部通过，基线报告位于
+  `test-data/frozen-fullsong-baseline-20261117/report.json`，SHA
+  `2670de5f1b491b149b10bcab4ca2de881499b4ea1b936495646a737e5754039d`。
+  人工74 BPM/178ms/22.5ms时钟仅用于诊断，原自动Timing仍不接受。
+- 默认10K有434条LN，其中74条尾移超过30ms；原界面只列起音移动。另复现量化塌缩乐句
+  仍声明代表内部候选、手动新增被称为检测、表达尾被称为物理检测尾的语义问题。
+  新`evidence.py`为生成候选保存检测与表达的原音频快照，编辑继承，局部锁定物件使用旧快照。
+  旧候选来源不足明确未知，不按重用ID借用新分析。
+- 乐句塌缩时清除最终乐句标志，内部省略理由不再宣称由不存在的LN表达；没有自动添加音符。
+  前端检查器和谱面检查独立到`static/evidence-review.js`，起音/尾端分别提供前12项定位，
+  使用候选自身时钟和对应声轨；人工添加、人工修改、未知来源和模型预测明确区分。
+- 完整10例对照已通过，选中ID、起止、轨道及既有证据字段全部不变；全部15,032条输出
+  的原检测快照与冻结分析逐字段一致，表达时间的提前量换算与既有`evidence_end`相符。
+  对照报告`test-data/frozen-fullsong-evidence-20261117/report.json` SHA
+  `b824bce54286d46259fff1b178062fe1748ddf4dceaaf067e5cae2c1014318b0`。
+- 快照实现首轮全量Python **2,459 passed、89 skipped（66.99秒）**；真实Edge全组
+  **15 passed（35.2秒）**，新增3项证据展示/定位流程均先复现失败再修复通过。
+  JS语法、`compileall`、`git diff --check`通过。具体字段、命令及范围见
+  [LN来源与全曲复核](ln-evidence-review-results.md)。准备完整Windows便携构建验证。
+- 独立复核后补局部重写保护：同ID重分析跨重写边界时拒绝与锁定旧物件合并，避免重复ID和
+  错绑快照；仅为锁定ID保留原人工编辑记录；新快照字段存在但缺ID时明确未知，不降级借用
+  本轮整首分析的新决策。前两项已由真实生成/编辑失败回归复现，专项44 passed；补充后全量
+  Python **2,461 passed、89 skipped（56.72秒）**。上述整谱对照保留原源码身份，没有覆盖重跑。
+- 旧格式局部候选也补充区域外来源保护：真实API生成`[8978,9978)`ms区域后，模拟缺少
+  整个快照字段的历史项目；下界新生成音可使用自身决策，上界锁定音及其他区域外音明确未知。
+  修复前复现错误借用2310ms新音尾，修复后定向通过；最终真实Edge全组
+  **16 passed（36.5秒）**，使用`MANIALAB_TEST_BROWSER=msedge`、`MANIALAB_TEST_PORT=8978`
+  执行`npm run test:ui`。Python编译、JS语法、差异检查通过。
