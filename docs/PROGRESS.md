@@ -6,9 +6,9 @@
 ## 当前状态（先读）
 
 - 已发布的 Windows 包为 `v0.1.0-alpha.6-dev.18`；后续主线修复不自动进入该已发布包。
-- 2026-11-17 工程整理、跨段落容量、Timing诊断、LN来源、草稿保护与局部报告已分八阶段合并（PR #101–#108）；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
-- 当前分支 `codex/regional-phrase-boundary-20261117` 在做第九阶段：局部重写防止内部起音静默丢失，也防止新乐句与锁定旧内部音重复。28项专项、全量Python及8正向/2反向冻结对照通过，待提交与CI。恢复时先核对实际Git、进程和本文件末尾，不重跑已完成的模型实验。
-- 已有66例[冻结片段对照](frozen-generation-regression-results.md)及10例[完整歌曲来源对照](ln-evidence-review-results.md)。最近完整便携构建仅对应PR #105的 `b7bfb09`；之后阶段没有重建包，也没有发布新标签。
+- 2026-11-17 工程整理、跨段落容量、Timing诊断、LN来源、草稿保护、局部报告与乐句边界已分九阶段合并（PR #101–#109）；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
+- PR #109已合并到`main`，九阶段代码在2026-11-17完成完整Windows便携验证；run `44057633497`通过，源码树与合并提交`3dc0705`一致。报告保存在ignored `build/structure-20261117-validation/ci-44057633497/`，没有创建新Release。
+- 已有66例[冻结片段对照](frozen-generation-regression-results.md)及10例[完整歌曲来源对照](ln-evidence-review-results.md)。第十阶段完成整合便携验证，另完成声部取舍静态复核与协议哈希更正；没有重复已完成的模型实验。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1657,3 +1657,34 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   运行 `.venv/Scripts/python.exe` 加该路径；输出 `test-data/regional-phrase-scope-final-20261117/`，
   报告SHA `91215012b54cc4e52710a9c499c7fe8d9cf47bb98aef288ce2f34b80e8ebb3a9`。
   没有重跑神经模型、重建便携包或发布版本；音乐质量仍未验收。
+- PR #109 head `0e25e5b126fd9cd533d6e14b714f85f031d1cb12`的Windows push
+  `44044780933`、PR `44044861229`均成功，合并为
+  `3dc07058a60335d565a586f8ce69161cd9f09019`。push记录Python2,493 passed、89 skipped
+  （58.79秒）、Chromium30 passed（1.0分钟），完整日志已保存在ignored验证目录。
+
+## 2026-11-17 第十阶段：集成便携验证
+
+- 针对九阶段合并提交`3dc07058a60335d565a586f8ce69161cd9f09019`执行
+  `gh workflow run windows.yml --ref main`。前两次run `44049902518`、`44056957927`取消；
+  最终run `44057633497`于2026-11-17成功。CI实际head为
+  `0e25e5b126fd9cd533d6e14b714f85f031d1cb12`，其Git tree
+  `4974a83b759a5e7237eac3877b8c656aa538bb2f`与合并提交一致。
+- 完整standard构建、固定钢琴模型、实际EXE离线/Unicode路径、失败取消与恢复、6–10K导出、
+  worker关停及产物归档全部通过。报告确认83个源码文件、2,360个worker文件；JUnit共2,582项，
+  2,493 passed、89 skipped、0 failures。没有下载大型ZIP或创建Release。
+- 只下载小型报告与日志到ignored目录
+  `build/structure-20261117-validation/ci-44057633497/`。便携报告SHA
+  `e2c0d7124e6bd11eba5c01267e3ae8b2d12669e0249316082ba40d549b4b192e`；JUnit SHA
+  `46e839c519be8b82c038adfdc703f1b56778c547747a99e4863f39f9de7685c4`；关停报告SHA
+  `bb5a6c3edd2e1b8c8a4aabd147b5724c5a735c4b60f3ea185529473989ae513c`。
+
+## 2026-11-17 第十一阶段：声部取舍证据复核
+
+- 只读核验发现[表达取舍协议](expression-tradeoff-audit-protocol.md)中的冻结
+  `selection.json` SHA 少写一个`5`，已更正。当前冻结文件、审计脚本常量和历史报告
+  `input_sha256`均为`24f23cc1d59e7452e5ede424f10054d285b0d2ecdd26b33095e651716f0b0b44`。
+- 66例结果中，26例默认配置的音符集合未变化；仅4例显式`max_held=5/1`压力配置发生
+  取舍，共新增23条、删除15条，删除理由均为容量或密度。声部权重均为1，段落没有
+  `main_voice`，且`salience_estimated=false`。这些静态证据可确认容量约束造成跨声部取舍，
+  不能证明具体取舍是音乐错误；没有据此改选音权重、重跑模型或重读音频。
+- 真实音频采音、重要声部判断、LN音乐性和osu!试打仍是开放验收，不以静态审计或构建通过代替。
