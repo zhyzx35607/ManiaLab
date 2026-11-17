@@ -16,7 +16,8 @@ import numpy as np
 from scipy.optimize import Bounds, LinearConstraint
 from scipy.sparse import csc_matrix
 
-from .arrange import _solve_binary, parameters, settings_at
+from .arrange import parameters, settings_at
+from .solver import solve_binary as _solve_binary
 from .preferences import row_settings
 from .domain import UNOBSERVED_RELEASES,note_from
 from .expression_articulation import articulation_policy

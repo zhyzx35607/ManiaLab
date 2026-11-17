@@ -5,28 +5,15 @@ from bisect import bisect_left, bisect_right
 from dataclasses import replace
 import math
 import random
-import threading
-import warnings
 
 import numpy as np
-from scipy.optimize import linear_sum_assignment, milp, Bounds, LinearConstraint
+from scipy.optimize import linear_sum_assignment, Bounds, LinearConstraint
 from scipy.sparse import csc_matrix, vstack
 
 from .domain import UNOBSERVED_RELEASES, Note, invariant, validate
 from .timing import BeatClock
 from .preferences import settings_at, row_settings
-
-
-_solver_lock = threading.Lock()
-
-
-def _solve_binary(*args, **kwargs):
-    # HiGHS owns a process-wide scheduler. Flask jobs run on worker threads;
-    # one solver thread avoids reusing a native thread pool across those jobs.
-    options = dict(kwargs.pop("options", {}), threads=1, parallel=False)
-    with _solver_lock, warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message="Unrecognized options detected:.*", category=RuntimeWarning)
-        return milp(*args, options=options, **kwargs)
+from .solver import solver_lock as _solver_lock, solve_binary as _solve_binary
 
 
 DEFAULTS = dict(keys=10, density=7.0, ln_ratio=.55, min_ln=240, max_held=5, release_gap=55,

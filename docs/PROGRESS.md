@@ -18,7 +18,7 @@
 - PR #116 将导入、项目读取、谱面切换和候选切换路由提取到`project_routes.py`，已合并为`d7a6f7db1cc4c515acfcd0985a53c93c8c356064`；PR run `44079580314`与合并后main run `44080283011`的Python/API和合成浏览器验证均成功，功能分支push run `44079484962`成功跳过。
 - PR #117 将 JSON、OSU 与 OSZ 导出处理提取到`export_routes.py`，已合并为`374caf536c269632df2967de641ae792d2fba171`；PR run `44082425764`与合并后main run `44082995836`的Python/API和合成浏览器验证均成功，功能分支push run `44082374845`成功跳过。
 - PR #118 将 Timing 检查与Offset重拟合路由提取到`timing_routes.py`，已合并为`fbd47e6f5d5c7009bda4dd921fc34a7009adeb43`；PR run `44085269448`与合并后main run `44085905987`的Python/API和合成浏览器验证均成功，功能分支push run `44085216977`成功跳过。
-- 当前分支`codex/plan-expression-routes-20261117`正在迁移编排建议、段落和表达路由；状态见下方第二十阶段。
+- PR #119–#123 的路由边界整理均已合入`main`；PR #123 run `44098248603`与合并后 main run `44098766111`通过，普通 push run `44098175931`成功跳过。当前基线为`b80dad8`，本次求解器结构阶段从该提交续接。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1782,5 +1782,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`POST /api/projects/<pid>/reference-style`并入`manialab/project_routes.py`，与谱面导入、选择和项目偏好操作同组；应用组合层注入参数规范器及风格分析器。
 - 保持10MB `.osu` 限制、UTF-8 校验、共享任务锁、明确键数偏好优先、风格元数据保存，以及不覆盖音频分析/既有候选的行为。
-- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_project_routes.py tests/test_server.py::test_reference_style_preserves_audio_candidates_and_target_keys tests/test_style.py`为10 passed；全量Python为2,505 passed、89 skipped（84.05秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`compileall`和`git diff --check`通过。Windows PR CI待运行。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_project_routes.py tests/test_server.py::test_reference_style_preserves_audio_candidates_and_target_keys tests/test_style.py`为10 passed；全量Python为2,505 passed、89 skipped（84.05秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`compileall`和`git diff --check`通过。PR run `44098248603`和合并后 main run `44098766111`通过；普通 push run `44098175931`成功跳过。
 - 未运行模型、读取用户音频或修改研究脚本/产物。
+
+## 2026-11-17 第二十五阶段：共享数值求解边界
+
+- 将 HiGHS 共享锁、MILP 单线程选项及 warning 过滤从`arrange.py`移至`manialab/solver.py`，并为`gesture_flow.py`的线性规划增加同锁求解入口。表达与研究模块不再从定轨模块引用私有求解器状态或实现；保留`expression._solve_binary`和`gesture_flow.linprog`的测试替换点。
+- 保持调用方 MILP 时间/间隙参数、强制`threads=1`与`parallel=False`、LP 的`highs-ds`方法/超时，以及两种 SciPy warning 类别和原窄消息过滤。MILP 与 LP 共用同一个非重入锁，不在调用侧嵌套加锁。
+- 新增 fake solver 参数与 warning 回归，以及 MILP/LP 跨线程互斥验证。定向求解器、表达、手势流、锚点和布局测试为47 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,509 passed、89 skipped（87.03秒）；完整Edge `npm run test:ui`为31 passed（1.4分钟）；`compileall`与`git diff --check`通过。等待Windows PR CI；未运行音频模型、读取用户音频或改动研究脚本/研究产物；音乐质量与 osu! 试打仍待独立验收。
