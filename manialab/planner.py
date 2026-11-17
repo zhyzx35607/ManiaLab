@@ -4,7 +4,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from .arrange import parameters
+from .arrange_config import parameters
 
 ALLOWED = {"density", "ln_ratio", "min_ln", "max_held", "chord_size", "focus", "pitch_follow", "balance", "jack_avoid", "release_gap",
            "phrase_ln", "drums_weight", "bass_weight", "vocals_weight", "other_weight", "guitar_weight", "piano_weight",

@@ -4,7 +4,7 @@ import shutil
 
 from flask import jsonify, request
 
-from .arrange import DEFAULTS
+from .arrange_config import DEFAULTS
 from .domain import parse_osu
 from .storage import AUDIO, extract_osz, safe_path, validate_import_paths
 

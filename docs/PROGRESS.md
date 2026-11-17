@@ -1,6 +1,6 @@
 # 续接进度
 
-更新：2026-11-17，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
+更新：2026-11-18，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
 ## 当前状态（先读）
@@ -19,6 +19,7 @@
 - PR #117 将 JSON、OSU 与 OSZ 导出处理提取到`export_routes.py`，已合并为`374caf536c269632df2967de641ae792d2fba171`；PR run `44082425764`与合并后main run `44082995836`的Python/API和合成浏览器验证均成功，功能分支push run `44082374845`成功跳过。
 - PR #118 将 Timing 检查与Offset重拟合路由提取到`timing_routes.py`，已合并为`fbd47e6f5d5c7009bda4dd921fc34a7009adeb43`；PR run `44085269448`与合并后main run `44085905987`的Python/API和合成浏览器验证均成功，功能分支push run `44085216977`成功跳过。
 - PR #119–#123 的路由边界整理均已合入`main`；PR #123 run `44098248603`与合并后 main run `44098766111`通过，普通 push run `44098175931`成功跳过。当前基线为`b80dad8`，本次求解器结构阶段从该提交续接。
+- PR #132、#133、#134 已依次合并到`main`；当前结构整理基线为`bfa99ba`。PR #133 run `44128674193`、进度更新后 run `44129552127`及 main run `44130292999`均通过；PR #134 run `44133239396`、进度更新后 run `44134458472`及 main run `44135099313`均通过。阶段 35 完整 Python/API 为2,527 passed、89 skipped，Edge UI 为31 passed。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1855,5 +1856,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`_sequence_windows_ln_interactions`从`sequence_windows.py`迁入`manialab/sequence_window_interactions.py`，新模块只依赖 NumPy 与`sequence_schema.py`；窗口模块仍导出同一函数对象，`sequence_prior.py`旧兼容入口不变。
 - 更新窗口边界测试，检查旧导出对象身份，并验证独立导入新模块不加载`sequence_windows.py`或`sequence_prior.py`。本机资源不足期间，定向 pytest 在收集阶段未能运行；`git diff --check`通过。
-- PR #134 Windows run `44133239396`通过：全量Python/API为2,527 passed、89 skipped，Edge UI为31 passed；模型及便携构建步骤按条件跳过。该干净runner结果完成本地资源不足时未能执行的运行时与训练编码兼容验证。
+- PR #134 Windows run `44133239396`和进度更新后 run `44134458472`，以及合并后 main run `44135099313`均通过：全量Python/API为2,527 passed、89 skipped，Edge UI为31 passed；模型及便携构建步骤按条件跳过。该干净runner结果完成本地资源不足时未能执行的运行时与训练编码兼容验证。
 - 未运行研究训练、模型或用户音频；未访问保留的 MAESTRO 测试，未改动研究脚本或研究产物。结构迁移不代表序列模型或音乐质量提升；osu! 试打仍独立验收。
+
+## 2026-11-18 第三十六阶段：定轨配置边界
+
+- 将`DEFAULTS`、`BOUNDS`、`INTEGER`和`parameters`从`arrange.py`迁入只依赖标准库`math`的`manialab/arrange_config.py`。`arrange.py`继续重导出同一对象；`planner.py`、`recommendations.py`与`project_routes.py`改为直接依赖轻量配置模块。
+- 新增兼容对象身份、默认设置副本及独立导入测试；子进程验证配置模块不加载`arrange`、NumPy或SciPy，三个直接消费者不加载`arrange`或SciPy。定向`.venv/Scripts/python.exe -m pytest -q tests/test_arrange_config_boundary.py tests/test_core.py tests/test_selection.py tests/test_selection_capacity_boundaries.py tests/test_recommendations.py tests/test_project_routes.py`为83 passed（14.35秒）；`.venv/Scripts/python.exe -m compileall -q manialab tests`与`git diff --check`通过。
+- PR CI待运行；本阶段未运行研究训练、模型、用户音频或参考谱，未访问保留的 MAESTRO 测试，也未修改研究脚本或研究产物。结构迁移不代表音乐质量或模型效果提升；osu! 试打仍独立验收。
