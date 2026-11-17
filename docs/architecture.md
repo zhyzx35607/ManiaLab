@@ -4,7 +4,7 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 
 | 层 | 入口 | 职责 |
 | --- | --- | --- |
-| 启动与 HTTP | `launcher.py`、`manialab/server.py`、`manialab/playback_routes.py` | 本机访问、任务与项目 API、播放、试听、波形响应 |
+| 启动与 HTTP | `launcher.py`、`manialab/server.py`、`manialab/task_service.py`、`manialab/playback_routes.py` | 本机访问、任务生命周期、项目 API、播放、试听、波形响应 |
 | 制谱服务 | `manialab/generation.py` | 组合证据、表达、量化、选音、定轨和报告；不依赖 Flask 或磁盘 |
 | 音乐领域 | `domain.py`、`timing.py`、`preferences.py`、`expression.py`、`arrange.py`、`layout.py` | 音符与谱面、时钟、分段策略、占轨约束和轨道搜索 |
 | 音频组件 | `audio.py`、`separation.py`、`piano.py`、`guitar.py`、`instrument_detector.py` | 分离、采音、模型身份、独立缓存和 CPU 推理 |
@@ -46,7 +46,9 @@ Timing诊断的12秒窗口固定属于原音频，窗口残差按当前制谱起
 
 ## 项目提交与失败
 
-任务修改加载的项目快照，成功且未取消才原子保存。失败和取消保留上一版本；新上传声轨只清理本次未提交的文件与新建解码目录。上传路径采用大小写不敏感的冲突检查；同一谱包先完整校验，再写入。嵌套谱面导出保留原始相对引用，必要时将补传音频写入该引用位置。
+`ProjectTasks` 在 `task_service.py` 持有单工作线程、任务表和应用级 `RLock`。后台操作由路由提供，服务负责状态推进、取消、日志和提交边界；同步项目写路由也使用同一把锁并检查项目是否正运行任务。操作只修改加载的项目快照，成功且未取消才原子保存。失败和取消保留上一版本；清理回调按是否已提交决定是否移除新上传文件和解码目录。`app.extensions['executor']` 与 `['jobs']` 保留为服务对象的兼容入口。
+
+上传路径采用大小写不敏感的冲突检查；同一谱包先完整校验，再写入。嵌套谱面导出保留原始相对引用，必要时将补传音频写入该引用位置。
 
 ## 验证与下一步
 
