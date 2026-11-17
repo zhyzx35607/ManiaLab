@@ -4,7 +4,7 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 
 | 层 | 入口 | 职责 |
 | --- | --- | --- |
-| 启动与 HTTP | `launcher.py`、`manialab/server.py`、`manialab/task_service.py`、`manialab/project_routes.py`、`manialab/analysis_routes.py`、`manialab/arrangement_routes.py`、`manialab/candidate_routes.py`、`manialab/upstream_routes.py`、`manialab/export_routes.py`、`manialab/timing_routes.py`、`manialab/playback_routes.py` | 本机访问、任务生命周期、项目读写、采音与导入声轨、编排建议/段落/表达、候选生成与编辑、Mapperatorinator集成、Timing检查/重拟合、JSON/OSU/OSZ导出、播放、试听、波形响应 |
+| 启动与 HTTP | `launcher.py`、`manialab/server.py`、`manialab/task_service.py`、`manialab/project_routes.py`、`manialab/analysis_routes.py`、`manialab/arrangement_routes.py`、`manialab/candidate_routes.py`、`manialab/upstream_routes.py`、`manialab/export_routes.py`、`manialab/timing_routes.py`、`manialab/playback_routes.py` | 本机访问、任务生命周期、项目读写/谱面偏好导入、采音与导入声轨、编排建议/段落/表达、候选生成与编辑、Mapperatorinator集成、Timing检查/重拟合、JSON/OSU/OSZ导出、播放、试听、波形响应 |
 | 制谱服务 | `manialab/generation.py` | 组合证据、表达、量化、选音、定轨和报告；不依赖 Flask 或磁盘 |
 | 音乐领域 | `domain.py`、`timing.py`、`preferences.py`、`expression.py`、`arrange.py`、`layout.py` | 音符与谱面、时钟、分段策略、占轨约束和轨道搜索 |
 | 音频组件 | `audio.py`、`separation.py`、`piano.py`、`guitar.py`、`instrument_detector.py` | 分离、采音、模型身份、独立缓存和 CPU 推理 |
@@ -17,6 +17,8 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 `upstream_routes.py`集中Mapperatorinator安装与生成接口；应用组合层传入共享`MapperEngine`、项目仓库、异步任务提交及当前项目Timing闭包。原模型生成保留输入键型、经确认的固定时钟对齐和完整remap报告。
 
 `candidate_routes.py`集中普通候选生成与编辑。生成算法仍由无HTTP依赖的`generation.py`提供；编辑在原候选上派生新版本，保留版本历史、Timing/落线报告和声部证据。
+
+项目谱面导入与参考风格偏好导入共用`project_routes.py`。参考风格路由只更新项目级风格/设置，不覆盖音频分析或候选；参数规范器和风格分析器由组合层注入。
 
 ## 两种时钟
 

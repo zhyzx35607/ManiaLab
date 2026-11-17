@@ -1775,4 +1775,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`POST /api/projects/<pid>/generate`和`edit`迁入`manialab/candidate_routes.py`。应用组合层注入现有参数规范器、Timing解析闭包及异步任务提交器；纯候选生成继续委托`generation.py`。
 - 保留候选版本冲突检查、编辑基准时间戳、旧候选继承、落线门槛、编辑历史、报告刷新和最近8个候选状态更新；参考谱风格导入保持独立。
-- 本阶段定向API/编辑/生成时钟与完整验证待运行；未运行模型、读取用户音频或修改研究脚本/产物。
+- 定向候选、编辑、生成时钟、表达、局部生成与证据测试为139 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,505 passed、89 skipped（84.02秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。PR #122 run `44096021565`与合并后main run `44096681056`均成功，合并提交`3e1059bed55bcb874751c360ce9f7540cfb79d81`；模型与便携构建步骤按触发条件跳过。
+- 本阶段未运行模型、读取用户音频或修改研究脚本/产物。
+
+## 2026-11-17 第二十四阶段：项目参考风格导入边界
+
+- 将`POST /api/projects/<pid>/reference-style`并入`manialab/project_routes.py`，与谱面导入、选择和项目偏好操作同组；应用组合层注入参数规范器及风格分析器。
+- 保持10MB `.osu` 限制、UTF-8 校验、共享任务锁、明确键数偏好优先、风格元数据保存，以及不覆盖音频分析/既有候选的行为。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_project_routes.py tests/test_server.py::test_reference_style_preserves_audio_candidates_and_target_keys tests/test_style.py`为10 passed；全量Python为2,505 passed、89 skipped（84.05秒）；完整Edge `npm run test:ui`为31 passed（1.3分钟）；`compileall`和`git diff --check`通过。Windows PR CI待运行。
+- 未运行模型、读取用户音频或修改研究脚本/产物。
