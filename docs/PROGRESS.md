@@ -1789,4 +1789,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将 HiGHS 共享锁、MILP 单线程选项及 warning 过滤从`arrange.py`移至`manialab/solver.py`，并为`gesture_flow.py`的线性规划增加同锁求解入口。表达与研究模块不再从定轨模块引用私有求解器状态或实现；保留`expression._solve_binary`和`gesture_flow.linprog`的测试替换点。
 - 保持调用方 MILP 时间/间隙参数、强制`threads=1`与`parallel=False`、LP 的`highs-ds`方法/超时，以及两种 SciPy warning 类别和原窄消息过滤。MILP 与 LP 共用同一个非重入锁，不在调用侧嵌套加锁。
-- 新增 fake solver 参数与 warning 回归，以及 MILP/LP 跨线程互斥验证。定向求解器、表达、手势流、锚点和布局测试为47 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,509 passed、89 skipped（87.03秒）；完整Edge `npm run test:ui`为31 passed（1.4分钟）；`compileall`与`git diff --check`通过。等待Windows PR CI；未运行音频模型、读取用户音频或改动研究脚本/研究产物；音乐质量与 osu! 试打仍待独立验收。
+- 新增 fake solver 参数与 warning 回归，以及 MILP/LP 跨线程互斥验证。定向求解器、表达、手势流、锚点和布局测试为47 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,509 passed、89 skipped（87.03秒）；完整Edge `npm run test:ui`为31 passed（1.4分钟）；`compileall`与`git diff --check`通过。PR #124 run `44102406451`与合并后 main run `44103378364`通过，合并提交`e37b3833a2a4a0f390777f7ee4823161091371a7`；模型与便携构建步骤按条件跳过。未运行音频模型、读取用户音频或改动研究脚本/研究产物；音乐质量与 osu! 试打仍待独立验收。
+
+## 2026-11-17 第二十六阶段：序列窗口编码边界
+
+- 将`SequenceRow`、节拍位置转换、单窗与批窗特征编码从`sequence_prior.py`迁入`sequence_windows.py`；模型 JSON 校验、`SequencePrior`和镜像评分仍由`sequence_prior.py`负责。
+- `sequence_prior.py`继续重导出原有窗口类、时钟和编码入口，训练/研究脚本无需改路径；`layout.py`改为分别从新窗口模块和模型模块导入。
+- 新增兼容导出的逐项身份回归，并验证窗口模块不承担模型加载/评分。定向`.venv/Scripts/python.exe -m pytest -q tests/test_sequence_prior_runtime.py tests/test_sequence_prior_remap.py tests/test_layout.py tests/test_sequence_windows_boundary.py`为59 passed（8.75秒）；全量`.venv/Scripts/python.exe -m pytest -q`为2,511 passed、89 skipped（85.52秒）；完整Edge `npm run test:ui`在`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`下为31 passed（1.3分钟）；`compileall`与`git diff --check`通过。Windows PR CI待运行。
+- 未读取用户音频/参考谱、触碰保留的 MAESTRO 测试或运行模型实验；音乐质量与 osu! 试打仍待独立验收。
