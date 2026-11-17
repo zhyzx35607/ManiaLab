@@ -17,12 +17,12 @@ from .preferences import ChartPreferences
 from .evidence import capture_source_evidence
 from .selection_report import regional_selection_report
 from .regional import validate_phrase_scope
+from .recommendation_plan import adjusted_segments, plan_evidence, validate_plan
 
 
 def generate_variant(state, payload, prefs, tempo, progress, cancelled):
     mode = payload.get("mode", "audio")
     started = time.perf_counter()
-    from .recommendations import adjusted_segments, validate_plan, plan_evidence
     segment_preferences=adjusted_segments(state.get('plan',{}),prefs)
     progress(15, "选择音乐物件 / 保留原始物件")
     if mode == "remap":

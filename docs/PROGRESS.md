@@ -1841,4 +1841,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 将版本化特征实现拆到`sequence_features_common.py`、`sequence_features_base.py`、`sequence_features_interactions.py`、`sequence_features_phrase_context.py`和`sequence_features_mirror.py`。`pattern_sequence.py`保留 schema、常量、编码器及原辅助函数的兼容重导出；模型输入字段、顺序和计算逻辑不作更改。
 - AST 对照确认迁移的12个函数定义与原实现一致。新增边界测试验证旧导入名仍指向同一函数/schema 对象，并确保编码实现模块不反向导入兼容门面。
 - 序列特征、schema、窗口、训练编码、运行时、布局与评估定向测试为135 passed、4 skipped（8.67秒）；全量`.venv/Scripts/python.exe -m pytest -q`为2,524 passed、89 skipped（65.48秒）；完整Edge `npm run test:ui`为31 passed（1.1分钟）。`.venv/Scripts/python.exe -m compileall -q manialab tests`和`git diff --check`通过。未运行研究训练、模型、用户音频或参考谱。
-- PR CI待运行；长期音乐质量与 osu! 试打仍独立验收。后续继续只读审查剩余领域模块，依据实际函数职责和调用/测试边界选择下一阶段。
+- PR #132 Windows run `44124525798`与合并后 main run `44125358706`均成功，合并提交`86ed7e88468197f3eb458a60c016eab19739a709`；Python/API与合成浏览器检查通过，模型和便携构建步骤按触发条件跳过。长期音乐质量与 osu! 试打仍独立验收。后续继续只读审查剩余领域模块，依据实际函数职责和调用/测试边界选择下一阶段。
+
+## 2026-11-18 第三十四阶段：本地编排计划边界
+
+- 将`EVIDENCE_THRESHOLD`、`plan_evidence`、`evidence_signature`、`validate_plan`和`adjusted_segments`迁入`manialab/recommendation_plan.py`。`recommendations.py`继续重导出同一对象；`generation.py`与`arrangement_routes.py`直接依赖计划模块，减少加载建议生成实现的耦合。
+- 新增兼容身份和独立导入边界测试。定向`.venv/Scripts/python.exe -m pytest -q tests/test_recommendation_plan_boundary.py tests/test_recommendations.py tests/test_server.py::test_generation_applies_local_recommendation_expression_to_export`为24 passed；`.venv/Scripts/python.exe -m compileall -q manialab tests`与`git diff --check`通过。
+- 本地全量测试期间并行运行浏览器测试导致资源耗尽：Python套件报告2,522 passed、89 skipped、4 failures，其中1项合成音频测试内存分配失败、3项导入边界测试无法创建子进程；浏览器套件因Node堆内存耗尽报告8个worker失败、23项未运行。失败发生时系统可用内存约1.1 GiB，且进程快照显示非本项目`eye-kg-llm-ui` Vite进程占用异常高；保留该用户进程及本项目两个资料服务，不能将此轮全量结果记作通过。后续由PR Windows CI在干净环境完整验证。
+- 未运行研究训练、模型或音频读取；未访问保留的 MAESTRO 测试，未改动研究脚本或研究产物。PR和CI待处理；音乐质量与 osu! 试打仍独立验收。
