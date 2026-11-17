@@ -6,7 +6,7 @@ import time
 from flask import request
 
 from .arrange import layout_metrics, parameters
-from .audio import decode
+from .audio_io import decode
 from .domain import clean_meta, parse_osu, upstream_events, validate
 from .ln_patterns import analyze_ln_patterns
 from .review import review_chart

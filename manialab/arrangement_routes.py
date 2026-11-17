@@ -59,7 +59,8 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
             structure = analysis.get("structure", {})
             action = payload.get("action", "detect")
             if action == "detect":
-                from .audio import decode, SR
+                from .audio_config import SR
+                from .audio_io import decode
 
                 progress(10, "读取音频，比较音色、能量与声部活动变化")
                 samples = decode(current_audio(state), projects.path(pid))

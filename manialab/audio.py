@@ -8,11 +8,9 @@ from __future__ import annotations
 from pathlib import Path
 from dataclasses import replace
 import hashlib
-import subprocess
 import threading
 import time
 
-import imageio_ffmpeg
 import numpy as np
 import onnxruntime as ort
 from scipy.io import wavfile
@@ -20,6 +18,7 @@ from scipy.io import wavfile
 from .domain import Note
 from .timing import estimate_timing, cover_missing_timing_windows
 from .audio_config import FRAME, OVERLAP, SR, WINDOW
+from .audio_io import decode as decode_audio, run_hidden
 from .audio_analysis import pitched_notes, rhythmic_evidence, fuse_attacks, refine_releases
 from .audio_evidence import (
     align_stem_samples,
@@ -32,26 +31,8 @@ _session = None
 _lock = threading.Lock()
 
 
-def run_hidden(args, **kwargs):
-    import os
-    return subprocess.run(args, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0, **kwargs)
-
-
 def decode(path, work):
-    result = run_hidden([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-i", str(path),
-                         "-vn", "-ac", "1", "-ar", str(SR), "-t", "1201", "-f", "f32le", "pipe:1"],
-                        capture_output=True, timeout=180)
-    if result.returncode:
-        raise ValueError("音频无法解码，请换用 WAV / MP3 / FLAC / OGG")
-    samples = np.frombuffer(result.stdout, dtype="<f4").copy()
-    if len(samples) < SR // 4:
-        raise ValueError("音频短于 0.25 秒")
-    if len(samples) > SR * 1200:
-        raise ValueError("首版支持不超过 20 分钟的音频")
-    if not np.all(np.isfinite(samples)):
-        raise ValueError("音频含无效采样值")
-    wavfile.write(Path(work) / "preview.wav", SR, (np.clip(samples, -1, 1) * 32767).astype(np.int16))
-    return samples
+    return decode_audio(path, work, runner=run_hidden)
 
 
 def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):

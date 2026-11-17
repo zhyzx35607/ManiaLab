@@ -1819,5 +1819,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 ## 2026-11-17 第三十阶段：音频事件分析边界
 
 - 将`pitched_notes`、`rhythmic_evidence`、`fuse_attacks`、`refine_releases`移入不导入 ONNX Runtime 的`manialab/audio_analysis.py`。`audio.py`继续重导出相同函数对象，分析编排仍通过原模块全局入口调用，保留现有导入和 monkeypatch 行为；解码、模型分窗推理、缓存与组合流程仍在`audio.py`。
-- 用 AST 对照合并前`main`与新模块，四个函数实现完全一致；独立子进程导入测试确认`audio_analysis`不会加载`onnxruntime`。音频事件、Timing、声部集成和替身回归共120 passed（9.90秒）；`.venv/Scripts/python.exe -m compileall -q manialab tests`及`git diff --check`通过。未运行真实模型测试或浏览器测试；PR Windows CI待运行。
+- 用 AST 对照合并前`main`与新模块，四个函数实现完全一致；独立子进程导入测试确认`audio_analysis`不会加载`onnxruntime`。音频事件、Timing、声部集成和替身回归共120 passed（9.90秒）；`.venv/Scripts/python.exe -m compileall -q manialab tests`及`git diff --check`通过。未运行真实模型测试或浏览器测试。PR #129 Windows run `44115907561`成功并合并为`a1f573c7187bf94a929db441f95af8d89c54ac8f`；合并后main run `44116712054`成功。
 - 下一步检查音频编排剩余职责及调用边界，选取可单独验证的纯数据/缓存边界；音乐质量与 osu! 试打仍需独立验收。
+
+## 2026-11-17 第三十一阶段：音频 IO 轻量边界
+
+- 将`run_hidden`与FFmpeg单声道PCM解码移入`manialab/audio_io.py`。`audio.py`保留相同进程辅助对象和旧签名`decode`包装，并把旧`audio.run_hidden`作为显式runner传入，既有导入及替换点可继续工作。
+- `provided_stems.py`、`separation.py`、`upstream_routes.py`和`arrangement_routes.py`改为直接依赖轻量音频IO/配置/证据模块。独立子进程验证这些模块导入后`manialab.audio`与`onnxruntime`都未载入。
+- `.venv/Scripts/python.exe -m pytest -q tests/test_audio_io_boundary.py tests/test_audio_analysis_boundary.py tests/test_audio_evidence_boundary.py tests/test_provided_stems.py tests/test_stems.py tests/test_upstream.py tests/test_server.py tests/test_import_reliability.py`为59 passed（15.43秒）；`.venv/Scripts/python.exe -m pytest -q tests/test_separation.py`为2 passed（0.72秒）。`.venv/Scripts/python.exe -m compileall -q manialab tests`与`git diff --check`通过。未运行真实模型、用户音频或浏览器测试；PR CI待运行。
+- 阶段 30 PR #129的Windows run `44115907561`和合并后main run `44116712054`均成功，合并提交为`a1f573c7187bf94a929db441f95af8d89c54ac8f`。下一步检查剩余音频分析编排和缓存职责，先做只读边界审查，再决定是否需要迁移；长期音乐质量与 osu! 试打仍独立验收。
