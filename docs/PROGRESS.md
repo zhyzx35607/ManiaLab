@@ -1795,11 +1795,17 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`SequenceRow`、节拍位置转换、单窗与批窗特征编码从`sequence_prior.py`迁入`sequence_windows.py`；模型 JSON 校验、`SequencePrior`和镜像评分仍由`sequence_prior.py`负责。
 - `sequence_prior.py`继续重导出原有窗口类、时钟和编码入口，训练/研究脚本无需改路径；`layout.py`改为分别从新窗口模块和模型模块导入。
-- 新增兼容导出的逐项身份回归，并验证窗口模块不承担模型加载/评分。定向`.venv/Scripts/python.exe -m pytest -q tests/test_sequence_prior_runtime.py tests/test_sequence_prior_remap.py tests/test_layout.py tests/test_sequence_windows_boundary.py`为59 passed（8.75秒）；全量`.venv/Scripts/python.exe -m pytest -q`为2,511 passed、89 skipped（85.52秒）；完整Edge `npm run test:ui`在`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`下为31 passed（1.3分钟）；`compileall`与`git diff --check`通过。PR #125 run `44106980785`成功，合并提交`dc1de5e67badccf058a85113f16fc94817ffdc52`；合并后 main run `44107895343`仍在运行。
+- 新增兼容导出的逐项身份回归，并验证窗口模块不承担模型加载/评分。定向`.venv/Scripts/python.exe -m pytest -q tests/test_sequence_prior_runtime.py tests/test_sequence_prior_remap.py tests/test_layout.py tests/test_sequence_windows_boundary.py`为59 passed（8.75秒）；全量`.venv/Scripts/python.exe -m pytest -q`为2,511 passed、89 skipped（85.52秒）；完整Edge `npm run test:ui`在`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`下为31 passed（1.3分钟）；`compileall`与`git diff --check`通过。PR #125 run `44106980785`与合并后 main run `44107895343`成功，合并提交`dc1de5e67badccf058a85113f16fc94817ffdc52`。
 - 未读取用户音频/参考谱、触碰保留的 MAESTRO 测试或运行模型实验；音乐质量与 osu! 试打仍待独立验收。
 
 ## 2026-11-17 第二十七阶段：序列特征 schema 边界
 
 - 将序列特征字段名、固定维度、LN 交互与乐句上下文配置、schema 修订号及版本映射从编码实现移入`manialab/sequence_schema.py`。`pattern_sequence.py`与运行窗口模块继续重导出同一对象，既有研究脚本导入路径保持不变。
-- 增加单一 schema 所有者和兼容重导出的身份测试；全量`.venv/Scripts/python.exe -m pytest -q`为2,512 passed、89 skipped（62.72秒），Edge `npm run test:ui`在`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`下为31 passed（1.2分钟），`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。Windows PR CI待运行。
+- 增加单一 schema 所有者和兼容重导出的身份测试；全量`.venv/Scripts/python.exe -m pytest -q`为2,512 passed、89 skipped（62.72秒），Edge `npm run test:ui`在`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`下为31 passed（1.2分钟），`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`与`git diff --check`通过。PR #126 Windows run `44108562881`与合并后 main run `44110037927`均成功，合并提交`76b760a53e93298b0be80f2ac87820a5338dda48`。
 - 不更改特征值、模型文件、缓存协议或训练脚本；未运行模型实验、读取用户音频/参考谱或访问保留的 MAESTRO 测试。音乐质量与 osu! 试打仍待独立验收。
+
+## 2026-11-17 第二十八阶段：Timing 拟合原语边界
+
+- 将 BPM 常见拍速归一化、相位估计、网格拟合/评分、固定 BPM 偏移重拟合、精确拍速建议及模型拍间隔支持移入`manialab/timing_fitting.py`。`timing.py`保留公共时钟、诊断、自动估速和候选对齐，并继续重导出旧拟合入口。
+- 定向 Timing/诊断/生成时钟/边界测试为72 passed；全量`.venv/Scripts/python.exe -m pytest -q`为2,513 passed、89 skipped（60.75秒）；Edge `npm run test:ui`在`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978`下为31 passed（1.2分钟）；`compileall`与`git diff --check`通过。PR 与 main CI待运行。
+- 只移动纯拟合实现，未更改算法、音频输入或模型实验；未读取用户音频/参考谱或访问保留的 MAESTRO 测试。音乐质量与 osu! 试打仍待独立验收。
