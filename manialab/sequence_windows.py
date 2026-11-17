@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .pattern_sequence import (
+from .sequence_schema import (
     FEATURE_COUNT,
     FEATURE_SCHEMA_COUNTS,
     FEATURE_SCHEMA_NAMES,
@@ -17,6 +17,8 @@ from .pattern_sequence import (
     ROW_FEATURES,
     ROW_WIDTH,
     WINDOW_ROWS,
+)
+from .pattern_sequence import (
     window_features,
     window_features_with_ln_interactions,
     window_features_with_ln_phrase_context,
