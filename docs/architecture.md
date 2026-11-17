@@ -7,7 +7,7 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 | 启动与 HTTP | `launcher.py`、`manialab/server.py`、`manialab/task_service.py`、`manialab/project_routes.py`、`manialab/analysis_routes.py`、`manialab/arrangement_routes.py`、`manialab/candidate_routes.py`、`manialab/upstream_routes.py`、`manialab/export_routes.py`、`manialab/timing_routes.py`、`manialab/playback_routes.py` | 本机访问、任务生命周期、项目读写/谱面偏好导入、采音与导入声轨、编排建议/段落/表达、候选生成与编辑、Mapperatorinator集成、Timing检查/重拟合、JSON/OSU/OSZ导出、播放、试听、波形响应 |
 | 制谱服务 | `manialab/generation.py` | 组合证据、表达、量化、选音、定轨和报告；不依赖 Flask 或磁盘 |
 | 音乐领域 | `domain.py`、`timing.py`、`timing_fitting.py`、`preferences.py`、`expression.py`、`arrange.py`、`layout.py`、`solver.py`、`sequence_schema.py`、`sequence_windows.py`、`sequence_prior.py` | 音符与谱面、时钟、Timing 拟合、分段策略、占轨约束、轨道搜索、共享求解与序列窗口先验 |
-| 音频组件 | `audio_config.py`、`audio_evidence.py`、`audio.py`、`separation.py`、`piano.py`、`guitar.py`、`instrument_detector.py` | 采样几何、声部来源证据和串音筛查、分离、采音、模型身份、独立缓存和 CPU 推理 |
+| 音频组件 | `audio_config.py`、`audio_analysis.py`、`audio_evidence.py`、`audio.py`、`separation.py`、`piano.py`、`guitar.py`、`instrument_detector.py` | 采样几何、声部来源证据与串音筛查、音符/瞬态分析、分离、模型身份、独立缓存和 CPU 推理 |
 | 项目与文件 | `storage.py`、`provided_stems.py` | 原子保存、安全路径、上传冲突检查、声轨来源与失败清理 |
 | 浏览器 | `static/` | 当前候选、待应用参数、试听与编辑；不重新解释模型能力 |
 | 构建与研究 | `scripts/`、`docs/` | 固定构建、运行验证、冻结协议与研究结果，见[脚本索引](../scripts/README.md) |
@@ -20,7 +20,7 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 
 `timing_fitting.py`持有节拍相位、BPM 归一化、拟合、评分和固定 BPM 偏移重拟合原语；`timing.py`保留公共音频时钟、拍线诊断、自动估速和候选对齐入口，并重导出旧拟合 API。
 
-`audio_evidence.py`只依赖 NumPy 与共享采样率配置，处理末尾采样差异、声部能量归属和分离串音筛查；`audio.py`重导出这些旧入口并组合推理流程。只需离线证据检查的脚本可直接导入轻量模块，不必加载 ONNX Runtime。
+`audio_analysis.py`负责模型无关的音符与瞬态提取、起音融合和音尾修整；它不加载 ONNX Runtime。`audio.py`保留解码、ONNX 分窗推理、缓存和分析编排，并重导出原有事件分析入口，既有脚本与测试替换点保持可用。`audio_evidence.py`只依赖 NumPy 与共享采样率配置，处理末尾采样差异、声部能量归属和分离串音筛查；只需离线分析或证据检查的代码可直接导入对应轻量模块。
 
 `upstream_routes.py`集中Mapperatorinator安装与生成接口；应用组合层传入共享`MapperEngine`、项目仓库、异步任务提交及当前项目Timing闭包。原模型生成保留输入键型、经确认的固定时钟对齐和完整remap报告。
 
