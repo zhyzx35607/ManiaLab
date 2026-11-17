@@ -6,7 +6,7 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 | --- | --- | --- |
 | 启动与 HTTP | `launcher.py`、`manialab/server.py`、`manialab/task_service.py`、`manialab/project_routes.py`、`manialab/analysis_routes.py`、`manialab/arrangement_routes.py`、`manialab/candidate_routes.py`、`manialab/upstream_routes.py`、`manialab/export_routes.py`、`manialab/timing_routes.py`、`manialab/playback_routes.py` | 本机访问、任务生命周期、项目读写/谱面偏好导入、采音与导入声轨、编排建议/段落/表达、候选生成与编辑、Mapperatorinator集成、Timing检查/重拟合、JSON/OSU/OSZ导出、播放、试听、波形响应 |
 | 制谱服务 | `manialab/generation.py` | 组合证据、表达、量化、选音、定轨和报告；不依赖 Flask 或磁盘 |
-| 音乐领域 | `domain.py`、`timing.py`、`timing_fitting.py`、`preferences.py`、`expression.py`、`expression_selection.py`、`arrange.py`、`layout.py`、`solver.py`、`sequence_schema.py`、`sequence_windows.py`、`sequence_prior.py` | 音符与谱面、时钟、Timing 拟合、分段策略、表达取舍、占轨约束、轨道搜索、共享求解与序列窗口先验 |
+| 音乐领域 | `domain.py`、`timing.py`、`timing_fitting.py`、`preferences.py`、`expression.py`、`expression_selection.py`、`arrange.py`、`layout.py`、`solver.py`、`sequence_schema.py`、`sequence_features_*.py`、`pattern_sequence.py`、`sequence_windows.py`、`sequence_prior.py` | 音符与谱面、时钟、Timing 拟合、分段策略、表达取舍、占轨约束、轨道搜索、共享求解与序列窗口先验 |
 | 音频组件 | `audio_config.py`、`audio_io.py`、`audio_analysis.py`、`audio_evidence.py`、`audio.py`、`separation.py`、`piano.py`、`guitar.py`、`instrument_detector.py` | 采样几何、FFmpeg 解码、声部来源证据与串音筛查、音符/瞬态分析、分离、模型身份、独立缓存和 CPU 推理 |
 | 项目与文件 | `storage.py`、`provided_stems.py` | 原子保存、安全路径、上传冲突检查、声轨来源与失败清理 |
 | 浏览器 | `static/` | 当前候选、待应用参数、试听与编辑；不重新解释模型能力 |
@@ -18,7 +18,9 @@ ManiaLab 分为应用、音乐领域、运行组件和研究工具四层。新�
 
 `expression.py`保留声部方案生成、证据追踪和兼容选择入口；`expression_selection.py`负责候选分组、和弦层级与容量约束 MILP。选择入口仍通过`expression._solve_binary`接收 solver 替身，旧辅助函数从原模块重导出。
 
-`sequence_schema.py`独立定义序列模型的版本化字段、维度和修订号；`pattern_sequence.py`继续重导出这些名字并实现编码。`sequence_windows.py`负责候选窗口行、节拍位置和单窗/批窗编码；`sequence_prior.py`保留模型校验与评分并重导出旧窗口 API。运行布局直接导入各自职责，研究与训练脚本继续使用兼容入口。
+`sequence_schema.py`独立定义序列模型的版本化字段、维度和修订号；`pattern_sequence.py`重导出 schema 与编码入口。`sequence_windows.py`负责候选窗口行、节拍位置和单窗/批窗编码；`sequence_prior.py`保留模型校验与评分并重导出旧窗口 API。运行布局直接导入各自职责，研究与训练脚本继续使用兼容入口。
+
+`pattern_sequence.py`是稳定的特征编码兼容门面。`sequence_features_common.py`负责共享输入校验；`sequence_features_base.py`、`sequence_features_interactions.py`和`sequence_features_phrase_context.py`分别实现基础、LN交互和LN长上下文编码；`sequence_features_mirror.py`负责各版本共用的镜像变换。模型特征顺序与数值定义由`sequence_schema.py`持有。
 
 `timing_fitting.py`持有节拍相位、BPM 归一化、拟合、评分和固定 BPM 偏移重拟合原语；`timing.py`保留公共音频时钟、拍线诊断、自动估速和候选对齐入口，并重导出旧拟合 API。
 
