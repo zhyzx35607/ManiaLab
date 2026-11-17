@@ -6,8 +6,8 @@
 ## 当前状态（先读）
 
 - 已发布的 Windows 包为 `v0.1.0-alpha.6-dev.18`；后续主线修复不自动进入该已发布包。
-- 2026-11-17 工程整理、跨段落容量、Timing诊断、LN来源与草稿保护已分七阶段合并（PR #101–#107）；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
-- 当前分支 `codex/regional-selection-audit-20261117` 已完成第八阶段本地验证：区分局部重写后的实际输出与整首预选提案。后端全量2,465 passed、89 skipped；前端完整Edge30项通过，PR检查待核对。恢复时先核对实际Git、进程和本文件末尾，不重跑已完成的模型实验。
+- 2026-11-17 工程整理、跨段落容量、Timing诊断、LN来源、草稿保护与局部报告已分八阶段合并（PR #101–#108）；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
+- 当前分支 `codex/regional-phrase-boundary-20261117` 在做第九阶段：局部重写防止内部起音静默丢失，也防止新乐句与锁定旧内部音重复。28项专项、全量Python及8正向/2反向冻结对照通过，待提交与CI。恢复时先核对实际Git、进程和本文件末尾，不重跑已完成的模型实验。
 - 已有66例[冻结片段对照](frozen-generation-regression-results.md)及10例[完整歌曲来源对照](ln-evidence-review-results.md)。最近完整便携构建仅对应PR #105的 `b7bfb09`；之后阶段没有重建包，也没有发布新标签。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
@@ -1615,3 +1615,45 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - PR #108首轮push检查通过，但PR检查在既有来源测试重开后读取尚未绘制的hitbox失败
   （29 passed、1 failed）。测试改为等待项目实际载入并轮询点击框，不加固定休眠、不改生产；
   两次独立Edge来源组均4 passed（15.2秒、14.3秒），已提交补充等待CI复核。
+- 最终head `f53e2d411eb0a75b88587e40c9446df087bdd0c7`的Windows push
+  `44025453538`、PR `44025459570`均通过，PR #108合并为
+  `94534a74fff71caa0b25abdfeb82e15709f86bc4`。push记录Python2,465 passed、89 skipped
+  （65.53秒），Chromium30 passed（59.5秒）；完整日志已保存ignored验证目录。
+
+## 2026-11-17 第九阶段：局部重写的乐句依赖边界
+
+- 真实生成复现：先保留1000ms、1500ms两个短键，再启用以1000ms为起点的乐句，
+  只重写`[1250,2500)`。整首提案用新乐句覆盖1500ms起音，但范围外锁定仍是旧短键，
+  导致1500ms起音静默消失。修改前证据在ignored
+  `build/structure-20261117-validation/regional-phrase-before.json`。
+- 新`regional.py`只在内部被省略起音属于重写范围、其代表乐句起点在范围外时拒绝，
+  提示扩大范围包含乐句起点和内部起音或整谱生成。边界按真实提前量、裁剪、量化后的
+  制谱起点判断。普通跨界持续音及没有内部覆盖关系的历史路径不受影响。
+- 不凭旧候选的phrase标志、support ID或本轮提案签名放行：手动缩短和重分析都可能
+  保留这些字段。即使旧长音看似相同，当前也要求一起重写相关乐句，以免推断不存在的来源身份。
+  全谱的表达、选择、定轨不变，不自动补音，也不把容量落选改为成功。
+- 四项真实行为回归先失败后通过；含API失败保留完整项目、扩大范围后生成及OSU回读的
+  根专项8项通过。独立补充容量落选、非整数拍格、编辑、缺快照、内部ID重分析、量化塌缩和
+  历史路径8项，合计 **16 passed（2.02秒）**；全量Python **2,481 passed、89 skipped
+  （57.25秒）**，运行 `.venv/Scripts/python.exe -m pytest -q`。
+- 复用4个已有开发片段各6K及原键数，8例均复现旧行为删除目标起音，新保护均拒绝不完整
+  替代范围；扩大范围后均生成成功。独立复核2,662个区域外锁定物件逐字段不变，OSU回读
+  起止/轨道一致。6例提案乐句因容量落选、2例实际选中；扩大范围不保证恢复音乐内容。
+  每组只检查最早可复现的旧保留内部起音，采用显式确认Timing的诊断，未跑模型或读音频。
+  产物 `test-data/regional-phrase-scope-20261117/`，报告SHA
+  `f44aa3c2da373711f3a956a7d1406764a2c786b90abe49372bcc7c641c28dd05`。
+  本机命令 `.venv/Scripts/python.exe build/structure-20261117-validation/check_regional_phrase_scope.py`，
+  输出目录不覆盖；输入/旧候选哈希与既有冻结记录一致。范围及限制见
+  [局部乐句边界结果](regional-phrase-boundary-results.md)。
+- 独立复核再现反方向：重写`[1000,1500)`生成新乐句却保留区外旧1500ms短键；旧音手动
+  移到2250ms时，即便原分析起音在范围内也会重复。新增保护仅检查已选中乐句明确替代的
+  内部ID是否仍被旧候选锁定。容量落选、量化塌缩、旧内部音已删除/已移入、普通持续音允许。
+  修改前6 failed、5 passed，最终三文件 **28 passed（2.80秒）**；真实API两种方向失败
+  均完整保留项目，扩大范围生成及导出通过。最终全量Python **2,493 passed、89 skipped
+  （60.65秒）**；JUnit保存在ignored `build/structure-20261117-validation/regional-phrase-final-junit.xml`。
+- 最终源码重新核对8正向、2反向冻结场景全部通过。8例扩大范围后的整份候选除创建时间/耗时
+  外与上一版产物一致，2,662个锁定物件不变；两例反向旧行为明确保留新乐句及旧内部音，
+  新保护拒绝。脚本 `build/structure-20261117-validation/check_regional_phrase_scope_final.py`，
+  运行 `.venv/Scripts/python.exe` 加该路径；输出 `test-data/regional-phrase-scope-final-20261117/`，
+  报告SHA `91215012b54cc4e52710a9c499c7fe8d9cf47bb98aef288ce2f34b80e8ebb3a9`。
+  没有重跑神经模型、重建便携包或发布版本；音乐质量仍未验收。

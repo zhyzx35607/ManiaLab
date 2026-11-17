@@ -16,6 +16,7 @@ from .ln_patterns import analyze_ln_patterns
 from .preferences import ChartPreferences
 from .evidence import capture_source_evidence
 from .selection_report import regional_selection_report
+from .regional import validate_phrase_scope
 
 
 def generate_variant(state, payload, prefs, tempo, progress, cancelled):
@@ -89,6 +90,8 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
         a, b = region
         previous = [note_from(n) for n in variant["notes"]]
         locked = [n for n in previous if not a <= n.start < b]
+        if mode == 'audio':
+            validate_phrase_scope(state['analysis'], candidates, selection, region, tempo, locked)
         previous_evidence = variant.get('source_evidence')
         locked_ids = {n.id for n in locked}
         locked_edits = [deepcopy(edit) for edit in variant.get('edits', [])
