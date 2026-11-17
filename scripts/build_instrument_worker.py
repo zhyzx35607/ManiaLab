@@ -11,6 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from manialab.instrument_bundle import RUNTIME_FILES, MODELS, runtime_identity, sha, verify_model, verify_source
+from scripts.worker_inventory import worker_inventory
 
 
 def main():
@@ -55,6 +56,7 @@ def main():
     # real-audio parity run is required before portable_runtime_verified changes.
     manifest = json.loads((assets/'manifest.json').read_text(encoding='utf-8'))
     manifest.update(worker_sources=original, worker_sha256=sha(assets/'ManiaLabInstrument/ManiaLabInstrument.exe'),
+        worker_files=worker_inventory(assets/'ManiaLabInstrument'),
         prepared_only=False, portable_runtime_verified=False)
     for path in reversed(paths):
         sys.path.insert(0,path)

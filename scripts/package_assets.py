@@ -1,6 +1,8 @@
 """Explicit portable profiles; only declared assets enter the application."""
 from pathlib import Path
+import json
 import shutil
+from scripts.worker_inventory import verify_worker_inventory
 
 BASE_FILES = (
     'basic-pitch.onnx', 'pattern-prior.json', 'arrangement-profiles.json',
@@ -45,6 +47,10 @@ def stage_assets(root, destination, profile):
     for name in directories:
         if not (source / name).is_dir():
             raise ValueError('Missing release directory: assets/' + name)
+    inventories = {}
+    for name in directories:
+        manifest = json.loads((source / name).with_name('manifest.json').read_text(encoding='utf-8'))
+        inventories[name] = verify_worker_inventory(source / name, manifest.get('worker_files'))
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=False)
     for name in files:
@@ -52,7 +58,11 @@ def stage_assets(root, destination, profile):
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(input_path(name), target)
     for name in directories:
-        shutil.copytree(source / name, destination / name)
+        for relative in inventories[name]:
+            target = destination / name / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source / name / relative, target)
+        verify_worker_inventory(destination / name, inventories[name])
     return enabled
 
 

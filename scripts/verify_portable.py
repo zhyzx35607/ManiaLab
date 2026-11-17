@@ -159,6 +159,7 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert release_manifest['worker_sha256']==hashlib.sha256((executable.parent/'_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe').read_bytes()).hexdigest()
         worker=verify_worker(ROOT,executable.parent/'_internal/assets/deep')
         assert release_manifest['worker_sources']==worker['worker_sources']
+        assert release_manifest['worker_files']==worker['worker_files']
         piano_identity=verify_piano_model(executable.parent/'_internal')
         assert release_manifest.get('piano_model')==piano_identity
         from scripts.package_assets import capabilities
@@ -171,7 +172,9 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             assert verify_guitar_model(executable.parent/'_internal')==release_manifest['guitar_model']
         if release_manifest.get('instrument_worker'):
             assert verify_instrument_worker(ROOT,executable.parent/'_internal/assets/instruments')==release_manifest['instrument_worker']
-        checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),executable_sha256=release_manifest['executable_sha256']))
+        checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),
+            worker_files=len(worker['worker_files']), build_profile=release_manifest['build_profile'],
+            capabilities=declared, executable_sha256=release_manifest['executable_sha256']))
         expected_prior=hashlib.sha256((ROOT/'assets/pattern-prior.json').read_bytes()).hexdigest()
         bundled_prior=hashlib.sha256((executable.parent/'_internal/assets/pattern-prior.json').read_bytes()).hexdigest()
         assert bundled_prior==expected_prior, 'Packaged layout model differs from the source release'

@@ -9,6 +9,7 @@
 - `build_audio_worker.py`：构建便携音频工作进程。
 - `build_windows.py --profile standard`：按明确组件清单构建隔离的 Windows 包，产物位于 `build/portable/<run-id>/`；`extended` 要求额外完整组件。
 - `package_assets.py`：维护构建范围、暂存资源和随包使用说明，避免夹带历史模型及研究文件。
+- `worker_inventory.py`：记录并核对 worker 全部运行文件；暂存按清单复制，拒绝额外文件、修改和链接。
 - `verify_portable.py`：用干净 PATH 和离线数据目录验证实际 EXE。
 - `verify_shutdown.py`：验证关闭应用时音频子进程结束。
 - `collect_release_validation.py`：核对 ZIP、测试报告和实际 EXE，并生成去除音频/逐音数据的发布验证摘要。

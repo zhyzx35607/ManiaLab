@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from manialab.instrument_bundle import MODELS, VOICE_MODELS, runtime_identity, sha
 from manialab.instrument_detector import InstrumentDetector
+from scripts.worker_inventory import verify_worker_inventory
 
 EVIDENCE = ('notes.json', 'raw-notes.json', 'window-notes.json', 'interval-constructions.json')
 HASH_KEYS = ('notes_sha256', 'raw_notes_sha256', 'window_notes_sha256', 'interval_constructions_sha256')
@@ -50,6 +51,7 @@ def main():
     assets = ROOT / 'assets/instruments'
     before = read(assets / 'manifest.json')
     checked(before['worker_sources'] == runtime_identity(ROOT), 'Packaged sources are stale')
+    verify_worker_inventory(assets/'ManiaLabInstrument', before.get('worker_files'))
     detector = InstrumentDetector(ROOT)
     command, runtime = detector._runtime()
     checked(runtime['kind'] == 'portable', 'Verification must invoke the bundled EXE')
@@ -106,7 +108,9 @@ def main():
             print(json.dumps(dict(stage='passed', voice=voice, releases=release, notes=len(notes))), flush=True)
     checked(read(assets / 'manifest.json') == before, 'Build manifest changed during verification')
     checked(runtime_identity(ROOT) == before['worker_sources'], 'Worker sources changed during verification')
+    verify_worker_inventory(assets/'ManiaLabInstrument', before['worker_files'])
     report = dict(worker_sha256=before['worker_sha256'], worker_sources=before['worker_sources'],
+        worker_files=before['worker_files'],
         verifier_sha256=sha(__file__), detector_sha256=sha(ROOT / 'manialab/instrument_detector.py'),
         models=MODELS, cases=cases, portable_runtime_verified=True, musical_acceptance=False,
         scope='Serial real-audio CPU EXE inference, research parity, both release modes and verified cache; not musical acceptance')

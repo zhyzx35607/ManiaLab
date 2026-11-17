@@ -23,6 +23,8 @@ git diff --check
 
 包内 `release-manifest.json` 记录 profile、capabilities、模型身份与源码摘要；`开始使用.txt` 从同一能力声明生成。发布验证核对实际组件，不能仅凭文件存在称模型可用。开发时钢琴状态区分 missing、mismatched、verified 与文件读取异常；状态查询缓存至多 30 秒，推理前强制校验。
 
+两个 worker builder 在构建完成时记录完整 `worker_files`（相对路径、字节数与 SHA）。暂存、包后校验和实际 EXE 验证拒绝多余、缺失或变化的运行文件，并拒绝符号链接与目录联接。没有清单的历史 worker 不能直接用于新包，应保留历史产物并重新构建；不得给未经核验的旧目录补清单绕过检查。Tsumugi 的运行验证报告也绑定该清单，依赖文件变化后须重新验证；本阶段只完整验证 standard，未重新运行历史 Tsumugi 音乐实验。
+
 已有历史 `assets/deep/piano-regression.onnx` 时不覆盖它。可将已验证的当前模型复制到 `assets/deep/piano-regression-<当前完整SHA256>.onnx`；运行和构建优先使用该版本文件。SHA 和大小从 `assets/piano-model.json` 读取并严格核对。需要重新准备时，可把该版本文件路径传给 `scripts/fetch_piano_model.py --output <路径>`；其默认工作目录按时间生成，已有输出不覆盖。发布包中统一命名为 `piano-regression.onnx`，历史文件不进入包。
 
 正式流水线见 `.github/workflows/windows.yml`。普通 PR 运行 Python 和浏览器测试；tag、手动触发或带 `[portable]` 的构建提交继续执行模型准备、EXE、离线 clean PATH、Unicode 数据路径、worker 退出及 ZIP 身份验证。检查通过和构建完成只证明对应的软件契约，音乐质量仍单独记录。

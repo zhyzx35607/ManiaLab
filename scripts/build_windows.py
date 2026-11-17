@@ -30,7 +30,8 @@ from build_provenance import (
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
 def source_snapshot():
-    files=[ROOT/'launcher.py',ROOT/'scripts/package_assets.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
+    files=[ROOT/'launcher.py',ROOT/'scripts/package_assets.py',ROOT/'scripts/worker_inventory.py',
+           ROOT/'scripts/build_provenance.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
            *sorted(p for p in (ROOT/'static').rglob('*') if p.is_file()),
            ROOT/'assets/pattern-prior.json',ROOT/'assets/arrangement-profiles.json',
            ROOT/'assets/piano-model.json',ROOT/'assets/guitar-model.json',ROOT/'assets/deep-models.json',ROOT/'manialab/tsumugi-source.json',
@@ -124,6 +125,7 @@ if verify_guitar_model(target/'_internal')!=guitar_identity:
 release_manifest=dict(version=__version__,sources=build_sources,build_profile=profile,capabilities=enabled,
     executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
     worker_sha256=bundled_worker['worker_sha256'],worker_sources=bundled_worker['worker_sources'],
+    worker_files=bundled_worker['worker_files'],
     piano_model=piano_identity,guitar_model=guitar_identity,instrument_worker=instrument_identity)
 (target/'release-manifest.json').write_text(json.dumps(release_manifest,indent=2),encoding='utf-8')
 for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:

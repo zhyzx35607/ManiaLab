@@ -1435,3 +1435,7 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - Mapperatorinator 的 OMP/MKL 统一2线程，实际运行器显式设置 PyTorch 算子2、跨算子1。主环境无torch的进程生命周期夹具显式提供线程契约替身；真实模型运行仍要求原独立环境。
 - 本地专项68 passed；两条真实Edge浏览器回归通过（14.8秒），原有静态服务不受影响。一次全量捕获生命周期夹具没有torch的问题，修正夹具后11项进程/原模型测试通过；最终全量 **2,405 passed、89 skipped（67.48秒）**。完整Windows构建结果待追加。
 - 文档补充 `docs/development.md`，当前乐器能力表对齐dev.18，历史实验继续保留。以上为工程验证，不代表采音或音乐质量通过验收；本阶段不创建新的Release标签。
+- `a330647` 的完整 Windows run `44004762861` 已成功：Python 2,405 passed、89 skipped（59.29秒），Chromium 两项通过（8.7秒），固定钢琴复建、worker/EXE/ZIP、离线 clean PATH、Unicode 数据路径及关停均通过。CI 记录 ZIP 888,441,706 字节、SHA `49136f93b69ee89447a980c1c5329cbabd9b8c35b4eb517f09abba101f98e617`。小型报告与完整日志下载至 ignored `build/structure-20261117-validation/ci-44004762861/`；未下载整包作本机独立复核。该记录仅对应这个源码提交。
+- 合并前独立复核发现 worker 子树仍使用 `copytree`，可夹入额外文件；本地目录未发现私有文件，但旧校验只覆盖 EXE，不能证明依赖树未改变。补充两个 builder 的完整 `worker_files` 清单，暂存前后与包后验证文件集合、大小、SHA，并拒绝链接；实际复制只遍历已核验清单。Tsumugi 运行验证前后也核对依赖树，报告绑定完整清单，不能沿用另一组 DLL 的旧报告。历史清单缺失时要求重建，不修改旧产物或给它补写身份。
+- 新增回归覆盖 worker 额外私有文件、复制期间新增文件、依赖内容变化、缺失文件、不安全路径和旧运行报告复用；相关构建专项32 passed。此补充尚需新的完整 Windows 验证；前一个成功 run 不作为新提交已完成打包验证的证据。
+- 补充后的本地全量 `.venv/Scripts/python.exe -m pytest -q` 为 **2,416 passed、89 skipped（59.46秒）**；`compileall -q manialab scripts tests` 与 `git diff --check`通过。两次独立代码复核均已结束；当前没有模型队列，仅保留原有8765/8766静态服务。
