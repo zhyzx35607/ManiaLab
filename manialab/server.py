@@ -16,7 +16,7 @@ from werkzeug.exceptions import HTTPException
 
 from . import __version__
 from .arrange import DEFAULTS, parameters, layout_metrics
-from .timing import DIVISIONS, align_candidates, chart_clock_notes, analysis_timing_diagnostics, grid_report, refit_offset
+from .timing import DIVISIONS, align_candidates, grid_report
 from .audio import analyze, analyze_deep
 from .separation import Separator
 from .provided_stems import ProvidedStemSeparator,prepare_provided_stems,provided_stem_identity
@@ -34,6 +34,7 @@ from .export_routes import register_export_routes
 from .planner import plan
 from .playback_routes import register_playback_routes
 from .project_routes import register_project_routes
+from .timing_routes import register_timing_routes
 from .storage import AUDIO, Projects, safe_path
 from .task_service import ProjectTasks
 from .upstream import MapperEngine
@@ -268,22 +269,7 @@ def create_app(resources, data_root):
         return detected | dict(bpm=bpm, offset=round(offset), division=division, audio_shift_ms=shift,
                                stable=bool(unchanged and detected.get("stable") and coverage_checked))
 
-    @app.post("/api/projects/<pid>/timing-refit")
-    def timing_refit(pid):
-        state = projects.load(pid)
-        tempo = requested_tempo(request.json, state)
-        attacks = chart_clock_notes([note_from(n) for n in state.get("analysis", {}).get("timing_attacks", [])], tempo["audio_shift_ms"])
-        fitted = refit_offset(attacks, tempo["bpm"], tempo["division"])
-        checks = analysis_timing_diagnostics(state.get('analysis', {}), tempo | fitted)
-        return jsonify(fitted | checks)
-
-    @app.post("/api/projects/<pid>/timing-check")
-    def timing_check(pid):
-        state = projects.load(pid)
-        tempo = requested_tempo(request.json, state)
-        if not state.get('analysis', {}).get('timing_attacks'):
-            raise ValueError("请用新版重新分析音频，才能检查整曲拍线")
-        return jsonify(analysis_timing_diagnostics(state['analysis'], tempo))
+    register_timing_routes(app, projects=projects, requested_tempo=requested_tempo)
 
     @app.post("/api/projects/<pid>/generate")
     def generate(pid):
