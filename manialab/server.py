@@ -6,7 +6,6 @@ import logging
 import math
 from pathlib import Path
 import secrets
-import time
 from types import SimpleNamespace
 from urllib.parse import urlparse
 import zipfile
@@ -15,8 +14,8 @@ from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 
 from . import __version__
-from .arrange import DEFAULTS, parameters, layout_metrics
-from .timing import DIVISIONS, align_candidates, grid_report
+from .arrange import DEFAULTS, parameters
+from .timing import DIVISIONS
 from .audio import analyze, analyze_deep
 from .separation import Separator
 from .provided_stems import ProvidedStemSeparator,prepare_provided_stems,provided_stem_identity
@@ -24,12 +23,10 @@ from .piano import PianoDetector
 from .guitar import GuitarDetector
 from .instrument_detector import InstrumentDetector
 from .pattern_prior import prior_status
-from .review import review_chart
-from .ln_patterns import analyze_ln_patterns
-from .editing import edit_notes
 from .style import describe_chart
 from .analysis_routes import register_analysis_routes
-from .domain import note_from, parse_osu, upstream_events, validate
+from .candidate_routes import register_candidate_routes
+from .domain import parse_osu
 from .export_routes import register_export_routes
 from .planner import plan
 from .playback_routes import register_playback_routes
@@ -167,54 +164,12 @@ def create_app(resources, data_root):
         current_audio=current_audio,
         planner=plan,
     )
-
-    @app.post("/api/projects/<pid>/generate")
-    def generate(pid):
-        payload = request.json
-        prefs = parameters(payload.get("settings", {}))
-        mode = payload.get("mode", "audio")
-        if mode not in ("audio", "remap"):
-            raise ValueError("生成模式无效")
-        def operation(state, progress, cancelled):
-            from .generation import generate_variant
-            return generate_variant(state, payload, prefs, requested_tempo(payload, state), progress, cancelled)
-        return submit(pid, operation)
-
-    @app.post("/api/projects/<pid>/edit")
-    def edit_candidate(pid):
-        payload = request.json
-        def operation(state, progress, cancelled):
-            import copy
-            if state['active'] < 0:
-                raise ValueError('请先生成候选谱面')
-            old = state['variants'][state['active']]
-            if payload.get('base_created') != old.get('created'):
-                raise ValueError('候选版本已经改变，请重新选择音符再修改')
-            progress(20,'检查修改与相邻 LN 占轨')
-            length = state.get('analysis',{}).get('duration')
-            notes, edit = edit_notes(old,payload,round(length*1000) if length else None)
-            prefs = old['settings']
-            points = state.get('input_timing',[]) if old['mode']=='remap' else []
-            beat = 60000/old['bpm']
-            report = validate(notes,prefs['keys'])
-            if old['mode']=='audio':
-                report['clock'] = old['report'].get('clock',{})
-                report['grid'] = grid_report(notes,old)
-                if report['grid']['off_grid']:
-                    raise ValueError('修改后的音符未通过落线检查')
-            report['layout'] = layout_metrics(notes,prefs['keys'],beat,points)
-            report['review'] = review_chart(notes,prefs['keys'],beat,points)
-            report['ln_patterns'] = analyze_ln_patterns(notes,prefs['keys'],beat,points)
-            variant = copy.deepcopy(old)
-            variant.update(notes=[n.data() for n in notes],report=report,created=time.time(),elapsed_seconds=0.,
-                           event_count=len(upstream_events(notes)),region=None)
-            variant['edits'] = [*old.get('edits',[]),dict(parent_created=old['created'],**edit)]
-            variant['selection'] = dict(message='手动修改已保存为新候选。原始采音保留，可从候选列表返回上一版。')
-            state['variants'] = (state['variants']+[variant])[-8:]
-            state['active'] = len(state['variants'])-1
-            state['settings'] = prefs.copy()
-            return report
-        return submit(pid,operation)
+    register_candidate_routes(
+        app,
+        submit=submit,
+        parameters=parameters,
+        requested_tempo=requested_tempo,
+    )
 
     @app.post("/api/projects/<pid>/reference-style")
     def reference_style(pid):
