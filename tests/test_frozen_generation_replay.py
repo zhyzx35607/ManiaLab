@@ -32,6 +32,8 @@ def test_diagnostic_generation_preserves_rejected_automatic_timing():
     assert analysis == original
     assert summary['passed'] and not summary['automatic_timing_gate']['accepted']
     assert variant['timing_confirmed'] is True
+    assert summary['timing_diagnostics'] == dict(status='insufficient',window_clock='audio',
+        assessed_windows=0,insufficient_windows=1,fallback_windows=0)
 
 
 def test_compare_preserves_ids_and_distinguishes_lane_and_tail_changes():
