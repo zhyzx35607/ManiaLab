@@ -116,10 +116,16 @@ def summarize(analysis, variant, segments=()):
         sections.append(dict(index=i, start_ms=start, end_ms=end,
             selected_voices=dict(Counter(n.voice for n in local)), ln_voices=dict(Counter(n.voice for n in local if n.hold))))
     forbidden = [n.id for n in notes if n.hold and n.release_reason in UNOBSERVED_RELEASES]
+    diagnostics = variant.get('timing_diagnostics') or {}
     return dict(notes=len(notes), ln=sum(n.hold for n in notes), voices=voices, sections=sections,
         capacity=capacity_report(notes, variant['settings'], segments), unsupported_release_ln=forbidden,
         structural=variant['report']['valid'], off_grid=variant['report']['grid']['off_grid'],
         timing_suspect_windows=sum(s.get('suspect', False) for s in variant['timing_sections']),
+        timing_diagnostics=dict(status=diagnostics.get('status', 'legacy'),
+            window_clock=diagnostics.get('window_clock', 'unspecified'),
+            assessed_windows=len(variant['timing_sections']),
+            insufficient_windows=len(diagnostics.get('insufficient_windows', [])),
+            fallback_windows=sum(s.get('fallback', False) for s in variant['timing_sections'])),
         omission_reasons=variant['selection'].get('omission_reasons', {}),
         solver=variant['selection'].get('selection_solver'))
 

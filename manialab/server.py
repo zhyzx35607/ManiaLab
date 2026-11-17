@@ -19,7 +19,7 @@ from werkzeug.exceptions import HTTPException
 
 from . import __version__
 from .arrange import DEFAULTS, parameters, layout_metrics
-from .timing import DIVISIONS, align_candidates, chart_clock_notes, grid_diagnostics, grid_report, refit_offset
+from .timing import DIVISIONS, align_candidates, chart_clock_notes, analysis_timing_diagnostics, grid_report, refit_offset
 from .audio import analyze, analyze_deep
 from .audition import grid_events, render_audition, waveform_window
 from .separation import Separator
@@ -416,18 +416,16 @@ def create_app(resources, data_root):
         tempo = requested_tempo(request.json, state)
         attacks = chart_clock_notes([note_from(n) for n in state.get("analysis", {}).get("timing_attacks", [])], tempo["audio_shift_ms"])
         fitted = refit_offset(attacks, tempo["bpm"], tempo["division"])
-        checks = grid_diagnostics(attacks, fitted["bpm"], fitted["offset"], fitted["division"])
-        return jsonify(**fitted, sections=checks, suspect=sum(s["suspect"] for s in checks))
+        checks = analysis_timing_diagnostics(state.get('analysis', {}), tempo | fitted)
+        return jsonify(fitted | checks)
 
     @app.post("/api/projects/<pid>/timing-check")
     def timing_check(pid):
         state = projects.load(pid)
         tempo = requested_tempo(request.json, state)
-        attacks = chart_clock_notes([note_from(n) for n in state.get("analysis", {}).get("timing_attacks", [])], tempo["audio_shift_ms"])
-        if not attacks:
+        if not state.get('analysis', {}).get('timing_attacks'):
             raise ValueError("请用新版重新分析音频，才能检查整曲拍线")
-        checks = grid_diagnostics(attacks, tempo["bpm"], tempo["offset"], tempo["division"])
-        return jsonify(sections=checks, suspect=sum(s["suspect"] for s in checks))
+        return jsonify(analysis_timing_diagnostics(state['analysis'], tempo))
 
     @app.post("/api/projects/<pid>/generate")
     def generate(pid):

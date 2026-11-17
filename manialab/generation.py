@@ -8,7 +8,7 @@ import time
 
 from .arrange import assign_lanes, select_notes, layout_metrics
 from .domain import note_from, validate, upstream_events
-from .timing import align_candidates, chart_clock_notes, grid_report, grid_diagnostics
+from .timing import align_candidates, chart_clock_notes, grid_report, analysis_timing_diagnostics
 from .voices import apply_phrase_evidence
 from .review import review_chart
 from .ln_patterns import analyze_ln_patterns
@@ -100,15 +100,15 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
     report["layout"] = layout_metrics(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
     report["review"] = review_chart(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
     report["ln_patterns"] = analyze_ln_patterns(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
-    timing_sections = grid_diagnostics(chart_clock_notes([note_from(n) for n in state.get("analysis", {}).get("timing_attacks", [])], tempo["audio_shift_ms"]),
-                                      tempo["bpm"], tempo["offset"], tempo["division"]) if mode == "audio" else []
+    timing_diagnostics = analysis_timing_diagnostics(state.get('analysis', {}), tempo) if mode == 'audio' else None
     if region is not None:
         selection["message"] = f"局部定轨完成；整谱实际 LN 比例 {report['ln_ratio']:.1%}。区域外物件已锁定。"
     variant = dict(notes=[n.data() for n in output], settings=prefs, mode=mode, report=report, selection=selection,
                    bpm=tempo["bpm"], offset=tempo["offset"], division=tempo["division"],
                    audio_shift_ms=tempo["audio_shift_ms"],
                    timing_revision=3,
-                   timing_sections=timing_sections,
+                   timing_sections=timing_diagnostics['sections'] if timing_diagnostics else [],
+                   timing_diagnostics=timing_diagnostics,
                    snap=payload.get("snap", True) is True, timing_confirmed=payload.get("timing_confirmed", False) is True,
                    elapsed_seconds=round(time.perf_counter() - started, 2), created=time.time(), region=region,
                    event_count=len(upstream_events(output)))

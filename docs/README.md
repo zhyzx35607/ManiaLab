@@ -15,6 +15,8 @@
 - [架构与开发入口](architecture.md)：模块职责、音频/制谱时钟、提交边界与开发顺序。
 - [开发与验证](development.md)：锁定浏览器回归、构建 profile 与历史模型共存。
 - [2026-11-17 检查与结构优化](project-review-20261117.md)：问题处理、验证证据及尚未完成的音乐目标。
+- [冻结多曲生成回归](frozen-generation-regression-results.md)：容量边界修复、66例对照与声部取舍变化。
+- [Timing诊断与波形时钟](timing-diagnostic-clock-results.md)：固定音频窗口、来源追踪、证据不足及界面对音修复。
 - [历史开发与研究导航](research-history.md)：从首页归档的版本与研究记录；不是当前包的功能清单。
 - [当前续接进度](PROGRESS.md)：已完成阶段、真实验证结果、产物位置和下一步。
 - [dev.18 发布说明](releases/0.1.0-alpha.6-dev-18.md)：已发布包的变更范围与验证边界，不含后续主线修复。

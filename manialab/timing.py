@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from bisect import bisect_right
+from collections import Counter
 import math
 
 import numpy as np
@@ -152,15 +153,20 @@ def refit_offset(attacks, bpm, division=4):
 
 
 def grid_diagnostics(attacks, bpm, offset, division=4):
-    """Describe local phase drift instead of pretending all songs are constant BPM."""
+    """Measure chart residuals in fixed original-audio windows.
+
+    Shifting or clipping the chart must not move physical evidence into a
+    different diagnostic window. Returned intervals always use audio time.
+    """
     if not attacks:
         return []
     times = np.asarray([n.start for n in attacks], float)
+    audio_times = np.asarray([n.audio_start if n.audio_start is not None else n.start for n in attacks], float)
     weights = np.asarray([max(.05, n.strength) for n in attacks])
     tick = 60000 / bpm / division
     result = []
-    for a in range(0, int(times[-1]) + 1, 12000):
-        mask = (times >= a) & (times < a + 12000)
+    for a in range(0, int(audio_times.max()) + 1, 12000):
+        mask = (audio_times >= a) & (audio_times < a + 12000)
         if mask.sum() < 5:
             continue
         residual = (times[mask] - offset + tick / 2) % tick - tick / 2
@@ -171,6 +177,35 @@ def grid_diagnostics(attacks, bpm, offset, division=4):
                            coverage=round(coverage, 3), phase_error_ms=round(shift, 2),
                            suspect=coverage < .65 or abs(shift) > 25))
     return result
+
+
+def analysis_timing_diagnostics(analysis, tempo):
+    """Recheck frozen timing evidence without losing its window provenance.
+
+    Source labels describe how the original evidence was assembled. Coverage,
+    phase and suspect flags are always recalculated for the requested clock.
+    Diagnostic availability never grants automatic Timing acceptance.
+    """
+    from .domain import note_from
+    clock = {k: tempo[k] for k in ('bpm', 'offset')}
+    clock.update(division=tempo.get('division', 4), audio_shift_ms=tempo.get('audio_shift_ms', 0))
+    attacks = chart_clock_notes([note_from(n) for n in analysis.get('timing_attacks', [])], clock['audio_shift_ms'])
+    sections = grid_diagnostics(attacks, clock['bpm'], clock['offset'], clock['division'])
+    originals = {(s['start_ms'], s['end_ms']): s for s in analysis.get('tempo', {}).get('sections', [])}
+    for section in sections:
+        original = originals.get((section['start_ms'], section['end_ms']), {})
+        for key in ('evidence_source', 'fallback'):
+            if key in original:
+                section[key] = original[key]
+    counts = Counter(n.audio_start//12000*12000 for n in attacks)
+    end = max(math.ceil(analysis.get('duration', 0)*1000),
+              max((n.audio_start+1 for n in attacks), default=0))
+    insufficient = [dict(start_ms=t, end_ms=min(t+12000, end), attacks=counts[t])
+        for t in range(0, end, 12000) if counts[t] < 5]
+    return dict(sections=sections, suspect=sum(s['suspect'] for s in sections),
+        insufficient_windows=insufficient,
+        status='insufficient' if not sections else 'partial' if insufficient else 'available',
+        clock=clock, window_clock='audio')
 
 
 def cover_missing_timing_windows(tempo, primary, fallback, primary_name='drums'):

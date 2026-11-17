@@ -40,6 +40,10 @@ Windows Release CI 的正式入口为 `.github/workflows/windows.yml`；完整�
 
 ## 常用验证
 
+`replay_frozen_generation.py` 读取固定SHA的分析和计划，通过真实生成、导出回读核对行为；
+`--baseline`比较同计划的ID、起止、轨道及证据字段。输入与逐音产物保留在ignored目录，
+不运行神经模型。范围见[协议](../docs/frozen-generation-regression-protocol.md)。
+
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m compileall -q manialab scripts tests

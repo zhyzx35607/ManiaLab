@@ -7,7 +7,7 @@
 
 - 已发布的 Windows 包为 `v0.1.0-alpha.6-dev.18`；后续主线修复不自动进入该已发布包。
 - 2026-11-17 工程整理与可靠性修复已完成两个阶段的代码和验证；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
-- 跨段落选择修复已完成本地66例冻结对照：默认26例与推荐30例输出完全不变，10例压力配置中4例发生可追溯取舍；见[结果](frozen-generation-regression-results.md)。分支 `codex/frozen-generation-regression-20261117` 待PR检查与合并；恢复时先核对实际Git状态。
+- 跨段落选择修复PR #103已合并，66例冻结对照见[结果](frozen-generation-regression-results.md)。当前继续 `codex/timing-diagnostics-clock-20261117`：修复Timing窗口随提前量改变、来源丢失和波形对齐时钟；恢复时先核对实际Git/进程，浏览器测试仍在开发验证。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1472,4 +1472,34 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   运行命令见协议：两个固定计划分别使用 `--baseline` 指向同名baseline目录，线程上限2。
 - 自动Timing门槛仍仅3/10片段接受；诊断显式确认时钟不等于自动成功。全部选中LN均缺
   历史音尾来源字段，明确记作unknown；分段累计大起音移动为5,078→5,080，不声称采音改善。
-  本阶段尚未合并。下一步先完成PR检查，再继续审查Timing确认与诊断状态的真实契约。
+  PR #103 head `cc605035a14eea283f1555e6598bbba716eda576` 的Windows
+  push run `44012919492`、PR run `44012999021` 均通过Python与Chromium检查，
+  于2026-11-17合并为 `9c80fc347283377389ca2b651e64a1e32d12d0bd`。
+  本阶段未重新构建便携包或发布新Release。继续审查Timing确认与诊断状态。
+
+## 2026-11-17 第四阶段：Timing诊断与波形时钟
+
+- 从PR #103合并后的main创建 `codex/timing-diagnostics-clock-20261117`。
+  已复现：5个原属12–24秒窗口的起音因22.5ms提前量重新分窗，原可疑窗口消失；
+  再次检查/拟合/生成丢失原鼓轨与混音补查来源；1个起音返回零检查段却没有证据不足状态。
+- 后端新增共享 `analysis_timing_diagnostics`：原音频起点固定窗口归属，当前制谱时间
+  计算残差；重算质量，仅继承来源标签；返回不足窗口、可评估状态和完整时钟身份。
+  API检查、重新拟合和生成报告使用同一入口，自动Timing接受条件不变。
+- 冻结10首已有片段各检查0、22.5、50、-50ms，40例全部满足窗口归属不随提前量改变。
+  对照PR #103的22.5ms报告，8首边界计数得到修正，可疑窗口数均不变；未读音频或参考，
+  未运行模型。产物 `test-data/timing-diagnostic-clock-20261117/report.json`，SHA
+  `c9f2352c11567fe52777796204c76d860fe8ad9a7a9b874f2a731392f7888cc6`。
+- 前端统一波形原始/制谱时钟转换，候选叠加采用候选自己的提前量，切换显示保持同一物理位置；
+  BPM/细分/半速/倍速编辑保留未舍入Offset锚点。完整时钟与请求序号共同使旧诊断失效，
+  原分析结论明确标注原始参数，证据不足单独显示；旧候选可读并提示重查。
+- 复核另复现手填93.5ms被后端取整94ms后前端静默丢弃响应，以及参考偏好载入恢复137 BPM
+  草稿后误显示120 BPM旧诊断。检查/拟合前按后端规则显式取整并提示；恢复草稿后核对诊断身份。
+  正负93.5/94.5ms、延迟响应、旧项目、保存重开、波形起止叠加与对齐均有浏览器回归。
+- 默认26例再次运行真实生成与导出回读，ID、起止、轨道及证据字段全部不变；报告位于
+  `test-data/frozen-generation-timing-fixed-20261117/report.json`，SHA
+  `e93c35b05963308fc38a93c7f46c86f88934ab6b2ff9c59f158b91bf43296880`。
+  命令与范围见[Timing诊断结果](timing-diagnostic-clock-results.md)。
+- 本地Python全量 **2,454 passed、89 skipped（65.87秒）**；真实Edge浏览器全组
+  **12 passed（28.0秒）**，运行 `npm run test:ui`，环境
+  `MANIALAB_TEST_BROWSER=msedge`、`MANIALAB_TEST_PORT=8978`。静态JS语法、编译与差异检查通过。
+  未重新构建便携包，未改变自动Timing接受门槛；下一阶段复用完整歌曲已有候选检查6–10K声部与LN。
