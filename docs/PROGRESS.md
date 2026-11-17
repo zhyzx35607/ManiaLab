@@ -1847,5 +1847,6 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`EVIDENCE_THRESHOLD`、`plan_evidence`、`evidence_signature`、`validate_plan`和`adjusted_segments`迁入`manialab/recommendation_plan.py`。`recommendations.py`继续重导出同一对象；`generation.py`与`arrangement_routes.py`直接依赖计划模块，减少加载建议生成实现的耦合。
 - 新增兼容身份和独立导入边界测试。定向`.venv/Scripts/python.exe -m pytest -q tests/test_recommendation_plan_boundary.py tests/test_recommendations.py tests/test_server.py::test_generation_applies_local_recommendation_expression_to_export`为24 passed；`.venv/Scripts/python.exe -m compileall -q manialab tests`与`git diff --check`通过。
-- 本地全量测试期间并行运行浏览器测试导致资源耗尽：Python套件报告2,522 passed、89 skipped、4 failures，其中1项合成音频测试内存分配失败、3项导入边界测试无法创建子进程；浏览器套件因Node堆内存耗尽报告8个worker失败、23项未运行。失败发生时系统可用内存约1.1 GiB，且进程快照显示非本项目`eye-kg-llm-ui` Vite进程占用异常高；保留该用户进程及本项目两个资料服务，不能将此轮全量结果记作通过。后续由PR Windows CI在干净环境完整验证。
-- 未运行研究训练、模型或音频读取；未访问保留的 MAESTRO 测试，未改动研究脚本或研究产物。PR和CI待处理；音乐质量与 osu! 试打仍独立验收。
+- 本地全量测试期间并行运行浏览器测试导致资源耗尽：Python套件报告2,522 passed、89 skipped、4 failures，其中1项合成音频测试内存分配失败、3项导入边界测试无法创建子进程；浏览器套件因Node堆内存耗尽报告8个worker失败、23项未运行。失败发生时系统可用内存约1.1 GiB，且进程快照显示非本项目`eye-kg-llm-ui` Vite进程占用异常高；保留该用户进程及本项目两个资料服务，不能将此轮全量结果记作通过。
+- PR #133 初始提交`4919aaf`的Windows run `44128674193`通过：全量Python/API为2,526 passed、89 skipped，Edge UI为31 passed；音频模型与便携构建步骤按条件跳过。该干净runner结果覆盖本地资源不足造成的全量验证缺口；没有运行研究训练或模型实验。
+- 未读取用户音频/参考谱或保留的 MAESTRO 测试，未改动研究脚本或研究产物。结构整理不代表音乐质量或模型效果提升；osu! 试打仍独立验收。
