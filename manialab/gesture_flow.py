@@ -9,13 +9,12 @@ from collections import Counter, defaultdict
 from dataclasses import replace
 import math
 import time
-import warnings
 
 import numpy as np
-from scipy.optimize import linprog, OptimizeWarning
+from scipy.optimize import linprog
 from scipy.sparse import csc_matrix
 
-from .arrange import _solver_lock
+from .solver import solve_linear
 
 REVISION = 'gesture-flow-v1'
 
@@ -68,10 +67,10 @@ def plan_flow(context, predictions, *, hierarchical=False, endpoint_weight=.25, 
     started = time.perf_counter()
     # A network incidence matrix with integral bounds has integral vertices;
     # dual simplex returns such a vertex without binary branch-and-bound.
-    with _solver_lock, warnings.catch_warnings():
-        warnings.filterwarnings('ignore', message='Unrecognized options detected:.*', category=OptimizeWarning)
-        solved = linprog(costs, A_eq=matrix, b_eq=supply, bounds=bounds, method='highs-ds',
-                         options=dict(time_limit=time_limit, threads=1, parallel=False))
+    solved = solve_linear(
+        linprog, costs, A_eq=matrix, b_eq=supply, bounds=bounds, method='highs-ds',
+        options=dict(time_limit=time_limit, threads=1, parallel=False),
+    )
     if not solved.success:
         raise ValueError('Flow planning did not reach an optimum: '+solved.message)
     integer = np.rint(solved.x)

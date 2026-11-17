@@ -14,7 +14,7 @@ import numpy as np
 from scipy.optimize import Bounds, LinearConstraint
 from scipy.sparse import csc_matrix
 
-from .arrange import _solve_binary
+from .solver import solve_binary as _solve_binary
 from .timing import BeatClock
 
 REVISION = 'anchor-gestures-v1'
