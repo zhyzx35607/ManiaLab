@@ -1827,4 +1827,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 将`run_hidden`与FFmpeg单声道PCM解码移入`manialab/audio_io.py`。`audio.py`保留相同进程辅助对象和旧签名`decode`包装，并把旧`audio.run_hidden`作为显式runner传入，既有导入及替换点可继续工作。
 - `provided_stems.py`、`separation.py`、`upstream_routes.py`和`arrangement_routes.py`改为直接依赖轻量音频IO/配置/证据模块。独立子进程验证这些模块导入后`manialab.audio`与`onnxruntime`都未载入。
 - `.venv/Scripts/python.exe -m pytest -q tests/test_audio_io_boundary.py tests/test_audio_analysis_boundary.py tests/test_audio_evidence_boundary.py tests/test_provided_stems.py tests/test_stems.py tests/test_upstream.py tests/test_server.py tests/test_import_reliability.py`为59 passed（15.43秒）；`.venv/Scripts/python.exe -m pytest -q tests/test_separation.py`为2 passed（0.72秒）。`.venv/Scripts/python.exe -m compileall -q manialab tests`与`git diff --check`通过。未运行真实模型、用户音频或浏览器测试；PR CI待运行。
-- 阶段 30 PR #129的Windows run `44115907561`和合并后main run `44116712054`均成功，合并提交为`a1f573c7187bf94a929db441f95af8d89c54ac8f`。下一步检查剩余音频分析编排和缓存职责，先做只读边界审查，再决定是否需要迁移；长期音乐质量与 osu! 试打仍独立验收。
+- 阶段 30 PR #129的Windows run `44115907561`和合并后main run `44116712054`均成功，合并提交为`a1f573c7187bf94a929db441f95af8d89c54ac8f`；本阶段 PR #130 Windows run `44117906701`与合并后main run `44118573172`均成功，合并提交`36826779232a165c3b7f8f07ee09aebd9cb52d63`。下一步检查剩余音频分析编排和缓存职责，先做只读边界审查，再决定是否需要迁移；长期音乐质量与 osu! 试打仍独立验收。
+
+## 2026-11-17 第三十二阶段：表达选音边界
+
+- 将`resolve_phrase_decisions`、和弦层级选项、候选去重、容量预检、鼓点回退与`select_expression`移入`manialab/expression_selection.py`。`expression.py`继续负责声部方案生成、校验和证据转换，并重导出原选择辅助函数。
+- `expression.select_expression`保留原签名，通过包装层将`expression._solve_binary`转交新模块，两阶段求解均继续使用既有可替换求解器入口。AST 对照确认六个辅助函数实现不变，旧选择函数签名一致。
+- 定向表达、solver、LN、Timing 生成和声部容量测试共364 passed（6.94秒）；全量`.venv/Scripts/python.exe -m pytest -q`为2,522 passed、89 skipped（63.52秒）；完整Edge `npm run test:ui`为31 passed（1.2分钟）。`.venv/Scripts/python.exe -m compileall -q manialab tests`与`git diff --check`通过。独立导入测试确认选择模块不反向导入`expression.py`或`audio.py`。未运行真实模型或用户音频；PR CI待运行。
+- 下一步审查`sequence_prior.py`窗口构造/特征编码与模型评分之间的边界，确认训练和布局调用兼容后再决定迁移范围；长期音乐质量与 osu! 试打仍独立验收。
