@@ -9,7 +9,7 @@
 - `test-data/sakura-tsumugi-expression-onset-v3/analysis.json`：
   `26a0250568b2ce149022c4aa1549af2d9dd49b045372959a6b26b5342ba5313a`
 - `test-data/expression-precision-v1/default/10k/selection.json`：
-  `24f23cc1d9e7452e5ede424f10054d285b0d2ecdd26b33095e651716f0b0b44`
+  `24f23cc1d59e7452e5ede424f10054d285b0d2ecdd26b33095e651716f0b0b44`
 - `test-data/expression-precision-v1/execution-plan.json`：
   `e6d47956ec469a98c81997f9e09d36011b8c2da6a8b75041aca4c4ad42b1b31e`
 
