@@ -335,7 +335,7 @@ def test_reference_210_91_export_and_timing_guards(tmp_path,keys,monkeypatch):
     stored=projects.load(pid);stored['variants'][0]['timing_revision']=2;projects.save(stored)
     assert client.get(base+'/export/osu').status_code==400
     assert client.get(base+'/export/json').status_code==200
-    monkeypatch.setattr('manialab.server.analyze',lambda *args:state['analysis'])
+    monkeypatch.setattr(app.extensions['analysis_services'],'analyze',lambda *args:state['analysis'])
     result=wait_job(client,client.post(base+'/analyze',json={},headers=headers).json)
     assert result['status']=='done'
     refreshed=projects.load(pid)

@@ -178,16 +178,16 @@ def test_failed_provided_stems_clean_new_files_and_preserve_previous_set(api, tm
 
 
 def test_cancelled_provided_stems_remove_new_decoded_folder_before_job_finishes(api, tmp_path, monkeypatch):
-    client, headers, _ = api
+    client, headers, app = api
     pid = import_mix(client, headers)
     ready, release = threading.Event(), threading.Event()
-    original = server.prepare_provided_stems
+    original = app.extensions['analysis_services'].prepare_provided_stems
     def prepare(*args):
         report = original(*args)
         ready.set()
         assert release.wait(5)
         return report
-    monkeypatch.setattr(server, 'prepare_provided_stems', prepare)
+    monkeypatch.setattr(app.extensions['analysis_services'], 'prepare_provided_stems', prepare)
     job = client.post(f'/api/projects/{pid}/provided-stems', data={'piano': (wave(), 'piano.wav')}, headers=headers).json
     try:
         assert ready.wait(5)
@@ -216,7 +216,7 @@ def test_request_and_background_failures_use_persistent_logger(api, tmp_path, mo
             assert client.get(f'/api/projects/{pid}').status_code == 500
         def fail(*args):
             raise RuntimeError('background failure sentinel')
-        monkeypatch.setattr(server, 'prepare_provided_stems', fail)
+        monkeypatch.setattr(app.extensions['analysis_services'], 'prepare_provided_stems', fail)
         result = wait_job(client, client.post(f'/api/projects/{pid}/provided-stems',
             data={'piano': (wave(), 'piano.wav')}, headers=headers).json)
         assert result['status'] == 'error'

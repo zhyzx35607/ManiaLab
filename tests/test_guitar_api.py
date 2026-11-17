@@ -60,7 +60,8 @@ def _result(**kwargs):
 
 
 def test_invalid_guitar_options_fail_before_starting_a_job(project, monkeypatch):
-    monkeypatch.setattr(server, 'analyze_deep', lambda *a, **k: pytest.fail('Invalid request started analysis'))
+    monkeypatch.setattr(project.app.extensions['analysis_services'], 'analyze_deep',
+        lambda *a, **k: pytest.fail('Invalid request started analysis'))
     cases = [
         {'guitar_engine': 'other'}, {'guitar_engine': None}, {'guitar_engine': []},
         {'engine': 'basic', 'guitar_engine': 'fl'},
@@ -81,7 +82,7 @@ def test_guitar_modes_are_independent_and_persist_in_job_and_reopened_project(pr
     def analyze(*args, **kwargs):
         calls.append(kwargs)
         return _result(**kwargs)
-    monkeypatch.setattr(server, 'analyze_deep', analyze)
+    monkeypatch.setattr(project.app.extensions['analysis_services'], 'analyze_deep', analyze)
     status = project.client.get('/api/status').json['guitar']
     assert status['available'] and status['default'] is False and status['predicted_releases_default'] is False
     for extra in ({}, {'allow_guitar_predicted_releases': True},
@@ -109,7 +110,7 @@ def test_provided_stems_require_explicit_guitar_and_missing_model_is_rejected(pr
     def analyze(*args, **kwargs):
         calls.append(kwargs)
         return _result(**kwargs)
-    monkeypatch.setattr(server, 'analyze_deep', analyze)
+    monkeypatch.setattr(project.app.extensions['analysis_services'], 'analyze_deep', analyze)
     project.state['provided_stems'] = {'source': 'provided', 'voices': ['bass', 'piano']}
     project.store.save(project.state)
     response = _post(project, dict(engine='provided', guitar_engine='fl'))
@@ -132,7 +133,7 @@ def test_failed_guitar_analysis_preserves_prior_results_and_options(project, mon
     project.store.save(project.state)
     def analyze(*args, **kwargs):
         raise failure
-    monkeypatch.setattr(server, 'analyze_deep', analyze)
+    monkeypatch.setattr(project.app.extensions['analysis_services'], 'analyze_deep', analyze)
     job = _job(project, _post(project, dict(engine='deep6', guitar_engine='fl', allow_guitar_predicted_releases=True)))
     assert job['status'] == ('cancelled' if isinstance(failure, InterruptedError) else 'error')
     assert _saved(project) == project.state
@@ -144,7 +145,7 @@ def test_active_guitar_job_can_be_cancelled_and_blocks_a_second_job(project, mon
         started.set()
         assert finish.wait(10)
         return _result(**kwargs)
-    monkeypatch.setattr(server, 'analyze_deep', analyze)
+    monkeypatch.setattr(project.app.extensions['analysis_services'], 'analyze_deep', analyze)
     response = _post(project, dict(engine='deep6', guitar_engine='fl'))
     try:
         assert response.status_code == 200 and started.wait(5)

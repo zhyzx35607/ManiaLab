@@ -135,9 +135,9 @@ def test_piano_api_requires_explicit_selection_and_an_isolated_piano_input(tmp_p
     def analyze(*args,**kwargs):
         calls.append(kwargs.get('piano_detector'))
         return dict(candidates=[],duration=2,tempo=dict(bpm=120,offset=0),piano_engine='specialist' if calls[-1] else 'general')
-    monkeypatch.setattr(server,'analyze_deep',analyze)
     monkeypatch.setattr(server.PianoDetector,'status',lambda self:dict(available=True))
     app=server.create_app(Path(__file__).parents[1],tmp_path)
+    monkeypatch.setattr(app.extensions['analysis_services'],'analyze_deep',analyze)
     client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
     try:
         pid=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json['id']
