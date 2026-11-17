@@ -48,10 +48,7 @@ function instrumentName(id){
 }
 
 function preserveTimingLoad(next){
-  const retained=Object.fromEntries(['bpm','offset','division','audioShift','auditionOffset','mode'].map(k=>[k,$(k).value]));
-  const confirmed=$('timingConfirmed').checked,anchor=clockAnchor;
-  loadState(next);for(const [k,v] of Object.entries(retained))$(k).value=v;
-  $('timingConfirmed').checked=confirmed;clockAnchor=anchor;setMode();updateGridStatus();
+  const draft=captureTimingDraft();loadState(next);restoreTimingDraft(draft);
 }
 window.lockStructure=()=>{
   structurePanel.querySelectorAll('button,input,select').forEach(e=>{
@@ -161,11 +158,9 @@ window.renderStructure=()=>{
   window.lockStructure();
 };
 async function structureJob(payload){
-  const retained=Object.fromEntries(['bpm','offset','division','audioShift','auditionOffset','mode'].map(k=>[k,$(k).value]));
-  const confirmed=$('timingConfirmed').checked,anchor=clockAnchor;
+  const draft=captureTimingDraft();
   await runJob('structure',{...payload,settings:settings(),audio_shift_ms:clockShift()});
-  for(const [k,v] of Object.entries(retained))$(k).value=v;
-  $('timingConfirmed').checked=confirmed;clockAnchor=anchor;setMode();updateGridStatus();
+  restoreTimingDraft(draft);
 }
 sectionDetect.onclick=guarded(()=>structureJob({action:'detect'}));
 bookmarkImport.onclick=guarded(()=>structureJob({action:'bookmarks'}));
