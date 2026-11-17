@@ -34,7 +34,7 @@ function renderLNDesign(){
   const selectedKind=$('lnEventFilter').value,locations=r.locations.filter(x=>x.kind===selectedKind);
   for(const item of locations.slice(0,20)){
     const button=document.createElement('button');button.className='quiet';button.textContent=`${fmt(item.start_ms/1000)} · ${item.text}`;
-    button.onclick=guarded(async()=>{audio.pause();setView('chart');seek(Math.max(0,item.start_ms/1000-.6));$('auditionStart').value=Math.max(0,item.start_ms/1000-1).toFixed(1);const n=v.notes.find(n=>item.columns.includes(n.lane)&&(n.end===item.start_ms||n.start===item.start_ms));if(n)inspectNote(n);if(state.analysis)await loadWaveDetail(item.start_ms);});events.append(button);
+    button.onclick=guarded(async()=>{audio.pause();setView('chart');seek(Math.max(0,item.start_ms/1000-.6));$('auditionStart').value=Math.max(0,item.start_ms/1000-1).toFixed(1);const n=v.notes.find(n=>item.columns.includes(n.lane)&&(n.end===item.start_ms||n.start===item.start_ms));if(n)inspectNote(n);if(state.analysis)await loadWaveDetail(waveChartTime(item.start_ms,waveCandidateShift(),waveShift()));});events.append(button);
   }
   if(!locations.length){const p=document.createElement('p');p.className='muted';p.textContent=c[selectedKind]?'此旧候选未保留该类定位样本，重新定轨可按全曲分段定位。':'当前谱面没有这一类事件。';events.append(p);}
 }

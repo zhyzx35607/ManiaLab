@@ -38,14 +38,12 @@ window.renderRecommendations=async()=>{
       const button=document.createElement('button');button.className='secondary';button.dataset.recommendation=option.id;button.textContent='采用这个方案';button.disabled=busy;
       button.onclick=guarded(async()=>{
         if(!recommendationResult)throw Error('请先更新建议');
-        const retained=Object.fromEntries(['bpm','offset','division','audioShift','auditionOffset','mode','analysisEngine'].map(k=>[k,$(k).value]));
-        const confirmed=$('timingConfirmed').checked,anchor=clockAnchor;
+        const draft=captureTimingDraft(['analysisEngine']);
         setBusy(true);
         try{
           const next=await api(`/api/projects/${state.id}/apply-recommendation`,{choice:option.id,settings:settings(),bpm:Number($('bpm').value),evidence_signature:result.evidence_signature,context_signature:result.context_signature});
           loadState(next);
-          for(const [key,value] of Object.entries(retained))$(key).value=value;
-          $('timingConfirmed').checked=confirmed;clockAnchor=anchor;setMode();updateGridStatus();
+          restoreTimingDraft(draft);
           recommendationPanel.open=false;
           msg(`已采用「${option.title}」及分段建议。检查拍线后点击生成，可继续调整参数。`);
         }finally{setBusy(false);window.renderRecommendations();}

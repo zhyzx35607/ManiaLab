@@ -27,6 +27,23 @@ function duration(){return Math.max(state?.analysis?.duration||0,Number.isFinite
 function currentTime(){return audio.src&&Number.isFinite(audio.currentTime)?audio.currentTime:manualTime;}
 function currentTimingClock(){return {bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),audio_shift_ms:clockShift()};}
 function sameTimingClock(clock){const current=currentTimingClock();return !!clock&&Object.keys(current).every(key=>clock[key]===current[key]);}
+function captureTimingDraft(extraFields=[]){
+  const fields=['bpm','offset','division','audioShift','auditionOffset','mode',...extraFields];
+  return {values:Object.fromEntries(fields.map(id=>[id,$(id).value])),confirmed:$('timingConfirmed').checked,anchor:clockAnchor};
+}
+function restoreTimingDraft(draft){
+  for(const [id,value] of Object.entries(draft.values))$(id).value=value;
+  lastClockShift=clockShift();clockAnchor=draft.anchor;$('timingConfirmed').checked=draft.confirmed;
+  // loadState may have displayed the saved candidate's diagnosis. Restoring a
+  // different draft clock cannot reuse that result or its marked windows.
+  if(timingDiagnostics&&!sameTimingClock(timingDiagnostics.clock)){clearTimingDiagnostics();renderTimingLocations();}
+  tempoChoices=tempoChoices.map(c=>({...c,offset:Math.round(c.audio_offset-clockShift())}));showTempoChoices();
+  $('structurePanel')?.classList.toggle('hidden',$('mode').value==='remap');
+  setMode();updateGridStatus();draw();
+  // Invalidate the recommendation request made by loadState with its temporary
+  // candidate BPM, and derive suggestions from the restored draft instead.
+  window.renderRecommendations?.();
+}
 function normalizeTimingOffset(){
   const value=Number($('offset').value);if(!Number.isFinite(value)||Math.abs(value)>600000)throw Error('Offset 必须在 -600000–600000 ms 内');
   const lower=Math.floor(value),rounded=value-lower===.5?lower+(lower%2===0?0:1):Math.round(value);
@@ -112,16 +129,12 @@ numbers.forEach(k=>$(k).addEventListener('input',updateOutputs));
 document.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{keys=Number(b.dataset.key);updateKeys();updateGridStatus();window.updateEditorLocks?.();});
 $('referenceStyleFile').onchange=guarded(async e=>{
   const file=e.target.files[0];if(!file)return;if(!state)throw Error('请先导入要制谱的音频或项目');if(busy)return;
-  const fields=['bpm','offset','division','audioShift','auditionOffset','mode','analysisEngine'];
-  const draft=Object.fromEntries(fields.map(id=>[id,$(id).value])),confirmed=$('timingConfirmed').checked,anchor=clockAnchor;
+  const draft=captureTimingDraft(['analysisEngine']);
   setBusy(true);
   try{
     const data=new FormData();data.append('file',file);data.append('settings',JSON.stringify(settings()));
     loadState(await api(`/api/projects/${state.id}/reference-style`,data,true));
-    fields.forEach(id=>$(id).value=draft[id]);lastClockShift=clockShift();clockAnchor=anchor;$('timingConfirmed').checked=confirmed;
-    if(timingDiagnostics&&!sameTimingClock(timingDiagnostics.clock)){clearTimingDiagnostics();renderTimingLocations();}
-    tempoChoices=tempoChoices.map(c=>({...c,offset:Math.round(c.audio_offset-clockShift())}));showTempoChoices();
-    setMode();updateGridStatus();draw();
+    restoreTimingDraft(draft);
     msg('已套用参考谱的全局偏好，请重新生成候选。已有 API 分段建议仍会应用，可按需清除。');
   }finally{setBusy(false);$('referenceStyleFile').value='';}
 });

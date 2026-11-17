@@ -33,6 +33,16 @@ def timing_fixture(projects, title):
             tempo=dict(bpm=120, offset=115, division=4, stable=True,
                 reliability='起音与网格整体一致；仍需试听确认',
                 sections=grid_diagnostics(notes,120,115,4)))))
+    return pid
+
+
+def ln_remap_fixture(projects):
+    pid = timing_fixture(projects, 'UI LN navigation remap')
+    state = projects.load(pid)
+    state.update(mode='remap', input_keys=10, input_timing=['115,500,4,2,0,70,1,0'],
+        input_notes=[dict(n, source='import', lane=i%10)
+                     for i,n in enumerate(state['analysis']['candidates'])])
+    projects.save(state)
 
 
 def evidence_fixture(projects, title):
@@ -96,7 +106,10 @@ def main():
         timing_fixture(projects, 'UI timing wave')
         timing_fixture(projects, 'UI timing saved')
         timing_fixture(projects, 'UI timing style')
-        for title in ('UI evidence review', 'UI evidence edits', 'UI evidence snapshots'):
+        timing_fixture(projects, 'UI LN navigation audio')
+        ln_remap_fixture(projects)
+        for title in ('UI evidence review', 'UI evidence edits', 'UI evidence snapshots',
+                      'UI draft expression', 'UI draft structure', 'UI draft recommendation'):
             evidence_fixture(projects, title)
         legacy_region_fixture(projects)
         try:

@@ -1541,3 +1541,31 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
   修复前复现错误借用2310ms新音尾，修复后定向通过；最终真实Edge全组
   **16 passed（36.5秒）**，使用`MANIALAB_TEST_BROWSER=msedge`、`MANIALAB_TEST_PORT=8978`
   执行`npm run test:ui`。Python编译、JS语法、差异检查通过。
+- 提交`b7bfb090f44d0c7ce84ca14e15581a9c909c35aa`已创建PR #105。普通Windows
+  run `44018594628`通过：Python2,461 passed、89 skipped（72.85秒），Chromium
+  16 passed（33.1秒）。完整便携run `44018546073`成功：Python2,461 passed、89 skipped
+  （67.28秒），Chromium16 passed（31.0秒）；固定钢琴复建、2,360个worker文件、标准ZIP、
+  实际EXE离线clean PATH/Unicode路径、6–10K导出、失败取消、重开和关停检查通过。
+- CI记录ZIP为888,717,778字节、SHA
+  `7e82f3781e591b0c67076a2986a1b1f9dc767f301f1e488e161b9a8040f3ca3c`，EXE SHA
+  `042e123c478f924f4e7e753f175a0bd6f61fc23ffd43290381163e10641e294e`。小型报告与完整日志
+  已下载至ignored `build/structure-20261117-validation/ci-44018546073/`并复核；没有下载
+  整包作本机独立检查。PR #105已合并为`5d0ecb392d8e1d498706f5a56682b561b793c1b8`。
+  本包对应`b7bfb09`源码，版本字符串仍为dev.18；不是原发布tag的资产，没有创建新Release。
+
+## 2026-11-17 第六阶段：复核定位与Timing草稿恢复
+
+- 基于PR #105提交创建`codex/review-navigation-clock-20261117`。LN事件按钮把制谱
+  时间直接传入波形细节，实际Edge复现原音频显示偏22.5ms、原谱候选切换音频草稿后偏50ms。
+  现在用候选自身时钟转换波形坐标，播放跳转与试听继续使用实际导出时间；两个真实浏览器
+  回归先失败后通过，并核对真实试听请求、波形采样窗口与光标。
+- 保存声部方案、段落边界、采用本地建议三个入口均复现：恢复137 BPM/50ms草稿后，仍显示
+  120 BPM候选的旧诊断。共享`captureTimingDraft`/`restoreTimingDraft`保留字段、显式确认
+  和未舍入Offset锚点，失效不匹配诊断及波形标记；参考偏好载入也使用同一入口。
+- 独立复核补出编排建议派生状态：保存方案后，临时载入120 BPM发出的建议不能用于137 BPM
+  草稿，实际采用被后端拒绝。恢复后重新请求建议并使旧请求失效，两个失败场景修复通过。
+  相同时钟保留诊断、恢复后直接采用建议、提前量再次改变仍保持原Offset锚点均有回归。
+- 定向LN两项通过（9.9秒），草稿恢复三项通过（12.2秒）；最终真实Edge全组
+  **21 passed（51.6秒）**，JS语法和`git diff --check`通过。
+  没有修改生产Python、运行模型或重放历史音频实验。API编排计划与清除计划的草稿保持路径
+  尚待下一小阶段核对；音乐质量和最终试打未验收。
