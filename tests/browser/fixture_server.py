@@ -95,6 +95,35 @@ def plan_fixture(projects, title):
     projects.save(state)
 
 
+def regional_audit_fixture(projects, title):
+    pid = timing_fixture(projects, title)
+    state = projects.load(pid)
+    notes = [Note(1000, 1800, id='locked', source='pitch', voice='piano'),
+             Note(3500, 4200, id='region', source='pitch', voice='bass')]
+    state['audio_shift_ms'] = 0
+    state['analysis'].update(duration=5, candidates=[n.data() for n in notes],
+        timing_attacks=[n.data() for n in notes], phrase_candidates=[],
+        voices=[dict(voice=v) for v in ('piano', 'bass')],
+        structure=dict(boundaries=[0,3000,5000],
+            segments=[dict(start_ms=0,end_ms=3000),dict(start_ms=3000,end_ms=5000)]),
+        tempo=dict(bpm=120, offset=0, division=4, stable=True))
+    projects.save(state)
+    return pid
+
+
+def reanalyzed_regional_fixture(projects):
+    pid = regional_audit_fixture(projects, 'UI regional audit reanalyzed')
+    state = projects.load(pid)
+    generate_variant(state, dict(mode='audio', timing_confirmed=True), state['settings'],
+        dict(bpm=120, offset=0, division=4, audio_shift_ms=0), lambda *_:None, lambda:False)
+    # Simulate a later analysis reusing the old ordinal ID for another onset.
+    # The UI then performs the real regional generate/save operation.
+    current = next(n for n in state['analysis']['candidates'] if n['id']=='locked')
+    current.update(start=3000, end=3300, pitch=72)
+    state['analysis']['timing_attacks'] = state['analysis']['candidates']
+    projects.save(state)
+
+
 def install_fixture_planner(app):
     # Replace only this disposable server's external call. Real plan HTTP,
     # queued jobs, cancellation, validation and project commits still execute.
@@ -153,6 +182,9 @@ def main():
         legacy_region_fixture(projects)
         for action in ('clear', 'success', 'error', 'cancel', 'scope'):
             plan_fixture(projects, f'UI plan {action}')
+        for action in ('current', 'legacy', 'full'):
+            regional_audit_fixture(projects, f'UI regional audit {action}')
+        reanalyzed_regional_fixture(projects)
         try:
             serve(app, host='127.0.0.1', port=args.port, threads=4)
         finally:

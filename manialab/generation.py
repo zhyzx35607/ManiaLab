@@ -15,6 +15,7 @@ from .review import review_chart
 from .ln_patterns import analyze_ln_patterns
 from .preferences import ChartPreferences
 from .evidence import capture_source_evidence
+from .selection_report import regional_selection_report
 
 
 def generate_variant(state, payload, prefs, tempo, progress, cancelled):
@@ -112,7 +113,7 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
     report["ln_patterns"] = analyze_ln_patterns(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
     timing_diagnostics = analysis_timing_diagnostics(state.get('analysis', {}), tempo) if mode == 'audio' else None
     if region is not None:
-        selection["message"] = f"局部定轨完成；整谱实际 LN 比例 {report['ln_ratio']:.1%}。区域外物件已锁定。"
+        selection = regional_selection_report(selection, output, locked)
     variant = dict(notes=[n.data() for n in output], settings=prefs, mode=mode, report=report, selection=selection,
                    bpm=tempo["bpm"], offset=tempo["offset"], division=tempo["division"],
                    audio_shift_ms=tempo["audio_shift_ms"],

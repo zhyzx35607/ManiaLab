@@ -50,6 +50,40 @@ function instrumentName(id){
 function preserveTimingLoad(next){
   const draft=captureTimingDraft();loadState(next);restoreTimingDraft(draft);
 }
+function renderExpressionAudit(candidate){
+  const selection=candidate?.selection;if(!selection)return;
+  const regional=candidate.region!=null||selection.scope==='regional_output';
+  const region=candidate.region,notes=candidate.notes||[];
+  const validRegion=Array.isArray(region)&&region.length===2&&region.every(Number.isFinite)&&region[0]<region[1];
+  const locked=n=>validRegion&&!(region[0]<=n.start&&n.start<region[1]);
+  const proposal=regional?(selection.scope==='regional_output'?selection.proposal:selection):selection;
+  if(regional){
+    const output=document.createElement('p');output.className='muted compact';
+    const lockedCount=notes.filter(locked).length;
+    const counts=validRegion?`区域外锁定 ${lockedCount} 个；本次重写 ${notes.length-lockedCount} 个`:'重写范围不明，无法区分锁定与重写数量';
+    output.textContent=`局部重写：实际保留 ${notes.length} 个物件；${counts}；实际 LN 比例 ${Math.round(notes.filter(n=>n.end>n.start).length/Math.max(1,notes.length)*100)}%。`;
+    const scope=document.createElement('p');scope.className='muted compact';
+    scope.textContent=selection.scope==='regional_output'?'以下为整首预选省音记录；区域外未采用这些新取舍。':
+      '旧候选未记录取舍范围；以下记录仅作整首预选参考，不能代表最终省音。区域外未采用这些新取舍。';
+    expressionAudit.append(output,scope);
+  }
+  const decisions=proposal?.decisions;if(!decisions)return;
+  const title=document.createElement('p');title.className='muted compact';
+  title.textContent=(regional?'整首预选省音原因：':'当前候选的省音记录（新方案需重新生成）：')+
+    Object.entries(proposal.omission_reasons||{}).map(([k,v])=>`${omissionNames[k]||k} ${v}`).join('；');
+  const details=document.createElement('details');const summary=document.createElement('summary');
+  summary.textContent=regional?'查看整首预选的省略提案（前 80 个，全部记录在分析 JSON）':'查看省略音的位置（前 80 个，全部记录在分析 JSON）';
+  details.append(summary);if(regional)details.append(title);else expressionAudit.append(title);
+  const retained=new Map(notes.map(n=>[n.id,n]));
+  for(const entry of decisions.filter(n=>n.decision==='omitted').slice(0,80)){
+    const actual=regional?retained.get(entry.id):null;
+    const status=actual?(locked(actual)?' · 同 ID 的旧物件已锁定保留，来源需分别核对':' · 实际已保留'):'';
+    const b=document.createElement('button');b.className='quiet';
+    b.textContent=`${regional?'提案 ':''}${fmt(entry.start/1000)} ${sourceNames[entry.voice]||entry.voice}${entry.instrument_id?' / '+instrumentName(entry.instrument_id):''} · ${omissionNames[entry.reason]||entry.reason}${status}`;
+    b.onclick=()=>{setView('evidence');seek(Math.max(0,entry.start/1000-.4));};details.append(b);
+  }
+  expressionAudit.append(details);
+}
 window.lockStructure=()=>{
   structurePanel.querySelectorAll('button,input,select').forEach(e=>{
     e.disabled=busy||!state?.analysis||(e===bookmarkImport&&!state?.reference_marks?.bookmarks?.length)||
@@ -144,17 +178,7 @@ window.renderStructure=()=>{
       row.append(summary,jump,mainLabel,choices,reasoning);structureRows.append(row);
     }
   }
-  const decisions=variant()?.selection?.decisions;
-  if(decisions){
-    const title=document.createElement('p');title.className='muted compact';
-    title.textContent='当前候选的省音记录（新方案需重新生成）：'+Object.entries(variant().selection.omission_reasons||{}).map(([k,v])=>`${omissionNames[k]||k} ${v}`).join('；');expressionAudit.append(title);
-    const details=document.createElement('details');const summary=document.createElement('summary');summary.textContent='查看省略音的位置（前 80 个，全部记录在分析 JSON）';details.append(summary);
-    for(const entry of decisions.filter(n=>n.decision==='omitted').slice(0,80)){
-      const b=document.createElement('button');b.className='quiet';b.textContent=`${fmt(entry.start/1000)} ${sourceNames[entry.voice]||entry.voice}${entry.instrument_id?' / '+instrumentName(entry.instrument_id):''} · ${omissionNames[entry.reason]||entry.reason}`;
-      b.onclick=()=>{setView('evidence');seek(Math.max(0,entry.start/1000-.4));};details.append(b);
-    }
-    expressionAudit.append(details);
-  }
+  renderExpressionAudit(variant());
   window.lockStructure();
 };
 async function structureJob(payload){

@@ -118,7 +118,7 @@ test('regional rewrites never substitute fresh decisions for locked legacy evide
   await expect(page.locator('#variants option:checked')).toContainText('局部');
   const current=await page.evaluate(()=>({note:variant().notes.find(n=>n.id==='evidence0'),
     snapshot:variant().source_evidence,region:variant().region,
-    decision:variant().selection.decisions.find(n=>n.id==='evidence0')}));
+    decision:variant().selection.proposal.decisions.find(n=>n.id==='evidence0')}));
   expect(current.note).toEqual(before);
   expect(current.region).toEqual([8978,9978]);
   expect(current.snapshot).not.toHaveProperty('evidence0');
@@ -130,7 +130,8 @@ test('regional rewrites never substitute fresh decisions for locked legacy evide
   // Read the real regional result as an older version that never saved snapshots.
   await page.route(`**/api/projects/${pid}`,async route=>{
     const response=await route.fetch(),data=await response.json();
-    delete data.variants[data.active].source_evidence;
+    const v=data.variants[data.active];
+    v.selection=v.selection.proposal;delete v.selection.scope;delete v.source_evidence;
     await route.fulfill({response,json:data});
   });
   await page.reload();await page.locator('#recent').selectOption(pid);
