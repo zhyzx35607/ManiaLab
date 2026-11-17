@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import sys
 import tempfile
+import threading
 import wave
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -12,6 +13,8 @@ sys.path.insert(0, str(ROOT))
 from manialab.arrange import parameters
 from manialab.domain import Note
 from manialab.generation import generate_variant
+from manialab import server
+from manialab.planner import validate_plan
 from manialab.server import create_app
 from manialab.timing import grid_diagnostics
 from waitress import serve
@@ -84,12 +87,48 @@ def legacy_region_fixture(projects):
     projects.save(state)
 
 
+def plan_fixture(projects, title):
+    pid = evidence_fixture(projects, title)
+    state = projects.load(pid)
+    state['analysis']['segments'] = state['analysis']['structure']['segments']
+    state['plan'] = dict(preferences={'density':4}, segments=[], explanation='Existing fixture plan')
+    projects.save(state)
+
+
+def install_fixture_planner(app):
+    # Replace only this disposable server's external call. Real plan HTTP,
+    # queued jobs, cancellation, validation and project commits still execute.
+    waiting, release = threading.Event(), threading.Event()
+    def fixture_plan(endpoint, model, key, instruction, segments, current, review=None):
+        if endpoint != 'fixture://planner' or model not in ('success', 'error', 'cancel'):
+            raise ValueError('Fixture planner rejects external requests')
+        if model == 'error':
+            raise ValueError('Deterministic fixture planner error')
+        if model == 'cancel':
+            release.clear()
+            waiting.set()
+            if not release.wait(15):
+                raise ValueError('Fixture planner release timed out')
+            waiting.clear()
+        return validate_plan(dict(preferences={'density':11}, segments=[],
+            explanation='Deterministic fixture plan'), segments)
+    server.plan = fixture_plan
+    @app.get('/__fixture/planner-state')
+    def planner_state():
+        return dict(waiting=waiting.is_set())
+    @app.post('/__fixture/planner-release')
+    def planner_release():
+        release.set()
+        return dict(ok=True)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, required=True)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='manialab-ui-') as work:
         app = create_app(ROOT, work)
+        install_fixture_planner(app)
         projects = app.extensions['projects']
         pid, folder = projects.create()
         with wave.open(str(folder / 'files/synthetic.wav'), 'wb') as output:
@@ -112,6 +151,8 @@ def main():
                       'UI draft expression', 'UI draft structure', 'UI draft recommendation'):
             evidence_fixture(projects, title)
         legacy_region_fixture(projects)
+        for action in ('clear', 'success', 'error', 'cancel', 'scope'):
+            plan_fixture(projects, f'UI plan {action}')
         try:
             serve(app, host='127.0.0.1', port=args.port, threads=4)
         finally:

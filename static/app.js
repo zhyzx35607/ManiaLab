@@ -148,8 +148,16 @@ $('another').onclick=guarded(()=>{$('seed').value=Math.floor(Math.random()*21474
 $('regenerate').onclick=guarded(()=>generate([Number($('regionStart').value)*1000,Number($('regionEnd').value)*1000]));
 $('cancel').onclick=guarded(()=>jobId?api('/api/jobs/'+jobId+'/cancel',{}):null);
 $('mode').onchange=setMode;
-$('plan').onclick=guarded(()=>runJob('plan',{endpoint:$('endpoint').value,model:$('model').value,key:$('apiKey').value,instruction:$('instruction').value,settings:settings()}));
-$('clearPlan').onclick=guarded(async()=>{if(state)loadState(await api(`/api/projects/${state.id}/clear-plan`,{}));});
+$('plan').onclick=guarded(async()=>{
+  if(busy)return;const draft=captureTimingDraft(['analysisEngine']);
+  const status=await runJob('plan',{endpoint:$('endpoint').value,model:$('model').value,key:$('apiKey').value,instruction:$('instruction').value,settings:settings()});
+  if(status==='done')restoreTimingDraft(draft);
+});
+$('clearPlan').onclick=guarded(async()=>{
+  if(!state||busy)return;const draft=captureTimingDraft(['analysisEngine']);setBusy(true);
+  try{loadState(await api(`/api/projects/${state.id}/clear-plan`,{}));restoreTimingDraft(draft);}
+  finally{setBusy(false);}
+});
 $('engineInstall').onclick=guarded(()=>runJob('engine-install',{}));
 $('engineGenerate').onclick=guarded(()=>runJob('engine-generate',{settings:settings(),seconds:Number($('engineSeconds').value),use_timing:$('engineUseTiming').checked,bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),audio_shift_ms:clockShift(),timing_confirmed:$('timingConfirmed').checked}));
 $('preset').onchange=()=>{const presets={balanced:{density:7,ln_ratio:.55,min_ln:240,max_held:5,chord_size:4,focus:'balanced'},sustain:{density:6,ln_ratio:.85,min_ln:300,max_held:4,chord_size:3,focus:'pitched'},rhythm:{density:8,ln_ratio:.25,min_ln:240,max_held:3,chord_size:4,focus:'transient'}};setSettings({...settings(),...presets[$('preset').value]});};
