@@ -16,6 +16,8 @@
 - `verify_official_decoder/`：用固定版本的 ppy Mania ruleset 独立解码 `.osz`，再逐物件、逐端点和逐 Timing 点与项目读取器对照。复现命令与整数毫秒限制见该目录 README。
 - `verify_shutdown.py`：验证关闭应用时音频子进程结束。
 - `collect_release_validation.py`：核对 ZIP、测试报告和实际 EXE，并生成去除音频/逐音数据的发布验证摘要。
+- `check_blind_review_scores.py`：校验钢琴盲听和定轨试打 CSV 的冻结身份与完成度，并可在不读取解盲表的情况下保存原始评分和哈希回执。
+- `refresh_piano_blind_review.py`：从现有的盲听片段和模板刷新离线评审网页；不解码源音频、不运行模型。
 
 Windows Release CI 的正式入口为 `.github/workflows/windows.yml`；完整流程及版本状态见 [`docs/README.md`](../docs/README.md) 和 [`docs/PROGRESS.md`](../docs/PROGRESS.md)。
 

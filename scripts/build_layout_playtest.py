@@ -80,13 +80,14 @@ def build(package, expected_sha, chart, out):
     with ZipFile(archive) as zipped:
         if zipped.testzip() is not None:
             raise ValueError("Playtest archive CRC mismatch")
-    with (player / "scores.csv").open("x", encoding="utf-8-sig", newline="") as stream:
-        writer = csv.writer(stream)
-        writer.writerow(["osz_sha256", "keys", "play_first", "play_second", "preferred_A_B_equal_unsure",
-                         "release_coordination", "hand_balance", "time_ms", "comment"])
-        for k in keys:
-            first, second = ("B", "A") if k in play_b_first else ("A", "B")
-            writer.writerow([bundle_sha, k, first, second, "", "", "", "", ""])
+    score_rows = [["osz_sha256", "keys", "play_first", "play_second", "preferred_A_B_equal_unsure",
+                   "release_coordination", "hand_balance", "time_ms", "comment"]]
+    for k in keys:
+        first, second = ("B", "A") if k in play_b_first else ("A", "B")
+        score_rows.append([bundle_sha, k, first, second, "", "", "", "", ""])
+    for name in ("scores.csv", "scores-template.csv"):
+        with (player / name).open("x", encoding="utf-8-sig", newline="") as stream:
+            csv.writer(stream).writerows(score_rows)
     shutil.copyfile(ROOT / "docs/layout-playtest.md", player / "playtest.md")
     (out / "deblind-after-scoring.json").write_text(json.dumps(dict(
         input_sha256=expected_sha, input_chart=chart, input_keys=original["keys"], notes=len(original["notes"]),

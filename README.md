@@ -10,7 +10,7 @@
 
 当前稳定入口： [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
-截至 2026-11-19，`main` 已包含 dev.18 发布后的结构、导入/编辑和拍号修复，完整范围见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)及[续接进度](docs/PROGRESS.md)。当前最新公开 Release 仍是 dev.18；本文下载的 ZIP 不含这些后续源码改动。main 上的便携构建和 EXE 验证已通过，但尚未作为新版本发布。
+截至 2026-11-19，`main` 已包含 dev.18 发布后的结构、导入/编辑、拍号及真人盲评回收改进，完整范围见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。当前最新公开 Release 仍是 dev.18；本文下载的 ZIP 不含这些后续源码改动。main 上的便携构建和 EXE 验证已通过，但尚未作为新版本发布。
 
 2026-11-18 源码已核对真实多难度谱包的编辑与重开，并用两首外部歌曲运行了完整采音到导出流程。结果与试听、试打入口见[工程与音乐验收记录](docs/acceptance-20261118.md)。
 

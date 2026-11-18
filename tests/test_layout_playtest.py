@@ -47,7 +47,10 @@ def test_player_pack_hides_engine_names_and_keeps_original_timing_hitsounds_and_
                 assert all(label not in text.lower() for label in ("beam", "classic"))
     with (out / "participant/scores.csv").open(encoding="utf-8-sig", newline="") as stream:
         rows = list(csv.DictReader(stream))
+    with (out / "participant/scores-template.csv").open(encoding="utf-8-sig", newline="") as stream:
+        template_rows = list(csv.DictReader(stream))
     assert [int(row["keys"]) for row in rows] == list(range(6, 11))
+    assert template_rows == rows
     assert {row["osz_sha256"] for row in rows} == {sha256(package.read_bytes()).hexdigest()}
     assert all(row["preferred_A_B_equal_unsure"] == "" for row in rows)
     assert all({row["play_first"], row["play_second"]} == {"A", "B"} for row in rows)

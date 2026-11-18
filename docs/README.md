@@ -13,6 +13,7 @@
 ## 项目状态
 
 - [2026-11-18 工程与音乐验收记录](acceptance-20261118.md)：真实谱包往返、两首外部歌曲及真人试打入口。
+- [真人评审回收与解盲顺序](human-review-integrity.md)：校验并锁定盲听/试打评分后再解盲；不替代真人音乐判断。
 - [osu!mania 官方解码对照](../scripts/verify_official_decoder/README.md)：固定 ppy 版本交叉校验导出谱包的物件、拍号、滚速和音频引用。
 - [架构与开发入口](architecture.md)：模块职责、音频/制谱时钟、提交边界与开发顺序。
 - [开发与验证](development.md)：锁定浏览器回归、构建 profile 与历史模型共存。
