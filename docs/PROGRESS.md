@@ -1892,5 +1892,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将分离声部 Basic Pitch 激活缓存的版本、NPZ 读写及音频/分离身份校验迁入`manialab/audio_cache.py`；`audio.py`继续负责推理与分析编排，并通过原路径使用缓存。缓存版本3、文件名、字段及压缩格式不变；钢琴、吉他和 Tsumugi 专用缓存保持独立。
 - 新增缓存格式往返、音频与分离身份失配、旧版本/缺字段/损坏/缺失缓存，以及新模块不加载 ONNX 推理运行时的测试。独立只读审查未发现行为兼容问题；既有`test_stems.py`与音尾来源测试覆盖`analyze_deep`缓存重建、复用和回读路径。
-- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_audio_cache.py tests/test_audio_cache_boundary.py tests/test_stems.py tests/test_provided_stems.py tests/test_audio_release_provenance.py tests/test_separation.py`为53 passed（4.40秒）；`.venv/Scripts/python.exe -m compileall -q manialab/audio.py manialab/audio_cache.py tests/test_audio_cache.py tests/test_audio_cache_boundary.py`和`git diff --check`通过。未运行全量本地测试。PR #139 Windows run `44233038267`通过：Python/API为2,543 passed、89 skipped，Edge UI为31 passed；模型及便携构建步骤按触发条件跳过。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_audio_cache.py tests/test_audio_cache_boundary.py tests/test_stems.py tests/test_provided_stems.py tests/test_audio_release_provenance.py tests/test_separation.py`为53 passed（4.40秒）；`.venv/Scripts/python.exe -m compileall -q manialab/audio.py manialab/audio_cache.py tests/test_audio_cache.py tests/test_audio_cache_boundary.py`和`git diff --check`通过。未运行全量本地测试。PR #139 最终提交 Windows run `44233665325`通过：Python/API为2,543 passed、89 skipped，Edge UI为31 passed；合并提交`acbfcdd682a6e350a20a3e60aaad187923938147`及 main run `44234039374`均成功；模型及便携构建步骤按触发条件跳过。
 - 未运行研究训练、音频模型或用户音频，未读取参考谱或保留的 MAESTRO 测试，也未改动研究脚本与研究产物。该结构调整不代表模型或音乐质量提升；独立泛化、试听与 osu! 试打仍待验收。
+
+## 2026-11-18 第四十一阶段：Mapperatorinator 事件适配边界
+
+- 将 note-like 记录到 Mapperatorinator `Event` 序列的转换迁入`manialab/mapper_event_adapter.py`；`domain.upstream_events`保留同签名兼容入口并惰性委托，使领域模块导入不再加载第三方事件类型。
+- 保持事件时间/轨道排序、同刻 LN 尾优先顺序及每个事件的 TIME_SHIFT/MANIA_COLUMN 展开方式不变。新增逐事件顺序与24-token数量回归，以及领域/适配器双向导入边界测试。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_mapper_event_adapter.py tests/test_core.py tests/test_generation_clock.py tests/test_upstream.py`为60 passed（12.45秒）；`.venv/Scripts/python.exe -m compileall -q manialab/domain.py manialab/mapper_event_adapter.py tests/test_mapper_event_adapter.py`和`git diff --check`通过。未运行全量本地测试。
+- 不运行模型、研究训练或用户数据，不访问参考谱及 MAESTRO 保留测试。该依赖边界调整不代表模型或音乐质量提升。

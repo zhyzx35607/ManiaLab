@@ -6,9 +6,6 @@ from pathlib import Path
 import re
 from string import Template
 
-from vendor.mapperatorinator.event import Event, EventType
-
-
 # These endings describe absent, exhausted or broken model context, not a supported
 # musical release. Preserve attacks and raw ends, but do not auto-create LNs.
 # Kong's bare "reattack" explicitly has release_observed=False: its prior-frame
@@ -115,16 +112,16 @@ def parse_osu(text):
 
 
 def upstream_events(notes):
-    """Bridge to Mapperatorinator's event vocabulary; pair LN endpoints by lane."""
-    events = []
-    for n in notes:
-        events.append((n.start, n.lane, EventType.HOLD_NOTE if n.hold else EventType.CIRCLE))
-        if n.hold:
-            events.append((n.end, n.lane, EventType.HOLD_NOTE_END))
-    result = []
-    for t, lane, kind in sorted(events, key=lambda e: (e[0], e[2] != EventType.HOLD_NOTE_END, e[1])):
-        result.extend([Event(kind), Event(EventType.TIME_SHIFT, t), Event(EventType.MANIA_COLUMN, lane)])
-    return result
+    """Compatibility entry for the Mapperatorinator event adapter."""
+    from .mapper_event_adapter import upstream_events as convert
+    return convert(notes)
+
+
+def __getattr__(name):
+    if name in ("Event", "EventType"):
+        from .mapper_event_adapter import Event, EventType
+        return Event if name == "Event" else EventType
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def validate(notes, keys):
