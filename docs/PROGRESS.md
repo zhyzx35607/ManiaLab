@@ -1899,5 +1899,5 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将 note-like 记录到 Mapperatorinator `Event` 序列的转换迁入`manialab/mapper_event_adapter.py`；`domain.upstream_events`保留同签名兼容入口并惰性委托，使领域模块导入不再加载第三方事件类型。
 - 保持事件时间/轨道排序、同刻 LN 尾优先顺序及每个事件的 TIME_SHIFT/MANIA_COLUMN 展开方式不变。新增逐事件顺序与24-token数量回归，以及领域/适配器双向导入边界测试。
-- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_mapper_event_adapter.py tests/test_core.py tests/test_generation_clock.py tests/test_upstream.py`为60 passed（12.45秒）；`.venv/Scripts/python.exe -m compileall -q manialab/domain.py manialab/mapper_event_adapter.py tests/test_mapper_event_adapter.py`和`git diff --check`通过。未运行全量本地测试。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_mapper_event_adapter.py tests/test_core.py tests/test_generation_clock.py tests/test_upstream.py`为60 passed（12.02秒）；`.venv/Scripts/python.exe -m compileall -q manialab/domain.py manialab/mapper_event_adapter.py tests/test_mapper_event_adapter.py`和`git diff --check`通过。未运行全量本地测试。PR #140 Windows run `44236677859`通过：Python/API为2,548 passed、89 skipped，Edge UI为31 passed；模型及便携构建步骤按触发条件跳过。
 - 不运行模型、研究训练或用户数据，不访问参考谱及 MAESTRO 保留测试。该依赖边界调整不代表模型或音乐质量提升。
