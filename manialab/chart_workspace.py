@@ -7,7 +7,6 @@ from pathlib import Path
 
 from .domain import parse_osu
 from .storage import safe_path
-from .structure import reference_marks
 
 
 _PROJECT_FIELDS = ("id", "charts", "cache_origin_audio")
@@ -57,6 +56,8 @@ def _chart_audio(base, relative, audio_name):
 
 
 def _new_chart(project, state, relative):
+    from .structure import reference_marks
+
     base = project / "files"
     path = safe_path(base, relative)
     text = path.read_text(encoding="utf-8-sig")

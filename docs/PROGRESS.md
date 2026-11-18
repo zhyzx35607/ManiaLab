@@ -1977,3 +1977,4 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 严格重定轨模式的滚动节拍器和试听 WAV 读取各段原谱红线与拍号，换速交界只有一次点击。首次导入可从原音频直接解码试听窗口，带缓存时沿用已有 WAV。已回归验证两条路径从非整数毫秒起点截取至音频末尾的样本一致。
 - 源码验证真实输入 `test-data/audio-transcription-chart-ab-playtest-20261118/Sakura-Piano-AB-6-10K.osz`。运行 `scripts/verify_chart_workspaces.py <源包> --sha256 f399fbd88c7efec888254c045852f30f28d3dff747b38fc9b571c336ee89a49e --out test-data/acceptance-chart-workspaces-20261118`。10/10 张谱各保存两份候选，关闭应用服务后逆序重开，16,130 个物件、4,610 条 LN 的起止及除轨道外的原始物件字段全部一致。两个导出格式的谱面内容相同，各自音频 SHA 匹配。该数字按十张难度累加。报告 SHA-256 `77a8b7f3888967edc63666868b097a883095f5b273ffa4a6a4b2470632eca6f5`。
 - 本地项目切换、编辑与服务路由定向测试 48 项通过。`tests/test_imported_audition.py tests/test_audition.py tests/test_audio_io_boundary.py` 11 项通过。Edge 已覆盖难度保存与打开以及 3/4 转 5/4 的试听 WAV 与实时网格逐拍核对。人工原声听审与 osu! 玩家手感评分待记录。
+- PR #153 首次运行的轻量依赖回归指出 `project_routes` 在导入时加载 SciPy。`chart_workspace` 现仅在首次解析新谱时导入段落标记解析器。
