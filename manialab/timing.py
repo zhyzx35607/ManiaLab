@@ -27,6 +27,7 @@ from .timing_fitting import (
 
 DIVISIONS = (3, 4, 6, 8, 12, 16)
 TEMPO_AMBIGUITY_METER_SUPPORT_MARGIN = .2
+PRECISE_BPM_DEDUP_TOLERANCE = .001
 
 
 def chart_clock_notes(notes, audio_shift_ms=0):
@@ -209,7 +210,10 @@ def estimate_timing(attacks, duration, beats_ms=None):
     if beats_ms is not None:
         for c in normalized.values():
             c["beat_support"] = round(beat_meter_support(beats_ms, c.get("exact_bpm", c["bpm"])), 4)
-    use_meter = max((c.get("beat_support", 0) for c in normalized.values()), default=0) >= .55
+        for c in precise.values():
+            c["beat_support"] = round(beat_meter_support(beats_ms, c["bpm"]), 4)
+    use_meter = max((c.get("beat_support", 0) for c in
+                     [*normalized.values(), *precise.values()]), default=0) >= .55
     def rank(c):
         exact = precise.get((c["bpm"], c["division"]))
         # Do not replace the strongest original tempo with a different harmonic
@@ -227,36 +231,42 @@ def estimate_timing(attacks, duration, beats_ms=None):
         return empty
     best = candidates[0]
     tempo_ambiguity = None
+    octave_options = [(candidate, False) for candidate in ranked if candidate is not best]
+    octave_options.extend((candidate, True) for candidate in precise.values())
+    octave_options.sort(key=lambda row: rank(row[0]), reverse=True)
     octave_candidates = []
-    for candidate in ranked:
-        if (candidate is best or
+    for candidate, is_precise in octave_options:
+        if (not 44 <= candidate["bpm"] <= 301 or
                 abs(max(candidate["bpm"], best["bpm"]) / min(candidate["bpm"], best["bpm"]) - 2) > .04 or
                 candidate["coverage"] < .8 or candidate["median_error_ms"] > 18 or
-                any(abs(candidate["bpm"] - existing["bpm"]) < .15
-                    for existing in octave_candidates)):
+                any(abs(candidate["bpm"] - existing["bpm"]) <
+                    (PRECISE_BPM_DEDUP_TOLERANCE if is_precise and existing_is_precise else .15)
+                    for existing, existing_is_precise in octave_candidates)):
             continue
-        octave_candidates.append(candidate)
-    ambiguous_octaves = [
-        c for c in octave_candidates
-        if not (use_meter and best.get("beat_support", 0) >= .55 and
-                best.get("beat_support", 0) - c.get("beat_support", 0)
-                >= TEMPO_AMBIGUITY_METER_SUPPORT_MARGIN)
-    ]
+        octave_candidates.append((candidate, is_precise))
+    ambiguous_octaves = []
+    for candidate, is_precise in octave_candidates:
+        if (use_meter and best.get("beat_support", 0) >= .55 and
+                best.get("beat_support", 0) - candidate.get("beat_support", 0)
+                >= TEMPO_AMBIGUITY_METER_SUPPORT_MARGIN):
+            continue
+        ambiguous_octaves.append((candidate, is_precise))
     if ambiguous_octaves:
-        alternatives = ambiguous_octaves
-        alternative = alternatives[0]
+        alternative, _ = ambiguous_octaves[0]
         rank_margin = max(0., rank(best) - rank(alternative))
         support_margin = best.get("beat_support", 0) - alternative.get("beat_support", 0)
         # Only pair-specific beat-model evidence can resolve half/double time;
         # an unrelated or equally supportive model must leave the choice open.
         tempo_ambiguity = dict(competitor_bpm=alternative["bpm"],
-                               competitor_bpms=[c["bpm"] for c in alternatives],
+                               competitor_bpms=[c["bpm"] for c, _ in ambiguous_octaves],
                                rank_margin=round(rank_margin, 4),
                                beat_support_margin=round(support_margin, 4),
                                best_beat_support=round(best.get("beat_support", 0), 4),
                                competitor_beat_support=round(alternative.get("beat_support", 0), 4),
                                meter_model_used=use_meter)
-        for candidate in alternatives:
+        for candidate, is_precise in ambiguous_octaves:
+            if is_precise:
+                continue
             if not any(abs(c["bpm"] - candidate["bpm"]) < .15 for c in candidates):
                 candidates.append(candidate)
         candidates.sort(key=rank, reverse=True)
@@ -285,7 +295,20 @@ def estimate_timing(attacks, duration, beats_ms=None):
                        if sparse_windows or tempo_ambiguity else precision_explanation)
     strongest = max((c["score"] for c in normalized.values()), default=0)
     strongest = max(strongest, max((c["score"] for c in precise.values()), default=0))
-    precise_candidates = sorted((c for c in precise.values() if c["score"] >= strongest * .85), key=lambda c: c["score"], reverse=True)[:4]
+    precise_candidates = []
+    for candidate in sorted((c for c in precise.values() if c["score"] >= strongest * .85),
+                            key=lambda c: c["score"], reverse=True):
+        if any(abs(c["bpm"] - candidate["bpm"]) < PRECISE_BPM_DEDUP_TOLERANCE
+               for c in precise_candidates):
+            continue
+        precise_candidates.append(candidate)
+        if len(precise_candidates) == 4:
+            break
+    for candidate, is_precise in ambiguous_octaves:
+        if (is_precise and not any(abs(c["bpm"] - candidate["bpm"])
+                                   < PRECISE_BPM_DEDUP_TOLERANCE
+                                   for c in precise_candidates)):
+            precise_candidates.append(candidate)
     return {**best, "estimated": True, "confidence": confidence, "stable": stable,
             "candidates": candidates, "precise_candidates": precise_candidates, "sections": sections,
             "sparse_windows": sparse_windows, "tempo_ambiguity": tempo_ambiguity,
