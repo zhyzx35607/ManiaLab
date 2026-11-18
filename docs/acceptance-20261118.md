@@ -8,6 +8,7 @@
 | 听音频生成谱的强拍 | 《Sweet Waltz》6K–10K 的红线均为三拍。实时节拍器、试听 WAV 和导出使用同一拍号。已有候选保留生成时的拍号。 |
 | 用 osu! 官方 ruleset 解码导出包 | ppy 官方 `LegacyBeatmapDecoder` 与 Mania converter 独立读取 17 个 `.osz`、26 张难度。17,824 个物件、5,602 条 LN 的列和起止，27 条红线及 3 个滚速变化均和项目读取器一致。 |
 | 用外部歌曲从音频生成 | 两首各取前 24 秒，串行运行四声部分离、音高及拍点分析。10 份 6K–10K 导出包均通过音频、占轨、落线和重新导入核对。 |
+| Windows 便携包运行 | 合并主线实构建的标准包通过离线干净 PATH、Unicode 文件路径、项目重开、四/六声部分析与导出及 worker 退出检查。公开 Release 仍为较早的 dev.18，未被此 CI 构建替换。 |
 | 盲听和试打 | 84 段钢琴原声备有离线评分页。另有同音符、同 Timing、同 LN 尾端的 6K–10K 定轨 A/B 包及评分表。 |
 
 ## 两段外部音乐
@@ -27,4 +28,4 @@
 2. `layout-only-playtest-20261118/participant/Layout-AB-6-10K.osz` 与同目录 `scores.csv` 用于比较放手、双手负荷和同段接续。操作见[试打说明](layout-playtest.md)。
 3. `independent-audio-20261118/listening.md` 汇集两首原片、首次导出的试听、关键声部和谱包。《Sweet Waltz》的修正版在 `cached-waltz-meter-20261118/`，请选择 `sweet-waltz-{6,7,8,9,10}K.osz`。`sweet-waltz-beats-a.wav` 使用导出谱的三拍红线，`sweet-waltz-beats-b.wav` 为 Offset 移动 100ms 后的四拍对照。记录采音、分段和 LN 有分歧的具体时间。
 
-当前钢琴默认采音沿用既有选择。官方解码只验证谱包结构与时间数据，不判断音频采音是否正确、声部是否清楚或谱面是否好玩。长期音乐验收需要上述人工记录和更广歌曲覆盖。官方复现工具及验证报告身份见[复现说明](../scripts/verify_official_decoder/README.md)；源码验证命令见[续接进度](PROGRESS.md)。
+当前钢琴默认采音沿用既有选择。官方解码和便携包冒烟测试只验证格式兼容、运行能力与合成输入链路，不判断真实音乐采音是否正确、声部是否清楚或谱面是否好玩。盲听模板与定轨 CSV 尚无玩家评分；《Sweet Waltz》《Choice》的人工听审也未完成。长期音乐验收需要这些记录和更广歌曲覆盖。官方解码复现工具及便携验证报告身份见[复现说明](../scripts/verify_official_decoder/README.md)与[续接进度](PROGRESS.md)。
