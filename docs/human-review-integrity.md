@@ -12,6 +12,8 @@
   --output test-data\piano-onset-blind-review-csv-20261119
 ```
 
+刷新包先在输出父目录生成临时副本，校验及文件写入全部成功后才发布为目标目录；失败时清理临时内容，不留下半成品目标。
+
 打开新包的 `participant/index.html`。本机浏览器草稿便于中断后恢复，但浏览器配置或本地文件隔离可能使其不可用；页面会提示保存是否成功，仍应定期导出 CSV。填完后把 `blind-review-results.csv` 存到新的 ignored 目录，再先运行只汇总状态的检查：
 
 ```powershell
