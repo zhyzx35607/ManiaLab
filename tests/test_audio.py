@@ -1,7 +1,9 @@
 from pathlib import Path
 import numpy as np
+import pytest
 from scipy.io import wavfile
 
+from manialab import audio
 from manialab.audio import SR, analyze, rhythmic_evidence
 from manialab.arrange import parameters
 
@@ -43,6 +45,45 @@ def test_stem_eof_rounding_never_changes_the_attack_clock():
     with pytest.raises(ValueError):align_stem_samples(samples,997)
     invalid=samples.copy();invalid[30]=np.nan
     with pytest.raises(ValueError):align_stem_samples(invalid,1000)
+
+
+def test_audio_analysis_streams_identity_hash_and_reuses_cache(tmp_path, monkeypatch):
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"synthetic audio identity")
+    inferred = []
+
+    def fake_infer(*args, **kwargs):
+        inferred.append(True)
+        return (
+            np.zeros((1, 88), dtype=np.float32),
+            np.zeros((1, 88), dtype=np.float32),
+            np.zeros(1, dtype=np.float64),
+        )
+
+    def reject_read_bytes(path):
+        raise AssertionError(f"whole-file read attempted for {path}")
+
+    monkeypatch.setattr(audio, "decode", lambda *args, **kwargs: np.zeros(SR, dtype=np.float32))
+    monkeypatch.setattr(audio, "infer", fake_infer)
+    monkeypatch.setattr(audio, "rhythmic_evidence", lambda *args, **kwargs: ([], {}))
+    monkeypatch.setattr(audio, "pitched_notes", lambda *args, **kwargs: [])
+    monkeypatch.setattr(audio, "refine_releases", lambda notes, samples: (notes, {}))
+    monkeypatch.setattr(audio, "fuse_attacks", lambda notes, attacks: (notes, [], 0))
+    monkeypatch.setattr(
+        "manialab.structure.detect_structure",
+        lambda analysis, samples, sample_rate, **kwargs: {"segments": []},
+    )
+    monkeypatch.setattr(
+        Path,
+        "read_bytes",
+        reject_read_bytes,
+    )
+
+    first = analyze(source, tmp_path, tmp_path / "model.onnx", parameters())
+    second = analyze(source, tmp_path, tmp_path / "model.onnx", parameters())
+
+    assert not first["cached"] and second["cached"]
+    assert len(inferred) == 1
 
 
 def test_silence():

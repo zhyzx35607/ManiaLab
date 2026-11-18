@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from dataclasses import replace
-import hashlib
 import threading
 import time
 
@@ -26,7 +25,7 @@ from .audio_evidence import (
     source_evidence,
     timing_evidence_quality,
 )
-from .audio_cache import load_stem_activations, save_stem_activations
+from .audio_cache import load_stem_activations, save_stem_activations, sha256_file
 
 _session = None
 _lock = threading.Lock()
@@ -69,7 +68,7 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     samples = decode(path, work, cancelled=cancelled)
     duration = len(samples) / SR
     cache = Path(work) / "activations.npz"
-    audio_hash = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    audio_hash = sha256_file(path, cancelled=cancelled)
     cached = None
     if cache.exists():
         try:

@@ -1,7 +1,6 @@
 """Launch the isolated, portable CPU music separation worker."""
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -11,6 +10,7 @@ import time
 import imageio_ffmpeg
 
 from .audio_io import run_hidden_cancellable
+from .audio_cache import sha256_file
 from .stems import PROFILES, profile_for
 
 MODEL_SHA256 = "a004b2790d73ffeaa535db458a1a79b539dfdbafbccc31f275d07e632ebd7816"
@@ -52,7 +52,7 @@ class Separator:
         work = Path(work)
         output = work / self.spec['directory']
         manifest = output / "separation.json"
-        digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        digest = sha256_file(path, cancelled=cancelled)
         stems_cached = False
         if manifest.is_file():
             try:
