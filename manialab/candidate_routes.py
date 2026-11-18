@@ -9,6 +9,7 @@ from .editing import edit_notes
 from .generation import generate_variant
 from .ln_patterns import analyze_ln_patterns
 from .review import review_chart
+from .selection_report import generation_context
 from .timing import grid_report
 
 
@@ -51,7 +52,7 @@ def register_candidate_routes(app, *, submit, parameters, requested_tempo):
             report["layout"] = layout_metrics(notes, prefs["keys"], beat, points)
             report["review"] = review_chart(notes, prefs["keys"], beat, points)
             report["ln_patterns"] = analyze_ln_patterns(notes, prefs["keys"], beat, points)
-            variant = copy.deepcopy(old)
+            variant = copy.deepcopy(old | {"selection": generation_context(old.get("selection", {}))})
             variant.update(
                 notes=[note.data() for note in notes],
                 report=report,
@@ -61,7 +62,7 @@ def register_candidate_routes(app, *, submit, parameters, requested_tempo):
                 region=None,
             )
             variant["edits"] = [*old.get("edits", []), dict(parent_created=old["created"], **edit)]
-            variant["selection"] = dict(message="手动修改已保存为新候选。原始采音保留，可从候选列表返回上一版。")
+            variant["selection"]["message"] = "手动修改已保存为新候选。原始采音保留，可从候选列表返回上一版。"
             state["variants"] = (state["variants"] + [variant])[-8:]
             state["active"] = len(state["variants"]) - 1
             state["settings"] = prefs.copy()
