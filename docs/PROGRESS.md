@@ -1978,3 +1978,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 源码验证真实输入 `test-data/audio-transcription-chart-ab-playtest-20261118/Sakura-Piano-AB-6-10K.osz`。运行 `scripts/verify_chart_workspaces.py <源包> --sha256 f399fbd88c7efec888254c045852f30f28d3dff747b38fc9b571c336ee89a49e --out test-data/acceptance-chart-workspaces-20261118`。10/10 张谱各保存两份候选，关闭应用服务后逆序重开，16,130 个物件、4,610 条 LN 的起止及除轨道外的原始物件字段全部一致。两个导出格式的谱面内容相同，各自音频 SHA 匹配。该数字按十张难度累加。报告 SHA-256 `77a8b7f3888967edc63666868b097a883095f5b273ffa4a6a4b2470632eca6f5`。
 - 本地项目切换、编辑与服务路由定向测试 48 项通过。`tests/test_imported_audition.py tests/test_audition.py tests/test_audio_io_boundary.py` 11 项通过。Edge 已覆盖难度保存与打开以及 3/4 转 5/4 的试听 WAV 与实时网格逐拍核对。人工原声听审与 osu! 玩家手感评分待记录。
 - PR #153 首次运行的轻量依赖回归指出 `project_routes` 在导入时加载 SciPy。`chart_workspace` 现仅在首次解析新谱时导入段落标记解析器。
+- PR #153 最终 Windows run `44329416293` 通过，合并提交 `80c1b71b`。
+
+## 2026-11-18 第五十一阶段：可填写的盲听评分与同音符定轨试打
+
+- 钢琴盲听网页和 `review-template.csv` 共用七列，`audio_start_ms` 保存整数毫秒，并保留音频相对路径。Edge 实际填写含双引号、逗号、中文和换行的备注，下载后通过 CSV 解析核对七列。定向 Python 8 项通过（包括定轨包回归），Edge 实际下载 1 项通过。
+- 用 `scripts/build_piano_onset_blind_review.py --input test-data/audio-transcription-chart-ab-20261118 --output test-data/piano-onset-blind-review-csv-20261118` 生成新的本地评审包。旧包和新包的 84 份 WAV、评分模板和解盲表逐字节一致，两包 CRC 通过。新版 `piano-onset-review.zip` SHA-256 为 `842de24e7e415cbf1d1ad7eb3aa8a26a75e4b3f03dfc2bbaa550c4844051f55c`。
+- 另用 `scripts/build_layout_playtest.py <第四十六阶段盲测包> --sha256 <该包 SHA> --chart Source-A-10K.osu --out test-data/layout-only-playtest-20261118` 构建定轨试打。所有难度共用一种选音、相同原声、1,612 个物件、461 条 LN 和相同变速。两侧使用产品内建的两种定轨模式、同一随机种子且关闭键型先验。每个键数检查导出后的全部非轨道物件字段、Timing 和占轨。6K 至 10K 分别有 572、739、702、855、664 个可玩物件的位置不同。
+- 玩家入口 `test-data/layout-only-playtest-20261118/participant/` 含 `Layout-AB-6-10K.osz`、`scores.csv` 和填写说明。谱包 SHA-256 `eb2369cc1fd954fae10f01aa902d39a6bae64bb40fd130c721bc08621cd14735`。需要玩家先填写实际试打结果再解盲。当前人工盲听和手感偏好均待验收。
