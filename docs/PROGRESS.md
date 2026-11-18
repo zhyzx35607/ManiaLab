@@ -1924,5 +1924,6 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 10/10份分析的 BPM 与 stable 结论均和冻结分析一致，仍只有3/10为 stable。`4709745`细分从3改为4，覆盖率`0.4987 → 0.6324`、中位误差`30 → 18.75 ms`、相对冻结计划 Offset 为`-1 ms`；`5647839`细分从3改为4，覆盖率`0.3864 → 0.5260`、中位误差`35.25 → 24.31 ms`、计划 Offset 差为`0 ms`。两者仍为`stable=false`；历史代码复算结果相同，未发现近期 PR 引入回归。该复算来自既有开发片段，不构成独立泛化或音乐验收。
 - 新增合成浏览器往返：选择`120.37 BPM`精确候选（原音频 Offset `115.25 ms`），把制谱提前量从`22.5 ms`改为`37.5 ms`后，谱面 Offset 从`93 ms`调整为`78 ms`并清除旧确认；未确认生成被后端拒绝且不保存候选，勾选确认后生成、保存并重载，BPM、Offset、提前量和确认状态均保持。
 - 完整验证：数值线程上限2时`.venv/Scripts/python.exe -m pytest -q`为`2,562 passed, 89 skipped`（70.20秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8981 npm run test:ui`为`32 passed`（约1.2分钟），其中 Timing 文件11项全过；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`、`node --check tests/browser/timing.spec.cjs`及`git diff --check`通过。没有运行模型、训练、用户音频或参考谱，没有访问 MAESTRO 保留测试。
+- PR #143 Windows validation run `44260840665`成功；合并提交`271c1b1148d08e18fac2d1656c2c786c6b5519d3`的 main run `44261260834`也成功。当前源码树与`origin/main`一致。
 - 本机 D 盘清理：删除的 dev.3/dev.4 发布 ZIP 大小与 SHA-256 均和仍在线的 GitHub Release 资产一致；清除时删除112个 Python `__pycache__` 目录及`.pytest_cache`。本地 dev.14 ZIP 对应 Release 不存在，故保留；dev.17/dev.18 包、全部模型、研究数据和验证报告也保留。D 盘可用空间从清理前`50.30 GiB`升至清理后`52.74 GiB`，测试运行后复测为`52.70 GiB`；仅清理本地可再下载副本与可重建缓存，没有改动 Git 跟踪数据。
 - 后续转入独立歌曲泛化、真实试听和 osu! 试打；现有 Timing 结果仍不能替代音乐质量验收。
