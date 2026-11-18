@@ -22,6 +22,7 @@ class ProjectTasks:
         self.lock = threading.RLock()
         self.jobs = {}
         self.completed_job_limit = completed_job_limit
+        self._closed = False
 
     def _prune_completed_for_submission(self):
         completed = [
@@ -50,7 +51,10 @@ class ProjectTasks:
             raise ValueError(message)
 
     def submit(self, project_id, operation, *, identity=None, cleanup=None):
+        submission_error = None
         with self.lock:
+            if self._closed:
+                raise ValueError("任务服务已关闭")
             self.ensure_project_idle(project_id)
             self.ensure_idle("已有计算任务运行，请完成后再启动新任务")
             self._prune_completed_for_submission()
@@ -68,9 +72,13 @@ class ProjectTasks:
             def run():
                 started = time.perf_counter()
                 with self.lock:
+                    if job["status"] != "queued":
+                        return
                     job["status"] = "running"
                 committed = False
                 try:
+                    if job["cancel"]:
+                        raise InterruptedError("已取消，原有谱面已保留")
                     state = self.projects.load(project_id)
                     result = operation(state, progress, lambda: job["cancel"])
                     with self.lock:
@@ -82,7 +90,7 @@ class ProjectTasks:
                                    elapsed_seconds=round(time.perf_counter() - started, 2))
                 except InterruptedError as error:
                     outcome = dict(status="cancelled", message=str(error))
-                except Exception as error:
+                except BaseException as error:
                     self.logger.exception("Project task failed: project=%s job=%s", project_id, job_id)
                     message = str(error) if isinstance(error, ValueError) else "任务失败，请查看本地日志"
                     outcome = dict(status="error", message=message)
@@ -90,13 +98,42 @@ class ProjectTasks:
                     if cleanup is not None:
                         try:
                             cleanup(committed)
-                        except Exception:
+                        except BaseException:
                             self.logger.exception("Project task cleanup failed: %s", project_id)
-                with self.lock:
-                    job.update(outcome)
+                    with self.lock:
+                        job.update(outcome)
 
-            self.executor.submit(run)
-            return job
+            try:
+                self.executor.submit(run)
+            except BaseException as error:
+                self.logger.exception("Project task could not be submitted: project=%s job=%s",
+                                      project_id, job_id)
+                self._closed = True
+                job.update(status="error", message="任务无法启动，请查看本地日志", cancel=True)
+                self.executor.shutdown(wait=False, cancel_futures=True)
+                submission_error = error
+                if cleanup is not None:
+                    try:
+                        cleanup(False)
+                    except BaseException:
+                        self.logger.exception(
+                            "Project task cleanup after submit failure failed: %s",
+                            project_id,
+                        )
+
+        if submission_error is not None:
+            if not isinstance(submission_error, Exception):
+                raise submission_error
+        with self.lock:
+            return dict(job)
+
+    def shutdown(self, *, wait=True):
+        with self.lock:
+            self._closed = True
+            for job in self.jobs.values():
+                if job["status"] in ("queued", "running"):
+                    job["cancel"] = True
+        self.executor.shutdown(wait=wait)
 
     def get(self, job_id):
         with self.lock:
@@ -108,5 +145,6 @@ class ProjectTasks:
             job = self.jobs.get(job_id)
             if job is None:
                 return False
-            job["cancel"] = True
+            if job["status"] not in TERMINAL_STATUSES:
+                job["cancel"] = True
             return True

@@ -10,7 +10,7 @@ import time
 
 import imageio_ffmpeg
 
-from .audio_io import run_hidden
+from .audio_io import run_hidden_cancellable
 from .stems import PROFILES, profile_for
 
 MODEL_SHA256 = "a004b2790d73ffeaa535db458a1a79b539dfdbafbccc31f275d07e632ebd7816"
@@ -70,11 +70,19 @@ class Separator:
         output.mkdir(exist_ok=True)
         wave = work / "separation-input.wav"
         progress(2, "准备"+self.spec['label']+"分析音频")
-        result = run_hidden([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-y", "-i", str(path),
-            "-vn", "-ac", str(INPUT_PROCESSING['channels']), "-ar", str(INPUT_PROCESSING['sample_rate']),
-            "-t", str(INPUT_PROCESSING['max_seconds']), "-c:a", INPUT_PROCESSING['codec'], str(wave)],
-            capture_output=True, timeout=180)
+        try:
+            result = run_hidden_cancellable(
+                [imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-y", "-i", str(path),
+                 "-vn", "-ac", str(INPUT_PROCESSING['channels']), "-ar", str(INPUT_PROCESSING['sample_rate']),
+                 "-t", str(INPUT_PROCESSING['max_seconds']), "-c:a", INPUT_PROCESSING['codec'], str(wave)],
+                cancelled,
+                timeout=180,
+            )
+        except BaseException:
+            wave.unlink(missing_ok=True)
+            raise
         if result.returncode:
+            wave.unlink(missing_ok=True)
             raise ValueError("声部分离无法解码音频")
         command = [str(self.python), str(self.resources/'scripts/separate_audio.py')] if self.python else [str(self.executable)]
         command += [str(wave), str(output), "--model", str(self.model), "--threads", "2"]

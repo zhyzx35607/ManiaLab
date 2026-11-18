@@ -270,11 +270,15 @@ class MapperEngine:
         # pydub's compressed-file loader needs an external ffprobe, which is
         # absent on clean Windows installs. Decode with our bundled FFmpeg;
         # pydub reads PCM WAV directly, preserving the analysis time base.
-        from .audio import run_hidden
+        from .audio_io import run_hidden_cancellable
         import imageio_ffmpeg
         decoded = output / "ManiaLab-source.wav"
-        decode_result = run_hidden([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-y", "-i", str(Path(audio).resolve()),
-            "-vn", "-ar", "44100", "-ac", "2", "-c:a", "pcm_s16le", str(decoded.resolve())], capture_output=True, timeout=180)
+        decode_result = run_hidden_cancellable(
+            [imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-y", "-i", str(Path(audio).resolve()),
+             "-vn", "-ar", "44100", "-ac", "2", "-c:a", "pcm_s16le", str(decoded.resolve())],
+            cancelled,
+            timeout=180,
+        )
         if decode_result.returncode:
             raise ValueError("原模型输入音频无法解码")
         argv = [self.python, self.resources/'assets/run_mapper.py', str(os.getpid()), "inference.py", "-cn", "v32", "gamemode=3", f'keycount={settings["keys"]}', f'circle_size={settings["keys"]}',

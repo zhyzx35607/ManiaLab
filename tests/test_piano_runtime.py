@@ -114,7 +114,7 @@ def test_deep_analysis_routes_only_piano_to_specialist(tmp_path,monkeypatch):
             np.testing.assert_array_equal(stem,samples)
             assert rate==audio.SR and cache.name=='piano-specialist-activations.npz'
             return [Note(400,1200,pitch=60,source='pitch',strength=.9,id='sp',release_reason='release_regression')],{'cached':True}
-    monkeypatch.setattr(audio,'decode',lambda *args:samples)
+    monkeypatch.setattr(audio,'decode',lambda *args,**kwargs:samples)
     def unused(*args):raise AssertionError('The general piano model must not also run')
     monkeypatch.setattr(audio,'infer',unused)
     result=audio.analyze_deep(Path('mix.wav'),tmp_path,Path('unused.onnx'),parameters(),Sources(),piano_detector=Specialist())

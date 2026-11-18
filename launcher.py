@@ -11,6 +11,21 @@ import threading
 import webbrowser
 
 
+def _run_server(server, task_service):
+    try:
+        server.run()
+    finally:
+        try:
+            server.close()
+        finally:
+            try:
+                dispatcher = getattr(server, "task_dispatcher", None)
+                if dispatcher is not None:
+                    dispatcher.shutdown()
+            finally:
+                task_service.shutdown(wait=True)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=0)
@@ -54,7 +69,7 @@ def main():
     print(f"ManiaLab: {url}\n项目数据: {root}\n关闭此窗口退出程序。", flush=True)
     if not args.no_browser:
         threading.Timer(.6, lambda: webbrowser.open(url)).start()
-    server.run()
+    _run_server(server, app.extensions["task_service"])
 
 
 if __name__ == "__main__":

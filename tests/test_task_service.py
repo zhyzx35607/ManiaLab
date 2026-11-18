@@ -1,4 +1,5 @@
 import logging
+import queue
 import threading
 import time
 
@@ -15,7 +16,7 @@ def task_store(tmp_path):
     try:
         yield projects, service
     finally:
-        service.executor.shutdown(wait=True)
+        service.shutdown()
 
 
 def wait_for_job(service, job_id):
@@ -50,6 +51,22 @@ def test_successful_task_commits_snapshot_before_cleanup(task_store):
     assert result["result"] == {"updated": True}
     assert projects.load(project_id)["value"] == "updated"
     assert cleanup == [True]
+    assert service.cancel(job["id"])
+    assert not service.get(job["id"])["cancel"]
+
+
+def test_submit_returns_a_stable_job_snapshot(task_store, monkeypatch):
+    projects, service = task_store
+    project_id = create_project(projects)
+    submitted = []
+    monkeypatch.setattr(service.executor, "submit", lambda operation: submitted.append(operation))
+
+    job = service.submit(project_id, lambda *args: {"completed": True})
+    assert job["status"] == "queued"
+    submitted[0]()
+
+    assert service.get(job["id"])["status"] == "done"
+    assert job["status"] == "queued"
 
 
 def test_failed_task_preserves_snapshot_and_runs_cleanup(task_store):
@@ -68,6 +85,58 @@ def test_failed_task_preserves_snapshot_and_runs_cleanup(task_store):
     assert result["message"] == "synthetic failure"
     assert projects.load(project_id)["value"] == "original"
     assert cleanup == [False]
+
+
+def test_base_exception_finishes_job_and_allows_later_work(task_store):
+    projects, service = task_store
+    project_id = create_project(projects)
+    cleanup = []
+
+    def operation(state, progress, cancelled):
+        raise SystemExit("synthetic worker exit")
+
+    job = service.submit(project_id, operation, cleanup=cleanup.append)
+    result = wait_for_job(service, job["id"])
+
+    assert result["status"] == "error"
+    assert result["message"] == "任务失败，请查看本地日志"
+    assert cleanup == [False]
+    recovered = service.submit(project_id, lambda *args: {"recovered": True})
+    assert wait_for_job(service, recovered["id"])["status"] == "done"
+
+
+def test_worker_start_failure_cancels_queued_work_and_closes_service(task_store, monkeypatch):
+    projects, service = task_store
+    project_id = create_project(projects)
+    cleanup = []
+
+    class TrackingQueue(queue.SimpleQueue):
+        def __init__(self):
+            super().__init__()
+            self.items = []
+
+        def put(self, item, *args, **kwargs):
+            self.items.append(item)
+            return super().put(item, *args, **kwargs)
+
+    work_queue = TrackingQueue()
+    monkeypatch.setattr(service.executor, "_work_queue", work_queue)
+
+    def fail_worker_start():
+        raise RuntimeError("synthetic executor failure")
+
+    monkeypatch.setattr(service.executor, "_adjust_thread_count", fail_worker_start)
+    job = service.submit(project_id, lambda *args: None, cleanup=cleanup.append)
+
+    assert job["status"] == "error"
+    assert cleanup == [False]
+    assert not service.has_active()
+    assert service._closed
+    assert len(work_queue.items) == 2
+    assert work_queue.items[0].future.cancelled()
+    assert work_queue.items[1] is None
+    with pytest.raises(ValueError, match="任务服务已关闭"):
+        service.submit(project_id, lambda *args: None)
 
 
 def test_cancelled_task_blocks_other_work_and_does_not_commit(task_store):
@@ -99,6 +168,30 @@ def test_cancelled_task_blocks_other_work_and_does_not_commit(task_store):
     assert result["status"] == "cancelled"
     assert projects.load(project_id)["value"] == "original"
     assert cleanup == [False]
+
+
+def test_shutdown_cancels_active_work_waits_for_cleanup_and_rejects_submits(task_store):
+    projects, service = task_store
+    project_id = create_project(projects)
+    started = threading.Event()
+    cleanup = []
+
+    def operation(state, progress, cancelled):
+        started.set()
+        while not cancelled():
+            time.sleep(0.005)
+        return {"cancelled": True}
+
+    job = service.submit(project_id, operation, cleanup=cleanup.append)
+    assert started.wait(5)
+
+    service.shutdown()
+
+    result = service.get(job["id"])
+    assert result["status"] == "cancelled"
+    assert cleanup == [False]
+    with pytest.raises(ValueError, match="任务服务已关闭"):
+        service.submit(project_id, lambda *args: None)
 
 
 def test_completed_job_history_is_bounded_without_pruning_active_job(task_store):
@@ -143,4 +236,4 @@ def test_completed_job_history_is_bounded_without_pruning_active_job(task_store)
         assert len(service.jobs) == 2
     finally:
         release.set()
-        service.executor.shutdown(wait=True)
+        service.shutdown()

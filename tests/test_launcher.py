@@ -8,7 +8,37 @@ import time
 import urllib.error
 import urllib.request
 
+import pytest
+
 from manialab import __version__
+from launcher import _run_server
+
+
+def test_launcher_closes_http_server_and_task_service_after_server_error():
+    calls = []
+
+    class Dispatcher:
+        def shutdown(self):
+            calls.append("dispatcher-shutdown")
+
+    class Server:
+        task_dispatcher = Dispatcher()
+
+        def run(self):
+            calls.append("run")
+            raise RuntimeError("synthetic server failure")
+
+        def close(self):
+            calls.append("close")
+
+    class TaskService:
+        def shutdown(self, *, wait):
+            calls.append(("shutdown", wait))
+
+    with pytest.raises(RuntimeError, match="synthetic server failure"):
+        _run_server(Server(), TaskService())
+
+    assert calls == ["run", "close", "dispatcher-shutdown", ("shutdown", True)]
 
 
 def test_launcher_survives_cp1252_output_and_unicode_data_directory(tmp_path):

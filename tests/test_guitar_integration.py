@@ -45,13 +45,14 @@ def test_only_explicit_guitar_uses_fl_and_keeps_source_energy_checks(tmp_path, m
     def reject(notes, *args):
         bleed.append({n.voice for n in notes})
         return notes, []
-    monkeypatch.setattr(audio, 'decode', lambda *args: mix)
+    monkeypatch.setattr(audio, 'decode', lambda *args, **kwargs: mix)
     monkeypatch.setattr(audio, 'infer', infer)
     monkeypatch.setattr(audio, 'pitched_notes', lambda *args, **kwargs: [Note(100, 700, source='pitch', id='general')])
     monkeypatch.setattr(audio, 'refine_releases', refine)
     monkeypatch.setattr(audio, 'fuse_attacks', fuse)
     monkeypatch.setattr(audio, 'reject_source_bleed', reject)
-    monkeypatch.setattr('manialab.structure.detect_structure', lambda *args: dict(segments=[dict(start_ms=0, end_ms=1000)]))
+    monkeypatch.setattr('manialab.structure.detect_structure',
+                        lambda *args, **kwargs: dict(segments=[dict(start_ms=0, end_ms=1000)]))
     result = audio.analyze_deep(Path('mix'), tmp_path, Path('unused'), parameters(), Sources(),
         guitar_detector=Specialist() if selected else None, allow_guitar_predicted_releases=release)
     assert len(generic) == len(refinements) == len(fusions) == (2 if selected else 3)
@@ -76,7 +77,7 @@ def test_only_explicit_guitar_uses_fl_and_keeps_source_energy_checks(tmp_path, m
 
 
 def test_invalid_guitar_tail_request_fails_before_decoding(tmp_path, monkeypatch):
-    monkeypatch.setattr(audio, 'decode', lambda *args: pytest.fail('Invalid options reached decoding'))
+    monkeypatch.setattr(audio, 'decode', lambda *args, **kwargs: pytest.fail('Invalid options reached decoding'))
     for value in (True, 'true', 1, None):
         with pytest.raises(ValueError, match='吉他模型音尾'):
             audio.analyze_deep(Path('mix'), tmp_path, Path('unused'), parameters(), None,
@@ -84,7 +85,7 @@ def test_invalid_guitar_tail_request_fails_before_decoding(tmp_path, monkeypatch
 
 
 def test_guitar_cannot_run_on_other_as_a_substitute(tmp_path, monkeypatch):
-    monkeypatch.setattr(audio, 'decode', lambda *args: np.zeros(audio.SR))
+    monkeypatch.setattr(audio, 'decode', lambda *args, **kwargs: np.zeros(audio.SR))
     class Sources:
         def separate(self, *args):
             return tmp_path, dict(source='provided', voices=['other'], audio_sha256='mix', set_sha256='stems')

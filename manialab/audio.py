@@ -32,8 +32,8 @@ _session = None
 _lock = threading.Lock()
 
 
-def decode(path, work):
-    return decode_audio(path, work, runner=run_hidden)
+def decode(path, work, cancelled=None):
+    return decode_audio(path, work, runner=run_hidden, cancelled=cancelled)
 
 
 def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):
@@ -66,7 +66,7 @@ def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):
 def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=lambda: False):
     started = time.perf_counter()
     progress(2, "解码音频")
-    samples = decode(path, work)
+    samples = decode(path, work, cancelled=cancelled)
     duration = len(samples) / SR
     cache = Path(work) / "activations.npz"
     audio_hash = hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -104,7 +104,7 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
             "engine": "Basic Pitch 0.4.0 ONNX + onset refinement + phase regression", "notice": "音高候选并非乐器分轨；复杂混音、混响和音尾仍可能误判。"}
     from .structure import detect_structure
     progress(97, '比较音色与声部变化，建议音乐段落')
-    result['structure'] = detect_structure(result, samples, SR)
+    result['structure'] = detect_structure(result, samples, SR, cancelled=cancelled)
     result['segments'] = result['structure']['segments']
     result['elapsed_seconds'] = round(time.perf_counter()-started, 2)
     progress(100, "采音候选与段落已准备好")
@@ -122,7 +122,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     if type(allow_guitar_predicted_releases) is not bool or (allow_guitar_predicted_releases and guitar_detector is None):
         raise ValueError('吉他模型音尾选项需要显式选择吉他专用采音')
     started = time.perf_counter()
-    samples = decode(path, work)
+    samples = decode(path, work, cancelled=cancelled)
     duration = len(samples) / SR
     stem_root, separation = separator.separate(path, work, progress, cancelled)
     stem_identity = separation_identity(separation)
@@ -275,7 +275,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
         notice="分离可能串音或遗漏乐器；声轨更多不代表采音必然更准。跨音高人声 LN 是编排选择，请用独立声部试听检查。")
     from .structure import detect_structure
     progress(97, '比较音色与声部变化，建议音乐段落')
-    result['structure'] = detect_structure(result, samples, SR)
+    result['structure'] = detect_structure(result, samples, SR, cancelled=cancelled)
     result['segments'] = result['structure']['segments']
     result['elapsed_seconds'] = round(time.perf_counter()-started, 2)
     progress(100, "多声部采音、持续段与音乐分段已准备好")

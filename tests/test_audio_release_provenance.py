@@ -148,7 +148,7 @@ def test_cached_analysis_reconstructs_generic_release_metadata_without_inference
         def separate(self, *args):
             return tmp_path, separation
 
-    monkeypatch.setattr(audio, 'decode', lambda *args: samples)
+    monkeypatch.setattr(audio, 'decode', lambda *args, **kwargs: samples)
     def unused(*args):
         raise AssertionError('Existing activations must be reused')
     monkeypatch.setattr(audio, 'infer', unused)
