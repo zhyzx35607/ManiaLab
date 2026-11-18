@@ -2,6 +2,7 @@ import hashlib
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -29,6 +30,15 @@ def test_separator_preserves_float_input_and_rebuilds_legacy_cache(tmp_path, mon
     manifest.write_text(json.dumps(old_report), encoding='utf-8')
     for voice in separator.spec['voices']:
         np.save(output/f'{voice}.npy', np.zeros(22050, dtype=np.float32))
+
+    def reject_read_bytes(path):
+        raise AssertionError(f'whole-file read attempted for {path}')
+
+    monkeypatch.setattr(
+        Path,
+        'read_bytes',
+        reject_read_bytes,
+    )
     launches = []
     real_popen = subprocess.Popen
 
