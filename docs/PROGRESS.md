@@ -1947,3 +1947,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 验证：`.venv/Scripts/python.exe -m pytest -q tests/test_frozen_generation_matrix.py tests/test_piano_transcription_chart_ab.py`为8 passed；`.venv/Scripts/python.exe -m compileall -q scripts tests`和`git diff --check`通过。PR #147 Windows run `44290064124`通过，合并提交`f947c2862e2d2cc40c14c7e3b6b1b4a8db303000`的 main run `44290737467`也通过；Python/API 与 Edge UI 检查成功，模型下载及便携构建按条件跳过。
 - 同日生成并校验本地盲测包 `test-data/audio-transcription-chart-ab-playtest-20261118/Sakura-Piano-AB-6-10K.osz`：10 张 Mania 谱（6K–10K 各两张）、共用同一音频、ZIP CRC 通过、无模型名称泄漏，包 SHA-256 `f399fbd88c7efec888254c045852f30f28d3dff747b38fc9b571c336ee89a49e`；解盲表保存在包外的 ignored 文件。此项只确认包完整和盲化，不代表已在 osu! 加载或完成试听/试打。
 - 该阶段只完善效果证据和人工验收入口，不是采音或键型提升。真实声音盲听、6K–10K玩家试打和独立歌曲泛化仍未完成；当前证据仍不支持替换默认采音。
+
+## 2026-11-18 第四十七阶段：全曲 LN 音尾分段定位
+
+- 新增只读 `scripts/summarize_frozen_generation_ln_segments.py`，校验冻结计划 SHA、10 个 case ID 和每个 `variant.json` SHA，再按冻结结构段落/声部统计 detected、expressed 与最终 release reason；分别报告原音频时钟的模型/表达尾移和谱面时钟的量化尾移。段落边界采用左闭右开；缺失起音、快照或尾端明确保留，不补猜。回归覆盖两个时钟分离、恰好30ms阈值、段落边界、缺失来源、段落外短键、重复 ID、哈希不符和输出目录保护。
+- 复核版输出位于 ignored `test-data/frozen-generation-ln-segments-reviewed-20261118/report.json`，SHA-256 `14ECE116D7592A675A8DFB364920B80A08F429E48A8FCA5F2AA5BE249843EF16`。10 个冻结配置共 4,043 条 LN，全部可归入段落、均有快照和可测尾端；`expressed.end - detected.end` 的大于30ms计数为0，`note.end - evidence_end` 的大于30ms计数为698。默认6K–10K各有70/72/75/73/74条，无人声配置为64/65/69/68/68条；较集中的 `other` 声部段落为187.501–215.474s和97.501–110.069s。跨配置会复用事件，这些是定位数量而非独立样本。
+- 汇总结果说明大尾移发生在量化阶段，不是表达阶段移动了模型预测尾端；不证明模型尾端等于真实松键，也不判断格线长短更好或更差。报告仅用于安排原声复听，未读取音频、Reference或 MAESTRO 保留测试，也未运行模型/用户数据。
+- 本地验证：`.venv\\Scripts\\python.exe -m pytest -q tests/test_frozen_generation_ln_segments.py`为7 passed；`compileall`与`git diff --check`通过。PR #149 Windows run `44310862594`通过（Python/API与合成浏览器流程成功；模型与便携构建按条件跳过）。该 PR 更新进度后的复验及合并后 main run 待记录。

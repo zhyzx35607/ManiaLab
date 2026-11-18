@@ -22,6 +22,14 @@
 
 10 份分析中自动 Timing 仅 3 份通过、7 份需要手动确认；这不是 BPM / Offset 对真实音乐准确率的证明。冻结矩阵均来自已用于开发的短片段，也不是独立泛化集。
 
+## 全曲 LN 尾端变化定位
+
+另对既有《樱花草》全曲冻结报告按结构段落、键数配置和声部分别汇总 LN 音尾，不重放生成、不读取音频或 Reference、不运行模型。10 个配置共 4,043 条 LN，4,043 条均有来源快照、起音坐标和两种尾端差值，并按冻结段落边界归类。
+
+这里分开计算两种不同时间差：`expressed.end - detected.end` 是原音频时钟中的表达阶段尾端变化；`note.end - evidence_end` 是谱面时钟中量化前后的尾端变化。全体样本的前一项均为 0ms，超过 30ms 的记录为 0；后一项有 698 条超过 30ms。默认配置各键数为 70/72/75/73/74 条（6K–10K），无人声配置为 64/65/69/68/68 条。较集中位置包括 `187.501–215.474s` 的 `other` 声部，以及 `97.501–110.069s` 的 `other` 声部。不同键数及配置会复用事件，以上数量是配置级定位结果，不是独立音频样本数。
+
+这表明这组已冻结输出中的大尾移发生在量化阶段，而非表达阶段移动了模型推测音尾；**不证明输入音尾正确、量化后的长短更差或更好，也不等于真实按键松开时间**。这些逐段候选只适合安排后续原声复听。详细、带哈希校验的本地报告位于 ignored `test-data/frozen-generation-ln-segments-reviewed-20261118/report.json`，汇总器与回归测试为 `scripts/summarize_frozen_generation_ln_segments.py`、`tests/test_frozen_generation_ln_segments.py`。
+
 ## 盲测包校验
 
 - 本地盲测包保存在 ignored `test-data/audio-transcription-chart-ab-playtest-20261118/Sakura-Piano-AB-6-10K.osz`，大小 4,781,489 字节。ZIP 包含 10 张 osu!mania 谱（6K–10K 各两张）和一份共同音频；所有谱面均为 Mania 模式，音频引用都能解析到包内同一文件。
