@@ -57,7 +57,7 @@ def beat_evidence(source, model_path, seconds=0):
         purpose="beat-unit selection only; onset audio establishes the offset")
 
 
-def separate(source, output, model_path, seconds=0, threads=3, beat_model=None):
+def separate(source, output, model_path, seconds=0, threads=2, beat_model=None):
     started = time.perf_counter()
     torch.set_num_threads(threads)
     torch.set_num_interop_threads(1)
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     parser.add_argument("output", type=Path)
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--seconds", type=float, default=0)
-    parser.add_argument("--threads", type=int, default=3)
+    parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--beat-model", type=Path)
     parser.add_argument("--beats-only", action="store_true")
     parser.add_argument('--profile',choices=('four','six'),default='four')
