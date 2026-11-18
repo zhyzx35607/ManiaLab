@@ -7,15 +7,30 @@ import threading
 import time
 
 
+TERMINAL_STATUSES = ("done", "error", "cancelled")
+
+
 class ProjectTasks:
     """Serialize project work and commit its snapshot only after success."""
 
-    def __init__(self, projects, logger=None):
+    def __init__(self, projects, logger=None, *, completed_job_limit=64):
+        if type(completed_job_limit) is not int or completed_job_limit < 1:
+            raise ValueError("completed_job_limit must be a positive integer")
         self.projects = projects
         self.logger = logger or logging.getLogger(__name__)
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.lock = threading.RLock()
         self.jobs = {}
+        self.completed_job_limit = completed_job_limit
+
+    def _prune_completed_for_submission(self):
+        completed = [
+            job_id for job_id, job in self.jobs.items()
+            if job["status"] in TERMINAL_STATUSES
+        ]
+        excess = max(0, len(completed) - self.completed_job_limit + 1)
+        for job_id in completed[:excess]:
+            del self.jobs[job_id]
 
     def has_active(self):
         with self.lock:
@@ -38,6 +53,7 @@ class ProjectTasks:
         with self.lock:
             self.ensure_project_idle(project_id)
             self.ensure_idle("已有计算任务运行，请完成后再启动新任务")
+            self._prune_completed_for_submission()
             job_id = secrets.token_hex(10)
             job = dict(id=job_id, project=project_id, status="queued", progress=0,
                        message="等待运行", cancel=False)

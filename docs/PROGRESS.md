@@ -5,6 +5,8 @@
 
 ## 当前状态（先读）
 
+- 最新状态（2026-11-19）：PR #161 已合并到`main`（`e11663b932c23f17303aef50941b7ef69ada275e`），PR run `44386569096`与 main run `44387300930`成功。公开 Release 仍为 dev.18。第五十九阶段本地回归为2,669 passed、90 skipped；当前代码待 PR/Windows CI 验证。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
+
 - 2026-11-19 当前续接：从 PR #157 合并提交 `19132940` 开始，公开 Release 仍为 dev.18，近889MB standard 构建仅为 Actions artifact。本阶段经 PR #158 合并为 `6200891e`；PR Windows run `44366735851`及合并后 main run `44368922837`的 Core 构建、实际 EXE、shutdown、Python/API 与 Edge UI 检查均通过。没有创建新 Release。人工钢琴盲听、同音符 6K–10K 定轨试打、两首独立歌曲听审仍为空，长期音乐质量目标保持未结项。
 - 2026-11-18 续接核验：PR #151 已合并为 `fc20c92`，Windows PR run `44320958903` 和 main run `44322594836` 均成功。第 49 阶段修复编辑后导出的段落书签，复现与验证见文末。音乐验收还需要玩家盲听、试打及独立歌曲证据。
 - 已发布的 Windows 包为 `v0.1.0-alpha.6-dev.18`；后续主线修复不自动进入该已发布包。
@@ -2043,4 +2045,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - `refresh_piano_blind_review.py` 在输出父目录的唯一临时目录内完成页面、CSV、短片、ZIP 和 manifest；全部成功后才将目录重命名为正式输出。若复制或写盘失败，临时目录自动清理，正式目标不会留下半成品；仍拒绝覆盖已有目标。
 - 输出本身为符号链接时在路径规范化前拒绝，避免悬空链接把产物重定向到外部目录；覆盖发布前目标被并发创建的冲突场景，确认保留已有文件并清理 staging。
 - 新增磁盘失败、悬空符号链接与发布前目标冲突合成测试；定向刷新/锁定/钢琴页面测试为29 passed、1 skipped（当前 Windows 环境不允许创建符号链接）。设置数值线程上限2运行全量`.venv\Scripts\python.exe -m pytest -q`为2,668 passed、90 skipped（67.05秒）；`compileall`及`git diff --check`通过。该阶段没有读取 ignored 音频、盲评评分或解盲数据。
-- 下一步可继续审视真实音乐链路中可独立机器验证的失败边界；真人钢琴盲听、6K–10K/LN定轨试打和两首独立歌曲复听仍缺人工结果，整体音乐验收保持开放。
+- PR #161 Windows run `44386569096`及合并后 main run `44387300930`均通过 Python/API 与合成浏览器检查；本次便携 EXE 步骤按 workflow 触发条件跳过。合并提交为`e11663b932c23f17303aef50941b7ef69ada275e`。
+- 下一步继续处理 `ProjectTasks.jobs` 对终态任务和结果无界保留的问题；真人钢琴盲听、6K–10K/LN定轨试打和两首独立歌曲复听仍缺人工结果，整体音乐验收保持开放。
+
+## 2026-11-19 第五十九阶段：限制终态任务历史
+
+- `ProjectTasks` 默认最多保留最近64条完成、失败或取消的任务记录；提交新任务时才清除最旧的终态记录，不触碰 queued/running 任务。近期结果字段继续可查询，已清除 ID 沿用未知任务的404行为。
+- 新增保留策略回归测试：用2条上限验证旧终态记录和取消入口失效、近期结果仍可读、运行任务在裁剪期间保留，最终记录数不超过上限。
+- 定向`.venv\Scripts\python.exe -m pytest -q tests/test_task_service.py tests/test_server.py`为22 passed；全量设置数值线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,669 passed、90 skipped（65.23秒）；`compileall`和`git diff --check`通过。
+- 下一步提交并由 Windows CI 验证；该工程内存治理不代表音质或玩家体验提升，人工音乐验收仍保持开放。
