@@ -19,7 +19,7 @@
 - PR #117 将 JSON、OSU 与 OSZ 导出处理提取到`export_routes.py`，已合并为`374caf536c269632df2967de641ae792d2fba171`；PR run `44082425764`与合并后main run `44082995836`的Python/API和合成浏览器验证均成功，功能分支push run `44082374845`成功跳过。
 - PR #118 将 Timing 检查与Offset重拟合路由提取到`timing_routes.py`，已合并为`fbd47e6f5d5c7009bda4dd921fc34a7009adeb43`；PR run `44085269448`与合并后main run `44085905987`的Python/API和合成浏览器验证均成功，功能分支push run `44085216977`成功跳过。
 - PR #119–#123 的路由边界整理均已合入`main`；PR #123 run `44098248603`与合并后 main run `44098766111`通过，普通 push run `44098175931`成功跳过。当前基线为`b80dad8`，本次求解器结构阶段从该提交续接。
-- PR #132、#133、#134、#135 已依次合并到`main`；当前结构整理基线为`1007f73`。PR #133 run `44128674193`、进度更新后 run `44129552127`及 main run `44130292999`均通过；PR #134 run `44133239396`、进度更新后 run `44134458472`及 main run `44135099313`均通过。阶段 35 完整 Python/API 为2,527 passed、89 skipped，Edge UI 为31 passed。阶段36 PR run `44137877217`、main run `44138712410`均通过：Python/API为2,531 passed、89 skipped，Edge UI为31 passed。
+- PR #132–#136 已依次合并到`main`；当前结构整理基线为`3f3879f`。PR #133 run `44128674193`、进度更新后 run `44129552127`及 main run `44130292999`均通过；PR #134 run `44133239396`、进度更新后 run `44134458472`及 main run `44135099313`均通过。阶段35完整 Python/API 为2,527 passed、89 skipped，Edge UI为31 passed。阶段36 PR run `44137877217`、main run `44138712410`均通过：Python/API为2,531 passed、89 skipped，Edge UI为31 passed。阶段37最终 PR run `44217665635`与 main run `44218152214`均通过：Python/API为2,533 passed、89 skipped，Edge UI为31 passed。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1870,5 +1870,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`select_notes`和`choose_holds`的选音、密度/和弦限制与LN目标求解迁入`manialab/candidate_selection.py`；`generation.py`直接依赖新模块，候选起音筛选与后续`arrange.py`定轨成为显式分层。
 - `arrange.py`保留原有公开函数签名的兼容包装，并继续让旧`_solve_binary`与`choose_holds`替换点生效；研究脚本与测试无需批量改导入路径。新模块不反向导入`arrange.py`。
-- 选音/LN、容量、来源边界、生成时钟与冻结回放定向测试复验为143 passed（13.43秒）；`compileall`与`git diff --check`通过。PR #136 Windows run `44217101175`通过：Python/API为2,533 passed、89 skipped，Edge UI为31 passed。
+- 选音/LN、容量、来源边界、生成时钟与冻结回放定向测试复验为143 passed（13.43秒）；`compileall`与`git diff --check`通过。PR #136 run `44217101175`和最终提交 run `44217665635`均通过：Python/API为2,533 passed、89 skipped，Edge UI为31 passed；合并提交`3f3879fb91d3072a2e321ede9ae538414f4e2282`的 main run `44218152214`通过。
 - 未运行研究训练、模型、用户音频或参考谱，未访问保留的 MAESTRO 测试，也未修改研究脚本或研究产物。重组代码不代表音乐质量或模型效果提升；osu! 试打仍独立验收。
+
+## 2026-11-18 第三十八阶段：候选边界重构后的冻结回放
+
+- 按原协议、数值线程上限2串行重放默认26例与分段40例，并分别对照既有`frozen-generation-fixed-20261117`和`frozen-generation-sections-fixed-20261117`。计划SHA与协议一致：`0696d759598b57ceaaefe3eb52ca3e78f0d443cee60c0816c4cda2d733fad593`、`bdcc88e9d1e9d56679f9f69b116a16f82a53099318663bf661420d4fef3c5a8b`。
+- 66/66例均通过结构、网格、输出容量及导出回读检查，容量违规为0；与既有fixed基线逐案无音符、证据或轨道差异。自动Timing门槛为9/26和12/40，与此前记录相同。这确认候选模块边界迁移保持确定性行为，不代表Timing、采音或音乐质量提升。
+- 使用`OMP_NUM_THREADS=2`、`MKL_NUM_THREADS=2`、`OPENBLAS_NUM_THREADS=2`运行`replay_frozen_generation.py`。输出分别位于ignored的`test-data/frozen-generation-architecture-20261118/`和`test-data/frozen-generation-sections-architecture-20261118/`，报告SHA为`3da98cd55a8a6aa0002ac0d19f2ac7bda55c47edc77ab32ea71545f22420d2e8`和`ec44562aac67e4db261949bee4b02524f3e9c14d57c4e30d41abfd4ca30b7beb`。默认、分段命令分别使用`plan.json`/`section-plan.json`及各自同名的`fixed-20261117`基线目录。
+- 未读取音频、参考谱或保留的 MAESTRO 测试，未运行模型。结果仍来自已用于开发的10首片段；独立泛化集、多曲来源完整LN/乐句证据、真实声音主次与可闻性以及 osu! 试打尚未完成。
