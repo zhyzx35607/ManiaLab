@@ -11,7 +11,7 @@ import pytest
 from scipy.io import wavfile
 
 from manialab import server
-from manialab import project_routes
+from manialab import project_routes, storage
 from manialab.domain import Note, export_osu, parse_osu
 from manialab.storage import MAX_IMPORT_BYTES, MAX_IMPORT_ENTRIES, extract_osz
 
@@ -27,6 +27,27 @@ def package(entries):
             archive.writestr(name, content)
     data.seek(0)
     return data
+
+
+def test_archive_entry_limit_is_checked_before_zipfile_materializes_entries(
+    tmp_path, monkeypatch
+):
+    uploaded = package([
+        ('first.wav', b'first'),
+        ('second.wav', b'second'),
+        ('third.wav', b'third'),
+    ])
+
+    def unexpected_zipfile(*args, **kwargs):
+        raise AssertionError('ZipFile should not parse an over-limit central directory')
+
+    monkeypatch.setattr(storage.zipfile, 'ZipFile', unexpected_zipfile)
+
+    with pytest.raises(ValueError, match='文件数量'):
+        extract_osz(uploaded, tmp_path, max_entries=2)
+
+    assert uploaded.tell() == 0
+    assert list(tmp_path.iterdir()) == []
 
 
 def wave(seconds=1):

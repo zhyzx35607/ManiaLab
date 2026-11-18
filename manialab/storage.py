@@ -57,11 +57,20 @@ def extract_osz(
     max_uncompressed_bytes=MAX_IMPORT_BYTES,
     max_entries=MAX_IMPORT_ENTRIES,
 ):
+    position = stream.tell()
+    try:
+        # Match ZipFile's EOCD/ZIP64 interpretation before it allocates every ZipInfo.
+        endrec = zipfile._EndRecData(stream)
+    finally:
+        stream.seek(position)
+    if endrec is not None and endrec[zipfile._ECD_ENTRIES_TOTAL] > max_entries:
+        raise ValueError("导入文件数量超过安全上限")
+
     with zipfile.ZipFile(stream) as archive:
         infos = archive.infolist()
-        uncompressed_bytes = sum(info.file_size for info in infos)
         if len(infos) > max_entries:
             raise ValueError("导入文件数量超过安全上限")
+        uncompressed_bytes = sum(info.file_size for info in infos)
         if uncompressed_bytes > max_uncompressed_bytes:
             raise ValueError("导入展开后的总数据量超过 512MB 安全上限")
         # Validate the entire archive before writing even its first member.

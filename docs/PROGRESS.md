@@ -2058,6 +2058,7 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 ## 2026-11-19 第六十阶段：整次导入共享展开预算
 
 - 导入总写入预算与 HTTP 请求体上限共用512 MiB常量；普通音频/`.osu`、所有 `.osz` 成员的展开大小均计入同一预算。ZIP 成员数限制也跨整次导入累计；超额归档在写入前拒绝，既有失败清理会删除本次新项目并保留此前项目。
-- 新增三个合成 multipart 用例，分别覆盖多归档展开字节合计超限、跨归档条目数超限、普通音频加归档超总写入预算。
-- 定向`.venv\Scripts\python.exe -m pytest -q tests/test_import_reliability.py tests/test_core.py`为49 passed；全量设置数值线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,672 passed、90 skipped（65.97秒）；`compileall`和`git diff --check`通过。
-- 下一步提交并由 Windows CI 验证；导入资源上限属于工程健壮性改进，不构成音乐质量验收。真人盲听、6K–10K/LN试打和两首独立歌曲复听继续待完成。
+- 先用 Python 标准库 ZIP 结束目录读取器读取声明条目数，在构造完整 `ZipFile` 中央目录前拒绝超过限制的归档；保留完整解析后的条目数防线，并先检查条目数再遍历大小。
+- 新增合成 multipart 用例，分别覆盖多归档展开字节合计超限、跨归档条目数超限、普通音频加归档超总写入预算；另验证超条目归档在创建完整 `ZipFile` 前被拒绝。
+- 首轮定向`.venv\Scripts\python.exe -m pytest -q tests/test_import_reliability.py tests/test_core.py`为49 passed；加入中央目录预检后同一命令为50 passed。全量设置数值线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,673 passed、90 skipped（65.50秒）；`compileall`和`git diff --check`通过。新增测试确认超条目 ZIP 在构造完整 `ZipFile` 前被拒绝，原始输入游标保持不变。
+- PR #163 已创建，中央目录预检补丁推送后等待最新 Windows CI；导入资源上限属于工程健壮性改进，不构成音乐质量验收。真人盲听、6K–10K/LN试打和两首独立歌曲复听继续待完成。
