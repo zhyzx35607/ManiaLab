@@ -62,6 +62,60 @@ test('saved diagnostics return only for the candidate clock and legacy projects 
   await expect(page.locator('#timingReport')).toContainText('旧候选未记录完整诊断');
 });
 
+test('precision BPM candidate preserves its adjusted clock through confirmation, generation, and reload', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.locator('#recent option')).toContainText(['UI timing precision']);
+  await page.locator('#recent').selectOption({ label: 'UI timing precision' });
+
+  const preciseOption = page.locator('#tempoCandidates option').filter({ hasText: '120.37 BPM' });
+  await expect(preciseOption).toHaveCount(1);
+  await page.locator('#tempoCandidates').selectOption(await preciseOption.getAttribute('value'));
+  await expect(page.locator('#bpm')).toHaveValue('120.37');
+  await expect(page.locator('#audioShift')).toHaveValue('22.5');
+  await expect(page.locator('#offset')).toHaveValue('93');
+  await expect(page.locator('#timingConfirmed')).not.toBeChecked();
+
+  await page.locator('#audioShift').fill('37.5');
+  await page.locator('#audioShift').blur();
+  await expect(page.locator('#offset')).toHaveValue('78');
+  await expect(page.locator('#timingConfirmed')).not.toBeChecked();
+  const pid = await page.locator('#recent').inputValue();
+
+  const rejectedRequest = page.waitForRequest(request =>
+    request.url().endsWith(`/api/projects/${pid}/generate`) && request.method() === 'POST');
+  await page.locator('#generate').click();
+  expect((await rejectedRequest).postDataJSON()).toMatchObject({
+    bpm: 120.37, offset: 78, audio_shift_ms: 37.5, timing_confirmed: false,
+  });
+  await expect(page.locator('#message')).toContainText('当前自动 Timing 不可靠');
+  let saved = await (await page.request.get(`/api/projects/${pid}`)).json();
+  expect(saved.variants).toHaveLength(0);
+
+  await page.locator('#timingConfirmed').check();
+  const acceptedRequest = page.waitForRequest(request =>
+    request.url().endsWith(`/api/projects/${pid}/generate`) && request.method() === 'POST');
+  await page.locator('#generate').click();
+  expect((await acceptedRequest).postDataJSON()).toMatchObject({
+    bpm: 120.37, offset: 78, audio_shift_ms: 37.5, timing_confirmed: true,
+  });
+  await expect(page.locator('#message')).toContainText('结构检查通过');
+  saved = await (await page.request.get(`/api/projects/${pid}`)).json();
+  expect(saved.variants).toHaveLength(1);
+  expect(saved.variants[0]).toMatchObject({
+    bpm: 120.37, offset: 78, audio_shift_ms: 37.5, timing_confirmed: true,
+  });
+
+  await page.reload();
+  await page.locator('#recent').selectOption(pid);
+  await expect(page.locator('#bpm')).toHaveValue('120.37');
+  await expect(page.locator('#offset')).toHaveValue('78');
+  await expect(page.locator('#audioShift')).toHaveValue('37.5');
+  await expect(page.locator('#timingConfirmed')).toBeChecked();
+  expect(errors).toEqual([]);
+});
+
 for (const edit of ['bpm', 'division', 'halfBpm', 'doubleBpm']) {
   test(`${edit} preserves the original offset anchor before changing the lead`, async ({ page }) => {
     await openTiming(page);
