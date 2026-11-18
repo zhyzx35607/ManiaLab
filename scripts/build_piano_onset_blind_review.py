@@ -28,6 +28,7 @@ DEFAULT_OUTPUT = ROOT / "test-data/piano-onset-blind-review-20261118"
 CLIP_BEFORE_MS = 1000
 CLIP_AFTER_MS = 1500
 SAMPLE_RATE = SR
+REVIEW_FIELDS = ("clip_id", "audio_file", "audio_start_ms", "pitch_midi", "audibility", "confidence_1_5", "comment")
 
 
 def sha256(path: Path) -> str:
@@ -122,13 +123,14 @@ def render_review_html(rows: list[dict]) -> str:
         clip_id = html.escape(row["clip_id"], quote=True)
         audio_file = html.escape(row["audio_file"], quote=True)
         target_time = html.escape(row["audio_start_label"])
+        audio_start_ms = html.escape(str(row["audio_start_ms"]), quote=True)
         pitch = html.escape(str(row["pitch"]))
         body_rows.append(
             "<tr>"
-            f"<th scope=\"row\">{clip_id}</th>"
-            f"<td>{target_time}</td>"
-            f"<td>MIDI {pitch}</td>"
-            f"<td><audio controls preload=\"none\" src=\"{audio_file}\"></audio></td>"
+            f"<th scope=\"row\" data-field=\"clip_id\" data-value=\"{clip_id}\">{clip_id}</th>"
+            f"<td data-field=\"audio_start_ms\" data-value=\"{audio_start_ms}\">{target_time}</td>"
+            f"<td data-field=\"pitch_midi\" data-value=\"{pitch}\">MIDI {pitch}</td>"
+            f"<td data-field=\"audio_file\" data-value=\"{audio_file}\"><audio controls preload=\"none\" src=\"{audio_file}\"></audio></td>"
             "<td><select data-field=\"audibility\">"
             "<option value=\"\"></option>"
             "<option value=\"yes\">听到目标音高起音</option>"
@@ -136,11 +138,11 @@ def render_review_html(rows: list[dict]) -> str:
             "<option value=\"no\">没有听到</option>"
             "<option value=\"unclear\">无法判断</option>"
             "</select></td>"
-            "<td><select data-field=\"confidence\">"
+            "<td><select data-field=\"confidence_1_5\">"
             "<option value=\"\"></option>"
             + "".join(f"<option value=\"{score}\">{score}</option>" for score in range(1, 6))
             + "</select></td>"
-            "<td><input data-field=\"comment\" type=\"text\" maxlength=\"500\"></td>"
+            "<td><textarea data-field=\"comment\" rows=\"1\" maxlength=\"500\"></textarea></td>"
             "</tr>"
         )
     return """<!doctype html>
@@ -154,7 +156,7 @@ body{font:15px/1.45 system-ui,sans-serif;margin:24px;color:#202124}
 main{max-width:1200px;margin:auto}table{border-collapse:collapse;width:100%}
 th,td{border-bottom:1px solid #d9dce1;padding:9px;text-align:left;vertical-align:middle}
 thead{position:sticky;top:0;background:#fff}audio{width:260px;max-width:38vw}
-select,input{font:inherit;max-width:100%}input{min-width:140px}
+select,textarea{font:inherit;max-width:100%}textarea{min-width:140px;resize:vertical}
 button{font:inherit;padding:8px 12px;margin:12px 0}
 </style>
 </head>
@@ -169,20 +171,17 @@ button{font:inherit;padding:8px 12px;margin:12px 0}
 </table>
 </main>
 <script>
+const fields=""" + json.dumps(REVIEW_FIELDS) + """;
 const csvCell=value=>'"'+String(value??'').replaceAll('"','""')+'"';
 document.getElementById('export').addEventListener('click',()=>{
-  const rows=[['clip_id','audio_start_ms','pitch_midi','audibility','confidence_1_5','comment']];
+  const rows=[fields];
   for(const tr of document.querySelectorAll('tbody tr')){
-    const cells=tr.querySelectorAll('th,td');
-    rows.push([
-      cells[0].textContent.trim(),cells[1].textContent.trim(),
-      cells[2].textContent.replace('MIDI ','').trim(),
-      tr.querySelector('[data-field="audibility"]').value,
-      tr.querySelector('[data-field="confidence"]').value,
-      tr.querySelector('[data-field="comment"]').value
-    ]);
+    rows.push(fields.map(name=>{
+      const field=tr.querySelector(`[data-field="${name}"]`);
+      return field.dataset.value??field.value;
+    }));
   }
-  const csv='\\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\\r\\n');
+  const csv='\\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\\r\\n')+'\\r\\n';
   const link=document.createElement('a');
   link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
   link.download='blind-review-results.csv';
@@ -309,22 +308,11 @@ def build_package(input_dir: Path, output_dir: Path) -> dict:
         encoding="utf-8",
     )
     with (participant_dir / "review-template.csv").open("w", encoding="utf-8-sig", newline="") as stream:
-        writer = csv.writer(stream)
-        writer.writerow(
-            ("clip_id", "audio_file", "audio_start_ms", "pitch_midi", "audibility", "confidence_1_5", "comment")
-        )
+        writer = csv.DictWriter(stream, fieldnames=REVIEW_FIELDS)
+        writer.writeheader()
         for row in review_rows:
-            writer.writerow(
-                (
-                    row["clip_id"],
-                    row["audio_file"],
-                    row["audio_start_ms"],
-                    row["pitch"],
-                    "",
-                    "",
-                    "",
-                )
-            )
+            writer.writerow(dict(clip_id=row["clip_id"], audio_file=row["audio_file"],
+                                 audio_start_ms=row["audio_start_ms"], pitch_midi=row["pitch"]))
     (participant_dir / "README.txt").write_text(
         "盲听复核\n\n"
         "打开 index.html，在每条片段中判断目标 MIDI 音高是否有清楚的钢琴起音，"

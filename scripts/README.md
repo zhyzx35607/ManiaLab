@@ -33,6 +33,7 @@ Windows Release CI 的正式入口为 `.github/workflows/windows.yml`；完整�
 
 - `check_piano_transcription_chart_ab.py`：复用本地缓存，对比 Kong、Transkun 官方及起音保留候选经过相同表达/选音/定轨后的 6K–10K 谱面；不运行模型、不读取 Reference，输出目录须使用新路径。
 - 受控条件、实际变化和验收限制见 [`docs/piano-transcription-chart-ab-2026-11-18.md`](../docs/piano-transcription-chart-ab-2026-11-18.md)。
+- `build_layout_playtest.py` 从指定谱包的一张谱生成 6K–10K 的同音符定轨盲测包和评分表。用 `--sha256` 指定源包哈希、`--chart` 选择原谱、`--out` 指定新目录。玩家流程见[同音符定轨试打](../docs/layout-playtest.md)。
 
 ## 《樱花草》表达取舍静态审计
 
