@@ -11,8 +11,9 @@ import pytest
 from scipy.io import wavfile
 
 from manialab import server
+from manialab import project_routes
 from manialab.domain import Note, export_osu, parse_osu
-from manialab.storage import extract_osz
+from manialab.storage import MAX_IMPORT_BYTES, MAX_IMPORT_ENTRIES, extract_osz
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -101,6 +102,54 @@ def test_import_rejects_cross_input_collisions_and_keeps_other_projects(api, tmp
     assert response.status_code == 400
     assert [p.name for p in (tmp_path / 'projects').iterdir()] == [previous['id']]
     assert (tmp_path / 'projects' / previous['id'] / 'files/old.wav').read_bytes() == b'previous'
+
+
+@pytest.mark.parametrize(('byte_limit', 'entry_limit', 'files'), [
+    (
+        10,
+        MAX_IMPORT_ENTRIES,
+        [
+            (package([('first.wav', b'123456')]), 'first.osz'),
+            (package([('second.wav', b'abcdef')]), 'second.osz'),
+        ],
+    ),
+    (
+        MAX_IMPORT_BYTES,
+        1,
+        [
+            (package([('first.wav', b'123456')]), 'first.osz'),
+            (package([('second.wav', b'abcdef')]), 'second.osz'),
+        ],
+    ),
+    (
+        10,
+        MAX_IMPORT_ENTRIES,
+        [
+            (io.BytesIO(b'123456'), 'first.wav'),
+            (package([('second.wav', b'abcdef')]), 'second.osz'),
+        ],
+    ),
+])
+def test_import_enforces_total_output_budget_and_cleans_new_project(
+    api, tmp_path, monkeypatch, byte_limit, entry_limit, files
+):
+    client, headers, _ = api
+    previous = client.post(
+        '/api/import',
+        data={'files': (io.BytesIO(b'previous'), 'old.wav')},
+        headers=headers,
+    ).json
+    monkeypatch.setattr(project_routes, 'MAX_IMPORT_BYTES', byte_limit)
+    monkeypatch.setattr(project_routes, 'MAX_IMPORT_ENTRIES', entry_limit)
+
+    response = client.post('/api/import', data={'files': files}, headers=headers)
+
+    assert response.status_code == 400
+    assert '安全上限' in response.json['error']
+    assert [path.name for path in (tmp_path / 'projects').iterdir()] == [previous['id']]
+    assert (
+        tmp_path / 'projects' / previous['id'] / 'files/old.wav'
+    ).read_bytes() == b'previous'
 
 
 def test_import_does_not_parse_osu_named_directories_as_charts(api):

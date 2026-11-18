@@ -10,6 +10,8 @@ import zipfile
 
 AUDIO = {".mp3", ".ogg", ".wav", ".flac", ".m4a", ".opus", ".aac"}
 ASSETS = AUDIO | {".osu", ".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+MAX_IMPORT_BYTES = 512 * 1024 * 1024
+MAX_IMPORT_ENTRIES = 3000
 
 
 def safe_path(root, name):
@@ -48,11 +50,20 @@ def validate_import_paths(root, entries):
     return targets
 
 
-def extract_osz(stream, root):
+def extract_osz(
+    stream,
+    root,
+    *,
+    max_uncompressed_bytes=MAX_IMPORT_BYTES,
+    max_entries=MAX_IMPORT_ENTRIES,
+):
     with zipfile.ZipFile(stream) as archive:
         infos = archive.infolist()
-        if len(infos) > 3000 or sum(i.file_size for i in infos) > 512 * 1024 * 1024:
-            raise ValueError("谱包解压大小超过 512MB 或文件过多")
+        uncompressed_bytes = sum(info.file_size for info in infos)
+        if len(infos) > max_entries:
+            raise ValueError("导入文件数量超过安全上限")
+        if uncompressed_bytes > max_uncompressed_bytes:
+            raise ValueError("导入展开后的总数据量超过 512MB 安全上限")
         # Validate the entire archive before writing even its first member.
         for i in infos:
             if (i.external_attr >> 16) & 0o170000 == 0o120000:
@@ -67,6 +78,7 @@ def extract_osz(stream, root):
             target.parent.mkdir(parents=True, exist_ok=True)
             with archive.open(i) as source, target.open("xb") as destination:
                 shutil.copyfileobj(source, destination)
+    return uncompressed_bytes, len(infos)
 
 
 class Projects:

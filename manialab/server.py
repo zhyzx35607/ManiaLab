@@ -33,7 +33,7 @@ from .project_routes import register_project_routes
 from .arrangement_routes import register_arrangement_routes
 from .timing_routes import register_timing_routes
 from .upstream_routes import register_upstream_routes
-from .storage import Projects, safe_path
+from .storage import MAX_IMPORT_BYTES, Projects, safe_path
 from .task_service import ProjectTasks
 from .upstream import MapperEngine
 
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 def create_app(resources, data_root):
     resources, data_root = Path(resources).resolve(), Path(data_root).resolve()
     app = Flask(__name__, static_folder=str(resources / "static"), static_url_path="/static")
-    app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024
+    app.config["MAX_CONTENT_LENGTH"] = MAX_IMPORT_BYTES
     app.config["TOKEN"] = secrets.token_urlsafe(32)
     projects = Projects(Path(data_root) / "projects")
     task_service = ProjectTasks(projects, logger)
