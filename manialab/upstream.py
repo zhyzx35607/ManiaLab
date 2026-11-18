@@ -74,8 +74,19 @@ class MapperEngine:
         self.python = self.root / "venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
 
     def status(self):
-        return {"installed": (self.root / "ready.json").is_file() and self.python.is_file(),
+        assets = self.resources / "assets"
+        environment_ready = (self.root / "ready.json").is_file() and self.python.is_file()
+        install_available = all((assets / name).is_file() for name in (
+            "mapperatorinator-source.zip",
+            "mapperatorinator-requirements.txt",
+            "download_mapper.py",
+            "run_mapper.py",
+        )) and ((assets / "runtime/uv.exe").is_file() or shutil.which("uv") is not None)
+        generate_available = environment_ready and (assets / "run_mapper.py").is_file()
+        return {"installed": generate_available,
                 "model_downloaded": (self.root / "model/gamemode=3/model.safetensors").is_file(),
+                "install_available": install_available,
+                "generate_available": generate_available,
                 "source_commit": SOURCE_COMMIT, "model_revision": MODEL_REVISION}
 
     @staticmethod

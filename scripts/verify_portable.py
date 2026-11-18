@@ -29,6 +29,7 @@ from scripts.build_provenance import (
     verify_instrument_worker,
     verify_piano_model,
 )
+from scripts.package_assets import capabilities, verify_core_model_files
 
 
 def verify_piano_onnx_runtime(model_path, identity):
@@ -86,6 +87,154 @@ def synthetic(path, seconds=30):
             struct.pack_into('<h',data,i*2,round(value*32767))
     with wave.open(str(path),'wb') as stream:
         stream.setnchannels(1);stream.setsampwidth(2);stream.setframerate(rate);stream.writeframes(data)
+
+
+def verify_manifest_components(manifest, declared, bundle_root, source_root=ROOT):
+    bundle_root = Path(bundle_root)
+    worker = None
+    piano_identity = None
+    if declared["separation_four"] or declared["separation_six"]:
+        worker_path = bundle_root / "_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe"
+        assert manifest["worker_sha256"] == hashlib.sha256(worker_path.read_bytes()).hexdigest()
+        worker = verify_worker(source_root, bundle_root / "_internal/assets/deep")
+        assert manifest["worker_sources"] == worker["worker_sources"]
+        assert manifest["worker_files"] == worker["worker_files"]
+    else:
+        for field in ("worker_sha256", "worker_sources", "worker_files"):
+            assert field in manifest and manifest[field] is None, (
+                f"Core release must declare {field}=null"
+            )
+    if declared["piano"]:
+        piano_identity = verify_piano_model(bundle_root / "_internal")
+        assert manifest.get("piano_model") == piano_identity
+    else:
+        assert "piano_model" in manifest and manifest["piano_model"] is None, (
+            "Unavailable piano_model must be explicitly null"
+        )
+    assert bool(manifest.get("guitar_model")) == declared["guitar"]
+    assert bool(manifest.get("instrument_worker")) == declared["instruments"]
+    if not declared["guitar"]:
+        assert "guitar_model" in manifest and manifest["guitar_model"] is None, (
+            "Unavailable guitar_model must be explicitly null"
+        )
+    elif manifest.get("guitar_model"):
+        from scripts.build_provenance import verify_guitar_model
+        assert verify_guitar_model(bundle_root / "_internal") == manifest["guitar_model"]
+    if not declared["instruments"]:
+        assert "instrument_worker" in manifest and manifest["instrument_worker"] is None, (
+            "Unavailable instrument_worker must be explicitly null"
+        )
+    elif manifest.get("instrument_worker"):
+        assert verify_instrument_worker(
+            source_root, bundle_root / "_internal/assets/instruments"
+        ) == manifest["instrument_worker"]
+    return worker, piano_identity
+
+
+def verify_runtime_capabilities(status, declared):
+    separator = status["separator"]
+    profiles = separator["profiles"]
+    actual = {}
+    for profile, capability in (("four", "separation_four"), ("six", "separation_six")):
+        assert profile in profiles, f"Portable status omitted separator profile {profile}"
+        actual[profile] = bool(profiles[profile]["available"])
+        assert actual[profile] == declared[capability], (
+            f"Manifest declares {capability}={declared[capability]}, "
+            f"but runtime reports {actual[profile]}"
+        )
+    assert bool(separator["available"]) == declared["separation_four"]
+    assert bool(status["piano"]["available"]) == declared["piano"]
+    assert bool(status["guitar"]["available"]) == declared["guitar"]
+    assert bool(status["instruments"]["available"]) == declared["instruments"]
+    assert not status["piano"]["default"]
+    return actual
+
+
+def verify_core_workflow(request, wait, start, stop, work, source, checks):
+    imported = request("/api/import", upload=("files", source.name, source.read_bytes()))
+    base = "/api/projects/" + imported["id"]
+    job = wait(request(base + "/analyze", dict(engine="basic", settings={})))
+    assert job["status"] == "done", job
+    state = request(base)
+    analysis = state["analysis"]
+    assert isinstance(analysis.get("candidates"), list), analysis
+    checks.append(dict(check="basic_analysis", engine=analysis["engine"],
+                       candidates=len(analysis["candidates"]),
+                       seconds=analysis["elapsed_seconds"]))
+
+    last_notes = None
+    for keys in range(6, 11):
+        payload = dict(mode="audio", bpm=120, offset=-22, division=4,
+                       audio_shift_ms=22.5, timing_confirmed=True,
+                       settings={"keys": keys, "ln_ratio": .6})
+        job = wait(request(base + "/generate", payload))
+        assert job["status"] == "done", job
+        generated_state = request(base)
+        parsed = parse_osu(request(base + "/export/osu").decode("utf-8"))
+        report = validate(parsed["notes"], keys)
+        assert report["valid"], report
+        grid = grid_report(parsed["notes"], dict(bpm=120, offset=-22, division=4))
+        assert grid["off_grid"] == 0, grid
+        last_notes = generated_state["variants"][generated_state["active"]]["notes"]
+        checks.append(dict(check="generate_export", keys=keys,
+                           notes=report["notes"], ln=report["ln"], off_grid=0))
+
+    provided = request("/api/import", upload=("files", source.name, source.read_bytes()))
+    provided_base = "/api/projects/" + provided["id"]
+    upload = request(provided_base + "/provided-stems",
+                     upload=("other", "合成其他声轨.wav", source.read_bytes()))
+    job = wait(upload)
+    assert job["status"] == "done", job
+    job = wait(request(provided_base + "/analyze",
+                       dict(engine="provided", settings={})))
+    assert job["status"] == "done", job
+    provided_state = request(provided_base)
+    voice_names = sorted(voice["voice"] for voice in provided_state["analysis"]["voices"])
+    assert voice_names == ["other"], voice_names
+    generated = wait(request(provided_base + "/generate",
+        dict(mode="audio", bpm=120, offset=-22, division=4, audio_shift_ms=22.5,
+             timing_confirmed=True, settings={"keys": 10, "ln_ratio": .6})))
+    assert generated["status"] == "done", generated
+    provided_chart = parse_osu(
+        request(provided_base + "/export/osu").decode("utf-8")
+    )
+    provided_report = validate(provided_chart["notes"], 10)
+    assert provided_report["valid"], provided_report
+    provided_grid = grid_report(
+        provided_chart["notes"], dict(bpm=120, offset=-22, division=4)
+    )
+    assert provided_grid["off_grid"] == 0, provided_grid
+    checks.append(dict(check="provided_stem_analysis_export", voices=voice_names,
+                       candidates=len(provided_state["analysis"]["candidates"]),
+                       notes=provided_report["notes"], ln=provided_report["ln"],
+                       off_grid=0))
+
+    unavailable = {}
+    for engine in ("deep", "deep6"):
+        job = wait(request(base + "/analyze", dict(engine=engine, settings={})), timeout=30)
+        assert job["status"] == "error", job
+        assert "分离组件未就绪" in job["message"], job
+        unavailable[engine] = job["status"]
+    assert request("/api/status")["separator"]["profiles"]["six"]["available"] is False
+    checks.append(dict(check="unavailable_engines", engines=unavailable,
+                       reason="bundled separation assets are not included"))
+
+    stop()
+    start()
+    restored = request(base)
+    restored_notes = restored["variants"][restored["active"]]["notes"]
+    assert restored_notes == last_notes
+    checks.append(dict(check="restart", preserved=True, keys=10,
+                       unicode_audio=source.name))
+
+    bad = request("/api/import", upload=("files", "damaged.wav", b"invalid audio"))
+    bad_base = "/api/projects/" + bad["id"]
+    failure = wait(request(bad_base + "/analyze", dict(engine="basic", settings={})))
+    assert failure["status"] == "error" and failure.get("message"), failure
+    assert not request(bad_base).get("analysis")
+    assert request("/api/status")["version"] == __version__
+    checks.append(dict(check="bad_audio_recovery", analysis=failure["status"],
+                       service_alive=True))
 
 
 def run(executable, work, piano_audio=None, instrument_fixtures=None, instruments_only=False,
@@ -156,42 +305,55 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert release_manifest['executable_sha256']==hashlib.sha256(executable.read_bytes()).hexdigest()
         for name,digest in release_manifest['sources'].items():
             assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, f'Packaged source is stale: {name}'
-        assert release_manifest['worker_sha256']==hashlib.sha256((executable.parent/'_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe').read_bytes()).hexdigest()
-        worker=verify_worker(ROOT,executable.parent/'_internal/assets/deep')
-        assert release_manifest['worker_sources']==worker['worker_sources']
-        assert release_manifest['worker_files']==worker['worker_files']
-        piano_identity=verify_piano_model(executable.parent/'_internal')
-        assert release_manifest.get('piano_model')==piano_identity
-        from scripts.package_assets import capabilities
         declared=capabilities(release_manifest['build_profile'])
         assert release_manifest['capabilities']==declared
-        assert bool(release_manifest.get('guitar_model'))==declared['guitar']
-        assert bool(release_manifest.get('instrument_worker'))==declared['instruments']
-        if release_manifest.get('guitar_model'):
-            from scripts.build_provenance import verify_guitar_model
-            assert verify_guitar_model(executable.parent/'_internal')==release_manifest['guitar_model']
-        if release_manifest.get('instrument_worker'):
-            assert verify_instrument_worker(ROOT,executable.parent/'_internal/assets/instruments')==release_manifest['instrument_worker']
+        worker,piano_identity=verify_manifest_components(
+            release_manifest,declared,executable.parent,ROOT
+        )
+        core_model_identity=verify_core_model_files(
+            executable.parent/'_internal/assets'
+        )
+        assert release_manifest.get('core_models')==core_model_identity, (
+            'Basic Pitch identity does not match the release manifest'
+        )
+        is_core=release_manifest['build_profile']=='core'
         checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),
-            worker_files=len(worker['worker_files']), build_profile=release_manifest['build_profile'],
+            worker_files=0 if worker is None else len(worker['worker_files']),
+            build_profile=release_manifest['build_profile'],
             capabilities=declared, executable_sha256=release_manifest['executable_sha256']))
-        expected_prior=hashlib.sha256((ROOT/'assets/pattern-prior.json').read_bytes()).hexdigest()
-        bundled_prior=hashlib.sha256((executable.parent/'_internal/assets/pattern-prior.json').read_bytes()).hexdigest()
-        assert bundled_prior==expected_prior, 'Packaged layout model differs from the source release'
-        checks.append(dict(check='bundled_model',sha256=bundled_prior))
+        checks.append(dict(check='core_model',**core_model_identity))
+        prior_path=executable.parent/'_internal/assets/pattern-prior.json'
+        if declared['pattern_prior']:
+            expected_prior=hashlib.sha256((ROOT/'assets/pattern-prior.json').read_bytes()).hexdigest()
+            bundled_prior=hashlib.sha256(prior_path.read_bytes()).hexdigest()
+            assert bundled_prior==expected_prior, 'Packaged layout model differs from the source release'
+            checks.append(dict(check='bundled_model',sha256=bundled_prior))
+        else:
+            assert not prior_path.exists(), 'Core profile must exclude the learned layout prior'
         expected_profiles=hashlib.sha256((ROOT/'assets/arrangement-profiles.json').read_bytes()).hexdigest()
         assert hashlib.sha256((executable.parent/'_internal/assets/arrangement-profiles.json').read_bytes()).hexdigest()==expected_profiles
         checks.append(dict(check='bundled_arrangement_profiles',sha256=expected_profiles))
         start();status=request('/api/status')
-        assert bool(status['guitar']['available'])==declared['guitar'],status['guitar']
-        assert bool(status['instruments']['available'])==declared['instruments'],status['instruments']
-        assert status['version']==__version__ and status['separator']['available'],status
-        assert status['piano']['available'] and not status['piano']['default'],status['piano']
-        checks.append(verify_piano_onnx_runtime(
-            executable.parent/'_internal/assets/deep/piano-regression.onnx',
-            piano_identity,
-        ))
-        checks.append(dict(check='startup',version=status['version'],separator=status['separator'],prior=status['pattern_prior']))
+        assert status['version']==__version__,status
+        separator_status=verify_runtime_capabilities(status,declared)
+        assert bool(status['pattern_prior']['available'])==declared['pattern_prior']
+        assert bool(status['engine']['install_available'])==declared['mapperatorinator_install']
+        if declared["piano"]:
+            checks.append(verify_piano_onnx_runtime(
+                executable.parent/'_internal/assets/deep/piano-regression.onnx',
+                piano_identity,
+            ))
+        checks.append(dict(check='startup',version=status['version'],separator=status['separator'],
+                           prior=status['pattern_prior'],engine=status['engine']))
+        if is_core:
+            if instruments_only or guitar_only or piano_audio is not None \
+                    or instrument_fixtures is not None or guitar_probe is not None:
+                raise ValueError("Core portable verification does not accept specialist-engine fixtures")
+            checks.append(dict(check='core_capability_status',separator=separator_status,
+                               piano_available=status['piano']['available']))
+            verify_core_workflow(request,wait,start,stop,work,source,checks)
+            print(json.dumps(dict(passed=True,scope='core',checks=checks),ensure_ascii=True),flush=True)
+            return
         if guitar_only:
             if guitar_probe is None:
                 raise ValueError('--guitar-only requires --guitar-probe')

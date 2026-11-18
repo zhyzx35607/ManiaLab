@@ -19,6 +19,8 @@ from .upstream import fixed_timing_output
 def register_upstream_routes(app, *, engine, projects, submit, current_audio, requested_tempo):
     @app.post("/api/projects/<pid>/engine-install")
     def engine_install(pid):
+        if not engine.status().get("install_available"):
+            raise ValueError("当前便携配置不含原模型安装器")
         def operation(state, progress, cancelled):
             engine.install(progress, cancelled)
             return engine.status()
@@ -27,6 +29,8 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
 
     @app.post("/api/projects/<pid>/engine-generate")
     def engine_generate(pid):
+        if not engine.status().get("generate_available"):
+            raise ValueError("当前便携配置不含原模型运行器；请使用支持该组件的构建")
         payload = request.get_json() or {}
         prefs = parameters(payload.get("settings", {}))
         seconds = payload.get("seconds", 30)

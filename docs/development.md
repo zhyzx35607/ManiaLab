@@ -24,7 +24,7 @@ git diff --check
 
 ## 模型与构建
 
-`scripts/build_windows.py --profile standard` 明确包含通用音高、四／六声部分离、节拍及钢琴组件。`--profile extended` 额外要求通过来源与运行验证的吉他 FL 模型、Tsumugi worker；缺失时构建失败，不默默降级。`scripts/package_assets.py` 按清单暂存资源，排除本地历史模型、额外实验文件及未声明组件。
+`scripts/build_windows.py --profile core` 仅包含许可与来源记录齐全的 Basic Pitch ONNX、应用自身谱面配置及通用分析/制谱代码；不包含内置 Demucs 分离器、节拍模型、钢琴/键型权重、uv 或原模型安装器。Core 包携带 `assets/model-manifest.json`；固定版本、来源 URL 与 Basic Pitch SHA-256 在暂存、EXE 和最终 ZIP 中逐层核对。混音采音、已有谱面重定轨和用户导入声轨仍可使用。`standard` 保留四/六声部分离、节拍、钢琴、键型先验及原模型安装器；`extended` 再要求吉他 FL 模型和 Tsumugi worker。Demucs 权重的单独再分发授权仍未核实，不能把这些本地显式构建配置称为可公开发行。GitHub 便携验证只构建 `core`，并核对最终归档实际文件；公开旧版包不会因此自动更新。`scripts/package_assets.py` 按清单暂存资源，排除本地历史模型、额外实验文件及未声明组件。
 
 包内 `release-manifest.json` 记录 profile、capabilities、模型身份与源码摘要；`开始使用.txt` 从同一能力声明生成。发布验证核对实际组件，不能仅凭文件存在称模型可用。开发时钢琴状态区分 missing、mismatched、verified 与文件读取异常；状态查询缓存至多 30 秒，推理前强制校验。
 

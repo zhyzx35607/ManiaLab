@@ -1,5 +1,6 @@
 import io
 import json
+import os
 from pathlib import Path
 import threading
 import time
@@ -13,6 +14,13 @@ from manialab.planner import plan
 from manialab.storage import Projects
 
 ROOT=Path(__file__).parents[1]
+
+
+def fake_mapper_install(data_root):
+    root=Path(data_root)/'mapperatorinator'
+    python=root/'venv'/('Scripts/python.exe' if os.name=='nt' else 'bin/python')
+    python.parent.mkdir(parents=True,exist_ok=True);python.touch()
+    (root/'ready.json').write_text('{}',encoding='utf-8')
 
 
 @pytest.mark.parametrize(('method', 'path'), [
@@ -43,6 +51,27 @@ def test_failed_import_removes_partial_project(tmp_path):
     assert response.status_code==400
     assert list((tmp_path/'projects').iterdir())==[]
     app.extensions['executor'].shutdown()
+
+
+def test_optional_mapper_routes_reject_profiles_without_installer(tmp_path, monkeypatch):
+    from manialab.upstream import MapperEngine
+    monkeypatch.setattr(MapperEngine, 'status', lambda self: {
+        'installed': False, 'model_downloaded': False,
+        'install_available': False, 'generate_available': False,
+    })
+    app=create_app(ROOT,tmp_path);client=app.test_client()
+    headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    try:
+        state=client.post('/api/import',data={
+            'files':(io.BytesIO(b'not decoded until analysis'),'song.wav')
+        },headers=headers).json
+        base=f"/api/projects/{state['id']}"
+        install=client.post(base+'/engine-install',json={},headers=headers)
+        generate=client.post(base+'/engine-generate',json={},headers=headers)
+        assert install.status_code==400 and '不含原模型安装器' in install.json['error']
+        assert generate.status_code==400 and '不含原模型运行器' in generate.json['error']
+    finally:
+        app.extensions['executor'].shutdown()
 
 
 def test_full_remap_export(tmp_path):
@@ -171,6 +200,7 @@ def test_generation_applies_local_recommendation_expression_to_export(tmp_path):
 def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_path,monkeypatch):
     from manialab.upstream import MapperEngine
     app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    fake_mapper_install(tmp_path)
     projects=Projects(tmp_path/'projects')
     state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
     pid=state['id'];base=f'/api/projects/{pid}'
@@ -217,6 +247,7 @@ def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_p
 def test_original_model_conflicts_are_reported_without_silent_reassignment(tmp_path,monkeypatch):
     from manialab.upstream import MapperEngine
     app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    fake_mapper_install(tmp_path)
     projects=Projects(tmp_path/'projects')
     state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
     pid=state['id'];base=f'/api/projects/{pid}'

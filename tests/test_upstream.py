@@ -58,6 +58,33 @@ def test_confirmed_timing_context_is_passed_but_never_returned_as_generated_char
     assert float(red[0])==93 and abs(float(red[1])-60000/210)<1e-7 and int(red[2])==3
 
 
+def test_mapper_capabilities_follow_packaged_installer_assets(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    resources = tmp_path / 'resources'
+    engine = MapperEngine(tmp_path / 'data', resources)
+    monkeypatch.setattr('manialab.upstream.shutil.which', lambda name: None)
+    status = engine.status()
+    assert not status['install_available'] and not status['generate_available']
+
+    assets = resources / 'assets'
+    for name in ('mapperatorinator-source.zip', 'mapperatorinator-requirements.txt',
+                 'download_mapper.py', 'run_mapper.py'):
+        path = assets / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch()
+    (assets / 'runtime/uv.exe').parent.mkdir(parents=True)
+    (assets / 'runtime/uv.exe').touch()
+    status = engine.status()
+    assert status['install_available'] and not status['generate_available']
+
+    engine.python.parent.mkdir(parents=True)
+    engine.python.touch()
+    (engine.root / 'ready.json').parent.mkdir(parents=True, exist_ok=True)
+    (engine.root / 'ready.json').touch()
+    assert engine.status()['installed'] and engine.status()['generate_available']
+
+
 def test_experimental_adapter_preserves_reference_meter_changes_without_notes(tmp_path,monkeypatch):
     engine=MapperEngine(tmp_path,ROOT)
     monkeypatch.setattr(engine,'status',lambda:dict(installed=True,model_downloaded=True))

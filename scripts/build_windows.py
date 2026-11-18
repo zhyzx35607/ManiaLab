@@ -15,7 +15,10 @@ import urllib.request
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from manialab import __version__
-from package_assets import PROFILES, capabilities, stage_assets, start_guide
+from package_assets import (
+    PROFILES, archive_stem, capabilities, stage_assets, start_guide,
+    verify_core_model_files,
+)
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--profile",choices=sorted(PROFILES),default="standard")
 profile=parser.parse_args().profile
@@ -30,35 +33,43 @@ from build_provenance import (
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
 def source_snapshot():
-    files=[ROOT/'launcher.py',ROOT/'scripts/package_assets.py',ROOT/'scripts/worker_inventory.py',
+    files=[ROOT/'launcher.py',ROOT/'README.md',ROOT/'LICENSE',ROOT/'THIRD_PARTY_NOTICES.md',
+           ROOT/'scripts/package_assets.py',ROOT/'scripts/worker_inventory.py',
            ROOT/'scripts/build_provenance.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
            *sorted(p for p in (ROOT/'static').rglob('*') if p.is_file()),
            ROOT/'assets/pattern-prior.json',ROOT/'assets/arrangement-profiles.json',
-           ROOT/'assets/piano-model.json',ROOT/'assets/guitar-model.json',ROOT/'assets/deep-models.json',ROOT/'manialab/tsumugi-source.json',
+           ROOT/'assets/model-manifest.json',ROOT/'assets/piano-model.json',
+           ROOT/'assets/guitar-model.json',ROOT/'assets/deep-models.json',ROOT/'manialab/tsumugi-source.json',
            *sorted((ROOT/'licenses').glob('HFGuitar-*'))]
     return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
 build_sources=source_snapshot()
-required=['basic-pitch.onnx','pattern-prior.json','arrangement-profiles.json','deep/ManiaLabAudio/ManiaLabAudio.exe','deep/htdemucs_6s.th',
-          'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json',
-          ]
+core_model_identity=verify_core_model_files(ROOT/'assets')
+required=['basic-pitch.onnx','arrangement-profiles.json']
+if enabled['pattern_prior']:
+    required.append('pattern-prior.json')
+if enabled['separation_four']:
+    required += ['deep/ManiaLabAudio/ManiaLabAudio.exe','deep/htdemucs_6s.th',
+                 'deep/hdemucs_high_trained.pt','deep/beat-this-final0.ckpt','deep/manifest.json']
 for relative in required:
     if not (ROOT/'assets'/relative).is_file():raise SystemExit(f'Missing release component: assets/{relative}')
-piano_identity=verify_piano_model(ROOT)
-worker_identity=verify_worker(ROOT,ROOT/'assets/deep')
+piano_identity=verify_piano_model(ROOT) if enabled['piano'] else None
+worker_identity=verify_worker(ROOT,ROOT/'assets/deep') if enabled['separation_four'] else None
 instrument_identity=None
 if enabled['instruments']:
     instrument_identity=verify_instrument_worker(ROOT,ROOT/'assets/instruments')
 guitar_identity=verify_guitar_model(ROOT) if enabled['guitar'] else None
 if enabled['guitar'] and guitar_identity is None:
     raise SystemExit('Extended profile requires the guitar model.')
-for model in json.loads((ROOT/'assets/deep-models.json').read_text(encoding='utf-8'))['models']:
-    with (ROOT/'assets/deep'/model['filename']).open('rb') as stream:
-        if hashlib.file_digest(stream,'sha256').hexdigest()!=model['sha256']:
-            raise SystemExit('Unexpected model checksum: '+model['name'])
+if enabled['separation_four']:
+    for model in json.loads((ROOT/'assets/deep-models.json').read_text(encoding='utf-8'))['models']:
+        with (ROOT/'assets/deep'/model['filename']).open('rb') as stream:
+            if hashlib.file_digest(stream,'sha256').hexdigest()!=model['sha256']:
+                raise SystemExit('Unexpected model checksum: '+model['name'])
 uv=shutil.which('uv')
-if not uv:raise SystemExit('Install uv first to bundle the optional engine installer.')
-(ROOT/'assets/runtime').mkdir(exist_ok=True)
-shutil.copy2(uv,ROOT/'assets/runtime/uv.exe')
+if enabled['mapperatorinator_install']:
+    if not uv:raise SystemExit('Install uv first to bundle the optional engine installer.')
+    (ROOT/'assets/runtime').mkdir(exist_ok=True)
+    shutil.copy2(uv,ROOT/'assets/runtime/uv.exe')
 lic=ROOT/'licenses/runtime';lic.mkdir(parents=True,exist_ok=True)
 inventory=[]
 for dist in metadata.distributions():
@@ -74,9 +85,10 @@ for dist in metadata.distributions():
 for name in ['LICENSE.txt','LICENSE']:
     source=Path(sys.base_prefix)/name
     if source.exists():shutil.copy2(source,lic/'Python-LICENSE.txt');break
-for suffix in ['MIT','APACHE']:
-    target=ROOT/f'licenses/uv-{suffix}.txt'
-    if not target.exists():target.write_bytes(urllib.request.urlopen(f'https://raw.githubusercontent.com/astral-sh/uv/0.12.1/LICENSE-{suffix}').read())
+if enabled['mapperatorinator_install']:
+    for suffix in ['MIT','APACHE']:
+        target=ROOT/f'licenses/uv-{suffix}.txt'
+        if not target.exists():target.write_bytes(urllib.request.urlopen(f'https://raw.githubusercontent.com/astral-sh/uv/0.12.1/LICENSE-{suffix}').read())
 gpl=ROOT/'licenses/FFmpeg-GPLv3.txt'
 if not gpl.exists():gpl.write_bytes(urllib.request.urlopen('https://raw.githubusercontent.com/FFmpeg/FFmpeg/master/COPYING.GPLv3').read())
 import imageio_ffmpeg
@@ -112,20 +124,25 @@ subprocess.run(args,check=True)
 target=distpath/'ManiaLab'
 if source_snapshot()!=build_sources:
     raise SystemExit('Application sources changed during the build; rebuild before publishing.')
-bundled_worker=verify_worker(ROOT,target/'_internal/assets/deep')
+bundled_worker=verify_worker(ROOT,target/'_internal/assets/deep') if enabled['separation_four'] else None
 if bundled_worker!=worker_identity:
     raise SystemExit('Audio worker changed during the build; rebuild before publishing.')
-bundled_piano_identity=verify_piano_model(target/'_internal')
+bundled_core_model_identity=verify_core_model_files(target/'_internal/assets')
+if bundled_core_model_identity!=core_model_identity:
+    raise SystemExit('Basic Pitch model identity changed during the build; rebuild before publishing.')
+bundled_piano_identity=verify_piano_model(target/'_internal') if enabled['piano'] else None
 if bundled_piano_identity!=piano_identity:
     raise SystemExit('Piano model identity changed during the build; rebuild before publishing.')
 if instrument_identity and verify_instrument_worker(ROOT,target/'_internal/assets/instruments')!=instrument_identity:
     raise SystemExit('Instrument worker changed during the build; rebuild before publishing.')
-if verify_guitar_model(target/'_internal')!=guitar_identity:
+if enabled['guitar'] and verify_guitar_model(target/'_internal')!=guitar_identity:
     raise SystemExit('Guitar model or attribution changed during the build; rebuild before publishing.')
 release_manifest=dict(version=__version__,sources=build_sources,build_profile=profile,capabilities=enabled,
     executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
-    worker_sha256=bundled_worker['worker_sha256'],worker_sources=bundled_worker['worker_sources'],
-    worker_files=bundled_worker['worker_files'],
+    core_models=bundled_core_model_identity,
+    worker_sha256=bundled_worker.get('worker_sha256') if bundled_worker else None,
+    worker_sources=bundled_worker.get('worker_sources') if bundled_worker else None,
+    worker_files=bundled_worker.get('worker_files') if bundled_worker else None,
     piano_model=piano_identity,guitar_model=guitar_identity,instrument_worker=instrument_identity)
 (target/'release-manifest.json').write_text(json.dumps(release_manifest,indent=2),encoding='utf-8')
 for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
@@ -133,7 +150,7 @@ for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
 shutil.copytree(ROOT/'licenses',target/'licenses',dirs_exist_ok=True)
 shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
 (target/'开始使用.txt').write_text(start_guide(__version__,enabled),encoding='utf-8-sig')
-name=f'ManiaLab-{__version__}-windows-x64'
+name=archive_stem(__version__,profile)
 archive=Path(shutil.make_archive(str(package_path/name),'zip',distpath,'ManiaLab'))
 with archive.open('rb') as stream:
     digest=hashlib.file_digest(stream,'sha256').hexdigest()
