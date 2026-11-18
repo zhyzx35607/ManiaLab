@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 最新状态（2026-11-19）：PR #161 已合并到`main`（`e11663b932c23f17303aef50941b7ef69ada275e`），PR run `44386569096`与 main run `44387300930`成功。公开 Release 仍为 dev.18。第五十九阶段本地回归为2,669 passed、90 skipped；当前代码待 PR/Windows CI 验证。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
+- 最新状态（2026-11-19）：PR #162 任务历史限额已合并为`ae0ee05e51e4046c27c3e4f3163dacf8917e803a`，PR run `44388833902`与 main run `44389967517`成功。公开 Release 仍为 dev.18。第六十阶段本地全量回归为2,672 passed、90 skipped；导入总预算改动待 PR/Windows CI 验证。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
 
 - 2026-11-19 当前续接：从 PR #157 合并提交 `19132940` 开始，公开 Release 仍为 dev.18，近889MB standard 构建仅为 Actions artifact。本阶段经 PR #158 合并为 `6200891e`；PR Windows run `44366735851`及合并后 main run `44368922837`的 Core 构建、实际 EXE、shutdown、Python/API 与 Edge UI 检查均通过。没有创建新 Release。人工钢琴盲听、同音符 6K–10K 定轨试打、两首独立歌曲听审仍为空，长期音乐质量目标保持未结项。
 - 2026-11-18 续接核验：PR #151 已合并为 `fc20c92`，Windows PR run `44320958903` 和 main run `44322594836` 均成功。第 49 阶段修复编辑后导出的段落书签，复现与验证见文末。音乐验收还需要玩家盲听、试打及独立歌曲证据。
@@ -2053,4 +2053,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - `ProjectTasks` 默认最多保留最近64条完成、失败或取消的任务记录；提交新任务时才清除最旧的终态记录，不触碰 queued/running 任务。近期结果字段继续可查询，已清除 ID 沿用未知任务的404行为。
 - 新增保留策略回归测试：用2条上限验证旧终态记录和取消入口失效、近期结果仍可读、运行任务在裁剪期间保留，最终记录数不超过上限。
 - 定向`.venv\Scripts\python.exe -m pytest -q tests/test_task_service.py tests/test_server.py`为22 passed；全量设置数值线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,669 passed、90 skipped（65.23秒）；`compileall`和`git diff --check`通过。
-- 下一步提交并由 Windows CI 验证；该工程内存治理不代表音质或玩家体验提升，人工音乐验收仍保持开放。
+- PR #162 Windows run `44388833902`及合并后 main run `44389967517`均通过 Python/API 与合成浏览器检查；便携 EXE 步骤按 workflow 触发条件跳过。合并提交为`ae0ee05e51e4046c27c3e4f3163dacf8917e803a`。该工程内存治理不代表音质或玩家体验提升。
+
+## 2026-11-19 第六十阶段：整次导入共享展开预算
+
+- 导入总写入预算与 HTTP 请求体上限共用512 MiB常量；普通音频/`.osu`、所有 `.osz` 成员的展开大小均计入同一预算。ZIP 成员数限制也跨整次导入累计；超额归档在写入前拒绝，既有失败清理会删除本次新项目并保留此前项目。
+- 先用 Python 标准库 ZIP 结束目录读取器读取声明条目数，在构造完整 `ZipFile` 中央目录前拒绝超过限制的归档；保留完整解析后的条目数防线，并先检查条目数再遍历大小。
+- 新增合成 multipart 用例，分别覆盖多归档展开字节合计超限、跨归档条目数超限、普通音频加归档超总写入预算；另验证超条目归档在创建完整 `ZipFile` 前被拒绝。
+- 首轮定向`.venv\Scripts\python.exe -m pytest -q tests/test_import_reliability.py tests/test_core.py`为49 passed；加入中央目录预检后同一命令为50 passed。全量设置数值线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,673 passed、90 skipped（65.50秒）；`compileall`和`git diff --check`通过。新增测试确认超条目 ZIP 在构造完整 `ZipFile` 前被拒绝，原始输入游标保持不变。
+- PR #163 已创建，中央目录预检补丁推送后等待最新 Windows CI；导入资源上限属于工程健壮性改进，不构成音乐质量验收。真人盲听、6K–10K/LN试打和两首独立歌曲复听继续待完成。

@@ -8,7 +8,14 @@ from .arrange_config import DEFAULTS
 from .chart_workspace import select_chart
 from .domain import parse_osu
 from .meter import project_with_meter
-from .storage import AUDIO, extract_osz, safe_path, validate_import_paths
+from .storage import (
+    AUDIO,
+    MAX_IMPORT_BYTES,
+    MAX_IMPORT_ENTRIES,
+    extract_osz,
+    safe_path,
+    validate_import_paths,
+)
 
 
 def register_project_routes(app, projects, task_service, *, parameters, describe_chart):
@@ -16,19 +23,41 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
         files = request.files.getlist("files")
         if not files:
             raise ValueError("请选择音频、.osu 或 .osz 文件")
+        if len(files) > MAX_IMPORT_ENTRIES:
+            raise ValueError("导入文件数量超过安全上限")
         pid, path = projects.create()
         try:
             state = dict(id=pid, title="Untitled", artist="Unknown", mode="audio", settings=DEFAULTS.copy(),
                          variants=[], active=-1, charts=[], audio=None, original=None, input_notes=[])
+            imported_bytes = 0
+            imported_entries = 0
             for file in files:
                 name = Path(file.filename.replace("\\", "/")).name
                 suffix = Path(name).suffix.lower()
                 if suffix == ".osz":
-                    extract_osz(file.stream, path / "files")
+                    added_bytes, added_entries = extract_osz(
+                        file.stream,
+                        path / "files",
+                        max_uncompressed_bytes=MAX_IMPORT_BYTES - imported_bytes,
+                        max_entries=MAX_IMPORT_ENTRIES - imported_entries,
+                    )
+                    imported_bytes += added_bytes
+                    imported_entries += added_entries
                 elif suffix in AUDIO | {".osu"}:
+                    position = file.stream.tell()
+                    file.stream.seek(0, 2)
+                    added_bytes = file.stream.tell()
+                    file.stream.seek(position)
+                    if imported_bytes + added_bytes > MAX_IMPORT_BYTES:
+                        raise ValueError("导入展开后的总数据量超过 512MB 安全上限")
+                    if imported_entries >= MAX_IMPORT_ENTRIES:
+                        raise ValueError("导入文件数量超过安全上限")
                     target, = validate_import_paths(path / "files", [(name, False)])
+                    file.stream.seek(0)
                     with target.open("xb") as destination:
                         file.save(destination)
+                    imported_bytes += added_bytes
+                    imported_entries += 1
                 else:
                     raise ValueError("支持 MP3/WAV/FLAC/OGG/M4A/OPUS、.osu 和 .osz")
             candidates = list((path / "files").rglob("*"))
