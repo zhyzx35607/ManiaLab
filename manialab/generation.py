@@ -14,6 +14,7 @@ from .timing import align_candidates, chart_clock_notes, grid_report, analysis_t
 from .voices import apply_phrase_evidence
 from .review import review_chart
 from .ln_patterns import analyze_ln_patterns
+from .meter import meter_for_clock
 from .preferences import ChartPreferences
 from .evidence import capture_source_evidence
 from .selection_report import regional_selection_report
@@ -75,6 +76,7 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
             raise ValueError("未找到可生成的采音候选，请检查声部权重、检测阈值或音源")
     locked = []
     previous_evidence = None
+    previous_meter = None
     locked_edits = []
     region = payload.get("region")
     if region is not None:
@@ -92,6 +94,7 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
         previous = [note_from(n) for n in variant["notes"]]
         locked = [n for n in previous if not a <= n.start < b]
         if mode == 'audio':
+            previous_meter = variant.get("meter", 4)
             validate_phrase_scope(state['analysis'], candidates, selection, region, tempo, locked)
         previous_evidence = variant.get('source_evidence')
         locked_ids = {n.id for n in locked}
@@ -128,6 +131,8 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
                    elapsed_seconds=round(time.perf_counter() - started, 2), created=time.time(), region=region,
                    event_count=len(upstream_events(output)))
     if mode == 'audio':
+        variant["meter"] = previous_meter if region is not None else (
+            tempo["meter"] if "meter" in tempo else meter_for_clock(state["analysis"], tempo))
         variant['source_evidence'] = capture_source_evidence(state['analysis'], evidence, output,
             locked=locked, previous=previous_evidence)
     if locked_edits:

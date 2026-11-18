@@ -154,8 +154,15 @@ def clean_meta(value):
     return re.sub(r"[\r\n\x00]", " ", str(value))[:200]
 
 
+def fixed_red_line(bpm, offset, meter=4):
+    if type(meter) is not int or not 0 < meter < 2**53:
+        raise ValueError("红线每小节拍数无效")
+    return f"{float(offset):.3f},{60000 / float(bpm):.8f},{meter},2,0,70,1,0"
+
+
 def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unknown", audio="audio.ogg",
-               bpm=120.0, offset=0.0, original=None, version="ManiaLab", creator="ManiaLab", grid_division=None, bookmarks=()):
+               bpm=120.0, offset=0.0, original=None, version="ManiaLab", creator="ManiaLab", grid_division=None,
+               bookmarks=(), meter=4):
     report = validate(notes, keys)
     if not report["valid"]:
         raise ValueError("谱面未通过结构校验：" + report["issues"][0])
@@ -185,7 +192,7 @@ def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unkno
         creator=clean_meta(creator), version=f"{version} {keys}K", source="", tags="ManiaLab generated",
         hp_drain_rate=5, circle_size=keys, overall_difficulty=7, approach_rate=5,
         slider_multiplier=1.4, slider_tick_rate=1, background_line="",
-        timing_points=f"{float(offset):.3f},{60000 / float(bpm):.8f},4,2,0,70,1,0", hit_objects="\n".join(lines))
+        timing_points=fixed_red_line(bpm, offset, meter), hit_objects="\n".join(lines))
     content = Template(template_path.read_text(encoding="utf-8")).substitute(substitutions)
     # New charts must not inherit the template's placeholder bookmark, including
     # songs with no internal section boundaries. Imported charts return above.

@@ -56,6 +56,14 @@ def precise_timing_fixture(projects):
     return pid
 
 
+def audio_meter_fixture(projects):
+    pid = timing_fixture(projects, 'UI audio meter')
+    state = projects.load(pid)
+    beats = [115 + i * 500 for i in range(24)]
+    state['analysis']['separation'] = dict(profile='four', beat_evidence=dict(beats_ms=beats, downbeats_ms=beats[::3]))
+    projects.save(state)
+
+
 def ln_remap_fixture(projects):
     pid = timing_fixture(projects, 'UI LN navigation remap')
     state = projects.load(pid)
@@ -193,6 +201,7 @@ def main():
         timing_fixture(projects, 'UI timing saved')
         timing_fixture(projects, 'UI timing style')
         precise_timing_fixture(projects)
+        audio_meter_fixture(projects)
         timing_fixture(projects, 'UI LN navigation audio')
         ln_remap_fixture(projects)
         for title in ('UI evidence review', 'UI evidence edits', 'UI evidence snapshots',

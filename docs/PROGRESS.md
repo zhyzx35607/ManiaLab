@@ -1993,3 +1993,18 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 在同一新目录先后运行 `scripts/verify_independent_audio.py prepare test-data/independent-audio-20261118` 与 `scripts/verify_independent_audio.py verify test-data/independent-audio-20261118`。公式、输入和判据先于推理记录在 `protocol.json`（SHA-256 `5656b2215a86d813400e2234b8a07b2799f667e79d318cffb6ca7ff90e4d7bfd`）。上游 HQ OGG、原始署名与转换后的各 24 秒 WAV 均保留在该 ignored 目录。
 - Setuniman《Sweet Waltz》和 Admiral Bob feat. Snowflake《Choice》的鼓贝斯选轨分别在 31.36 和 20.32 秒完成四声部实算，自动接受 150/68 BPM。各键数分别为 120 个物件/90 条 LN、100 个物件/18 条 LN。共 10 份 OSZ 保留预期音频，1,640 个起点和放键端点全部落线，回读键位与端点一致。总报告 SHA-256 `84a6ac045372df545dda0817df67461ab3fecd9d90f435799670effcb0c264b9`。
 - 《Sweet Waltz》的模型下拍呈三拍周期，首次音频模式导出固定为四拍；《Choice》10K 有 8 个物件归为 `other`，含 1 条 LN。[验收记录](acceptance-20261118.md)给出来源和复听位置。两段均已备好试听与 6K–10K 谱包。当前未收集真人评分。
+- PR #154 合并后 `main` run `44331863473` 成功。PR #155 Windows run `44332141244` 通过，合并提交 `29880324` 的 `main` run `44333019827` 通过。
+
+## 2026-11-18 第五十三阶段：把有证据的小节强拍带到试听与导出
+
+- 音频模式在稳定时钟上核对整段拍点、下拍覆盖和红线相位。至少有三个完整且一致的小节，才采用检测到的每小节拍数。草稿时钟、候选快照、手工编辑、局部重写、两种导出、实时节拍器、试听 WAV 与 Mapperatorinator 的固定红线上下文共用此规则。旧候选沿用四拍，原谱重定轨采用原谱的变速与拍号。
+- 复用第五十二阶段《Sweet Waltz》的分析，在独立项目重新生成 6K–10K。五份 `.osu` 各只有红线的一个字节从 `4` 变为 `3`。五份合计 600 个物件、450 条 LN、1,050 个端点，原音频逐字节相同。对导出时钟和偏移 100ms 的对照分别渲染八秒 WAV，独立解码逐拍核对每份的 20 次点击。回放脚本为本地 `test-data/check-cached-waltz-meter-20261118.py`，输出在 `test-data/cached-waltz-meter-20261118/`，报告 SHA-256 为 `b02bd5a41850b3529805f06640e6919fd5b9e4c7cad36bd604b105dd686e5fb7`。
+- 定向 Python 97 项和 Edge 13 项通过。设置 `OMP_NUM_THREADS=2`、`MKL_NUM_THREADS=2`、`OPENBLAS_NUM_THREADS=2` 后运行 `.venv/Scripts/python.exe -m pytest -q` 为 2,620 passed、89 skipped（104.35 秒）。`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8984 npm run test:ui` 为 36 passed。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests` 与 `git diff --check` 通过。
+- 下一步用 osu! 官方解码器独立读回谱面，并验证 Windows 便携可执行文件。采音、声部分段和 6K–10K 手感的真人评分入口见[验收记录](acceptance-20261118.md)。
+
+## 2026-11-19 第五十四阶段：官方 Mania ruleset 独立读回谱包
+
+- 新增 `scripts/verify_official_decoder/`：固定 `ppy.osu.Game.Rulesets.Mania` NuGet `2026.1026.0`（对应上游 commit `b94ee4d835d65683d027ae8f47a3e61fa4899ad4`），使用官方 `LegacyBeatmapDecoder` 和 Mania converter 解析 `.osz`；独立比较器核对规则、键数、物件类型/列/起止、原声引用、红线拍号及滚速变化。
+- 官方解码实际读取 17 个 `.osz` 中的 26 张难度：17,824 个物件、5,602 条 LN、23,426 个起放端点、27 条红线与 3 次滚速变化均与 ManiaLab 读取器一致。定轨 A/B 的 5 对音符起止与原声一致而轨道不同；《Sweet Waltz》5 对新旧谱物件一致、拍号分别为三拍和四拍。合成控制还覆盖拍号、速度变化与负向输入拒绝。官方报告 SHA-256 `4204c7c75cea95294fe3df5ab822cd46c26017f811f6a2a21e767afde6df793d`；对照摘要 SHA-256 `a060c8026e303f27a15a0adfe8fd5023ecc2443714074cc4656ec8ff69df080d`。本地完整谱包/报告/SDK 均在忽略的 `test-data/official-decoder-20261118/`，不提交。
+- 新增比较器负向测试，分别篡改键数、列摘要、起放端点摘要、红线拍号、滚速及音频引用并确认拒绝；另覆盖偏移校正的正负半毫秒舍入边界。`tests/test_audio_meter.py tests/test_official_decoder_compare.py tests/test_upstream.py` 为 42 passed。最终全量 `.venv/Scripts/python.exe -m pytest -q` 为 2,629 passed、89 skipped（69.25 秒）；`compileall`、JS 语法检查与 `git diff --check` 通过。复用同一 17 包输入进行第二次官方解码，26 张谱的所有汇总关系再次一致；复跑小结位于 ignored 的 `test-data/official-decoder-20261118/validation/replay-20261119/summary.json`，SHA-256 `422c4daf668a178148ee69927bdfd617bb59f10b83a8ab29fc1bf3f9885d21ee`。
+- 固定依赖版本及复现步骤见 [官方解码对照](../scripts/verify_official_decoder/README.md)。此项验证导出兼容性，不代表音乐采音、声部清晰度或玩家体验已验收。下一步合并源码后手动运行 Windows 便携 workflow，验证实构建 EXE；盲听与 6–10K/LN 玩家评分仍待收集。

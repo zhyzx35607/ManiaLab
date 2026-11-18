@@ -54,7 +54,7 @@ def beat_evidence(source, model_path, seconds=0):
         beats_ms=np.round(beats * 1000).astype(int).tolist(),
         downbeats_ms=np.round(downbeats * 1000).astype(int).tolist(),
         elapsed_seconds=round(time.perf_counter() - started, 2),
-        purpose="beat-unit selection only; onset audio establishes the offset")
+        purpose="beat-unit selection and fixed-clock bar accents; onset audio establishes the offset")
 
 
 def separate(source, output, model_path, seconds=0, threads=2, beat_model=None):

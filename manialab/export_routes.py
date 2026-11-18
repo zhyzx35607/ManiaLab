@@ -38,7 +38,7 @@ def register_export_routes(app, projects, resources, current_audio):
             folder = Path(state["original"]).parent
         content = export_osu(notes, variant["settings"]["keys"], resources / "vendor" / "mapperatorinator" / "template.osu",
                              title=state["title"], artist=state["artist"], audio=state.get("audio") or "audio.ogg",
-                             bpm=variant["bpm"], offset=variant["offset"], original=original,
+                             bpm=variant["bpm"], offset=variant["offset"], original=original, meter=variant.get("meter", 4),
                              grid_division=variant["division"] if variant["mode"] == "audio" else None,
                              version=f'ManiaLab {variant["settings"]["seed"]}',
                              bookmarks=[max(0, round(t-variant.get('audio_shift_ms', 0))) for t in
