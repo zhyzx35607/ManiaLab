@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 最新状态（2026-11-19）：PR #164 任务取消与进程关停已合并为`6d779209561b6b767b5f6886d75e9713bf371227`；PR Windows run `44403326416`及合并后 main run `44405337764`成功，Python/API均为2,682 passed、89 skipped，Edge UI均为36 passed；便携构建按触发条件跳过。PR #165 补录验证结果并合并为`265414e7f59d5875079b86e040ae4cfd6a457a8b`，PR run `44406379629`通过；合并后 main run `44407019369`截至本次记录仍停在 pytest 步骤运行中，不记作成功。第六十二阶段结构频谱分块本地全量回归为2,682 passed、90 skipped，Edge UI为36 passed；该阶段 PR/CI待执行。公开 Release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
+- 最新状态（2026-11-19）：PR #164 任务取消与进程关停已合并为`6d779209561b6b767b5f6886d75e9713bf371227`；PR Windows run `44403326416`及合并后 main run `44405337764`成功，Python/API均为2,682 passed、89 skipped，Edge UI均为36 passed；便携构建按触发条件跳过。PR #165 补录验证结果并合并为`265414e7f59d5875079b86e040ae4cfd6a457a8b`，PR run `44406379629`通过；合并后 main run `44407019369`截至本次记录仍停在 pytest 步骤运行中，不记作成功。PR #166 的 Windows run `44410686981`通过，Python/API为2,683 passed、89 skipped，Edge UI为36 passed；等待进度文档更新复验与合并。第六十二阶段本地全量回归为2,682 passed、90 skipped。公开 Release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
 
 - 2026-11-19 当前续接：从 PR #157 合并提交 `19132940` 开始，公开 Release 仍为 dev.18，近889MB standard 构建仅为 Actions artifact。本阶段经 PR #158 合并为 `6200891e`；PR Windows run `44366735851`及合并后 main run `44368922837`的 Core 构建、实际 EXE、shutdown、Python/API 与 Edge UI 检查均通过。没有创建新 Release。人工钢琴盲听、同音符 6K–10K 定轨试打、两首独立歌曲听审仍为空，长期音乐质量目标保持未结项。
 - 2026-11-18 续接核验：PR #151 已合并为 `fc20c92`，Windows PR run `44320958903` 和 main run `44322594836` 均成功。第 49 阶段修复编辑后导出的段落书签，复现与验证见文末。音乐验收还需要玩家盲听、试打及独立歌曲证据。
@@ -2079,4 +2079,5 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 新增与原整曲 SciPy STFT 参考公式的合成数值等价测试（强制11帧分块），并验证检测在首个频谱块后响应取消。定向`tests/test_structure_expression.py`为34 passed。
 - 合成180秒单声道`float32`输入的`tracemalloc`峰值比较：原整曲参考为90.85 MiB，分块实现为12.16 MiB，约7.5倍降低；这是合成内存基准，不代表真实音乐质量或所有机器上的绝对峰值。
 - 设置 OpenMP / OpenBLAS / MKL 线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,682 passed、90 skipped（66.01秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9004 npm run test:ui`为36 passed（1.4分钟）。`.venv\Scripts\python.exe -m compileall -q manialab tests`与`git diff --check`通过。
-- 本阶段仅改变结构特征的内存占用和取消粒度，需以旧实现数值对照守住输出；没有运行模型、研究或音乐质量实验，也未读取 ignored 音频、评分、解盲表或模型产物。PR/Windows CI待执行；人工听审及玩家试打仍未完成，公开 Release 仍为 dev.18。
+- PR #166 Windows run `44410686981`通过，Python/API为2,683 passed、89 skipped，Edge UI为36 passed；便携构建按触发条件跳过。等待文档同步复验和合并后 main run。
+- 本阶段仅改变结构特征的内存占用和取消粒度，需以旧实现数值对照守住输出；没有运行模型、研究或音乐质量实验，也未读取 ignored 音频、评分、解盲表或模型产物。人工听审及玩家试打仍未完成，公开 Release 仍为 dev.18。
