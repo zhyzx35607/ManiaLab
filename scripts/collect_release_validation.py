@@ -13,6 +13,9 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from manialab import __version__
+from scripts.package_assets import (
+    archive_stem, capabilities, verify_core_model_payload, verify_core_payload,
+)
 
 
 def sha256(path):
@@ -25,12 +28,22 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
     package_dir = build_root / "release"
     executable = build_root / "dist" / "ManiaLab" / "ManiaLab.exe"
     manifest_path = executable.parent / "release-manifest.json"
-    archive_path = package_dir / f"ManiaLab-{__version__}-windows-x64.zip"
-    output = package_dir / f"ManiaLab-{__version__}-validation.json"
-    checksums = package_dir / f"ManiaLab-{__version__}-windows-x64-SHA256SUMS.txt"
-    if not all(path.is_file() for path in (executable, manifest_path, archive_path)):
-        raise SystemExit("Portable executable, manifest, or ZIP is missing.")
+    if not all(path.is_file() for path in (executable, manifest_path)):
+        raise SystemExit("Portable executable or manifest is missing.")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    profile = manifest.get("build_profile")
+    try:
+        declared_capabilities = capabilities(profile)
+    except (TypeError, ValueError) as exc:
+        raise SystemExit(f"Portable manifest has an unknown build profile: {profile!r}") from exc
+    if manifest.get("capabilities") != declared_capabilities:
+        raise SystemExit("Portable capabilities do not match the declared build profile.")
+    stem = archive_stem(__version__, profile)
+    archive_path = package_dir / f"{stem}.zip"
+    output = package_dir / f"{stem}-validation.json"
+    checksums = package_dir / f"{stem}-SHA256SUMS.txt"
+    if not archive_path.is_file():
+        raise SystemExit("Portable ZIP is missing.")
     executable_sha = sha256(executable)
     if manifest.get("version") != __version__ or manifest.get("executable_sha256") != executable_sha:
         raise SystemExit("Portable executable identity does not match the release manifest.")
@@ -60,6 +73,21 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
             raise SystemExit("Release ZIP executable does not match the verified build.")
         if json.loads(archive.read("ManiaLab/release-manifest.json")) != manifest:
             raise SystemExit("Release ZIP manifest does not match the verified build.")
+        if profile == "core":
+            try:
+                verify_core_payload(names)
+            except ValueError as exc:
+                raise SystemExit(f"Core distribution contains an invalid payload: {exc}") from exc
+        try:
+            model_manifest = json.loads(
+                archive.read("ManiaLab/_internal/assets/model-manifest.json")
+            )
+            with archive.open("ManiaLab/_internal/assets/basic-pitch.onnx") as stream:
+                core_models = verify_core_model_payload(model_manifest, stream)
+        except (ValueError, KeyError) as exc:
+            raise SystemExit(f"Release ZIP is missing valid core model provenance: {exc}") from exc
+        if manifest.get("core_models") != core_models:
+            raise SystemExit("Core model identity does not match the release manifest.")
 
     suites = ET.parse(pytest_report).getroot()
     suite_nodes = [suites] if suites.tag == "testsuite" else list(suites.findall("testsuite"))
@@ -71,34 +99,58 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
         raise SystemExit(f"Pytest report is not clean: {totals}")
 
     portable = json.loads(Path(portable_report).read_text(encoding="utf-8"))
-    required_checks = {
-        "release_manifest",
-        "piano_onnx_runtime",
-        "deep_analysis",
-        "six_stem_analysis_export",
-        "cancel_and_failure",
-    }
+    required_checks = {"release_manifest", "startup", "restart"}
+    if profile == "core":
+        required_checks.update({"basic_analysis", "provided_stem_analysis_export", "bad_audio_recovery"})
+    else:
+        required_checks.update({
+            "piano_onnx_runtime",
+            "deep_analysis",
+            "six_stem_analysis_export",
+            "cancel_and_failure",
+        })
     if not isinstance(portable, list):
         raise SystemExit("Portable verification report has an unexpected format.")
     portable_checks = [item.get("check") for item in portable if isinstance(item, dict)]
     if not required_checks.issubset(portable_checks):
         raise SystemExit("Portable verification report is missing required checks.")
-    piano_check = next(
-        item for item in portable
-        if isinstance(item, dict) and item.get("check") == "piano_onnx_runtime"
-    )
     piano_model = manifest.get("piano_model")
-    if (
-        not isinstance(piano_model, dict)
-        or piano_check.get("sha256") != piano_model.get("sha256")
-        or piano_check.get("bytes") != piano_model.get("bytes")
-        or "CPUExecutionProvider" not in piano_check.get("providers", [])
-    ):
-        raise SystemExit("Piano runtime smoke does not match the release manifest.")
+    if profile == "core":
+        if any(manifest.get(key) is not None for key in (
+                "worker_sha256", "worker_sources", "worker_files", "piano_model",
+                "guitar_model", "instrument_worker")):
+            raise SystemExit("Core manifest declares an excluded worker or model.")
+        piano_check = None
+    else:
+        piano_check = next(
+            item for item in portable
+            if isinstance(item, dict) and item.get("check") == "piano_onnx_runtime"
+        )
+        if (
+            not isinstance(piano_model, dict)
+            or piano_check.get("sha256") != piano_model.get("sha256")
+            or piano_check.get("bytes") != piano_model.get("bytes")
+            or "CPUExecutionProvider" not in piano_check.get("providers", [])
+        ):
+            raise SystemExit("Piano runtime smoke does not match the release manifest.")
 
     shutdown = json.loads(Path(shutdown_report).read_text(encoding="utf-8"))
-    if shutdown.get("worker_stopped_on_parent_exit") is not True:
-        raise SystemExit("Audio worker did not stop when the application exited.")
+    if declared_capabilities["separation_four"]:
+        if (
+            shutdown.get("passed") is not True
+            or shutdown.get("worker_expected") is not True
+            or shutdown.get("application_exited") is not True
+            or shutdown.get("worker_stopped_on_parent_exit") is not True
+        ):
+            raise SystemExit("Audio worker did not stop when the application exited.")
+    elif (
+        shutdown.get("passed") is not True
+        or shutdown.get("worker_expected") is not False
+        or shutdown.get("application_exited") is not True
+        or shutdown.get("worker_processes_before_exit") != []
+        or shutdown.get("worker_processes_after_exit") != []
+    ):
+        raise SystemExit("Core shutdown check did not verify a worker-free application exit.")
     commit = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
     ).strip()
@@ -131,10 +183,16 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
                 "sha256": piano_check["sha256"],
                 "bytes": piano_check["bytes"],
                 "cpu_smoke_passed": True,
-            },
+            } if piano_check else None,
+            "core_models": manifest.get("core_models"),
             "shutdown": {
                 "passed": True,
-                "worker_stopped_on_parent_exit": True,
+                "worker_expected": declared_capabilities["separation_four"],
+                "worker_stopped_on_parent_exit": (
+                    shutdown.get("worker_stopped_on_parent_exit")
+                    if declared_capabilities["separation_four"] else None
+                ),
+                "application_exited": True,
                 "report_sha256": sha256(shutdown_report),
             },
             "archive_integrity": {
@@ -148,6 +206,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
             "timing_acceptance": False,
             "research_weights_enabled": False,
             "portable_fixture": "synthetic audio; package/runtime checks only",
+            "separation_weights_bundled": declared_capabilities["separation_four"],
         },
     }
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -5,6 +5,7 @@
 
 ## 当前状态（先读）
 
+- 2026-11-19 当前续接：从 PR #157 合并提交 `19132940` 开始，公开 Release 仍为 dev.18，近889MB standard 构建仅为 Actions artifact。本阶段代码提交 `af276a9`，PR #158 的 Core Windows 构建、实际 EXE、shutdown、Python/API 与 Edge UI 检查已通过（run `44366735851`）；现待合并及合并后 main CI。没有创建新 Release。人工钢琴盲听、同音符 6K–10K 定轨试打、两首独立歌曲听审仍为空，长期音乐质量目标保持未结项。
 - 2026-11-18 续接核验：PR #151 已合并为 `fc20c92`，Windows PR run `44320958903` 和 main run `44322594836` 均成功。第 49 阶段修复编辑后导出的段落书签，复现与验证见文末。音乐验收还需要玩家盲听、试打及独立歌曲证据。
 - 已发布的 Windows 包为 `v0.1.0-alpha.6-dev.18`；后续主线修复不自动进入该已发布包。
 - 2026-11-17 工程整理、跨段落容量、Timing诊断、LN来源、草稿保护、局部报告与乐句边界已分九阶段合并（PR #101–#109）；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
@@ -2016,3 +2017,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 从实际 EXE 启动两次，干净 PATH 下完成离线分析及 6K–10K 五档生成导出（均零 off-grid），验证推荐选择、过期 Timing 拒绝、取消/失败恢复，以及 Unicode 音频名 `音频测试.wav` 的项目关闭重开。manifest 报告 114 个源文件、2,360 个 worker 文件、standard profile；能力为 audio/four/six/piano，guitar/instruments 未启用。EXE SHA-256 `59c8c41f775365de318d3d99093f258c36821ac1fa187fb47e88579c4a083e7c`。
 - 独立关停报告确认关闭应用时 worker 已退出。ZIP 为 888,813,966 字节、SHA-256 `f64d0562dd76c700c8d4be6f69df2075176b323684601e32d81cf1cd9ed175e8`。验证资产保留在 ignored `test-data/portable-verification-20261119/`；只下载了小型验证报告，未下载近 889MB ZIP。该 zip 为临时 Actions artifact，未经版本号/发布流程发布；当前公开 Release 仍是 v0.1.0-alpha.6-dev.18。因此后续源码已验，用户直接下载的公开版尚未包含本阶段和更早的 main 更新。首页和[工程验收记录](acceptance-20261118.md)已注明此边界。
 - 完成状态严格限定为工程和机器验证：官方读回、Windows 实际 EXE 运行以及两首独立音乐到 6K–10K 导出均有可复现结果。人工钢琴盲听表及 6K–10K/LN 定轨试打表为空；两首独立歌曲听审尚待真人完成。真实音乐质量、采音和手感目标不宣布通过，不因本阶段 CI 变绿而结项。
+
+## 2026-11-19 第五十六阶段：Core 便携配置与来源完整性
+
+- 公开 Windows 构建切换到 `core` profile：只带 Basic Pitch、应用谱面配置和基础运行时，排除 Demucs/Beat This!/钢琴/吉他/Tsumugi 权重、音频 worker、uv 与 Mapperatorinator 安装器。混音采音、已有谱面重定轨、导入声轨和基础 6K–10K 生成保持可用；没有把授权未核实的 Demucs checkpoint 放进新公开构建。`standard`/`extended` 本地构建所需的先验、模型元数据、分离资源与 Mapperatorinator 安装文件继续按 capability 暂存。
+- 补齐 `assets/model-manifest.json`：构建清单、便携 EXE 验证和最终 ZIP 验证均核对 Basic Pitch `v0.4.0` 固定来源 URL 与 SHA-256 `2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec`。发布报告新增 Core 模型身份和按 profile 判定的关停证据；Core 单独确认运行时无音频 worker、应用可退出，非 core 保留原 worker 退出检查。
+- 最终实际 Core Windows 构建 ID `codex-core-20261119-b`，产物留在 ignored `build/portable/codex-core-20261119-b/`。EXE SHA-256 `488d85c591c0624c385be9bee2447843c355101b98143558b955e474acb01363`；ZIP 112,643,004 字节，SHA-256 `5d6e845d4772c977db3f93f9a0d63ffdbe73343cf7d3409ee1da8a575ef7d139`。发布收集器逐项验证源码快照、EXE/manifest/ZIP 一致性、Basic Pitch 字节身份、JUnit、portable 报告和 shutdown 报告；ZIP 1,753 个条目 CRC 全通过、无重复路径，仅含三个 Core 资源，未发现其它 ONNX/权重、worker、uv 或安装器文件。
+- 实际 EXE 合成运行记录位于 ignored `test-data/portable-core-20261119-b/report.json`，SHA-256 `0422c85fd8ccca9d33323aad46f3b9a75ebe961051b556aa3c3b99147e1b3689`：基础分析得到5个候选；6K–10K各生成5个物件/5条 LN、0 off-grid；导入合成 `other` 声轨分析导出通过；deep/deep6 缺失组件返回预期错误；Unicode 文件名、项目重启保存和损坏音频恢复检查通过。关停报告 `test-data/shutdown-core-20261119-b/report.json` SHA-256 `c192bf8da5e21b4a254457ec7f13703ae57fb3dfc1ae5e4a992ece0953f2ec71`，确认未发现 worker、应用正常退出。JUnit `test-data/core-validation-20261119-a/junit-final.xml` 为2,735项、2,646 passed、89 skipped、0 failures/errors，SHA-256 `4ab15eb302bff04d50d8ca929f237f27bfcbfe81d26d5730313b28f3d600c8a6`；Playwright UI 36 passed。最终再次运行 `compileall`、全部 `static/*.js` 的 `node --check` 与 `git diff --check` 均通过。
+- 发布证据摘要位于 ignored `build/portable/codex-core-20261119-b/release/ManiaLab-0.1.0-alpha.6-dev.18-windows-x64-core-validation.json`，摘要 SHA-256 `3d4fbb5c88d89f36f2c37f274076a143f8a9ad2ed043d63087c309b510735eaa`，source commit 为 `af276a9ab44cc838f84f551329b830ef766ead68`；摘要所引用的118个源码快照、ZIP、EXE 和验证报告均逐项校验。PR #158 Windows run `44366735851` 成功：Python/API 为2,646 passed、89 skipped，Edge 为36 passed；Core EXE/ZIP、实际合成流程、worker-free shutdown 与发布摘要收集通过，钢琴模型/音频 worker 构建按 Core profile 跳过。合并后 main CI 待验证；不发布新 Release，当前公开版仍是 dev.18。机器/工程验证不代表音乐质量或玩家体验已验收，真人钢琴盲听、定轨试打和两首独立歌曲听审继续待办。
