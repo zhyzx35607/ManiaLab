@@ -7,7 +7,8 @@ from copy import deepcopy
 import math
 import time
 
-from .arrange import assign_lanes, select_notes, layout_metrics
+from .arrange import assign_lanes, layout_metrics
+from .candidate_selection import select_notes
 from .domain import note_from, validate, upstream_events
 from .timing import align_candidates, chart_clock_notes, grid_report, analysis_timing_diagnostics
 from .voices import apply_phrase_evidence
