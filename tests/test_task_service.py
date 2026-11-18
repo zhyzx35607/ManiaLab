@@ -99,3 +99,48 @@ def test_cancelled_task_blocks_other_work_and_does_not_commit(task_store):
     assert result["status"] == "cancelled"
     assert projects.load(project_id)["value"] == "original"
     assert cleanup == [False]
+
+
+def test_completed_job_history_is_bounded_without_pruning_active_job(task_store):
+    projects, _ = task_store
+    project_id = create_project(projects)
+    service = ProjectTasks(
+        projects,
+        logging.getLogger("test.task_service.retention"),
+        completed_job_limit=2,
+    )
+    started, release = threading.Event(), threading.Event()
+    job_ids = []
+    try:
+        for value in range(3):
+            job = service.submit(
+                project_id,
+                lambda state, progress, cancelled, value=value: {"value": value},
+            )
+            job_ids.append(job["id"])
+            assert wait_for_job(service, job["id"])["status"] == "done"
+
+        assert service.get(job_ids[0]) is None
+        assert service.cancel(job_ids[0]) is False
+        assert service.get(job_ids[1])["result"] == {"value": 1}
+        assert service.get(job_ids[2])["result"] == {"value": 2}
+
+        def active_operation(state, progress, cancelled):
+            started.set()
+            assert release.wait(5)
+            return {"active": True}
+
+        active = service.submit(project_id, active_operation)
+        assert started.wait(5)
+        assert service.get(job_ids[1]) is None
+        assert service.get(active["id"])["status"] == "running"
+        assert service.get(job_ids[2])["status"] == "done"
+        release.set()
+
+        result = wait_for_job(service, active["id"])
+        assert result["status"] == "done"
+        assert result["result"] == {"active": True}
+        assert len(service.jobs) == 2
+    finally:
+        release.set()
+        service.executor.shutdown(wait=True)
