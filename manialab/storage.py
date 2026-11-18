@@ -12,6 +12,7 @@ AUDIO = {".mp3", ".ogg", ".wav", ".flac", ".m4a", ".opus", ".aac"}
 ASSETS = AUDIO | {".osu", ".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 MAX_IMPORT_BYTES = 512 * 1024 * 1024
 MAX_IMPORT_ENTRIES = 3000
+MAX_IMPORT_CENTRAL_DIRECTORY_BYTES = 32 * 1024 * 1024
 
 
 def safe_path(root, name):
@@ -59,12 +60,15 @@ def extract_osz(
 ):
     position = stream.tell()
     try:
-        # Match ZipFile's EOCD/ZIP64 interpretation before it allocates every ZipInfo.
+        # Match ZipFile's EOCD/ZIP64 interpretation before it reads the full directory.
         endrec = zipfile._EndRecData(stream)
     finally:
         stream.seek(position)
-    if endrec is not None and endrec[zipfile._ECD_ENTRIES_TOTAL] > max_entries:
-        raise ValueError("导入文件数量超过安全上限")
+    if endrec is not None:
+        if endrec[zipfile._ECD_ENTRIES_TOTAL] > max_entries:
+            raise ValueError("导入文件数量超过安全上限")
+        if endrec[zipfile._ECD_SIZE] > MAX_IMPORT_CENTRAL_DIRECTORY_BYTES:
+            raise ValueError("谱包中央目录超过安全上限")
 
     with zipfile.ZipFile(stream) as archive:
         infos = archive.infolist()

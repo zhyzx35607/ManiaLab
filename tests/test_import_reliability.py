@@ -50,6 +50,33 @@ def test_archive_entry_limit_is_checked_before_zipfile_materializes_entries(
     assert list(tmp_path.iterdir()) == []
 
 
+def test_archive_central_directory_size_is_checked_before_zipfile_reads_it(
+    tmp_path, monkeypatch
+):
+    uploaded = package([('song.osu', b'chart')])
+    endrec = storage.zipfile._EndRecData(uploaded)
+    oversized_endrec = list(endrec)
+    oversized_endrec[storage.zipfile._ECD_SIZE] = (
+        storage.MAX_IMPORT_CENTRAL_DIRECTORY_BYTES + 1
+    )
+    uploaded.seek(0)
+
+    def oversized_directory(_stream):
+        return oversized_endrec
+
+    def unexpected_zipfile(*args, **kwargs):
+        raise AssertionError('ZipFile should not read an oversized central directory')
+
+    monkeypatch.setattr(storage.zipfile, '_EndRecData', oversized_directory)
+    monkeypatch.setattr(storage.zipfile, 'ZipFile', unexpected_zipfile)
+
+    with pytest.raises(ValueError, match='中央目录'):
+        extract_osz(uploaded, tmp_path)
+
+    assert uploaded.tell() == 0
+    assert list(tmp_path.iterdir()) == []
+
+
 def wave(seconds=1):
     data = io.BytesIO()
     wavfile.write(data, 22050, np.zeros(round(22050 * seconds), dtype=np.int16))
