@@ -36,6 +36,16 @@
 - ZIP CRC 检查通过；谱面元数据只显示 Source A / Source B，不含 Kong 或 Transkun 名称。解盲表 `deblind-key-after-playtest.json` 为有效 JSON，单独保存在包外，没有嵌入 `.osz`。包 SHA-256 为 `f399fbd88c7efec888254c045852f30f28d3dff747b38fc9b571c336ee89a49e`，包内音频 SHA-256 为 `2a82d46c43e43acb4f8e21de71573be1ae6b71b8cf5485364c9ed1d5d3b12765`。
 - 以上只验证盲化标签、压缩包完整性与音频引用；尚未在 osu! 客户端加载、试听或试打，不能作为采音或键型改善的证据。
 
+## 钢琴差异盲听包
+
+为人工核听 10K 最终谱中两种采音方案的钢琴差异，`scripts/build_piano_onset_blind_review.py`从已缓存的起音/音高结果和报告引用的原音频生成了 84 个片段：Transkun 独有 40 个、Kong 独有 44 个。每段以原音频时间为中心，保留起音前 1 秒和后 1.5 秒，采样率 22,050 Hz，不做逐段归一化；包内随机编号和来源解盲表分开保存。跨两侧独有清单未发现 100 ms 内的同音配对。
+
+- 评审包：ignored `test-data/piano-onset-blind-review-20261118/piano-onset-review.zip`；SHA-256 `b5339477e8932d563fb87a3c162c27003295eeabd5de5677089e41e6e3c8d298`。
+- 浏览器评审页：ignored `test-data/piano-onset-blind-review-20261118/participant/index.html`；可直接播放片段并导出 CSV。解盲表 `deblind-key.json` 保存在 ZIP 外。原音频 SHA-256 与 A/B 报告记录一致：`2a82d46c43e43acb4f8e21de71573be1ae6b71b8cf5485364c9ed1d5d3b12765`。
+- 验证：`.venv\Scripts\python.exe -m pytest -q tests/test_piano_onset_blind_review.py` 为 7 passed；`compileall` 通过；84 个 WAV 均为 22,050 Hz、55,125 样本；ZIP CRC 通过且不含来源标签，84 项解盲表均在包外。
+
+这只是盲听入口和包完整性验证；还没有任何人工评分，不能据此判断哪种采音更准确。评分对象仅是已生成 10K 谱中两侧独有的钢琴候选是否能在原声听到，不覆盖所有模型候选、LN 松键真值或整首泛化；它也不验证键型手感。对应的 6K–10K `.osz` 仍需玩家在 osu! 中加载并试打。
+
 ## 冻结矩阵产物
 
 - 默认矩阵列映射汇总：ignored `test-data/frozen-generation-matrix-key-layout-default-20261118/report.json`，26 个配置、10 份分析。
