@@ -59,7 +59,8 @@ def precise_timing_fixture(projects):
 def ln_remap_fixture(projects):
     pid = timing_fixture(projects, 'UI LN navigation remap')
     state = projects.load(pid)
-    state.update(mode='remap', input_keys=10, input_timing=['115,500,4,2,0,70,1,0'],
+    state.update(mode='remap', input_keys=10, input_timing=[
+        '115,500,3', '1615,-50,4,2,0,70,0,0', '3115,400,2,2,0,70,1,0', '3115,250,5,2,0,70,1,0'],
         input_notes=[dict(n, source='import', lane=i%10)
                      for i,n in enumerate(state['analysis']['candidates'])])
     projects.save(state)

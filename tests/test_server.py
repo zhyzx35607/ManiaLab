@@ -206,6 +206,11 @@ def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_p
         projects.save(saved)
         response=client.get(base+'/export/osu')
         assert response.status_code==400 and '落线' in response.json['error']
+        original_audio=client.post(base+'/chart',json={'path':''},headers=headers).json
+        assert original_audio['original'] is None and original_audio['mode']=='audio'
+        assert original_audio['variants']==state['variants']
+        model_chart=client.post(base+'/chart',json={'path':saved['original']},headers=headers).json
+        assert model_chart['variants']==saved['variants'] and model_chart['active']==0
     finally:app.extensions['executor'].shutdown()
 
 

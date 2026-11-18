@@ -5,41 +5,12 @@ import shutil
 from flask import jsonify, request
 
 from .arrange_config import DEFAULTS
+from .chart_workspace import select_chart
 from .domain import parse_osu
 from .storage import AUDIO, extract_osz, safe_path, validate_import_paths
 
 
 def register_project_routes(app, projects, task_service, *, parameters, describe_chart):
-    def set_chart(state, relative):
-        previous_audio = state.get("audio")
-        base = projects.path(state["id"]) / "files"
-        source = safe_path(base, relative)
-        content = source.read_text(encoding="utf-8-sig")
-        parsed = parse_osu(content)
-        from .structure import reference_marks
-
-        state["reference_marks"] = reference_marks(content)
-        state.pop("expression", None)
-        state.pop("plan", None)
-        state.update(mode="remap", original=relative, input_notes=[note.data() for note in parsed["notes"]],
-                     title=parsed["metadata"].get("Title", source.stem),
-                     artist=parsed["metadata"].get("Artist", "Unknown"), input_keys=parsed["keys"],
-                     input_timing=parsed["timing"], variants=[], active=-1)
-        state["settings"]["keys"] = min(10, max(6, parsed["keys"]))
-        audio_name = parsed["general"].get("AudioFilename", "")
-        audio = safe_path(base, (Path(relative).parent / audio_name).as_posix()) if audio_name else None
-        if audio and audio.is_file():
-            state["audio"] = audio.relative_to(base).as_posix()
-        elif state.get("audio") and Path(state["audio"]).name.casefold() == Path(audio_name).name.casefold():
-            pass
-        else:
-            state["audio"] = None
-        if state.get("audio") != previous_audio:
-            state.pop("provided_stems", None)
-        state.pop("analysis", None)
-        for file in ("activations.npz", "preview.wav"):
-            (projects.path(state["id"]) / file).unlink(missing_ok=True)
-
     def import_files():
         files = request.files.getlist("files")
         if not files:
@@ -71,7 +42,7 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
                 except (ValueError, UnicodeError, IndexError):
                     continue
             if state["charts"]:
-                set_chart(state, state["charts"][0]["path"])
+                state = select_chart(path, state, state["charts"][0]["path"], initial=True)
             elif not state["audio"]:
                 raise ValueError("没有可用音频或原生 mania 谱面")
             projects.save(state)
@@ -94,8 +65,9 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             relative = request.json["path"]
             if relative not in [chart["path"] for chart in state["charts"]]:
                 raise ValueError("未知谱面")
-            set_chart(state, relative)
-            projects.save(state)
+            if (relative or None) != state.get("original"):
+                state = select_chart(projects.path(pid), state, relative)
+                projects.save(state)
             return jsonify(state)
 
     def choose_variant(pid):

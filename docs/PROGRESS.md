@@ -1969,3 +1969,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 通过真实 `/edit` 与 `/export/osu` 接口复现：在带段落书签的音频候选上仅修改一条轨道，原来的 `1480,2980` 书签全部消失。手工编辑与局部生成现共用候选生成时保存的段落和表达记录。手工编辑重新计算实际音符报告，旧候选缺少段落快照时书签留空。
 - `.\.venv\Scripts\python.exe -m pytest -q tests/test_edited_candidate_bookmarks.py tests/test_editing.py tests/test_regional_selection_report.py tests/test_evidence_snapshot.py` 为 23 passed。回归通过 HTTP 连续换轨、删音、重开项目并回读 `.osu` 和 `.osz`。输入为临时目录中的合成谱面。
 - 接下来验证同一谱包各难度的保存与恢复、原谱变速和拍号的试听。人工音乐评审仍待记录。
+- PR #151 合并后的 `main` run `44322594836` 成功。PR #152 run `44324693260` 和合并后 `main` run `44325499743` 均成功，合并提交为 `5902e947`。
+
+## 2026-11-18 第五十阶段：同一谱包的多难度编辑与原谱试听
+
+- 难度切换按原谱保存候选、手工修改、活动版本和分析。解码、声部与推理缓存按音频分开，同一音频可复用派生文件，既有项目保留原目录。生成 Mapperatorinator 谱之后也能从难度列表返回原音频项目。
+- 严格重定轨模式的滚动节拍器和试听 WAV 读取各段原谱红线与拍号，换速交界只有一次点击。首次导入可从原音频直接解码试听窗口，带缓存时沿用已有 WAV。已回归验证两条路径从非整数毫秒起点截取至音频末尾的样本一致。
+- 源码验证真实输入 `test-data/audio-transcription-chart-ab-playtest-20261118/Sakura-Piano-AB-6-10K.osz`。运行 `scripts/verify_chart_workspaces.py <源包> --sha256 f399fbd88c7efec888254c045852f30f28d3dff747b38fc9b571c336ee89a49e --out test-data/acceptance-chart-workspaces-20261118`。10/10 张谱各保存两份候选，关闭应用服务后逆序重开，16,130 个物件、4,610 条 LN 的起止及除轨道外的原始物件字段全部一致。两个导出格式的谱面内容相同，各自音频 SHA 匹配。该数字按十张难度累加。报告 SHA-256 `77a8b7f3888967edc63666868b097a883095f5b273ffa4a6a4b2470632eca6f5`。
+- 本地项目切换、编辑与服务路由定向测试 48 项通过。`tests/test_imported_audition.py tests/test_audition.py tests/test_audio_io_boundary.py` 11 项通过。Edge 已覆盖难度保存与打开以及 3/4 转 5/4 的试听 WAV 与实时网格逐拍核对。人工原声听审与 osu! 玩家手感评分待记录。
