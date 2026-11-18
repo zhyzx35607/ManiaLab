@@ -1913,6 +1913,6 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将精确 BPM 候选自身的覆盖率、误差与拍点支持用于半速 / 倍速竞争筛选；未消歧的精确竞争项继续进入可选 Timing 候选。精确候选之间按`.001 BPM`去重，保留同一整数 BPM 舍入附近、但全曲漂移不同的拟合；普通 BPM 候选沿用`.15 BPM`容差。
 - 新增合成回归覆盖`120.37 BPM`的`60.18 BPM`精确竞争项，以及相差`.12 BPM`的近邻精确候选和半速竞争列表，确认各候选保留自己的拟合质量与选择入口。
-- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_timing.py`为51 passed；最终全量（数值线程上限2）`.venv/Scripts/python.exe -m pytest -q`为2,558 passed、89 skipped（71.14秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`及`git diff --check`通过。当前分支前一轮 Edge UI 为31 passed；本次仅调整服务端精确 BPM 去重，最终 Windows PR 检查待运行。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_timing.py`为51 passed；最终全量（数值线程上限2）`.venv/Scripts/python.exe -m pytest -q`为2,558 passed、89 skipped（71.14秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`及`git diff --check`通过。PR #142 Windows run `44248668628`通过：Python/API为2,558 passed、89 skipped，Edge合成UI为31 passed；模型下载及便携构建步骤按条件跳过。
 - 未运行模型、研究训练或用户音频，未读取参考谱、下载语料及 MAESTRO 保留测试，未改研究脚本或逐音产物。合成 Timing 通过不代表独立音乐泛化、真实试听或 osu! 试打验收；这些长期目标仍待完成。
 - 后续继续检查 Timing 候选的 API/UI 往返与人工确认边界，再转入独立泛化和试听验收，不重复既有模型实验。
