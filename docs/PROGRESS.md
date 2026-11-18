@@ -1937,3 +1937,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 既有采音研究仍是混合结论：11段历史开发实录起音F1从`0.953677`升至`0.986837`，但91份控制的漏采从8升至25，另有20个Kong能找到而Transkun漏掉的实录起音。此次对照没有直接听审、试打或读取Reference，故不证明《樱花草》钢琴采音正确，也不证明6–10K键型改善；当前证据不支持全局替换默认采音。
 - 下一步先对可追溯的新增/移除片段做盲化原声听审，再由玩家比较相同范围的6K–10K键型；结论记录完成前不将实验候选设为默认。长期歌曲泛化和真实音乐质量目标仍未完成。
 - PR #145 Windows validation run `44283528751`通过；合并提交`f20626f543508200a829bccb74c9e8199bf02b59`的 main run `44284232486`通过。Python/API与合成浏览器流程成功，模型下载和便携构建按触发条件跳过。
+
+## 2026-11-18 第四十六阶段：采音与 6K–10K 键型效果审计
+
+- 复核《樱花草》Kong/Transkun 对照：Transkun 候选少约18%，每种键数钢琴最终物件少4个；1,553个相同事件、59个新增、61个移除。布局启发式在6K/7K/8K/9K/10K分别变化`-4.444/-2.739/-12.998/+2.421/-10.386`，不支持一致改善；起音最大移动仍101ms，超过30ms的移动仅`2,908→2,905`。结合既有实录 F1 提升但控制漏采`8→25`及20个新增实录漏采，仍不切换默认采音。
+- 扩充`scripts/summarize_frozen_generation_matrix.py`：逐案读取并校验冻结`variant.json`哈希，保留每列/声部列负载，并对同一分析、同一配置下的不同键数比较候选ID、起止时间及轨道列。新增6项矩阵摘要回归，覆盖键列负载、跨键变化和非法轨道。
+- 默认矩阵的10份分析在6K和10K都选出3,147个相同候选、531条LN；6K到10K有2,737/3,147个事件换列（86.97%），起止时间、选中ID无变化。6K到7K/8K/9K各只有2份分析，换列比例为68.86%/73.41%/84.07%，不能据此判定手感改善。分段配置的10K `melody` 与`layers`分别为469/298与1,388/904个事件/LN，显示参数敏感性而非质量高低。默认1,363条、分段7,986条LN的音尾来源全部为`unknown`；自动Timing仍仅3/10通过。
+- 完整数值、限制与下一步见[生成矩阵、键型与采音效果审计](generation-effect-audit-2026-11-18.md)。新汇总仅读取既有冻结计划、回放和变体；未读音频、Reference或保留测试，未运行模型/推理，也未改生产生成与采音默认行为。ignored 汇总报告分别为`test-data/frozen-generation-matrix-key-layout-default-20261118/report.json`（SHA-256 `AC275C7F3F95FF444B1353E29A00BD02522AB91EF66441AA80ECAE071379490B`）和`test-data/frozen-generation-matrix-key-layout-sections-20261118/report.json`（SHA-256 `116166969042C7F1BAF1D2381C8A336100F97F9128D014A340A62745E3DFC93C`）。
+- 验证：`.venv/Scripts/python.exe -m pytest -q tests/test_frozen_generation_matrix.py tests/test_piano_transcription_chart_ab.py`为8 passed；`.venv/Scripts/python.exe -m compileall -q scripts tests`和`git diff --check`通过。Windows PR CI待运行。该阶段整理效果证据，不是音质提升；真实声音盲听、6K–10K玩家试打和独立歌曲泛化仍未完成。

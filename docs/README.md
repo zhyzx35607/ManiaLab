@@ -16,6 +16,7 @@
 - [开发与验证](development.md)：锁定浏览器回归、构建 profile 与历史模型共存。
 - [2026-11-17 检查与结构优化](project-review-20261117.md)：问题处理、验证证据及尚未完成的音乐目标。
 - [冻结多曲生成回归](frozen-generation-regression-results.md)：容量边界修复、66例对照与声部取舍变化。
+- [生成矩阵、键型与采音效果审计](generation-effect-audit-2026-11-18.md)：钢琴采音 A/B、6K–10K 实际列映射及 LN/Timing 证据边界。
 - [Timing诊断与波形时钟](timing-diagnostic-clock-results.md)：固定音频窗口、来源追踪、证据不足及界面对音修复。
 - [LN来源与完整歌曲复核](ln-evidence-review-results.md)：检测/表达/谱面尾端分层、不可变来源快照及6–10K整曲验证。
 - [局部乐句边界保护](regional-phrase-boundary-results.md)：防止范围外新乐句错误代替范围内起音，含冻结候选对照与扩大范围后的导出检查。
