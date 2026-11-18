@@ -22,6 +22,12 @@
 
 10 份分析中自动 Timing 仅 3 份通过、7 份需要手动确认；这不是 BPM / Offset 对真实音乐准确率的证明。冻结矩阵均来自已用于开发的短片段，也不是独立泛化集。
 
+## 盲测包校验
+
+- 本地盲测包保存在 ignored `test-data/audio-transcription-chart-ab-playtest-20261118/Sakura-Piano-AB-6-10K.osz`，大小 4,781,489 字节。ZIP 包含 10 张 osu!mania 谱（6K–10K 各两张）和一份共同音频；所有谱面均为 Mania 模式，音频引用都能解析到包内同一文件。
+- ZIP CRC 检查通过；谱面元数据只显示 Source A / Source B，不含 Kong 或 Transkun 名称。解盲表 `deblind-key-after-playtest.json` 为有效 JSON，单独保存在包外，没有嵌入 `.osz`。包 SHA-256 为 `f399fbd88c7efec888254c045852f30f28d3dff747b38fc9b571c336ee89a49e`，包内音频 SHA-256 为 `2a82d46c43e43acb4f8e21de71573be1ae6b71b8cf5485364c9ed1d5d3b12765`。
+- 以上只验证盲化标签、压缩包完整性与音频引用；尚未在 osu! 客户端加载、试听或试打，不能作为采音或键型改善的证据。
+
 ## 冻结矩阵产物
 
 - 默认矩阵列映射汇总：ignored `test-data/frozen-generation-matrix-key-layout-default-20261118/report.json`，26 个配置、10 份分析。
