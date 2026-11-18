@@ -1954,3 +1954,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 复核版输出位于 ignored `test-data/frozen-generation-ln-segments-reviewed-20261118/report.json`，SHA-256 `14ECE116D7592A675A8DFB364920B80A08F429E48A8FCA5F2AA5BE249843EF16`。10 个冻结配置共 4,043 条 LN，全部可归入段落、均有快照和可测尾端；`expressed.end - detected.end` 的大于30ms计数为0，`note.end - evidence_end` 的大于30ms计数为698。默认6K–10K各有70/72/75/73/74条，无人声配置为64/65/69/68/68条；较集中的 `other` 声部段落为187.501–215.474s和97.501–110.069s。跨配置会复用事件，这些是定位数量而非独立样本。
 - 汇总结果说明大尾移发生在量化阶段，不是表达阶段移动了模型预测尾端；不证明模型尾端等于真实松键，也不判断格线长短更好或更差。报告仅用于安排原声复听，未读取音频、Reference或 MAESTRO 保留测试，也未运行模型/用户数据。
 - 本地验证：`.venv\\Scripts\\python.exe -m pytest -q tests/test_frozen_generation_ln_segments.py`为7 passed；`compileall`与`git diff --check`通过。PR #149 Windows run `44310862594`通过，进度更新后 run `44311633143`通过（Python/API与合成浏览器流程成功；模型与便携构建按条件跳过）。PR #149 已于2026-11-18合并，merge commit `d991217fd260e9bf8ec66c05ad5294beb0ba6492`；合并后 main run `44312826642`通过，Python/API与合成浏览器流程成功，模型与便携构建按条件跳过。
+
+## 2026-11-18 第四十八阶段：钢琴采音差异盲听包
+
+- 修正`scripts/build_piano_onset_blind_review.py`：先按 A/B 报告中的`audio_reference`定位源音频，再核对报告记录的音频 SHA-256；此前哈希核对发生在路径赋值之前，脚本会直接报未定义变量。
+- 新增真实路径/哈希匹配、错误哈希拒绝及生成包 CRC/盲化回归。定向`.venv\Scripts\python.exe -m pytest -q tests/test_piano_onset_blind_review.py`为7 passed；`.venv\Scripts\python.exe -m compileall -q scripts/build_piano_onset_blind_review.py tests/test_piano_onset_blind_review.py`和`git diff --check`通过。
+- 使用已缓存《樱花草》10K输出、无模型推理生成ignored评审包`test-data/piano-onset-blind-review-20261118/piano-onset-review.zip`：84段差异（Transkun独有40、Kong独有44），每段原起音前1秒/后1.5秒，22050Hz，无逐段归一化。解盲映射留在包外；ZIP SHA-256为`b5339477e8932d563fb87a3c162c27003295eeabd5de5677089e41e6e3c8d298`，manifest SHA-256为`e8b524ff86f6535b8854f5982bdd0d3b9585b40e34871d288e6a17d2f0c6a376`。独立复核确认84个WAV时长/采样率、ZIP CRC、盲化标签和包外解盲项均正确。
+- 此包还没有人工评分，不产生采音改善结论；其验证只覆盖10K已选钢琴物件的新增/移除可闻性。此前报告中 Transkun 开发录音F1较高但控制样本漏采增加，仍不支持换默认。键型更无玩家试打反馈；现有6K–10K `.osz`能评整体谱面偏好，不能隔离纯定轨。
+- 验收下一步：用户或玩家完成盲听CSV和同键数osu! A/B试打记录后，先锁定评分表再解盲汇总；如需证明纯定轨手感，另做固定音符/Timing/LN端点、只改变轨道的盲测谱包。PR与CI状态待记录。
