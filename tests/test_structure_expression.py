@@ -27,6 +27,24 @@ def test_sections_follow_acoustic_change_not_fifteen_second_windows():
     assert silent['boundaries']==[0,48000]
 
 
+def test_structure_detection_checks_cancellation_after_audio_features():
+    calls = []
+
+    def cancelled():
+        calls.append(True)
+        return len(calls) >= 3
+
+    samples = np.zeros(22050, dtype=np.float32)
+    with pytest.raises(InterruptedError, match='已取消'):
+        detect_structure(
+            dict(duration=1, tempo=dict(bpm=120, offset=0), candidates=[]),
+            samples,
+            22050,
+            cancelled=cancelled,
+        )
+    assert len(calls) == 3
+
+
 def test_bookmarks_are_separate_from_sv_and_kiai():
     m=reference_marks('[Editor]\nBookmarks: 1000, 2000\n[TimingPoints]\n0,500,4,2,1,70,1,0\n1200,-50,4,2,1,60,0,0\n2000,-100,4,2,1,70,0,1\n2300,500,4,2,1,70,1,1\n2600,500,4,2,1,70,1,0\nNaN,500,4,2,1,70,1,1')
     assert m['bookmarks']==[1000,2000]
@@ -323,6 +341,61 @@ def test_structure_api_preserves_audio_evidence_and_exports_saved_plan(tmp_path)
         assert failed['status']=='error'
         assert '不在当前音频范围内' in failed['message']
     finally:app.extensions['executor'].shutdown()
+
+
+def test_structure_audio_decode_observes_task_cancellation(tmp_path, monkeypatch):
+    import io
+    import threading
+    import time
+    from pathlib import Path
+    from manialab import audio_io
+    from manialab.server import create_app
+    from manialab.storage import Projects
+    from tests.test_server import wait_job
+
+    root = Path(__file__).parents[1]
+    app = create_app(root, tmp_path)
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    imported = client.post('/api/import', data={
+        'files': (io.BytesIO(b'placeholder'), 'song.wav')
+    }, headers=headers).json
+    state = dict(imported, analysis=analysis([]))
+    Projects(tmp_path / 'projects').save(state)
+    started = threading.Event()
+    detected = []
+
+    def cancellable_decode(path, work, *, cancelled):
+        started.set()
+        while not cancelled():
+            time.sleep(.005)
+        raise InterruptedError('已取消，原有谱面已保留')
+
+    monkeypatch.setattr(audio_io, 'decode', cancellable_decode)
+    monkeypatch.setattr('manialab.structure.detect_structure',
+                        lambda *args: detected.append(True))
+    try:
+        response = client.post(
+            f"/api/projects/{state['id']}/structure",
+            json={'action': 'detect'},
+            headers=headers,
+        )
+        assert response.status_code == 200
+        job_id = response.json['id']
+        assert started.wait(5)
+        assert app.extensions['task_service'].cancel(job_id)
+        for _ in range(500):
+            result = client.get(f'/api/jobs/{job_id}').json
+            if result['status'] in ('done', 'error', 'cancelled'):
+                break
+            time.sleep(.02)
+        else:
+            raise AssertionError('structure task did not finish')
+        assert result['status'] == 'cancelled'
+        assert not detected
+        assert client.get(f"/api/projects/{state['id']}").json['analysis'] == state['analysis']
+    finally:
+        app.extensions['task_service'].shutdown()
 
 
 def test_automatic_expression_api_uses_per_section_phrase_budget(tmp_path):

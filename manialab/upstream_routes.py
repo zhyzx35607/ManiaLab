@@ -42,7 +42,7 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
             project = projects.path(pid)
             work = audio_work(project, state)
             if not (work / "preview.wav").exists():
-                decode(current_audio(state), work)
+                decode(current_audio(state), work, cancelled=cancelled)
             tempo = requested_tempo(payload, state) if payload.get("use_timing") is True else None
             if tempo is not None and not (tempo.get("stable") or payload.get("timing_confirmed") is True):
                 raise ValueError("请先检查并确认当前 BPM / Offset，再传入原模型")

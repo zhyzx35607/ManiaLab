@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import os
 import subprocess
+import time
 
 import imageio_ffmpeg
 import numpy as np
@@ -14,6 +15,44 @@ from .audio_config import SR
 
 def run_hidden(args, **kwargs):
     return subprocess.run(args, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0, **kwargs)
+
+
+def run_hidden_cancellable(args, cancelled, *, timeout):
+    if cancelled():
+        raise InterruptedError("已取消，原有谱面已保留")
+    process = subprocess.Popen(
+        args,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+    )
+
+    def kill_and_reap():
+        if process.poll() is None:
+            try:
+                process.kill()
+            except OSError:
+                if process.poll() is None:
+                    raise
+        process.communicate()
+
+    deadline = time.monotonic() + timeout
+    try:
+        while True:
+            if cancelled():
+                raise InterruptedError("已取消，原有谱面已保留")
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(args, timeout)
+            try:
+                stdout, stderr = process.communicate(timeout=min(.2, remaining))
+                return subprocess.CompletedProcess(args, process.returncode, stdout, stderr)
+            except subprocess.TimeoutExpired:
+                continue
+    except BaseException:
+        kill_and_reap()
+        raise
 
 
 def decode_preview_window(path, first_sample, frames):
@@ -30,11 +69,14 @@ def decode_preview_window(path, first_sample, frames):
     return (np.clip(samples, -1, 1) * 32767).astype(np.int16)
 
 
-def decode(path, work, *, runner=None):
+def decode(path, work, *, runner=None, cancelled=None):
     runner = run_hidden if runner is None else runner
-    result = runner([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-i", str(path),
-                     "-vn", "-ac", "1", "-ar", str(SR), "-t", "1201", "-f", "f32le", "pipe:1"],
-                    capture_output=True, timeout=180)
+    args = [imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-i", str(path),
+            "-vn", "-ac", "1", "-ar", str(SR), "-t", "1201", "-f", "f32le", "pipe:1"]
+    if cancelled is None:
+        result = runner(args, capture_output=True, timeout=180)
+    else:
+        result = run_hidden_cancellable(args, cancelled, timeout=180)
     if result.returncode:
         raise ValueError("音频无法解码，请换用 WAV / MP3 / FLAC / OGG")
     samples = np.frombuffer(result.stdout, dtype="<f4").copy()

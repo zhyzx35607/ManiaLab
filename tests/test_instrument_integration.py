@@ -41,7 +41,7 @@ def test_application_routes_only_selected_bass_other_and_keeps_energy_filter(tmp
     def refine(notes,*args):refinements.append(notes);return notes,{}
     def fuse(notes,*args):fusions.append(notes);return [replace(n,start=n.start+1) for n in notes],[],0
     def bleed(notes,*args):bleed_inputs.append([n.voice for n in notes]);return notes,[]
-    monkeypatch.setattr(audio,'decode',lambda *args:mixture)
+    monkeypatch.setattr(audio,'decode',lambda *args,**kwargs:mixture)
     monkeypatch.setattr(audio,'infer',infer)
     monkeypatch.setattr(audio,'pitched_notes',lambda *args,**kwargs:[Note(100,700,pitch=60,source='pitch',id='generic')])
     monkeypatch.setattr(audio,'refine_releases',refine)
@@ -49,7 +49,8 @@ def test_application_routes_only_selected_bass_other_and_keeps_energy_filter(tmp
     monkeypatch.setattr(audio,'reject_source_bleed',bleed)
     monkeypatch.setattr('manialab.articulation.steady_bass_onsets',lambda *args:[])
     monkeypatch.setattr('manialab.voices.vocal_phrases',lambda *args:[])
-    monkeypatch.setattr('manialab.structure.detect_structure',lambda *args:dict(segments=[dict(start_ms=0,end_ms=1000)]))
+    monkeypatch.setattr('manialab.structure.detect_structure',
+                        lambda *args,**kwargs:dict(segments=[dict(start_ms=0,end_ms=1000)]))
     result=audio.analyze_deep(Path('mix'),tmp_path,Path('unused.onnx'),parameters(),Sources(),
         instrument_detector=Specialist() if specialist else None,allow_predicted_releases=specialist)
     assert len(generic_calls)==len(refinements)==len(fusions)==(2 if specialist else 4)
@@ -73,7 +74,7 @@ def test_application_routes_only_selected_bass_other_and_keeps_energy_filter(tmp
 
 
 def test_low_level_entry_rejects_release_without_specialist_before_decoding(tmp_path,monkeypatch):
-    monkeypatch.setattr(audio,'decode',lambda *args:pytest.fail('Invalid option reached audio decoder'))
+    monkeypatch.setattr(audio,'decode',lambda *args,**kwargs:pytest.fail('Invalid option reached audio decoder'))
     for value in (True,'true',1,None):
         with pytest.raises(ValueError,match='模型音尾'):
             audio.analyze_deep(Path('unused'),tmp_path,Path('unused'),parameters(),None,allow_predicted_releases=value)

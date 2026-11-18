@@ -38,12 +38,12 @@ def prepare_provided_stems(mix, sources, work, progress=lambda p,s:None, cancell
             return previous|{'cached':True}
     folder.mkdir(parents=True,exist_ok=True)
     progress(3,'核对原曲与导入声轨的时间轴')
-    mixture=decode(mix,folder)
+    mixture=decode(mix,folder,cancelled=cancelled)
     files={};padding={}
     for index,(voice,path) in enumerate(sources.items()):
         if cancelled():raise InterruptedError('已取消声轨导入')
         progress(5+int(index*85/len(sources)),'读取 '+VOICES[voice])
-        samples=decode(path,folder)
+        samples=decode(path,folder,cancelled=cancelled)
         if abs(len(samples)-len(mixture))>2:
             raise ValueError(f'{VOICES[voice]}长度 {len(samples)/SR:.3f} 秒，与原曲 {len(mixture)/SR:.3f} 秒不同；请导出同起点、同长度的声轨，保留开头静音')
         samples,padding[voice]=align_stem_samples(samples,len(mixture))

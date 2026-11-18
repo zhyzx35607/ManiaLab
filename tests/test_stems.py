@@ -28,7 +28,7 @@ def test_six_source_pitch_cache_depends_on_separation_model(tmp_path,monkeypatch
     class Cached:
         def separate(self,*args):return directory,report
     calls=[]
-    monkeypatch.setattr(audio,'decode',lambda *a:np.zeros(audio.SR*2,dtype=np.float32))
+    monkeypatch.setattr(audio,'decode',lambda *a,**kwargs:np.zeros(audio.SR*2,dtype=np.float32))
     def infer(*args):
         calls.append(1)
         return np.zeros((10,88)),np.zeros((10,88)),np.arange(10)/86

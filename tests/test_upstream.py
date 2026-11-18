@@ -39,7 +39,8 @@ def test_generated_model_timing_is_enforced_after_serialization(keys):
 def test_confirmed_timing_context_is_passed_but_never_returned_as_generated_chart(tmp_path,monkeypatch):
     engine=MapperEngine(tmp_path,ROOT)
     monkeypatch.setattr(engine,'status',lambda:dict(installed=True,model_downloaded=True))
-    monkeypatch.setattr('manialab.audio.run_hidden',lambda *a,**k:subprocess.CompletedProcess(a,0))
+    monkeypatch.setattr('manialab.audio_io.run_hidden_cancellable',
+                        lambda *a,**k:subprocess.CompletedProcess(a,0))
     output=tmp_path/'output';seen=[]
     def run(argv,*args):
         seen.extend(argv)
@@ -88,7 +89,8 @@ def test_mapper_capabilities_follow_packaged_installer_assets(tmp_path, monkeypa
 def test_experimental_adapter_preserves_reference_meter_changes_without_notes(tmp_path,monkeypatch):
     engine=MapperEngine(tmp_path,ROOT)
     monkeypatch.setattr(engine,'status',lambda:dict(installed=True,model_downloaded=True))
-    monkeypatch.setattr('manialab.audio.run_hidden',lambda *a,**k:subprocess.CompletedProcess(a,0))
+    monkeypatch.setattr('manialab.audio_io.run_hidden_cancellable',
+                        lambda *a,**k:subprocess.CompletedProcess(a,0))
     reference=tmp_path/'human.osu'
     original=export_osu([Note(1000,5000,1)],10,ROOT/'vendor/mapperatorinator/template.osu',bpm=70,offset=189)
     parts=sections(original)
@@ -120,7 +122,8 @@ def test_experimental_adapter_preserves_reference_meter_changes_without_notes(tm
 def test_arrangement_context_is_explicit_and_never_returned_as_prediction(tmp_path,monkeypatch):
     engine=MapperEngine(tmp_path,ROOT)
     monkeypatch.setattr(engine,'status',lambda:dict(installed=True,model_downloaded=True))
-    monkeypatch.setattr('manialab.audio.run_hidden',lambda *a,**k:subprocess.CompletedProcess(a,0))
+    monkeypatch.setattr('manialab.audio_io.run_hidden_cancellable',
+                        lambda *a,**k:subprocess.CompletedProcess(a,0))
     original=export_osu([Note(1000,1000,4),Note(1500,2500,6)],10,
         ROOT/'vendor/mapperatorinator/template.osu',bookmarks=[1000,5000],creator='private mapper')
     reference=tmp_path/'sketch.osu';reference.write_text(original,encoding='utf-8')

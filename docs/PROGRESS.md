@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 最新状态（2026-11-19）：PR #162 任务历史限额已合并为`ae0ee05e51e4046c27c3e4f3163dacf8917e803a`，PR run `44388833902`与 main run `44389967517`成功。公开 Release 仍为 dev.18。第六十阶段本地全量回归为2,672 passed、90 skipped；导入总预算改动待 PR/Windows CI 验证。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
+- 最新状态（2026-11-19）：PR #163 导入展开预算已合并为`d705c9c65e40cf08beaa8c732e079773e555c9d4`；PR Windows run `44393454396`及合并后 main run `44394113412`成功，Python/API为2,674 passed、89 skipped，Edge UI为36 passed；便携构建按触发条件跳过。第六十一阶段任务生命周期改动本地全量回归为2,681 passed、90 skipped，待 PR/Windows CI 验证。公开 Release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
 
 - 2026-11-19 当前续接：从 PR #157 合并提交 `19132940` 开始，公开 Release 仍为 dev.18，近889MB standard 构建仅为 Actions artifact。本阶段经 PR #158 合并为 `6200891e`；PR Windows run `44366735851`及合并后 main run `44368922837`的 Core 构建、实际 EXE、shutdown、Python/API 与 Edge UI 检查均通过。没有创建新 Release。人工钢琴盲听、同音符 6K–10K 定轨试打、两首独立歌曲听审仍为空，长期音乐质量目标保持未结项。
 - 2026-11-18 续接核验：PR #151 已合并为 `fc20c92`，Windows PR run `44320958903` 和 main run `44322594836` 均成功。第 49 阶段修复编辑后导出的段落书签，复现与验证见文末。音乐验收还需要玩家盲听、试打及独立歌曲证据。
@@ -2061,4 +2061,13 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 先用 Python 标准库 ZIP 结束目录读取器读取声明条目数，在构造完整 `ZipFile` 中央目录前拒绝超过限制的归档；保留完整解析后的条目数防线，并先检查条目数再遍历大小。
 - 新增合成 multipart 用例，分别覆盖多归档展开字节合计超限、跨归档条目数超限、普通音频加归档超总写入预算；另验证超条目归档在创建完整 `ZipFile` 前被拒绝。
 - 首轮定向`.venv\Scripts\python.exe -m pytest -q tests/test_import_reliability.py tests/test_core.py`为49 passed；加入中央目录预检后同一命令为50 passed。全量设置数值线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,673 passed、90 skipped（65.50秒）；`compileall`和`git diff --check`通过。新增测试确认超条目 ZIP 在构造完整 `ZipFile` 前被拒绝，原始输入游标保持不变。
-- PR #163 已创建，中央目录预检补丁推送后等待最新 Windows CI；导入资源上限属于工程健壮性改进，不构成音乐质量验收。真人盲听、6K–10K/LN试打和两首独立歌曲复听继续待完成。
+- PR #163 已合并为`d705c9c65e40cf08beaa8c732e079773e555c9d4`。PR Windows run `44393454396`成功；合并后 main run `44394113412`成功，Python/API为2,674 passed、89 skipped，Edge UI为36 passed；便携构建按触发条件跳过。导入资源上限属于工程健壮性改进，不构成音乐质量验收。真人盲听、6K–10K/LN试打和两首独立歌曲复听继续待完成。
+
+## 2026-11-19 第六十一阶段：任务取消与进程关停
+
+- `ProjectTasks` 增加关闭状态：应用开始关停后拒绝新任务、请求取消排队及运行任务，并等待清理完成；线程启动失败时取消遗留 Future、关闭不可用的 executor 并执行未提交任务的清理。提交响应返回锁内任务快照，避免后台完成时与 HTTP JSON 序列化共享可变字典。终态任务取消请求保持兼容的成功响应，但不再改写终态记录。
+- 启动器退出时依次关闭 Waitress socket/request dispatcher 与任务服务；即使服务运行或关闭阶段抛错，后续清理仍会执行。Waitress dispatcher 按其接口等待最多5秒，任务服务随后进行协作取消和等待。
+- 新增可取消 FFmpeg 子进程执行器，在约200ms轮询周期内检查取消，并终止、回收子进程；接入普通/深度采音、导入声轨、分离预转码、结构检测及可选上游模型解码。结构特征与边界扫描也检查取消；SciPy 的单次 STFT 等原生向量化调用无法中途打断，取消在当前调用返回后生效。
+- 新增线程启动失败、`BaseException` 任务恢复、关停取消/清理、稳定响应快照、Waitress dispatcher 清理、FFmpeg 终止回收、结构任务 API 取消以及结构扫描取消检查。定向跨模块验证为127 passed；全量设置数值线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,681 passed、90 skipped（67.63秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9003 npm run test:ui`为36 passed（1.4分钟）。`.venv\Scripts\python.exe -m compileall -q manialab scripts tests launcher.py`与`git diff --check`通过。
+- 当前改动位于`codex/task-service-lifecycle-20261119`，PR/Windows CI尚待执行。本阶段没有运行模型、研究或音乐质量实验，也没有读取 ignored 音频、评审评分、解盲表或模型产物。
+- 本阶段只改善任务可取消性、异常恢复与应用关停，不代表采音或谱面音乐性改善。真人钢琴盲听、实际键数的6K–10K/LN试打及两首独立歌曲听审仍未完成；公开 Release 仍是 dev.18。

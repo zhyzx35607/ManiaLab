@@ -14,6 +14,11 @@ REVISION = 1
 STEP_MS = 500
 
 
+def _check_cancelled(cancelled):
+    if cancelled is not None and cancelled():
+        raise InterruptedError("已取消，原有谱面已保留")
+
+
 def reference_marks(text):
     from .domain import sections, values
     parts = sections(text)
@@ -53,7 +58,8 @@ def reference_marks(text):
                 kiai_transitions=sorted(set(kiai_transitions)))
 
 
-def acoustic_features(samples, sample_rate, candidates, duration_ms):
+def acoustic_features(samples, sample_rate, candidates, duration_ms, *, cancelled=None):
+    _check_cancelled(cancelled)
     count = max(1, math.ceil(duration_ms / STEP_MS))
     features = []
     names = []
@@ -62,24 +68,34 @@ def acoustic_features(samples, sample_rate, candidates, duration_ms):
         # duration, not quadratically as a full song similarity matrix would.
         freq, times, spectrum = stft(samples, fs=sample_rate, nperseg=2048,
                                     noverlap=1024, boundary=None, padded=False)
+        _check_cancelled(cancelled)
         power = np.abs(spectrum) ** 2
         bins = np.clip((times * 1000 / STEP_MS).astype(int), 0, count - 1)
         counts = np.maximum(1, np.bincount(bins, minlength=count))
         bands = np.geomspace(35, sample_rate / 2, 17)
-        energy = np.array([power[(freq >= a) & (freq < b)].sum(axis=0)
-                           for a, b in zip(bands[:-1], bands[1:])])
-        band_level = np.array([np.bincount(bins, weights=row, minlength=count) / counts for row in energy]).T
+        energy, band_level = [], []
+        for a, b in zip(bands[:-1], bands[1:]):
+            _check_cancelled(cancelled)
+            row = power[(freq >= a) & (freq < b)].sum(axis=0)
+            energy.append(row)
+            band_level.append(np.bincount(bins, weights=row, minlength=count) / counts)
+        energy = np.asarray(energy)
+        band_level = np.asarray(band_level).T
         # Spectral shape, separate from the total energy.
         shape = np.sqrt(band_level / np.maximum(band_level.sum(axis=1, keepdims=True), 1e-12))
+        _check_cancelled(cancelled)
         features.extend(shape.T)
         names.extend(f'band_{i}' for i in range(16))
         features.append(np.log1p(band_level.sum(axis=1) * 1e5))
         names.append('energy')
     voices = sorted({n.get('voice', 'mix') for n in candidates})
     for voice in voices:
+        _check_cancelled(cancelled)
         attacks = np.zeros(count)
         sustain = np.zeros(count)
-        for n in candidates:
+        for index, n in enumerate(candidates):
+            if index % 1024 == 0:
+                _check_cancelled(cancelled)
             if n.get('voice', 'mix') != voice or n.get('strength', 0) < .35:
                 continue
             a = min(count - 1, max(0, n['start'] // STEP_MS))
@@ -94,13 +110,16 @@ def acoustic_features(samples, sample_rate, candidates, duration_ms):
     # Robust channel scaling, so one loud residual stem cannot dominate.
     scale = np.maximum(np.percentile(x, 90, axis=0) - np.percentile(x, 10, axis=0), .15)
     x = np.clip(x / scale, 0, 6)
-    return gaussian_filter1d(x, 1, axis=0), names
+    x = gaussian_filter1d(x, 1, axis=0)
+    _check_cancelled(cancelled)
+    return x, names
 
 
-def describe_sections(boundaries, analysis, features=None):
+def describe_sections(boundaries, analysis, features=None, *, cancelled=None):
     notes = analysis.get('candidates', [])
     result, representatives = [], []
     for a, b in zip(boundaries[:-1], boundaries[1:]):
+        _check_cancelled(cancelled)
         local = [n for n in notes if a <= n['start'] < b]
         vector = None
         group = None
@@ -125,31 +144,41 @@ def describe_sections(boundaries, analysis, features=None):
     return result
 
 
-def detect_structure(analysis, samples=None, sample_rate=22050):
+def detect_structure(analysis, samples=None, sample_rate=22050, *, cancelled=None):
     length = round(analysis['duration'] * 1000)
     if length <= 0:
         raise ValueError('歌曲长度无效')
-    x, names = acoustic_features(samples, sample_rate, analysis.get('candidates', []), length)
+    _check_cancelled(cancelled)
+    x, names = acoustic_features(
+        samples, sample_rate, analysis.get('candidates', []), length,
+        cancelled=cancelled,
+    )
     novelty = np.zeros(len(x))
     sums = np.vstack([np.zeros((1, x.shape[1])), np.cumsum(x, axis=0)])
+    _check_cancelled(cancelled)
     for width in (8, 16):  # Compare 4- and 8-second contexts on either side.
         for i in range(1, len(x)):
+            if i % 64 == 0:
+                _check_cancelled(cancelled)
             a, b = max(0, i-width), min(len(x), i+width)
             left = (sums[i]-sums[a])/(i-a)
             right = (sums[b]-sums[i])/(b-i)
             novelty[i] += np.mean((right-left)**2) / 2
     novelty = gaussian_filter1d(novelty, 1)
+    _check_cancelled(cancelled)
     middle = novelty[8:-8] if len(novelty) > 16 else novelty
     median = float(np.median(middle))
     mad = float(np.median(np.abs(middle-median)))
     peaks, _ = find_peaks(novelty, distance=16, prominence=max(.03, mad*.7),
                           height=max(.04, median + mad*.6))
+    _check_cancelled(cancelled)
     tempo = analysis.get('tempo', {})
     bpm = float(tempo.get('bpm', 120))
     beat = 60000 / bpm if 10 <= bpm <= 1000 else 500
     offset = float(tempo.get('offset', 0))
     boundaries, evidence = [0], []
     for index in peaks:
+        _check_cancelled(cancelled)
         raw = int(index * STEP_MS)
         snapped = round(offset + round((raw-offset)/beat)*beat)
         if snapped < 4000 or length-snapped < 4000 or snapped-boundaries[-1] < 6000:
@@ -157,9 +186,10 @@ def detect_structure(analysis, samples=None, sample_rate=22050):
         boundaries.append(snapped)
         evidence.append(dict(time_ms=snapped, raw_ms=raw, novelty=round(float(novelty[index]), 4)))
     boundaries.append(length)
+    _check_cancelled(cancelled)
     return dict(revision=REVISION, source='acoustic-change' if samples is not None else 'detected-activity',
         duration_ms=length, boundaries=boundaries,
-        segments=describe_sections(boundaries, analysis, x), boundary_evidence=evidence,
+        segments=describe_sections(boundaries, analysis, x, cancelled=cancelled), boundary_evidence=evidence,
         feature_names=names, notice='按音色、能量及声部活动变化建议分段；S 编号仅表示统计相似，不等于主歌／副歌识别。请试听并编辑边界。')
 
 

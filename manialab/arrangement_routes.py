@@ -66,8 +66,11 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
                 from .audio_io import decode
 
                 progress(10, "读取音频，比较音色、能量与声部活动变化")
-                samples = decode(current_audio(state), audio_work(projects.path(pid), state))
-                structure = detect_structure(analysis, samples, SR)
+                samples = decode(current_audio(state), audio_work(projects.path(pid), state),
+                                 cancelled=cancelled)
+                if cancelled():
+                    raise InterruptedError("已取消，原有谱面已保留")
+                structure = detect_structure(analysis, samples, SR, cancelled=cancelled)
             elif action == "bookmarks":
                 marks = state.get("reference_marks", {}).get("bookmarks", [])
                 if not marks:
