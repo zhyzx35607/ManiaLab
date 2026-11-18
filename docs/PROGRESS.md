@@ -1927,3 +1927,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - PR #143 Windows validation run `44260840665`成功；合并提交`271c1b1148d08e18fac2d1656c2c786c6b5519d3`的 main run `44261260834`也成功。当前源码树与`origin/main`一致。
 - 本机 D 盘清理：删除的 dev.3/dev.4 发布 ZIP 大小与 SHA-256 均和仍在线的 GitHub Release 资产一致；清除时删除112个 Python `__pycache__` 目录及`.pytest_cache`。本地 dev.14 ZIP 对应 Release 不存在，故保留；dev.17/dev.18 包、全部模型、研究数据和验证报告也保留。D 盘可用空间从清理前`50.30 GiB`升至清理后`52.74 GiB`，测试运行后复测为`52.70 GiB`；仅清理本地可再下载副本与可重建缓存，没有改动 Git 跟踪数据。
 - 后续转入独立歌曲泛化、真实试听和 osu! 试打；现有 Timing 结果仍不能替代音乐质量验收。
+
+## 2026-11-18 第四十五阶段：钢琴起音候选到 6K–10K 谱面对照
+
+- 复用 Nova《樱花草》已有 Kong、Transkun 与起音保留输出，不重跑模型；同一音频 SHA、非钢琴候选 SHA、表达计划、手动时钟和生成参数保持不变。钢琴两侧只比较起音/音高，统一强度为0.5；不使用 Transkun velocity 或 offset，关闭钢琴LN，不读取 Reference。
+- Kong 有1,557个钢琴候选，Transkun官方1,275个，起音保留版1,277个。每种键数最终选中的钢琴物件为173对169，鼓为301对303，总物件为1,614对1,612；461条 LN 均来自 `other`。起音保留版新增的2个候选没有改变任一键数的最终选音。
+- 6K、7K、8K、9K、10K 各输出Kong/Transkun官方/起音保留三张谱，共15张。每种键数Transkun相对Kong有1,553个相同事件、59个新增、61个移除；布局代价分别变化`-4.444`、`-2.739`、`-12.998`、`+2.421`、`-10.386`。布局代价是启发式，方向并不一致，不能据此认定键型更好；起音最大移动仍为101ms，超过30ms的移动计数仅从2,908降至2,905。结构、固定网格和导出回读通过只确认制谱正确性，不代表采音或音乐验收。
+- 定向`.venv\Scripts\python.exe -m pytest -q tests/test_piano_transcription_chart_ab.py`为2 passed（1.68秒）；数值线程上限2时全量`.venv\Scripts\python.exe -m pytest -q`为2,568 passed、89 skipped（66.74秒）；`.venv\Scripts\python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。研究复现入口为`scripts/check_piano_transcription_chart_ab.py`；本地产物在ignored `test-data/audio-transcription-chart-ab-20261118/`，汇总SHA-256为`C05D1AADAB50CB5070E9F0B1EC5786FD40921A52BBBA69B73615065C32830B3C`。只提交脚本、测试和去逐音数据后的文档。
+- 既有采音研究仍是混合结论：11段历史开发实录起音F1从`0.953677`升至`0.986837`，但91份控制的漏采从8升至25，另有20个Kong能找到而Transkun漏掉的实录起音。此次对照没有直接听审、试打或读取Reference，故不证明《樱花草》钢琴采音正确，也不证明6–10K键型改善；当前证据不支持全局替换默认采音。
+- 下一步先对可追溯的新增/移除片段做盲化原声听审，再由玩家比较相同范围的6K–10K键型；结论记录完成前不将实验候选设为默认。长期歌曲泛化和真实音乐质量目标仍未完成。
