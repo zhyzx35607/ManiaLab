@@ -14,6 +14,7 @@ from werkzeug.exceptions import HTTPException
 
 from . import __version__
 from .arrange import DEFAULTS, parameters
+from .meter import meter_for_clock, stable_audio_clock, valid_audio_clock
 from .timing import DIVISIONS
 from .audio import analyze, analyze_deep
 from .separation import Separator
@@ -130,7 +131,10 @@ def create_app(resources, data_root):
         return shift
 
     def requested_tempo(payload, state):
-        detected = state.get("analysis", {}).get("tempo", {"bpm": 120, "offset": 0})
+        analysis = state.get("analysis") or {}
+        detected = analysis.get("tempo")
+        if not valid_audio_clock(detected):
+            detected = {"bpm": 120, "offset": 0}
         shift = requested_shift(payload, state)
         detected_offset = math.floor(detected["offset"] - shift + .5)
         bpm, offset = float(payload.get("bpm", detected["bpm"])), float(payload.get("offset", detected_offset))
@@ -140,9 +144,9 @@ def create_app(resources, data_root):
         if type(division) is not int or division not in DIVISIONS:
             raise ValueError("拍内细分必须为 3、4、6、8、12 或 16")
         unchanged = abs(bpm - detected["bpm"]) < .0001 and abs(offset - detected_offset) < .01 and division == detected.get("division", 4)
-        coverage_checked = detected.get('evidence_source') != 'drums' or detected.get('timing_coverage_revision',0) >= 1
-        return detected | dict(bpm=bpm, offset=round(offset), division=division, audio_shift_ms=shift,
-                               stable=bool(unchanged and detected.get("stable") and coverage_checked))
+        clock = dict(bpm=bpm, offset=round(offset), division=division, audio_shift_ms=shift,
+                     stable=unchanged and stable_audio_clock(detected))
+        return detected | clock | {"meter": meter_for_clock(analysis, clock)}
 
     register_analysis_routes(
         app, projects=projects, task_service=task_service, resources=resources,

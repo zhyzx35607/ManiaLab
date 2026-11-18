@@ -30,7 +30,7 @@ async function playerWave(page) {
   return Buffer.from(encoded, 'base64');
 }
 
-test('imported live metronome and audition WAV agree across tempo and meter changes', async ({page}) => {
+async function captureAuditions(page) {
   await page.goto('/');
   await page.evaluate(() => {
     const create = URL.createObjectURL.bind(URL);
@@ -41,6 +41,10 @@ test('imported live metronome and audition WAV agree across tempo and meter chan
       return url;
     };
   });
+}
+
+test('imported live metronome and audition WAV agree across tempo and meter changes', async ({page}) => {
+  await captureAuditions(page);
   await page.locator('#recent').selectOption({label: 'UI LN navigation remap'});
   await expect(page.locator('#mode')).toHaveValue('remap');
   await page.locator('.audition-panel').evaluate(panel => { panel.open = true; });
@@ -73,4 +77,46 @@ test('imported live metronome and audition WAV agree across tempo and meter chan
   await expect(page.locator('#auditionNote')).toContainText('75 ms');
   expect(pcmCue(await playerWave(page), .075)).toBeTruthy();
   await page.locator('#auditionAudio').evaluate(player => player.pause());
+});
+
+test('audio draft, saved red line, live bars and A/B audition use the same meter and shift', async ({page}) => {
+  await captureAuditions(page);
+  await page.locator('#recent').selectOption({label: 'UI audio meter'});
+  await expect(page.locator('#offset')).toHaveValue('93');
+  const accents = () => page.evaluate(() =>
+    beatsBetween(0, 8).filter(beat => beat.accent).map(beat => Math.round(beat.time * 1000)));
+  const triple = [93, 1593, 3093, 4593, 6093, 7593];
+  expect(await accents()).toEqual(triple);
+  await page.locator('#generate').click();
+  await expect(page.locator('#message')).toContainText('结构检查通过');
+  const red = (await (await page.request.get(await page.locator('#exportOsu').getAttribute('href'))).text())
+    .match(/\[TimingPoints\]\s*([^\r\n]+)/)[1].split(',').map(Number);
+  expect(red.slice(0, 3)).toEqual([93, 500, 3]);
+  expect(await accents()).toEqual(triple);
+  await page.locator('.audition-panel').evaluate(panel => { panel.open = true; });
+  await page.locator('#auditionLength').selectOption('8');
+  for (const [button, offset, meter] of [['auditionA', 93, 3], ['auditionB', 192, 4]]) {
+    if (button === 'auditionB') await page.locator('#auditionOffset').fill('192.5');
+    const received = page.waitForResponse('**/audition');
+    await page.locator('#' + button).click();
+    const response = await received;
+    expect(response.ok()).toBeTruthy();
+    expect(response.request().postDataJSON().offset).toBe(offset);
+    expect(Number(response.headers()['x-manialab-audition-meter'])).toBe(meter);
+    await expect(page.locator('#auditionNote')).toContainText(`每小节 ${meter} 拍`);
+    const wave = await playerWave(page);
+    for (let index = 0; offset + index * 500 < 8000; index++) {
+      expect(pcmCue(wave, (offset + index * 500) / 1000)).toBe(index % meter === 0);
+    }
+    await page.locator('#auditionAudio').evaluate(player => player.pause());
+  }
+  await page.locator('#auditionApply').click();
+  await expect(page.locator('#offset')).toHaveValue('192');
+  expect(await accents()).toEqual([192, 2192, 4192, 6192]);
+  await page.locator('#offset').fill('192.5');
+  await page.locator('#timingConfirmed').check();
+  const sent = page.waitForRequest(request => request.url().endsWith('/generate'));
+  await page.locator('#generate').click();
+  expect((await sent).postDataJSON().offset).toBe(192);
+  await expect(page.locator('#message')).toContainText('结构检查通过');
 });

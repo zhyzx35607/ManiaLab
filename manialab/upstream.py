@@ -21,7 +21,7 @@ def fixed_timing_output(text, tempo):
     Model timestamps already use chart time: never subtract audio_shift again.
     """
     from dataclasses import replace
-    from .domain import parse_osu, sections
+    from .domain import fixed_red_line, parse_osu, sections
     from .timing import align_candidates, grid_report
     parsed = parse_osu(text)
     aligned, report = align_candidates(parsed['notes'], tempo, confirmed=True)
@@ -38,7 +38,7 @@ def fixed_timing_output(text, tempo):
                 fields[5] = sample
         notes.append(replace(new, raw=','.join(fields)))
     parts = sections(text)
-    parts['TimingPoints'] = [f"{tempo['offset']:.3f},{60000 / tempo['bpm']:.8f},4,2,0,70,1,0"]
+    parts['TimingPoints'] = [fixed_red_line(tempo['bpm'], tempo['offset'], tempo.get('meter', 4))]
     parts['Editor'] = [line for line in parts.get('Editor', []) if not line.startswith('BeatDivisor:')]
     parts['Editor'].append(f"BeatDivisor:{tempo.get('division', 4)}")
     parts['HitObjects'] = [n.raw for n in notes]
@@ -57,8 +57,9 @@ def verify_fixed_timing(content, tempo):
     red = [line.split(',') for line in parsed['timing'] if line.strip() and not line.startswith('//')
            and float(line.split(',')[1]) > 0]
     if (len(red) != 1 or abs(float(red[0][0]) - tempo['offset']) > .001 or
-            abs(float(red[0][1]) - 60000 / tempo['bpm']) > .00001):
-        raise ValueError('原模型输出的红线与确认的 BPM / Offset 不一致，请重新生成')
+            abs(float(red[0][1]) - 60000 / tempo['bpm']) > .00001 or
+            len(red[0]) < 3 or red[0][2].strip() != str(tempo.get('meter', 4))):
+        raise ValueError('原模型输出的红线与确认的 BPM、Offset 或每小节拍数不一致，请重新生成')
     report = grid_report(parsed['notes'], dict(bpm=60000 / float(red[0][1]),
                          offset=float(red[0][0]), division=tempo.get('division', 4)))
     if report['off_grid']:
@@ -294,7 +295,8 @@ class MapperEngine:
             from .domain import export_osu, sections
             reference=output/'timing-context.osu'
             content=export_osu([],settings['keys'],self.resources/'vendor/mapperatorinator/template.osu',
-                audio=decoded.name,bpm=tempo['bpm'] if tempo else 120,offset=tempo['offset'] if tempo else 0)
+                audio=decoded.name,bpm=tempo['bpm'] if tempo else 120,offset=tempo['offset'] if tempo else 0,
+                meter=tempo.get('meter', 4) if tempo else 4)
             if timing_reference is not None:
                 timing=sections(Path(timing_reference).read_text(encoding='utf-8-sig')).get('TimingPoints', [])
                 if not any(line.strip() and not line.startswith('//') and float(line.split(',')[1]) > 0 for line in timing):

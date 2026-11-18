@@ -35,6 +35,7 @@ def register_playback_routes(app, *, projects, current_audio, requested_tempo):
             raise ValueError("试听范围必须为 1–30 秒，起点不能为负")
         mode = payload.get("mode", "beats")
         remap_mix = False
+        meter = None
         if mode == "beats":
             clock = payload.get("beat_clock")
             if clock is None:
@@ -49,8 +50,16 @@ def register_playback_routes(app, *, projects, current_audio, requested_tempo):
                     points = parse_osu(chart.read_text(encoding="utf-8-sig"))["timing"]
                 events = imported_grid_events(points or [], start, length)
             elif clock == "fixed":
+                saved = state["variants"][state["active"]] if state["active"] >= 0 else {}
+                saved_audio = saved.get("mode") == "audio"
+                fields = ("bpm", "offset", "audio_shift_ms")
+                if saved_audio and not any(key in payload for key in fields):
+                    payload = {key: saved[key] for key in fields if key in saved} | payload
                 tempo = requested_tempo(payload, state)
-                events = grid_events(tempo["bpm"], tempo["offset"], start, length)
+                meter = tempo["meter"]
+                if saved_audio and all(tempo[key] == saved.get(key, 0) for key in fields):
+                    meter = saved.get("meter", 4)
+                events = grid_events(tempo["bpm"], tempo["offset"], start, length, meter=meter)
             else:
                 raise ValueError("试听拍线来源无效")
         elif mode in ("chart", "evidence"):
@@ -85,6 +94,8 @@ def register_playback_routes(app, *, projects, current_audio, requested_tempo):
         )
         response = send_file(buffer, mimetype="audio/wav", download_name="ManiaLab-timing-audition.wav")
         response.headers["X-ManiaLab-Audition-Events"] = str(len(report["events"]))
+        if meter is not None:
+            response.headers["X-ManiaLab-Audition-Meter"] = str(meter)
         return response
 
     @app.get("/api/projects/<pid>/waveform")

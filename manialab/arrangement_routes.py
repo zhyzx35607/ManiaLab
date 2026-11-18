@@ -1,5 +1,6 @@
 from flask import jsonify, request
 from .chart_workspace import audio_work
+from .meter import project_with_meter
 from .recommendation_plan import adjusted_segments
 
 
@@ -34,7 +35,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
             state = projects.load(pid)
             state.pop("plan", None)
             projects.save(state)
-        return jsonify(state)
+        return jsonify(project_with_meter(state))
 
     @app.post("/api/projects/<pid>/recommendations")
     def local_recommendations(pid):
@@ -120,7 +121,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
                 value = dict(value, source="manual")
             state["expression"] = value
             projects.save(state)
-        return jsonify(state)
+        return jsonify(project_with_meter(state))
 
     @app.post("/api/projects/<pid>/apply-recommendation")
     def apply_recommendation(pid):
@@ -153,4 +154,4 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
                     state["analysis"], state["settings"], segment_preferences=option["segments"],
                 )
             projects.save(state)
-        return jsonify(state)
+        return jsonify(project_with_meter(state))

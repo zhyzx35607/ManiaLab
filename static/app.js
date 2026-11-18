@@ -44,9 +44,13 @@ function restoreTimingDraft(draft){
   // candidate BPM, and derive suggestions from the restored draft instead.
   window.renderRecommendations?.();
 }
+function chartOffset(value){
+  const lower=Math.floor(value);
+  return value-lower===.5?lower+(lower%2===0?0:1):Math.round(value);
+}
 function normalizeTimingOffset(){
   const value=Number($('offset').value);if(!Number.isFinite(value)||Math.abs(value)>600000)throw Error('Offset 必须在 -600000–600000 ms 内');
-  const lower=Math.floor(value),rounded=value-lower===.5?lower+(lower%2===0?0:1):Math.round(value);
+  const rounded=chartOffset(value);
   if(value!==rounded){$('offset').value=rounded;timingChanged();msg(`Offset 已取整为 ${rounded} ms；本次检查使用此拍线。`);}
 }
 function renderOriginalTempoNote(){
@@ -124,7 +128,7 @@ async function runJob(action,payload,form=false){
   }finally{jobId=null;setBusy(false);}
 }
 async function importFiles(files){if(!files.length||busy)return;setBusy(true);$('jobText').textContent='导入素材…';try{const data=new FormData();for(const f of files)data.append('files',f);loadState(await api('/api/import',data,true));msg(state.mode==='remap'?'原谱已导入，可直接严格重新定轨。':'音频已导入，点击分析音频开始。');}finally{setBusy(false);$('files').value='';}}
-async function generate(region){$('offset').value=Math.round(Number($('offset').value));await runJob('generate',{settings:settings(),mode:$('mode').value,bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),audio_shift_ms:clockShift(),snap:true,timing_confirmed:$('timingConfirmed').checked,...(region?{region}:{})});}
+async function generate(region){$('offset').value=chartOffset(Number($('offset').value));await runJob('generate',{settings:settings(),mode:$('mode').value,bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),audio_shift_ms:clockShift(),snap:true,timing_confirmed:$('timingConfirmed').checked,...(region?{region}:{})});}
 numbers.forEach(k=>$(k).addEventListener('input',updateOutputs));
 document.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{keys=Number(b.dataset.key);updateKeys();updateGridStatus();window.updateEditorLocks?.();});
 $('referenceStyleFile').onchange=guarded(async e=>{
@@ -197,6 +201,15 @@ const cueClock=new ManiaAudioClock(audio,(from,to)=>{
 function tick(){if(!audio.paused)draw();requestAnimationFrame(tick);}
 new ResizeObserver(draw).observe($('roll'));audio.addEventListener('loadedmetadata',draw);audio.addEventListener('seeked',()=>{lastAudioTime=audio.currentTime;draw();});
 const importedTimingCache=new WeakMap();
+function audioMeter(bpm,offset){
+  const saved=variant(),shift=clockShift();
+  if(saved?.mode==='audio'&&bpm===saved.bpm&&offset===saved.offset&&shift===(saved.audio_shift_ms??0)){
+    return saved.meter??4;
+  }
+  const detected=state?.analysis?.tempo;
+  if(detected&&bpm===detected.bpm&&offset===Math.round(detected.offset-shift))return state.detected_meter??4;
+  return 4;
+}
 function timingPoints(){
   if($('mode').value==='remap'){
     const lines=state?.input_timing;
@@ -216,8 +229,8 @@ function timingPoints(){
     }
     return importedTimingCache.get(lines);
   }
-  const bpm=Number($('bpm').value),offset=Number($('offset').value);
-  return Number.isFinite(bpm)&&bpm>=10&&bpm<=1000&&Number.isFinite(offset)?[{offset,beat:60000/bpm,meter:4}]:[];
+  const bpm=Number($('bpm').value),offset=chartOffset(Number($('offset').value));
+  return Number.isFinite(bpm)&&bpm>=10&&bpm<=1000&&Number.isFinite(offset)?[{offset,beat:60000/bpm,meter:audioMeter(bpm,offset)}]:[];
 }
 function beatsBetween(start,end){
   const points=timingPoints(),out=[];
@@ -279,13 +292,13 @@ let auditionUrl=null,auditionRequest=0;
 $('voice').onchange=()=>{if(!state)return;const t=currentTime();cueClock.reset();audio.pause();audio.src=$('voice').value==='mix'?`/api/projects/${state.id}/audio`:`/api/projects/${state.id}/stem/${$('voice').value}`;audio.addEventListener('loadedmetadata',()=>{audio.currentTime=Math.min(t,audio.duration||t);draw();},{once:true});draw();};
 $('auditionHere').onclick=()=>{$('auditionStart').value=currentTime().toFixed(1);};
 $('auditionLoop').onchange=()=>{$('auditionAudio').loop=$('auditionLoop').checked;};
-$('auditionApply').onclick=()=>{$('offset').value=Math.round(Number($('auditionOffset').value));timingChanged();msg('已采用对照 B 的 Offset；请检查整曲后重新生成。');};
+$('auditionApply').onclick=()=>{$('offset').value=chartOffset(Number($('auditionOffset').value));timingChanged();msg('已采用对照 B 的 Offset；请检查整曲后重新生成。');};
 async function audition(mode,compare=false){
   const originalBeats=mode==='beats'&&$('mode').value==='remap';
   const remapMix=originalBeats||(mode==='chart'&&variant()?.mode==='remap');
   if(!state?.analysis&&!(remapMix&&state?.audio))throw Error('请先分析音频');
   const requestNumber=++auditionRequest;
-  const pid=state.id,offset=Number($(compare?'auditionOffset':'offset').value);
+  const pid=state.id,offset=chartOffset(Number($(compare?'auditionOffset':'offset').value));
   const payload={mode,start_ms:Number($('auditionStart').value)*1000,duration_ms:Number($('auditionLength').value)*1000,
     bpm:Number($('bpm').value),offset,division:Number($('division').value),audio_shift_ms:clockShift(),releases:true,voice:$('voice').value};
   if(mode==='beats')payload.beat_clock=originalBeats?'original':'fixed';
@@ -296,7 +309,7 @@ async function audition(mode,compare=false){
   audio.pause();$('auditionAudio').pause();if(auditionUrl)URL.revokeObjectURL(auditionUrl);
   auditionUrl=URL.createObjectURL(blob);$('auditionAudio').src=auditionUrl;$('auditionAudio').loop=$('auditionLoop').checked;
   $('auditionNote').textContent=payload.beat_clock==='original'?`原谱拍线 · ${payload.start_ms/1000} 秒开始，重音按各段拍号播放。`:
-    mode==='beats'?`${compare?'B':'A'}：${payload.bpm} BPM / ${offset} ms，${payload.start_ms/1000} 秒开始。音乐和节拍器共用采样时钟。`:
+    mode==='beats'?`${compare?'B':'A'}：${payload.bpm} BPM / ${offset} ms，每小节 ${response.headers.get('X-ManiaLab-Audition-Meter')} 拍，${payload.start_ms/1000} 秒开始。`:
     `${mode==='chart'?'候选谱面':'原始采音'}：${payload.start_ms/1000} 秒开始，高音提示起点、低音提示持续音结束。`;
   await $('auditionAudio').play();
 }

@@ -15,7 +15,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 @pytest.mark.parametrize('keys',range(6,11))
 def test_generated_model_timing_is_enforced_after_serialization(keys):
-    tempo=dict(bpm=210,offset=93,division=4,audio_shift_ms=22.5)
+    tempo=dict(bpm=210,offset=93,division=4,audio_shift_ms=22.5,meter=3)
     original=export_osu([Note(378,950,0),Note(435,435,1),Note(490,500,2)],keys,
         ROOT/'vendor/mapperatorinator/template.osu',bpm=209.998,offset=91)
     # Preserve hit sounds and custom samples while rewriting the model clock.
@@ -32,6 +32,8 @@ def test_generated_model_timing_is_enforced_after_serialization(keys):
         verify_fixed_timing(exported.replace(',379,128,',',378,128,'),tempo)
     with pytest.raises(ValueError,match='红线'):
         verify_fixed_timing(exported,tempo|{'offset':91})
+    with pytest.raises(ValueError,match='红线'):
+        verify_fixed_timing(exported,tempo|{'meter':4})
 
 
 def test_confirmed_timing_context_is_passed_but_never_returned_as_generated_chart(tmp_path,monkeypatch):
@@ -46,14 +48,14 @@ def test_confirmed_timing_context_is_passed_but_never_returned_as_generated_char
         return ''
     monkeypatch.setattr(engine,'run',run)
     result=engine.generate(tmp_path/'input.wav',output,parameters(),lambda *a:None,lambda:False,
-                           tempo=dict(bpm=210,offset=93),seconds=12,start_ms=24000)
+                           tempo=dict(bpm=210,offset=93,meter=3),seconds=12,start_ms=24000)
     assert result.name=='generated.osu'
     assert 'in_context=[TIMING]' in seen and 'output_type=[MAP]' in seen
     assert 'start_time=24000' in seen and 'end_time=36000' in seen
     ref=sections((output/'timing-context.osu').read_text(encoding='utf-8'))
     assert not any(line.strip() for line in ref.get('HitObjects', []))
     red=next(line for line in ref['TimingPoints'] if line.strip()).split(',')
-    assert float(red[0])==93 and abs(float(red[1])-60000/210)<1e-7
+    assert float(red[0])==93 and abs(float(red[1])-60000/210)<1e-7 and int(red[2])==3
 
 
 def test_experimental_adapter_preserves_reference_meter_changes_without_notes(tmp_path,monkeypatch):

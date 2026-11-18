@@ -7,6 +7,7 @@ from flask import jsonify, request
 from .arrange_config import DEFAULTS
 from .chart_workspace import select_chart
 from .domain import parse_osu
+from .meter import project_with_meter
 from .storage import AUDIO, extract_osz, safe_path, validate_import_paths
 
 
@@ -46,7 +47,7 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             elif not state["audio"]:
                 raise ValueError("没有可用音频或原生 mania 谱面")
             projects.save(state)
-            return jsonify(state)
+            return jsonify(project_with_meter(state))
         except Exception:
             shutil.rmtree(path, ignore_errors=True)
             raise
@@ -56,7 +57,7 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
         if state.get("original") and "input_timing" not in state:
             source = safe_path(projects.path(pid) / "files", state["original"])
             state["input_timing"] = parse_osu(source.read_text(encoding="utf-8-sig"))["timing"]
-        return jsonify(state)
+        return jsonify(project_with_meter(state))
 
     def choose_chart(pid):
         with task_service.lock:
@@ -68,7 +69,7 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             if (relative or None) != state.get("original"):
                 state = select_chart(projects.path(pid), state, relative)
                 projects.save(state)
-            return jsonify(state)
+            return jsonify(project_with_meter(state))
 
     def choose_variant(pid):
         with task_service.lock:
@@ -80,7 +81,7 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             state["active"] = index
             state["settings"] = state["variants"][index]["settings"].copy()
             projects.save(state)
-            return jsonify(state)
+            return jsonify(project_with_meter(state))
 
     def reference_style(pid):
         with task_service.lock:
@@ -104,7 +105,7 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             # The current target key count remains the user's explicit choice.
             state["settings"] = prefs
             projects.save(state)
-        return jsonify(state)
+        return jsonify(project_with_meter(state))
 
     app.add_url_rule("/api/import", endpoint="import_files", view_func=import_files, methods=["POST"])
     app.add_url_rule("/api/projects/<pid>", endpoint="get_project", view_func=get_project, methods=["GET"])

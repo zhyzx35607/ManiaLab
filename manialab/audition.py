@@ -68,11 +68,11 @@ def render_audition(preview, start_ms, duration_ms, events, music_volume=.7, cli
                         events=audible_events, gain=gain)
 
 
-def grid_events(bpm, offset, start_ms, duration_ms, division=1):
+def grid_events(bpm, offset, start_ms, duration_ms, division=1, *, meter=4):
     tick = 60000 / bpm / division
     first = math.ceil((start_ms - offset) / tick)
     last = math.ceil((start_ms + duration_ms - offset) / tick)
-    return [(offset + i * tick, "accent" if i % (4 * division) == 0 else "beat")
+    return [(offset + i * tick, "accent" if i % (meter * division) == 0 else "beat")
             for i in range(first, last)]
 
 
