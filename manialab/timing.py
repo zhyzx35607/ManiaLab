@@ -92,6 +92,15 @@ def grid_diagnostics(attacks, bpm, offset, division=4):
     return result
 
 
+def _insufficient_timing_windows(attacks, duration_ms):
+    """List 12-second windows that lack the five attacks needed for a grid check."""
+    times = [n.audio_start if n.audio_start is not None else n.start for n in attacks]
+    counts = Counter(int(t // 12000) * 12000 for t in times)
+    end = max(math.ceil(duration_ms), max((math.floor(t) + 1 for t in times), default=0))
+    return [dict(start_ms=start, end_ms=min(start + 12000, end), attacks=counts[start])
+            for start in range(0, end, 12000) if counts[start] < 5]
+
+
 def analysis_timing_diagnostics(analysis, tempo):
     """Recheck frozen timing evidence without losing its window provenance.
 
@@ -110,11 +119,7 @@ def analysis_timing_diagnostics(analysis, tempo):
         for key in ('evidence_source', 'fallback'):
             if key in original:
                 section[key] = original[key]
-    counts = Counter(n.audio_start//12000*12000 for n in attacks)
-    end = max(math.ceil(analysis.get('duration', 0)*1000),
-              max((n.audio_start+1 for n in attacks), default=0))
-    insufficient = [dict(start_ms=t, end_ms=min(t+12000, end), attacks=counts[t])
-        for t in range(0, end, 12000) if counts[t] < 5]
+    insufficient = _insufficient_timing_windows(attacks, analysis.get('duration', 0) * 1000)
     return dict(sections=sections, suspect=sum(s['suspect'] for s in sections),
         insufficient_windows=insufficient,
         status='insufficient' if not sections else 'partial' if insufficient else 'available',
@@ -219,18 +224,25 @@ def estimate_timing(attacks, duration, beats_ms=None):
         return empty
     best = candidates[0]
     sections = grid_diagnostics(attacks, best["bpm"], best["offset"], best["division"])
+    sparse_windows = [window for window in _insufficient_timing_windows(attacks, duration * 1000)
+                      if window['attacks'] and window['end_ms'] - window['start_ms'] == 12000]
     suspect = sum(s["suspect"] for s in sections)
-    stable = best["coverage"] >= .8 and best["median_error_ms"] <= 18 and suspect == 0 and len(sections) >= 2 and "exact_bpm" not in best
+    stable = (best["coverage"] >= .8 and best["median_error_ms"] <= 18 and suspect == 0
+              and len(sections) >= 2 and not sparse_windows and "exact_bpm" not in best)
     confidence = round(best["coverage"] * (1 - suspect / max(1, len(sections))), 3)
     explanation = "起音与网格整体一致；仍需试听确认 Offset、倍速 / 半速和弱起" if stable else "拍线不稳定或证据不足：请校准 BPM / Offset 并试听确认后再生成"
+    if sparse_windows:
+        explanation = "存在起音稀少但非静音的段落，自动 Timing 无法确认；请检查这些段落后再生成"
     if "exact_bpm" in best:
-        explanation = (f"取整为 {best['bpm']:g} BPM 可能造成约 {best['rounding_drift_ms']}ms 的整曲漂移。"
-                       f"另有 {best['exact_bpm']:g} BPM 精确候选，请比较歌曲开头与结尾后采用。")
+        precision_explanation = (f"取整为 {best['bpm']:g} BPM 可能造成约 {best['rounding_drift_ms']}ms 的整曲漂移。"
+                                 f"另有 {best['exact_bpm']:g} BPM 精确候选，请比较歌曲开头与结尾后采用。")
+        explanation = f"{precision_explanation} {explanation}" if sparse_windows else precision_explanation
     strongest = max((c["score"] for c in normalized.values()), default=0)
     strongest = max(strongest, max((c["score"] for c in precise.values()), default=0))
     precise_candidates = sorted((c for c in precise.values() if c["score"] >= strongest * .85), key=lambda c: c["score"], reverse=True)[:4]
     return {**best, "estimated": True, "confidence": confidence, "stable": stable,
-            "candidates": candidates, "precise_candidates": precise_candidates, "sections": sections, "reliability": explanation,
+            "candidates": candidates, "precise_candidates": precise_candidates, "sections": sections,
+            "sparse_windows": sparse_windows, "reliability": explanation,
             "meter_model_used": use_meter}
 
 

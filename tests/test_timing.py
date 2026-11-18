@@ -4,7 +4,18 @@ import pytest
 
 from manialab.audio import rhythmic_evidence, SR, fuse_attacks
 from manialab.domain import Note
-from manialab.timing import BeatClock, chart_clock_notes, estimate_timing, align_candidates, normalize_bpm, refit_offset, grid_report, cover_missing_timing_windows, _score
+from manialab.timing import (
+    BeatClock,
+    chart_clock_notes,
+    estimate_timing,
+    analysis_timing_diagnostics,
+    align_candidates,
+    normalize_bpm,
+    refit_offset,
+    grid_report,
+    cover_missing_timing_windows,
+    _score,
+)
 
 
 def test_original_red_lines_change_period_and_ignore_inherited_velocity():
@@ -70,6 +81,36 @@ def test_variable_tempo_does_not_claim_safe_grid():
     assert any(s['suspect'] for s in result['sections'])
     with pytest.raises(ValueError, match='Timing'):
         align_candidates(notes, result)
+
+
+def test_sparse_nonempty_window_blocks_automatic_timing():
+    notes = [Note(t, t) for t in range(100, 12000, 500)]
+    notes.extend(Note(t, t) for t in (12100, 14500, 16900, 19300))
+    notes.extend(Note(t, t) for t in range(24100, 36000, 500))
+
+    result = estimate_timing(notes, 36)
+
+    assert result['bpm'] == 120
+    assert not result['stable']
+    assert result['sparse_windows'] == [dict(start_ms=12000, end_ms=24000, attacks=4)]
+    diagnostics = analysis_timing_diagnostics(
+        dict(duration=36, timing_attacks=[note.data() for note in notes]), result)
+    assert diagnostics['status'] == 'partial'
+    assert diagnostics['insufficient_windows'] == result['sparse_windows']
+    with pytest.raises(ValueError, match='Timing'):
+        align_candidates(notes, result)
+    align_candidates(notes, result, confirmed=True)
+
+
+def test_silent_window_does_not_block_automatic_timing():
+    notes = [Note(t, t) for t in range(100, 12000, 500)]
+    notes.extend(Note(t, t) for t in range(24100, 36000, 500))
+
+    result = estimate_timing(notes, 36)
+
+    assert result['bpm'] == 120
+    assert result['stable']
+    assert result['sparse_windows'] == []
 
 
 def test_triplet_grid_does_not_claim_support_from_unrepresentable_half_beats():
