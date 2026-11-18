@@ -4,6 +4,7 @@ from pathlib import Path
 
 from flask import request
 
+from .chart_workspace import audio_work
 from .stems import VOICES
 from .storage import AUDIO, safe_path
 
@@ -69,6 +70,7 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
                 raise ValueError(piano_status.get("message", "当前安装包未包含钢琴专用采音模型"))
 
         def operation(state, progress, cancelled):
+            work = audio_work(projects.path(pid), state)
             if analysis_engine in ("deep", "deep6", "provided"):
                 selected_separator = (
                     services.ProvidedStemSeparator(state.get("provided_stems"))
@@ -76,7 +78,7 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
                     else services.Separator(resources, "six") if analysis_engine == "deep6" else separator
                 )
                 state["analysis"] = services.analyze_deep(
-                    current_audio(state), projects.path(pid), resources / "assets/basic-pitch.onnx",
+                    current_audio(state), work, resources / "assets/basic-pitch.onnx",
                     prefs, selected_separator, progress, cancelled,
                     piano_detector=piano_detector if piano_engine == "specialist" else None,
                     guitar_detector=guitar_detector if guitar_engine == "fl" else None,
@@ -86,7 +88,7 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
                 )
             else:
                 state["analysis"] = services.analyze(
-                    current_audio(state), projects.path(pid), resources / "assets" / "basic-pitch.onnx",
+                    current_audio(state), work, resources / "assets" / "basic-pitch.onnx",
                     prefs, progress, cancelled,
                 )
             state["settings"] = prefs
@@ -129,7 +131,8 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
             if not request.files or set(request.files) - set(VOICES):
                 raise ValueError("请选择并标明声部文件")
             # Preserve old sets and analyses; each upload has an isolated path.
-            folder = projects.path(pid) / "provided-uploads" / secrets.token_hex(16)
+            work = audio_work(projects.path(pid), state)
+            folder = work / "provided-uploads" / secrets.token_hex(16)
             uploads_to_save = []
             for voice in request.files:
                 uploads = request.files.getlist(voice)
@@ -153,11 +156,11 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
             def operation(state, progress, cancelled):
                 nonlocal new_decoded_folder
                 _, key = services.provided_stem_identity(current_audio(state), sources)
-                decoded_folder = projects.path(pid) / "stems-provided" / key
+                decoded_folder = work / "stems-provided" / key
                 if not decoded_folder.exists():
                     new_decoded_folder = decoded_folder
                 report = services.prepare_provided_stems(
-                    current_audio(state), sources, projects.path(pid), progress, cancelled,
+                    current_audio(state), sources, work, progress, cancelled,
                 )
                 state["provided_stems"] = report
                 return {"voices": report["voices"], "duration_seconds": report["duration_seconds"]}

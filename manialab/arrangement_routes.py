@@ -1,4 +1,5 @@
 from flask import jsonify, request
+from .chart_workspace import audio_work
 from .recommendation_plan import adjusted_segments
 
 
@@ -64,7 +65,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
                 from .audio_io import decode
 
                 progress(10, "读取音频，比较音色、能量与声部活动变化")
-                samples = decode(current_audio(state), projects.path(pid))
+                samples = decode(current_audio(state), audio_work(projects.path(pid), state))
                 structure = detect_structure(analysis, samples, SR)
             elif action == "bookmarks":
                 marks = state.get("reference_marks", {}).get("bookmarks", [])

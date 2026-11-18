@@ -7,9 +7,11 @@ from flask import request
 
 from .arrange import layout_metrics, parameters
 from .audio_io import decode
+from .chart_workspace import archive_active_chart, audio_work
 from .domain import clean_meta, parse_osu, upstream_events, validate
 from .ln_patterns import analyze_ln_patterns
 from .review import review_chart
+from .structure import reference_marks
 from .timing import grid_report
 from .upstream import fixed_timing_output
 
@@ -33,7 +35,8 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
 
         def operation(state, progress, cancelled):
             # Supply decoded WAV so upstream pydub needs no global ffmpeg installation.
-            work = projects.path(pid)
+            project = projects.path(pid)
+            work = audio_work(project, state)
             if not (work / "preview.wav").exists():
                 decode(current_audio(state), work)
             tempo = requested_tempo(payload, state) if payload.get("use_timing") is True else None
@@ -64,9 +67,11 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
             # The ordinary remap action remains available after generation.
             assigned = selected
             name = "Mapperatorinator-" + secrets.token_hex(4) + ".osu"
-            (work / "files" / name).write_text(text, encoding="utf-8")
+            (project / "files" / name).write_text(text, encoding="utf-8")
+            archive_active_chart(project, state)
             state.update(
                 original=name,
+                reference_marks=reference_marks(text),
                 input_notes=[note.data() for note in selected],
                 input_keys=parsed["keys"],
                 input_timing=parsed["timing"],
@@ -92,7 +97,6 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
                 )
             if warnings:
                 message += "\n原模型警告（可能包含未配对并被上游丢弃的 LN）：\n" + "\n".join(warnings)
-            # Source reference is project-level, so discard variants belonging to an older source.
             state["variants"] = [
                 dict(
                     notes=[note.data() for note in assigned], settings=prefs, mode="remap", report=report,

@@ -7,8 +7,11 @@ import math
 import numpy as np
 from scipy.io import wavfile
 
+from .audio_config import SR
+from .audio_io import decode_preview_window
 
-def render_audition(preview, start_ms, duration_ms, events, music_volume=.7, click_volume=.3):
+
+def render_audition(preview, start_ms, duration_ms, events, music_volume=.7, click_volume=.3, *, original_audio=False):
     """Mix a short excerpt and events in one PCM stream, with no UI timer jitter.
 
     Events are (absolute milliseconds, kind), where kind is beat/accent/head/tail.
@@ -20,12 +23,19 @@ def render_audition(preview, start_ms, duration_ms, events, music_volume=.7, cli
         raise ValueError("试听范围必须为 1–30 秒，起点不能为负")
     if not 0 <= music_volume <= 1 or not 0 <= click_volume <= 1:
         raise ValueError("试听音量必须在 0–1 范围内")
-    sample_rate, data = wavfile.read(preview, mmap=True)
-    first = round(start_ms * sample_rate / 1000)
-    last = min(len(data), first + round(duration_ms * sample_rate / 1000))
-    if first >= last:
+    if start_ms > 24 * 3600 * 1000:
         raise ValueError("试听起点超过音频结尾")
-    source = np.asarray(data[first:last], dtype=np.float32)
+    if original_audio:
+        sample_rate = SR
+        first = round(start_ms * sample_rate / 1000)
+        data = decode_preview_window(preview, first, round(duration_ms * sample_rate / 1000))
+    else:
+        sample_rate, data = wavfile.read(preview, mmap=True)
+        first = round(start_ms * sample_rate / 1000)
+        data = data[first:first + round(duration_ms * sample_rate / 1000)]
+    if len(data) == 0:
+        raise ValueError("试听起点超过音频结尾")
+    source = np.asarray(data, dtype=np.float32)
     if np.issubdtype(data.dtype, np.integer):
         source /= max(abs(np.iinfo(data.dtype).min), np.iinfo(data.dtype).max)
     if source.ndim == 1:
@@ -64,6 +74,50 @@ def grid_events(bpm, offset, start_ms, duration_ms, division=1):
     last = math.ceil((start_ms + duration_ms - offset) / tick)
     return [(offset + i * tick, "accent" if i % (4 * division) == 0 else "beat")
             for i in range(first, last)]
+
+
+def imported_grid_events(timing_points, start_ms, duration_ms):
+    """Play imported red lines in chart time, restarting the bar at each change."""
+    points = {}
+    for line in timing_points:
+        if not isinstance(line, str):
+            continue
+        fields = line.split(",")
+        if len(fields) < 2 or (len(fields) >= 7 and fields[6].strip() != "1"):
+            continue
+        try:
+            offset, period = float(fields[0]), float(fields[1])
+        except ValueError:
+            continue
+        if not math.isfinite(offset) or not math.isfinite(period) or period <= 0:
+            continue
+        try:
+            meter = int(fields[2])
+        except (IndexError, ValueError):
+            meter = 4
+        points[offset] = period, meter if 0 < meter < 2**53 else 4
+    if not points:
+        raise ValueError("原谱没有可用于试听的 Timing 红线")
+
+    offsets = sorted(points)
+    events = []
+    end_ms = start_ms + duration_ms
+    for index, offset in enumerate(offsets):
+        period, meter = points[offset]
+        begin = start_ms if index == 0 else max(start_ms, offset)
+        finish = min(end_ms, offsets[index + 1]) if index + 1 < len(offsets) else end_ms
+        if begin >= finish:
+            continue
+        first, stop = (begin - offset) / period, (finish - offset) / period
+        # A beat number outside the exact integer range cannot be accented
+        # consistently with the browser. Bound the work for malformed files.
+        if max(abs(first), abs(stop)) >= 2**53 or math.ceil(stop) - math.ceil(first) > 10000 - len(events):
+            raise ValueError("这段原谱的拍线过密或时间超出试听范围")
+        for beat in range(math.ceil(first), math.ceil(stop)):
+            time_ms = offset + beat * period
+            if begin <= time_ms < finish:
+                events.append((time_ms, "accent" if beat % meter == 0 else "beat"))
+    return events
 
 
 def waveform_window(preview, start_ms, duration_ms, bins=1600):
