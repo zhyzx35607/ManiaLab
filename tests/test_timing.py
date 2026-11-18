@@ -250,6 +250,47 @@ def test_tempo_ambiguity_exposes_all_qualified_octave_candidates():
     }
 
 
+def test_precision_competitors_keep_their_own_fit_and_remain_selectable():
+    bpm = 120.37
+    times = 91 + np.arange(int(90 * bpm / 60)) * 60000 / bpm
+    attacks = [Note(round(t), round(t)) for t in times]
+
+    result = estimate_timing(attacks, 95)
+
+    assert result['bpm'] == 120
+    assert result['tempo_ambiguity'] is not None
+    assert any(abs(value - 60.18) < .01
+               for value in result['tempo_ambiguity']['competitor_bpms'])
+    assert any(abs(candidate['bpm'] - 60.18) < .01
+               and candidate['coverage'] >= .8 and candidate['median_error_ms'] <= 18
+               for candidate in result['precise_candidates'])
+    assert not result['stable']
+
+
+def test_nearby_precision_candidates_and_octave_competitors_remain_distinct(monkeypatch):
+    bpm_a, bpm_b = 120.45, 120.57
+    times_a = 91 + np.arange(int(180 * 120.46 / 60)) * 60000 / 120.46
+    times_b = 91 + np.arange(int(180 * 120.54 / 60)) * 60000 / 120.54
+    attacks = [Note(round(t), round(t)) for t in np.sort(np.r_[times_a, times_b])]
+
+    def precision_candidate(_attacks, _raw, rounded, _duration):
+        precise = {60: (60.2, .82), 60.5: (60.32, .82),
+                   120: (bpm_a, .9), 121: (bpm_b, .9)}
+        match = precise.get(rounded['bpm'])
+        if match is None:
+            return None
+        bpm, score = match
+        return {**rounded, 'bpm': bpm, 'score': score, 'coverage': 1.,
+                'median_error_ms': 0., 'rounding_drift_ms': 100}
+
+    monkeypatch.setattr('manialab.timing._precision_candidate', precision_candidate)
+    result = estimate_timing(attacks, 180)
+
+    precise_bpms = {candidate['bpm'] for candidate in result['precise_candidates']}
+    assert {bpm_a, bpm_b} <= precise_bpms
+    assert {60.2, 60.32} <= set(result['tempo_ambiguity']['competitor_bpms'])
+
+
 @pytest.mark.parametrize('interval_ms,strengths_pattern,expected_bpm,competitor_bpm,jitter', [
     (500, (1., 1.), 120, 60, 0),
     (500, (1., .12), 120, 60, 3),

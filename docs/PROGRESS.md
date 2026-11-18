@@ -1908,3 +1908,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 所有未消歧的八度竞争 BPM 均进入`tempo.candidates`供前端选择，并按 BPM 去重；返回诊断保留竞争项及拍点支持差。无歧义时延用原有稳定与量化路径。
 - 合成回归覆盖等强和强弱起音、快慢两个方向、轻微抖动、模型明确消歧、模型支持接近、无关 BPM 更获模型支持、多个八度竞争项以及未确认量化拦截。定向`.venv/Scripts/python.exe -m pytest -q tests/test_timing.py tests/test_timing_diagnostic_clock.py tests/test_generation_clock.py`为81 passed；数值线程限制为2时全量`.venv/Scripts/python.exe -m pytest -q`为2,556 passed、89 skipped（76.72秒）；Edge `MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978 npm run test:ui`为31 passed（约1.2分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。
 - 本阶段只验证合成 Timing 门槛与现有接口兼容；未运行音频模型、研究训练或用户音频，未读取参考谱及 MAESTRO 保留测试，也未改研究脚本或研究产物。尚未用小数精确候选的独立拟合指标参与八度竞争筛选；该边界、独立泛化、真实试听和 osu! 试打仍待后续验证。结果不代表真实音乐质量或模型效果提升。
+
+## 2026-11-18 第四十三阶段：精确 BPM 竞争项保留独立拟合
+
+- 将精确 BPM 候选自身的覆盖率、误差与拍点支持用于半速 / 倍速竞争筛选；未消歧的精确竞争项继续进入可选 Timing 候选。精确候选之间按`.001 BPM`去重，保留同一整数 BPM 舍入附近、但全曲漂移不同的拟合；普通 BPM 候选沿用`.15 BPM`容差。
+- 新增合成回归覆盖`120.37 BPM`的`60.18 BPM`精确竞争项，以及相差`.12 BPM`的近邻精确候选和半速竞争列表，确认各候选保留自己的拟合质量与选择入口。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_timing.py`为51 passed；最终全量（数值线程上限2）`.venv/Scripts/python.exe -m pytest -q`为2,558 passed、89 skipped（71.14秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`及`git diff --check`通过。PR #142 Windows run `44248668628`通过：Python/API为2,558 passed、89 skipped，Edge合成UI为31 passed；模型下载及便携构建步骤按条件跳过。
+- 未运行模型、研究训练或用户音频，未读取参考谱、下载语料及 MAESTRO 保留测试，未改研究脚本或逐音产物。合成 Timing 通过不代表独立音乐泛化、真实试听或 osu! 试打验收；这些长期目标仍待完成。
+- 后续继续检查 Timing 候选的 API/UI 往返与人工确认边界，再转入独立泛化和试听验收，不重复既有模型实验。
