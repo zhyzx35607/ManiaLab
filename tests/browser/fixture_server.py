@@ -39,6 +39,23 @@ def timing_fixture(projects, title):
     return pid
 
 
+def precise_timing_fixture(projects):
+    pid = timing_fixture(projects, 'UI timing precision')
+    state = projects.load(pid)
+    state['analysis']['tempo'].update(
+        bpm=120,
+        offset=115.25,
+        stable=False,
+        candidates=[dict(bpm=120, offset=115.25, division=4, coverage=.95)],
+        precise_candidates=[dict(
+            bpm=120.37, offset=115.25, division=4, coverage=.95,
+            precision_suggestion=True, rounding_drift_ms=37,
+        )],
+    )
+    projects.save(state)
+    return pid
+
+
 def ln_remap_fixture(projects):
     pid = timing_fixture(projects, 'UI LN navigation remap')
     state = projects.load(pid)
@@ -174,6 +191,7 @@ def main():
         timing_fixture(projects, 'UI timing wave')
         timing_fixture(projects, 'UI timing saved')
         timing_fixture(projects, 'UI timing style')
+        precise_timing_fixture(projects)
         timing_fixture(projects, 'UI LN navigation audio')
         ln_remap_fixture(projects)
         for title in ('UI evidence review', 'UI evidence edits', 'UI evidence snapshots',

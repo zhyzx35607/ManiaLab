@@ -21,6 +21,7 @@
 - PR #119–#123 的路由边界整理均已合入`main`；PR #123 run `44098248603`与合并后 main run `44098766111`通过，普通 push run `44098175931`成功跳过。当前基线为`b80dad8`，本次求解器结构阶段从该提交续接。
 - PR #132–#136 已依次合并到`main`；当前结构整理基线为`3f3879f`。PR #133 run `44128674193`、进度更新后 run `44129552127`及 main run `44130292999`均通过；PR #134 run `44133239396`、进度更新后 run `44134458472`及 main run `44135099313`均通过。阶段35完整 Python/API 为2,527 passed、89 skipped，Edge UI为31 passed。阶段36 PR run `44137877217`、main run `44138712410`均通过：Python/API为2,531 passed、89 skipped，Edge UI为31 passed。阶段37最终 PR run `44217665635`与 main run `44218152214`均通过：Python/API为2,533 passed、89 skipped，Edge UI为31 passed。
 - PR #137 已合并为`b483895eefafe2f5c432a4c73b73e7e274f847b1`。PR Windows run `44225629152`通过，合并后 main run `44226100575`成功；详见本文件末尾。
+- PR #142 Windows run `44248668628`通过并已合入`main`；当前基线为`f35b22f6c50ddfe9a1aa0926ab2121087dce6451`。精确 BPM 候选的重算和 UI/API 往返验证在下一阶段记录。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1913,6 +1914,15 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将精确 BPM 候选自身的覆盖率、误差与拍点支持用于半速 / 倍速竞争筛选；未消歧的精确竞争项继续进入可选 Timing 候选。精确候选之间按`.001 BPM`去重，保留同一整数 BPM 舍入附近、但全曲漂移不同的拟合；普通 BPM 候选沿用`.15 BPM`容差。
 - 新增合成回归覆盖`120.37 BPM`的`60.18 BPM`精确竞争项，以及相差`.12 BPM`的近邻精确候选和半速竞争列表，确认各候选保留自己的拟合质量与选择入口。
-- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_timing.py`为51 passed；最终全量（数值线程上限2）`.venv/Scripts/python.exe -m pytest -q`为2,558 passed、89 skipped（71.14秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`及`git diff --check`通过。PR #142 Windows run `44248668628`通过：Python/API为2,558 passed、89 skipped，Edge合成UI为31 passed；模型下载及便携构建步骤按条件跳过。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_timing.py`为51 passed；最终全量（数值线程上限2）`.venv/Scripts/python.exe -m pytest -q`为2,558 passed、89 skipped（71.14秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`及`git diff --check`通过。PR #142 Windows run `44248668628`通过并合入`main`为`f35b22f6c50ddfe9a1aa0926ab2121087dce6451`：Python/API为2,558 passed、89 skipped，Edge合成UI为31 passed；模型下载及便携构建步骤按条件跳过。
 - 未运行模型、研究训练或用户音频，未读取参考谱、下载语料及 MAESTRO 保留测试，未改研究脚本或逐音产物。合成 Timing 通过不代表独立音乐泛化、真实试听或 osu! 试打验收；这些长期目标仍待完成。
 - 后续继续检查 Timing 候选的 API/UI 往返与人工确认边界，再转入独立泛化和试听验收，不重复既有模型实验。
+
+## 2026-11-18 第四十四阶段：冻结 Timing 复算与候选往返回归
+
+- 新增`scripts/reestimate_frozen_timing.py`，按固定计划 SHA `0696d759598b57ceaaefe3eb52ca3e78f0d443cee60c0816c4cda2d733fad593`及逐份分析 SHA 校验输入；将26个配置按10份唯一分析去重，重用已保存的`timing_attacks`和拍点模型`beats_ms`，不读音频、不运行模型、不覆盖已有输出目录。汇总报告保存在 ignored `test-data/frozen-timing-reestimate-20261118/report.json`，不输出逐音内容。
+- 10/10份分析的 BPM 与 stable 结论均和冻结分析一致，仍只有3/10为 stable。`4709745`细分从3改为4，覆盖率`0.4987 → 0.6324`、中位误差`30 → 18.75 ms`、相对冻结计划 Offset 为`-1 ms`；`5647839`细分从3改为4，覆盖率`0.3864 → 0.5260`、中位误差`35.25 → 24.31 ms`、计划 Offset 差为`0 ms`。两者仍为`stable=false`；历史代码复算结果相同，未发现近期 PR 引入回归。该复算来自既有开发片段，不构成独立泛化或音乐验收。
+- 新增合成浏览器往返：选择`120.37 BPM`精确候选（原音频 Offset `115.25 ms`），把制谱提前量从`22.5 ms`改为`37.5 ms`后，谱面 Offset 从`93 ms`调整为`78 ms`并清除旧确认；未确认生成被后端拒绝且不保存候选，勾选确认后生成、保存并重载，BPM、Offset、提前量和确认状态均保持。
+- 完整验证：数值线程上限2时`.venv/Scripts/python.exe -m pytest -q`为`2,562 passed, 89 skipped`（70.20秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8981 npm run test:ui`为`32 passed`（约1.2分钟），其中 Timing 文件11项全过；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`、`node --check tests/browser/timing.spec.cjs`及`git diff --check`通过。没有运行模型、训练、用户音频或参考谱，没有访问 MAESTRO 保留测试。
+- 本机 D 盘清理：删除的 dev.3/dev.4 发布 ZIP 大小与 SHA-256 均和仍在线的 GitHub Release 资产一致；清除时删除112个 Python `__pycache__` 目录及`.pytest_cache`。本地 dev.14 ZIP 对应 Release 不存在，故保留；dev.17/dev.18 包、全部模型、研究数据和验证报告也保留。D 盘可用空间从清理前`50.30 GiB`升至清理后`52.74 GiB`，测试运行后复测为`52.70 GiB`；仅清理本地可再下载副本与可重建缓存，没有改动 Git 跟踪数据。
+- 后续转入独立歌曲泛化、真实试听和 osu! 试打；现有 Timing 结果仍不能替代音乐质量验收。
