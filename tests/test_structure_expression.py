@@ -2,6 +2,7 @@ import copy
 import numpy as np
 import pytest
 
+from manialab import structure
 from manialab.arrange import parameters, assign_lanes
 from manialab.domain import Note, validate, export_osu, sections, values
 from manialab.expression import propose_expression, expression_evidence, select_expression, validate_expression
@@ -27,14 +28,59 @@ def test_sections_follow_acoustic_change_not_fifteen_second_windows():
     assert silent['boundaries']==[0,48000]
 
 
-def test_structure_detection_checks_cancellation_after_audio_features():
+def test_chunked_structure_features_match_full_stft_reference(monkeypatch):
+    sample_rate = 8000
+    samples = np.random.default_rng(11).normal(0, .2, sample_rate * 12).astype(np.float32)
+    monkeypatch.setattr(structure, "_STFT_CHUNK_FRAMES", 11)
+
+    actual, names = structure.acoustic_features(samples, sample_rate, [], 12000)
+
+    freq, times, spectrum = structure.stft(
+        samples, fs=sample_rate, nperseg=2048, noverlap=1024,
+        boundary=None, padded=False,
+    )
+    power = np.abs(spectrum) ** 2
+    bins = np.clip((times * 1000 / structure.STEP_MS).astype(int), 0, 23)
+    counts = np.maximum(1, np.bincount(bins, minlength=24))
+    bands = np.geomspace(35, sample_rate / 2, 17)
+    energy = np.array([
+        power[(freq >= start) & (freq < end)].sum(axis=0)
+        for start, end in zip(bands[:-1], bands[1:])
+    ])
+    band_level = np.array([
+        np.bincount(bins, weights=row, minlength=24) / counts for row in energy
+    ]).T
+    shape = np.sqrt(band_level / np.maximum(band_level.sum(axis=1, keepdims=True), 1e-12))
+    expected_features = np.column_stack((shape, np.log1p(band_level.sum(axis=1) * 1e5)))
+    scale = np.maximum(
+        np.percentile(expected_features, 90, axis=0) -
+        np.percentile(expected_features, 10, axis=0),
+        .15,
+    )
+    expected = structure.gaussian_filter1d(
+        np.clip(expected_features / scale, 0, 6), 1, axis=0,
+    )
+
+    assert names == [*(f"band_{index}" for index in range(16)), "energy"]
+    np.testing.assert_allclose(actual, expected, rtol=1e-6, atol=1e-7)
+
+
+def test_structure_detection_checks_cancellation_between_spectral_chunks(monkeypatch):
     calls = []
+    stft_calls = []
+    original_stft = structure.stft
+
+    def tracked_stft(*args, **kwargs):
+        stft_calls.append(True)
+        return original_stft(*args, **kwargs)
 
     def cancelled():
         calls.append(True)
-        return len(calls) >= 3
+        return len(calls) >= 4
 
-    samples = np.zeros(22050, dtype=np.float32)
+    monkeypatch.setattr(structure, "_STFT_CHUNK_FRAMES", 8)
+    monkeypatch.setattr(structure, "stft", tracked_stft)
+    samples = np.zeros(2048 + 16 * 1024, dtype=np.float32)
     with pytest.raises(InterruptedError, match='已取消'):
         detect_structure(
             dict(duration=1, tempo=dict(bpm=120, offset=0), candidates=[]),
@@ -42,7 +88,8 @@ def test_structure_detection_checks_cancellation_after_audio_features():
             22050,
             cancelled=cancelled,
         )
-    assert len(calls) == 3
+    assert len(calls) == 4
+    assert len(stft_calls) == 1
 
 
 def test_bookmarks_are_separate_from_sv_and_kiai():

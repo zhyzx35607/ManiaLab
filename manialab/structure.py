@@ -12,11 +12,50 @@ from scipy.ndimage import gaussian_filter1d
 
 REVISION = 1
 STEP_MS = 500
+_STFT_NPERSEG = 2048
+_STFT_HOP = 1024
+_STFT_CHUNK_FRAMES = 512
 
 
 def _check_cancelled(cancelled):
     if cancelled is not None and cancelled():
         raise InterruptedError("已取消，原有谱面已保留")
+
+
+def _spectral_band_levels(samples, sample_rate, count, cancelled):
+    nperseg, hop = _STFT_NPERSEG, _STFT_HOP
+    frame_count = 1 + (len(samples) - nperseg) // hop
+    frame_times = (np.arange(frame_count) * hop + nperseg // 2) / sample_rate
+    bins = np.clip((frame_times * 1000 / STEP_MS).astype(int), 0, count - 1)
+    counts = np.maximum(1, np.bincount(bins, minlength=count))
+    bands = np.geomspace(35, sample_rate / 2, 17)
+    band_ranges = list(zip(bands[:-1], bands[1:]))
+
+    totals = np.zeros((len(band_ranges), count), dtype=np.float64)
+    for first in range(0, frame_count, _STFT_CHUNK_FRAMES):
+        _check_cancelled(cancelled)
+        last = min(frame_count, first + _STFT_CHUNK_FRAMES)
+        # Align chunks to the song-wide hop grid and include the last full window.
+        sample_start = first * hop
+        sample_end = (last - 1) * hop + nperseg
+        freq, _, spectrum = stft(
+            samples[sample_start:sample_end],
+            fs=sample_rate,
+            nperseg=nperseg,
+            noverlap=nperseg - hop,
+            boundary=None,
+            padded=False,
+        )
+        _check_cancelled(cancelled)
+        power = np.abs(spectrum) ** 2
+        local_bins = bins[first:last]
+        for index, (start, end) in enumerate(band_ranges):
+            _check_cancelled(cancelled)
+            row = power[(freq >= start) & (freq < end)].sum(axis=0)
+            totals[index] += np.bincount(local_bins, weights=row, minlength=count)
+        del power, spectrum
+        _check_cancelled(cancelled)
+    return (totals / counts).T
 
 
 def reference_marks(text):
@@ -63,24 +102,9 @@ def acoustic_features(samples, sample_rate, candidates, duration_ms, *, cancelle
     count = max(1, math.ceil(duration_ms / STEP_MS))
     features = []
     names = []
-    if samples is not None and len(samples) >= 2048:
-        # Aggregate before retaining features: memory grows linearly in audio
-        # duration, not quadratically as a full song similarity matrix would.
-        freq, times, spectrum = stft(samples, fs=sample_rate, nperseg=2048,
-                                    noverlap=1024, boundary=None, padded=False)
-        _check_cancelled(cancelled)
-        power = np.abs(spectrum) ** 2
-        bins = np.clip((times * 1000 / STEP_MS).astype(int), 0, count - 1)
-        counts = np.maximum(1, np.bincount(bins, minlength=count))
-        bands = np.geomspace(35, sample_rate / 2, 17)
-        energy, band_level = [], []
-        for a, b in zip(bands[:-1], bands[1:]):
-            _check_cancelled(cancelled)
-            row = power[(freq >= a) & (freq < b)].sum(axis=0)
-            energy.append(row)
-            band_level.append(np.bincount(bins, weights=row, minlength=count) / counts)
-        energy = np.asarray(energy)
-        band_level = np.asarray(band_level).T
+    if samples is not None and len(samples) >= _STFT_NPERSEG:
+        # Keep only one bounded spectrum block while accumulating song-time bands.
+        band_level = _spectral_band_levels(samples, sample_rate, count, cancelled)
         # Spectral shape, separate from the total energy.
         shape = np.sqrt(band_level / np.maximum(band_level.sum(axis=1, keepdims=True), 1e-12))
         _check_cancelled(cancelled)
