@@ -52,7 +52,7 @@ def click_track(bpm, seconds=100, offset=.347):
 @pytest.mark.parametrize('bpm', [90, 120, 137, 174.5, 273.25])
 def test_precision_and_last_beat_drift(bpm):
     y, expected = click_track(bpm)
-    notes, result = rhythmic_evidence(y)
+    notes, result = rhythmic_evidence(y, beats_ms=expected + 27)
     assert abs(result['bpm'] - bpm) < .01
     beat = 60000 / result['bpm']
     errors = (expected - result['offset'] + beat / 2) % beat - beat / 2
@@ -106,7 +106,7 @@ def test_silent_window_does_not_block_automatic_timing():
     notes = [Note(t, t) for t in range(100, 12000, 500)]
     notes.extend(Note(t, t) for t in range(24100, 36000, 500))
 
-    result = estimate_timing(notes, 36)
+    result = estimate_timing(notes, 36, [127 + i * 500 for i in range(72)])
 
     assert result['bpm'] == 120
     assert result['stable']
@@ -180,9 +180,9 @@ def test_real_fractional_tempo_is_not_hidden_by_rounding():
 
 
 def test_numerical_noise_does_not_request_fractional_bpm():
-    notes = [Note(round(91 + i * 60000 / 210.00073), round(91 + i * 60000 / 210.00073))
-             for i in range(800)]
-    result = estimate_timing(notes, 230)
+    times = 91 + np.arange(800) * 60000 / 210.00073
+    notes = [Note(round(t), round(t)) for t in times]
+    result = estimate_timing(notes, 230, times + 27)
     assert result['bpm'] == 210
     assert result['stable']
     assert not result['precise_candidates']
@@ -206,6 +206,91 @@ def test_sparse_or_irregular_model_beats_cannot_overrule_audio():
                for i in range(200)]
     result = estimate_timing(attacks, 101, [100, 900, 4000])
     assert result['bpm'] == 120 and not result['meter_model_used']
+
+
+def test_ambiguous_meter_support_does_not_resolve_half_double_tempo():
+    attacks = [Note(round(91 + i * 500), round(91 + i * 500), strength=1)
+               for i in range(80)]
+    gaps = np.array([500] * 114 + [1000] * 86)
+    model_beats = 118 + np.r_[0, np.cumsum(gaps)]
+
+    result = estimate_timing(attacks, 40, model_beats)
+
+    assert result['bpm'] == 120
+    assert result['meter_model_used']
+    assert result['tempo_ambiguity']['competitor_bpm'] == 60
+    assert result['tempo_ambiguity']['beat_support_margin'] < .2
+    assert not result['stable']
+
+
+def test_unrelated_meter_candidate_cannot_resolve_half_double_tempo():
+    attacks = [Note(round(91 + i * 500), round(91 + i * 500), strength=1)
+               for i in range(80)]
+    gaps = np.array([500] * 80 + [round(60000 / 180)] * 120)
+    model_beats = 118 + np.r_[0, np.cumsum(gaps)]
+
+    result = estimate_timing(attacks, 40, model_beats)
+
+    assert result['bpm'] == 120
+    assert result['meter_model_used']
+    assert result['tempo_ambiguity']['best_beat_support'] < .55
+    assert result['tempo_ambiguity']['competitor_bpm'] == 60
+    assert not result['stable']
+
+
+def test_tempo_ambiguity_exposes_all_qualified_octave_candidates():
+    attacks = [Note(round(91 + i * 500), round(91 + i * 500), strength=1)
+               for i in range(80)]
+
+    result = estimate_timing(attacks, 40)
+
+    assert result['tempo_ambiguity']['competitor_bpms'] == [60, 240]
+    assert set(result['tempo_ambiguity']['competitor_bpms']) <= {
+        candidate['bpm'] for candidate in result['candidates']
+    }
+
+
+@pytest.mark.parametrize('interval_ms,strengths_pattern,expected_bpm,competitor_bpm,jitter', [
+    (500, (1., 1.), 120, 60, 0),
+    (500, (1., .12), 120, 60, 3),
+    (250, (1., .12), 240, 120, 2),
+])
+def test_half_double_tempo_candidates_without_beat_evidence_require_confirmation(
+        interval_ms,strengths_pattern,expected_bpm,competitor_bpm,jitter):
+    times = 91 + np.arange(int(40000 / interval_ms), dtype=float) * interval_ms
+    times += np.resize(np.array([0, jitter, -jitter, jitter / 2]), len(times))
+    strengths = np.resize(np.asarray(strengths_pattern), len(times))
+    attacks = [Note(round(t), round(t), strength=float(w)) for t,w in zip(times,strengths)]
+
+    result = estimate_timing(attacks, 40)
+
+    assert result['bpm'] == expected_bpm
+    assert competitor_bpm in [candidate['bpm'] for candidate in result['candidates']]
+    assert result['tempo_ambiguity']['competitor_bpm'] == competitor_bpm
+    assert not result['tempo_ambiguity']['meter_model_used']
+    assert not result['stable']
+    assert '拍点证据不足' in result['reliability']
+    with pytest.raises(ValueError, match='Timing'):
+        align_candidates(attacks, result)
+    align_candidates(attacks, result, confirmed=True)
+
+
+@pytest.mark.parametrize('interval_ms,beat_interval,expected_bpm', [
+    (500, 1000, 60),
+    (250, 500, 120),
+])
+def test_meter_evidence_resolves_half_double_tempo_candidates(interval_ms,beat_interval,expected_bpm):
+    times = 91 + np.arange(int(40000 / interval_ms)) * interval_ms
+    strengths = np.where(np.arange(len(times)) % 2 == 0, 1., .12)
+    attacks = [Note(round(t), round(t), strength=float(w)) for t,w in zip(times,strengths)]
+    model_beats = 118 + np.arange(int(40000 / beat_interval)) * beat_interval
+
+    result = estimate_timing(attacks, 40, model_beats)
+
+    assert result['bpm'] == expected_bpm
+    assert result['meter_model_used']
+    assert result['tempo_ambiguity'] is None
+    assert result['stable']
 
 
 @pytest.mark.parametrize('bpm,offset,division', [(210,91,4),(105,91,4),(166.667,-91,3),(174.5,91,4),

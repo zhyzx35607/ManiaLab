@@ -26,6 +26,7 @@ from .timing_fitting import (
 )
 
 DIVISIONS = (3, 4, 6, 8, 12, 16)
+TEMPO_AMBIGUITY_METER_SUPPORT_MARGIN = .2
 
 
 def chart_clock_notes(notes, audio_shift_ms=0):
@@ -157,7 +158,8 @@ def cover_missing_timing_windows(tempo, primary, fallback, primary_name='drums')
 
 def estimate_timing(attacks, duration, beats_ms=None):
     empty = dict(bpm=120., offset=0., estimated=True, confidence=0., stable=False,
-                 candidates=[], precise_candidates=[], sections=[], division=4, reliability="节奏证据不足，请设置 BPM / Offset 后试听")
+                 candidates=[], precise_candidates=[], sections=[], division=4, tempo_ambiguity=None,
+                 reliability="节奏证据不足，请设置 BPM / Offset 后试听")
     if len(attacks) < 8 or attacks[-1].start - attacks[0].start < 5000:
         return empty
     times = np.asarray([n.start for n in attacks], float)
@@ -214,7 +216,8 @@ def estimate_timing(attacks, duration, beats_ms=None):
         # just because rounding damaged it. Keep it visible with a warning.
         acoustic = max(c["score"], exact["score"] * .98) if exact else c["score"]
         return acoustic + (c.get("beat_support", 0) * .24 if use_meter else 0)
-    for c in sorted(normalized.values(), key=rank, reverse=True):
+    ranked = sorted(normalized.values(), key=rank, reverse=True)
+    for c in ranked:
         if not 44 <= c["bpm"] <= 301 or any(abs(c["bpm"] - p["bpm"]) < .15 for p in candidates):
             continue
         candidates.append(c)
@@ -223,26 +226,70 @@ def estimate_timing(attacks, duration, beats_ms=None):
     if not candidates:
         return empty
     best = candidates[0]
+    tempo_ambiguity = None
+    octave_candidates = []
+    for candidate in ranked:
+        if (candidate is best or
+                abs(max(candidate["bpm"], best["bpm"]) / min(candidate["bpm"], best["bpm"]) - 2) > .04 or
+                candidate["coverage"] < .8 or candidate["median_error_ms"] > 18 or
+                any(abs(candidate["bpm"] - existing["bpm"]) < .15
+                    for existing in octave_candidates)):
+            continue
+        octave_candidates.append(candidate)
+    ambiguous_octaves = [
+        c for c in octave_candidates
+        if not (use_meter and best.get("beat_support", 0) >= .55 and
+                best.get("beat_support", 0) - c.get("beat_support", 0)
+                >= TEMPO_AMBIGUITY_METER_SUPPORT_MARGIN)
+    ]
+    if ambiguous_octaves:
+        alternatives = ambiguous_octaves
+        alternative = alternatives[0]
+        rank_margin = max(0., rank(best) - rank(alternative))
+        support_margin = best.get("beat_support", 0) - alternative.get("beat_support", 0)
+        # Only pair-specific beat-model evidence can resolve half/double time;
+        # an unrelated or equally supportive model must leave the choice open.
+        tempo_ambiguity = dict(competitor_bpm=alternative["bpm"],
+                               competitor_bpms=[c["bpm"] for c in alternatives],
+                               rank_margin=round(rank_margin, 4),
+                               beat_support_margin=round(support_margin, 4),
+                               best_beat_support=round(best.get("beat_support", 0), 4),
+                               competitor_beat_support=round(alternative.get("beat_support", 0), 4),
+                               meter_model_used=use_meter)
+        for candidate in alternatives:
+            if not any(abs(c["bpm"] - candidate["bpm"]) < .15 for c in candidates):
+                candidates.append(candidate)
+        candidates.sort(key=rank, reverse=True)
     sections = grid_diagnostics(attacks, best["bpm"], best["offset"], best["division"])
     sparse_windows = [window for window in _insufficient_timing_windows(attacks, duration * 1000)
                       if window['attacks'] and window['end_ms'] - window['start_ms'] == 12000]
     suspect = sum(s["suspect"] for s in sections)
     stable = (best["coverage"] >= .8 and best["median_error_ms"] <= 18 and suspect == 0
-              and len(sections) >= 2 and not sparse_windows and "exact_bpm" not in best)
+              and len(sections) >= 2 and not sparse_windows and not tempo_ambiguity
+              and "exact_bpm" not in best)
     confidence = round(best["coverage"] * (1 - suspect / max(1, len(sections))), 3)
     explanation = "起音与网格整体一致；仍需试听确认 Offset、倍速 / 半速和弱起" if stable else "拍线不稳定或证据不足：请校准 BPM / Offset 并试听确认后再生成"
     if sparse_windows:
         explanation = "存在起音稀少但非静音的段落，自动 Timing 无法确认；请检查这些段落后再生成"
+    if tempo_ambiguity:
+        bpm_options = " / ".join(f"{bpm:g}" for bpm in
+                                 [best["bpm"], *tempo_ambiguity["competitor_bpms"]])
+        evidence_note = ("拍点模型未能可靠消歧" if tempo_ambiguity["meter_model_used"]
+                         else "拍点证据不足")
+        explanation += (f"；半速 / 倍速候选 {bpm_options} BPM 均能解释起音，"
+                        f"{evidence_note}，请试听确认拍速后再生成")
     if "exact_bpm" in best:
         precision_explanation = (f"取整为 {best['bpm']:g} BPM 可能造成约 {best['rounding_drift_ms']}ms 的整曲漂移。"
                                  f"另有 {best['exact_bpm']:g} BPM 精确候选，请比较歌曲开头与结尾后采用。")
-        explanation = f"{precision_explanation} {explanation}" if sparse_windows else precision_explanation
+        explanation = (f"{precision_explanation} {explanation}"
+                       if sparse_windows or tempo_ambiguity else precision_explanation)
     strongest = max((c["score"] for c in normalized.values()), default=0)
     strongest = max(strongest, max((c["score"] for c in precise.values()), default=0))
     precise_candidates = sorted((c for c in precise.values() if c["score"] >= strongest * .85), key=lambda c: c["score"], reverse=True)[:4]
     return {**best, "estimated": True, "confidence": confidence, "stable": stable,
             "candidates": candidates, "precise_candidates": precise_candidates, "sections": sections,
-            "sparse_windows": sparse_windows, "reliability": explanation,
+            "sparse_windows": sparse_windows, "tempo_ambiguity": tempo_ambiguity,
+            "reliability": explanation,
             "meter_model_used": use_meter}
 
 
