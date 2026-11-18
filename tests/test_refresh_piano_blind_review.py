@@ -6,6 +6,7 @@ from zipfile import ZipFile
 import pytest
 
 from scripts.build_piano_onset_blind_review import REVIEW_FIELDS, _write_zip
+import scripts.refresh_piano_blind_review as refresh_module
 from scripts.refresh_piano_blind_review import refresh_package
 
 
@@ -144,3 +145,57 @@ def test_refresh_preserves_existing_outputs(tmp_path):
         refresh_package(source, output)
 
     assert (output / "sentinel").read_text(encoding="utf-8") == "keep"
+
+
+def test_refresh_rejects_output_symlink_without_following_target(tmp_path):
+    source = _source_package(tmp_path / "source")
+    external_parent = tmp_path / "external"
+    external_parent.mkdir()
+    output = tmp_path / "refreshed"
+    target = external_parent / "redirected"
+    try:
+        output.symlink_to(target, target_is_directory=True)
+    except OSError as error:
+        pytest.skip(f"symbolic links are unavailable: {error}")
+
+    with pytest.raises(ValueError, match="symbolic link"):
+        refresh_package(source, output)
+
+    assert output.is_symlink()
+    assert not target.exists()
+    assert not list(external_parent.glob(".redirected.staging-*"))
+
+
+def test_refresh_cleans_staging_directory_when_writing_fails(tmp_path, monkeypatch):
+    source = _source_package(tmp_path / "source")
+    output = tmp_path / "refreshed"
+
+    def fail_copy(*_args, **_kwargs):
+        raise OSError("synthetic disk failure")
+
+    monkeypatch.setattr(refresh_module.shutil, "copyfile", fail_copy)
+
+    with pytest.raises(OSError, match="synthetic disk failure"):
+        refresh_package(source, output)
+
+    assert not output.exists()
+    assert not list(tmp_path.glob(".refreshed.staging-*"))
+
+
+def test_refresh_preserves_output_created_before_publish(tmp_path, monkeypatch):
+    source = _source_package(tmp_path / "source")
+    output = tmp_path / "refreshed"
+    rename = refresh_module.Path.rename
+
+    def create_competing_output(staging, destination):
+        output.mkdir()
+        (output / "sentinel").write_text("keep", encoding="utf-8")
+        return rename(staging, destination)
+
+    monkeypatch.setattr(refresh_module.Path, "rename", create_competing_output)
+
+    with pytest.raises(OSError):
+        refresh_package(source, output)
+
+    assert (output / "sentinel").read_text(encoding="utf-8") == "keep"
+    assert not list(tmp_path.glob(".refreshed.staging-*"))

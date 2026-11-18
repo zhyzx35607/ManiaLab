@@ -4,9 +4,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path, PurePosixPath
 import shutil
 import sys
+import tempfile
 from zipfile import BadZipFile, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -81,37 +83,15 @@ def _validate_source_package(
         raise ValueError("Source participant archive is invalid") from error
 
 
-def refresh_package(source_participant: Path, output: Path) -> dict:
-    source = source_participant.resolve()
-    output = output.resolve()
-    if not source.is_dir():
-        raise FileNotFoundError(source)
-    if output.exists():
-        raise ValueError("Preserve existing review packages by choosing a new output directory")
-    if (
-        not output.parent.is_dir()
-        or output == source
-        or output in source.parents
-        or source in output.parents
-    ):
-        raise ValueError("Choose an existing parent and a separate review output directory")
-
-    source_manifest_path = source.parent / "manifest.json"
-    source_manifest = json.loads(source_manifest_path.read_text(encoding="utf-8"))
-    source_audio_sha256 = source_manifest.get("source_sha256", {}).get("audio")
-    if (
-        not isinstance(source_audio_sha256, str)
-        or len(source_audio_sha256) != 64
-        or any(character not in "0123456789abcdef" for character in source_audio_sha256.lower())
-    ):
-        raise ValueError("Source review manifest has no valid audio identity")
-
-    template_path = source / "review-template.csv"
-    template_data = template_path.read_bytes()
-    rows = _participant_rows(template_data)
-    _validate_source_package(source, source_manifest, template_data, rows)
+def _write_refreshed_package(
+    source: Path,
+    output: Path,
+    source_audio_sha256: str,
+    template_data: bytes,
+    rows: list[dict],
+) -> dict:
     participant = output / "participant"
-    participant.mkdir(parents=True)
+    participant.mkdir()
 
     clip_sha256_by_id = {}
     for row in rows:
@@ -162,6 +142,54 @@ def refresh_package(source_participant: Path, output: Path) -> dict:
         json.dumps(manifest, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    return manifest
+
+
+def refresh_package(source_participant: Path, output: Path) -> dict:
+    source = source_participant.resolve()
+    output = Path(os.path.abspath(output))
+    if output.is_symlink():
+        raise ValueError("Choose a new output path instead of a symbolic link")
+    output = output.parent.resolve() / output.name
+    if not source.is_dir():
+        raise FileNotFoundError(source)
+    if output.exists():
+        raise ValueError("Preserve existing review packages by choosing a new output directory")
+    if (
+        not output.parent.is_dir()
+        or output == source
+        or output in source.parents
+        or source in output.parents
+    ):
+        raise ValueError("Choose an existing parent and a separate review output directory")
+
+    source_manifest_path = source.parent / "manifest.json"
+    source_manifest = json.loads(source_manifest_path.read_text(encoding="utf-8"))
+    source_audio_sha256 = source_manifest.get("source_sha256", {}).get("audio")
+    if (
+        not isinstance(source_audio_sha256, str)
+        or len(source_audio_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in source_audio_sha256.lower())
+    ):
+        raise ValueError("Source review manifest has no valid audio identity")
+
+    template_path = source / "review-template.csv"
+    template_data = template_path.read_bytes()
+    rows = _participant_rows(template_data)
+    _validate_source_package(source, source_manifest, template_data, rows)
+    with tempfile.TemporaryDirectory(
+        prefix=f".{output.name}.staging-",
+        dir=output.parent,
+    ) as temporary:
+        staging = Path(temporary)
+        manifest = _write_refreshed_package(
+            source,
+            staging,
+            source_audio_sha256,
+            template_data,
+            rows,
+        )
+        staging.rename(output)
     return manifest
 
 
