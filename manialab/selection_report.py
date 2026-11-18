@@ -1,6 +1,11 @@
-"""Keep a proposal's selection claims separate from a regionally merged chart."""
+"""Keep generation context separate from claims about the selected notes."""
 from collections import Counter
 from copy import deepcopy
+
+
+def generation_context(selection):
+    """Return the source snapshots that still apply when the note list changes."""
+    return {field: selection[field] for field in ('structure', 'expression') if field in selection}
 
 
 def regional_selection_report(proposal, output, locked):
@@ -24,8 +29,5 @@ def regional_selection_report(proposal, output, locked):
             chart_start=note.start, chart_end=note.end) for note in output],
         proposal=dict(deepcopy(proposal), scope='full_song_proposal'),
         message=f'局部定轨完成；整谱实际 LN 比例 {held/max(1, count):.1%}。区域外物件已锁定。')
-    # Preserve the generation's own structure snapshot for export bookmarks.
-    for field in ('structure', 'expression'):
-        if field in proposal:
-            report[field] = deepcopy(proposal[field])
+    report.update(deepcopy(generation_context(proposal)))
     return report

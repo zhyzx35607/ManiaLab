@@ -5,6 +5,7 @@
 
 ## 当前状态（先读）
 
+- 2026-11-18 续接核验：PR #151 已合并为 `fc20c92`，Windows PR run `44320958903` 和 main run `44322594836` 均成功。第 49 阶段修复编辑后导出的段落书签，复现与验证见文末。音乐验收还需要玩家盲听、试打及独立歌曲证据。
 - 已发布的 Windows 包为 `v0.1.0-alpha.6-dev.18`；后续主线修复不自动进入该已发布包。
 - 2026-11-17 工程整理、跨段落容量、Timing诊断、LN来源、草稿保护、局部报告与乐句边界已分九阶段合并（PR #101–#109）；检查与结果见 [project-review-20261117.md](project-review-20261117.md)，分阶段记录在本文件末尾。
 - PR #109已合并到`main`，九阶段代码在2026-11-17完成完整Windows便携验证；run `44057633497`通过，源码树与合并提交`3dc0705`一致。报告保存在ignored `build/structure-20261117-validation/ci-44057633497/`，没有创建新Release。
@@ -1962,3 +1963,9 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 使用已缓存《樱花草》10K输出、无模型推理生成ignored评审包`test-data/piano-onset-blind-review-20261118/piano-onset-review.zip`：84段差异（Transkun独有40、Kong独有44），每段原起音前1秒/后1.5秒，22050Hz，无逐段归一化。解盲映射留在包外；ZIP SHA-256为`b5339477e8932d563fb87a3c162c27003295eeabd5de5677089e41e6e3c8d298`，manifest SHA-256为`e8b524ff86f6535b8854f5982bdd0d3b9585b40e34871d288e6a17d2f0c6a376`。独立复核确认84个WAV时长/采样率、ZIP CRC、盲化标签和包外解盲项均正确。
 - 此包还没有人工评分，不产生采音改善结论；其验证只覆盖10K已选钢琴物件的新增/移除可闻性。此前报告中 Transkun 开发录音F1较高但控制样本漏采增加，仍不支持换默认。键型更无玩家试打反馈；现有6K–10K `.osz`能评整体谱面偏好，不能隔离纯定轨。
 - 验收下一步：用户或玩家完成盲听CSV和同键数osu! A/B试打记录后，先锁定评分表再解盲汇总；如需证明纯定轨手感，另做固定音符/Timing/LN端点、只改变轨道的盲测谱包。PR与CI状态待记录。
+
+## 2026-11-18 第四十九阶段：编辑后的段落书签
+
+- 通过真实 `/edit` 与 `/export/osu` 接口复现：在带段落书签的音频候选上仅修改一条轨道，原来的 `1480,2980` 书签全部消失。手工编辑与局部生成现共用候选生成时保存的段落和表达记录。手工编辑重新计算实际音符报告，旧候选缺少段落快照时书签留空。
+- `.\.venv\Scripts\python.exe -m pytest -q tests/test_edited_candidate_bookmarks.py tests/test_editing.py tests/test_regional_selection_report.py tests/test_evidence_snapshot.py` 为 23 passed。回归通过 HTTP 连续换轨、删音、重开项目并回读 `.osu` 和 `.osz`。输入为临时目录中的合成谱面。
+- 接下来验证同一谱包各难度的保存与恢复、原谱变速和拍号的试听。人工音乐评审仍待记录。
