@@ -2,6 +2,7 @@
 import io
 import logging
 from pathlib import Path
+import struct
 import threading
 import time
 import zipfile
@@ -54,20 +55,17 @@ def test_archive_central_directory_size_is_checked_before_zipfile_reads_it(
     tmp_path, monkeypatch
 ):
     uploaded = package([('song.osu', b'chart')])
-    endrec = storage.zipfile._EndRecData(uploaded)
-    oversized_endrec = list(endrec)
-    oversized_endrec[storage.zipfile._ECD_SIZE] = (
-        storage.MAX_IMPORT_CENTRAL_DIRECTORY_BYTES + 1
-    )
-    uploaded.seek(0)
-
-    def oversized_directory(_stream):
-        return oversized_endrec
+    archive_bytes = bytearray(uploaded.getvalue())
+    endrec_offset = archive_bytes.rfind(zipfile.stringEndArchive)
+    assert endrec_offset >= 0
+    endrec = list(struct.unpack_from(zipfile.structEndArchive, archive_bytes, endrec_offset))
+    endrec[zipfile._ECD_SIZE] = storage.MAX_IMPORT_CENTRAL_DIRECTORY_BYTES + 1
+    struct.pack_into(zipfile.structEndArchive, archive_bytes, endrec_offset, *endrec)
+    uploaded = io.BytesIO(archive_bytes)
 
     def unexpected_zipfile(*args, **kwargs):
         raise AssertionError('ZipFile should not read an oversized central directory')
 
-    monkeypatch.setattr(storage.zipfile, '_EndRecData', oversized_directory)
     monkeypatch.setattr(storage.zipfile, 'ZipFile', unexpected_zipfile)
 
     with pytest.raises(ValueError, match='中央目录'):
