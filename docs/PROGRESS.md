@@ -1870,5 +1870,5 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 - 将`select_notes`和`choose_holds`的选音、密度/和弦限制与LN目标求解迁入`manialab/candidate_selection.py`；`generation.py`直接依赖新模块，候选起音筛选与后续`arrange.py`定轨成为显式分层。
 - `arrange.py`保留原有公开函数签名的兼容包装，并继续让旧`_solve_binary`与`choose_holds`替换点生效；研究脚本与测试无需批量改导入路径。新模块不反向导入`arrange.py`。
-- 选音/LN、容量、来源边界、生成时钟与冻结回放定向测试为143 passed（14.54秒）；`compileall`与`git diff --check`已通过。完整Windows PR CI待运行。
+- 选音/LN、容量、来源边界、生成时钟与冻结回放定向测试复验为143 passed（13.43秒）；`compileall`与`git diff --check`通过。PR #136 Windows run `44217101175`通过：Python/API为2,533 passed、89 skipped，Edge UI为31 passed。
 - 未运行研究训练、模型、用户音频或参考谱，未访问保留的 MAESTRO 测试，也未修改研究脚本或研究产物。重组代码不代表音乐质量或模型效果提升；osu! 试打仍独立验收。
