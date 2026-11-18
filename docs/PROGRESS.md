@@ -1901,3 +1901,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 保持事件时间/轨道排序、同刻 LN 尾优先顺序及每个事件的 TIME_SHIFT/MANIA_COLUMN 展开方式不变。新增逐事件顺序与24-token数量回归，以及领域/适配器双向导入边界测试。
 - 定向`.venv/Scripts/python.exe -m pytest -q tests/test_mapper_event_adapter.py tests/test_core.py tests/test_generation_clock.py tests/test_upstream.py`为60 passed（12.02秒）；`.venv/Scripts/python.exe -m compileall -q manialab/domain.py manialab/mapper_event_adapter.py tests/test_mapper_event_adapter.py`和`git diff --check`通过。未运行全量本地测试。PR #140 Windows run `44236677859`通过：Python/API为2,548 passed、89 skipped，Edge UI为31 passed；模型及便携构建步骤按触发条件跳过。
 - 不运行模型、研究训练或用户数据，不访问参考谱及 MAESTRO 保留测试。该依赖边界调整不代表模型或音乐质量提升。
+
+## 2026-11-18 第四十二阶段：半速 / 倍速歧义门槛
+
+- 自动 Timing 检出同一首歌存在网格拟合合格的半速 / 倍速 BPM 时，默认要求用户试听确认；有拍点模型时，只有最佳 BPM 自身支持度至少`.55`且比每个八度竞争项至少高`.20`，才据此解除歧义。第三种 BPM 获得较高模型支持、或模型对竞争项支持相近时，不再误标稳定。
+- 所有未消歧的八度竞争 BPM 均进入`tempo.candidates`供前端选择，并按 BPM 去重；返回诊断保留竞争项及拍点支持差。无歧义时延用原有稳定与量化路径。
+- 合成回归覆盖等强和强弱起音、快慢两个方向、轻微抖动、模型明确消歧、模型支持接近、无关 BPM 更获模型支持、多个八度竞争项以及未确认量化拦截。定向`.venv/Scripts/python.exe -m pytest -q tests/test_timing.py tests/test_timing_diagnostic_clock.py tests/test_generation_clock.py`为81 passed；数值线程限制为2时全量`.venv/Scripts/python.exe -m pytest -q`为2,556 passed、89 skipped（76.72秒）；Edge `MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=8978 npm run test:ui`为31 passed（约1.2分钟）；`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。
+- 本阶段只验证合成 Timing 门槛与现有接口兼容；未运行音频模型、研究训练或用户音频，未读取参考谱及 MAESTRO 保留测试，也未改研究脚本或研究产物。尚未用小数精确候选的独立拟合指标参与八度竞争筛选；该边界、独立泛化、真实试听和 osu! 试打仍待后续验证。结果不代表真实音乐质量或模型效果提升。
