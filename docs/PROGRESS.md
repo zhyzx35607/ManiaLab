@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 最新状态（2026-11-19）：PR #163 导入展开预算已合并为`d705c9c65e40cf08beaa8c732e079773e555c9d4`；PR Windows run `44393454396`及合并后 main run `44394113412`成功，Python/API为2,674 passed、89 skipped，Edge UI为36 passed；便携构建按触发条件跳过。第六十一阶段任务生命周期改动本地全量回归为2,681 passed、90 skipped，待 PR/Windows CI 验证。公开 Release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
+- 最新状态（2026-11-19）：PR #164 任务取消与进程关停已合并为`6d779209561b6b767b5f6886d75e9713bf371227`；PR Windows run `44403326416`及合并后 main run `44405337764`成功，Python/API均为2,682 passed、89 skipped，Edge UI均为36 passed；便携构建按触发条件跳过。公开 Release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
 
 - 2026-11-19 当前续接：从 PR #157 合并提交 `19132940` 开始，公开 Release 仍为 dev.18，近889MB standard 构建仅为 Actions artifact。本阶段经 PR #158 合并为 `6200891e`；PR Windows run `44366735851`及合并后 main run `44368922837`的 Core 构建、实际 EXE、shutdown、Python/API 与 Edge UI 检查均通过。没有创建新 Release。人工钢琴盲听、同音符 6K–10K 定轨试打、两首独立歌曲听审仍为空，长期音乐质量目标保持未结项。
 - 2026-11-18 续接核验：PR #151 已合并为 `fc20c92`，Windows PR run `44320958903` 和 main run `44322594836` 均成功。第 49 阶段修复编辑后导出的段落书签，复现与验证见文末。音乐验收还需要玩家盲听、试打及独立歌曲证据。
@@ -2069,5 +2069,6 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 启动器退出时依次关闭 Waitress socket/request dispatcher 与任务服务；即使服务运行或关闭阶段抛错，后续清理仍会执行。Waitress dispatcher 按其接口等待最多5秒，任务服务随后进行协作取消和等待。
 - 新增可取消 FFmpeg 子进程执行器，在约200ms轮询周期内检查取消，并终止、回收子进程；接入普通/深度采音、导入声轨、分离预转码、结构检测及可选上游模型解码。结构特征与边界扫描也检查取消；SciPy 的单次 STFT 等原生向量化调用无法中途打断，取消在当前调用返回后生效。
 - 新增线程启动失败、`BaseException` 任务恢复、关停取消/清理、稳定响应快照、Waitress dispatcher 清理、FFmpeg 终止回收、结构任务 API 取消以及结构扫描取消检查。定向跨模块验证为127 passed；全量设置数值线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,681 passed、90 skipped（67.63秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9003 npm run test:ui`为36 passed（1.4分钟）。`.venv\Scripts\python.exe -m compileall -q manialab scripts tests launcher.py`与`git diff --check`通过。
-- 当前改动位于`codex/task-service-lifecycle-20261119`，PR/Windows CI尚待执行。本阶段没有运行模型、研究或音乐质量实验，也没有读取 ignored 音频、评审评分、解盲表或模型产物。
+- PR #164 Windows run `44403326416`通过；合并后 main run `44405337764`成功，Python/API为2,682 passed、89 skipped，Edge UI为36 passed，便携构建按触发条件跳过。合并提交为`6d779209561b6b767b5f6886d75e9713bf371227`。没有创建新 Release。
+- 本阶段没有运行模型、研究或音乐质量实验，也没有读取 ignored 音频、评审评分、解盲表或模型产物。
 - 本阶段只改善任务可取消性、异常恢复与应用关停，不代表采音或谱面音乐性改善。真人钢琴盲听、实际键数的6K–10K/LN试打及两首独立歌曲听审仍未完成；公开 Release 仍是 dev.18。
