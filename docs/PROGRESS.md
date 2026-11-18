@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 最新状态（2026-11-19）：PR #164 任务取消与进程关停已合并为`6d779209561b6b767b5f6886d75e9713bf371227`；PR Windows run `44403326416`及合并后 main run `44405337764`成功，Python/API均为2,682 passed、89 skipped，Edge UI均为36 passed；便携构建按触发条件跳过。PR #165 补录验证结果并合并为`265414e7f59d5875079b86e040ae4cfd6a457a8b`，PR run `44406379629`通过；合并后 main run `44407019369`被后续 main 工作流取消，不记作成功。PR #166 结构分析分块 STFT 已合并为`e684551abd5071d75f33febefe76e0bd7b182135`；PR runs `44410686981`和进度同步后 `44411505246`均通过，合并后 main run `44412123852`成功，Python/API为2,683 passed、89 skipped，Edge UI为36 passed，便携构建按触发条件跳过。第六十三阶段本地全量回归为2,685 passed、90 skipped，Edge UI为36 passed；PR #167 初次 Windows run `44415178836`通过，Python/API为2,686 passed、89 skipped，Edge UI为36 passed；进度同步后复验待完成。当前公开 Pre-release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
+- 最新状态（2026-11-19）：PR #164 任务取消与进程关停已合并为`6d779209561b6b767b5f6886d75e9713bf371227`；PR Windows run `44403326416`及合并后 main run `44405337764`成功，Python/API均为2,682 passed、89 skipped，Edge UI均为36 passed；便携构建按触发条件跳过。PR #165 补录验证结果并合并为`265414e7f59d5875079b86e040ae4cfd6a457a8b`，PR run `44406379629`通过；合并后 main run `44407019369`被后续 main 工作流取消，不记作成功。PR #166 结构分析分块 STFT 已合并为`e684551abd5071d75f33febefe76e0bd7b182135`；PR runs `44410686981`和进度同步后 `44411505246`均通过，合并后 main run `44412123852`成功，Python/API为2,683 passed、89 skipped，Edge UI为36 passed，便携构建按触发条件跳过。第六十三阶段本地全量回归为2,685 passed、90 skipped，Edge UI为36 passed；PR #167 Windows runs `44415178836`和进度同步后`44416022976`均通过，Python/API为2,686 passed、89 skipped，Edge UI为36 passed。当前公开 Pre-release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
 
 - 2026-11-19 当前续接：从 PR #157 合并提交 `19132940` 开始，公开 Release 仍为 dev.18，近889MB standard 构建仅为 Actions artifact。本阶段经 PR #158 合并为 `6200891e`；PR Windows run `44366735851`及合并后 main run `44368922837`的 Core 构建、实际 EXE、shutdown、Python/API 与 Edge UI 检查均通过。没有创建新 Release。人工钢琴盲听、同音符 6K–10K 定轨试打、两首独立歌曲听审仍为空，长期音乐质量目标保持未结项。
 - 2026-11-18 续接核验：PR #151 已合并为 `fc20c92`，Windows PR run `44320958903` 和 main run `44322594836` 均成功。第 49 阶段修复编辑后导出的段落书签，复现与验证见文末。音乐验收还需要玩家盲听、试打及独立歌曲证据。
@@ -2088,5 +2088,5 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 合成测试校验跨多个数据块的摘要与标准 SHA-256 一致、相关路径不调用`Path.read_bytes()`、哈希中途取消后最多读取首个1 MiB块，以及分析缓存仍正确复用、分离路径不进行整文件读取。
 - 定向`.venv\Scripts\python.exe -m pytest -q tests/test_audio_cache.py tests/test_audio.py tests/test_separation.py`为20 passed。全量设置 OpenMP / OpenBLAS / MKL 线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,685 passed、90 skipped（65.28秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9005 npm run test:ui`为36 passed（1.4分钟）。`.venv\Scripts\python.exe -m compileall -q manialab scripts tests launcher.py`及`git diff --check`通过。
 - 独立只读复核未发现明显哈希正确性回归；建议正向测试覆盖多块拼接，已将输入扩至约3 MiB并重新运行定向与全量测试。没有运行模型、研究或真实音频；未读取 ignored 音频、评审评分、解盲表、模型权重或研究产物。
-- PR #167 首轮 Windows run `44415178836`通过，Python/API为2,686 passed、89 skipped，Edge UI为36 passed；新增的 CI 结果同步到本文件后需再次复验。
+- PR #167 Windows run `44415178836`及本文件同步后的 run `44416022976`均通过，Python/API为2,686 passed、89 skipped，Edge UI为36 passed；便携构建按触发条件跳过。
 - 本阶段只降低大音频身份校验的内存占用并增加哈希取消响应，不改变音频推理、缓存版本或音乐输出，不代表真实音乐质量提升。公开 Pre-release 仍为 dev.18；钢琴盲听、6K–10K/LN 试打与两首独立歌曲真人听审仍待完成。
