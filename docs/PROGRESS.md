@@ -20,7 +20,7 @@
 - PR #118 将 Timing 检查与Offset重拟合路由提取到`timing_routes.py`，已合并为`fbd47e6f5d5c7009bda4dd921fc34a7009adeb43`；PR run `44085269448`与合并后main run `44085905987`的Python/API和合成浏览器验证均成功，功能分支push run `44085216977`成功跳过。
 - PR #119–#123 的路由边界整理均已合入`main`；PR #123 run `44098248603`与合并后 main run `44098766111`通过，普通 push run `44098175931`成功跳过。当前基线为`b80dad8`，本次求解器结构阶段从该提交续接。
 - PR #132–#136 已依次合并到`main`；当前结构整理基线为`3f3879f`。PR #133 run `44128674193`、进度更新后 run `44129552127`及 main run `44130292999`均通过；PR #134 run `44133239396`、进度更新后 run `44134458472`及 main run `44135099313`均通过。阶段35完整 Python/API 为2,527 passed、89 skipped，Edge UI为31 passed。阶段36 PR run `44137877217`、main run `44138712410`均通过：Python/API为2,531 passed、89 skipped，Edge UI为31 passed。阶段37最终 PR run `44217665635`与 main run `44218152214`均通过：Python/API为2,533 passed、89 skipped，Edge UI为31 passed。
-- 第三十九阶段补充非空稀疏Timing窗口门槛：只读冻结审查未发现此缺口解释现有自动拒绝；合成回归确认完整12秒窗口内1–4个起音此前可漏过自动拍线。修复后全量Python为2,535 passed、89 skipped，PR/合并检查待完成，详见本文件末尾。
+- PR #137 已合并为`b483895eefafe2f5c432a4c73b73e7e274f847b1`。PR Windows run `44225629152`通过，合并后 main run `44226100575`成功；详见本文件末尾。
 - 开发导航见 [architecture.md](architecture.md)，旧版与研究摘要见 [research-history.md](research-history.md)。下方历次“当前”表述属于当时记录。
 - 真实音乐质量、Timing、声部主次与 LN 音乐性仍未验收；保留历史结果，不重复已完成模型实验。
 
@@ -1886,4 +1886,4 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 只读复核默认与分段冻结报告：现有自动Timing门槛分别接受9/26、12/40；所有拒绝项均有5个已评估窗口、0个不足窗口。因此这些结果不能证明新发现的稀疏窗口缺口造成了既有拒绝。
 - 新增合成复现：前后完整窗口各有24个对齐起音，中间完整12秒窗口有4个偏拍起音；旧逻辑仍标记稳定并允许未确认量化。共享窗口计数用于估速门槛和分析诊断；完整且非空、少于5次起音的窗口要求手动确认，并在结果中列出`sparse_windows`。完全静音窗口及不足12秒的尾段不因此拒绝；显式确认仍可继续。
 - 定向`.venv/Scripts/python.exe -m pytest -q tests/test_timing.py tests/test_timing_diagnostic_clock.py tests/test_generation_clock.py`为73 passed；设置`OMP_NUM_THREADS=2`、`MKL_NUM_THREADS=2`、`OPENBLAS_NUM_THREADS=2`后全量`.venv/Scripts/python.exe -m pytest -q`为2,535 passed、89 skipped（71.33秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。
-- 没有重跑冻结生成：冻结计划保存的是已算出的Timing，不会重新执行估速；新合成回归直接覆盖了缺陷边界。未运行研究脚本、模型或用户音频，未读取参考谱或保留的 MAESTRO 测试。PR Windows CI 与合并后主线检查待完成；Timing与音乐质量仍需独立泛化数据、试听和 osu! 试打验收。
+- 没有重跑冻结生成：冻结计划保存的是已算出的Timing，不会重新执行估速；新合成回归直接覆盖了缺陷边界。未运行研究脚本、模型或用户音频，未读取参考谱或保留的 MAESTRO 测试。PR #137 Windows run `44225629152`通过，合并后 main run `44226100575`成功；长期Timing与音乐质量仍需独立泛化数据、试听和 osu! 试打验收。
