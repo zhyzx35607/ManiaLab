@@ -12,6 +12,7 @@
 - `worker_inventory.py`：记录并核对 worker 全部运行文件；暂存按清单复制，拒绝额外文件、修改和链接。
 - `verify_portable.py`：用干净 PATH 和离线数据目录验证实际 EXE。
 - `verify_chart_workspaces.py` 使用指定 SHA-256 的多难度 `.osz` 走导入、逐难度编辑、重开、双格式导出。用 `--out` 指定新的本地目录，保存项目和逐难度校验结果。
+- `verify_independent_audio.py prepare <新目录>` 固定两首外部音乐的来源、哈希和前 24 秒窗口，`verify <同目录>` 串行运行真实音频分析及 6K–10K 生成、导出和重导入。需本机四声部模型及 `gh`。
 - `verify_shutdown.py`：验证关闭应用时音频子进程结束。
 - `collect_release_validation.py`：核对 ZIP、测试报告和实际 EXE，并生成去除音频/逐音数据的发布验证摘要。
 

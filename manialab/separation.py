@@ -77,7 +77,7 @@ class Separator:
         if result.returncode:
             raise ValueError("声部分离无法解码音频")
         command = [str(self.python), str(self.resources/'scripts/separate_audio.py')] if self.python else [str(self.executable)]
-        command += [str(wave), str(output), "--model", str(self.model)]
+        command += [str(wave), str(output), "--model", str(self.model), "--threads", "2"]
         if self.profile != 'four':
             command += ['--profile', self.profile]
         if self.beat_model.is_file():
@@ -90,7 +90,8 @@ class Separator:
         with log.open("w", encoding="utf-8") as stream:
             process = subprocess.Popen(command, stdout=stream, stderr=stream,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-                env=os.environ | {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"})
+                env=os.environ | {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8",
+                                  "OMP_NUM_THREADS": "2", "MKL_NUM_THREADS": "2", "OPENBLAS_NUM_THREADS": "2"})
             try:
                 position = 0
                 with log.open("r", encoding="utf-8", errors="replace") as reader:

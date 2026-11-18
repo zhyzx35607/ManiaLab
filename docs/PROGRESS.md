@@ -1986,3 +1986,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 用 `scripts/build_piano_onset_blind_review.py --input test-data/audio-transcription-chart-ab-20261118 --output test-data/piano-onset-blind-review-csv-20261118` 生成新的本地评审包。旧包和新包的 84 份 WAV、评分模板和解盲表逐字节一致，两包 CRC 通过。新版 `piano-onset-review.zip` SHA-256 为 `842de24e7e415cbf1d1ad7eb3aa8a26a75e4b3f03dfc2bbaa550c4844051f55c`。
 - 另用 `scripts/build_layout_playtest.py <第四十六阶段盲测包> --sha256 <该包 SHA> --chart Source-A-10K.osu --out test-data/layout-only-playtest-20261118` 构建定轨试打。所有难度共用一种选音、相同原声、1,612 个物件、461 条 LN 和相同变速。两侧使用产品内建的两种定轨模式、同一随机种子且关闭键型先验。每个键数检查导出后的全部非轨道物件字段、Timing 和占轨。6K 至 10K 分别有 572、739、702、855、664 个可玩物件的位置不同。
 - 玩家入口 `test-data/layout-only-playtest-20261118/participant/` 含 `Layout-AB-6-10K.osz`、`scores.csv` 和填写说明。谱包 SHA-256 `eb2369cc1fd954fae10f01aa902d39a6bae64bb40fd130c721bc08621cd14735`。需要玩家先填写实际试打结果再解盲。当前人工盲听和手感偏好均待验收。
+
+## 2026-11-18 第五十二阶段：两首外部音乐的采音到出谱验证
+
+- 分离启动器显式传入 `--threads 2`，覆盖四声部、六声部和只补节拍三条路径。worker 的直接调用默认值也改为 2；算子间线程为 1。`tests/test_separation.py` 两项使用真实 FFmpeg 转码并检查子进程参数。
+- 在同一新目录先后运行 `scripts/verify_independent_audio.py prepare test-data/independent-audio-20261118` 与 `scripts/verify_independent_audio.py verify test-data/independent-audio-20261118`。公式、输入和判据先于推理记录在 `protocol.json`（SHA-256 `5656b2215a86d813400e2234b8a07b2799f667e79d318cffb6ca7ff90e4d7bfd`）。上游 HQ OGG、原始署名与转换后的各 24 秒 WAV 均保留在该 ignored 目录。
+- Setuniman《Sweet Waltz》和 Admiral Bob feat. Snowflake《Choice》的鼓贝斯选轨分别在 31.36 和 20.32 秒完成四声部实算，自动接受 150/68 BPM。各键数分别为 120 个物件/90 条 LN、100 个物件/18 条 LN。共 10 份 OSZ 保留预期音频，1,640 个起点和放键端点全部落线，回读键位与端点一致。总报告 SHA-256 `84a6ac045372df545dda0817df67461ab3fecd9d90f435799670effcb0c264b9`。
+- 《Sweet Waltz》的模型下拍呈三拍周期，首次音频模式导出固定为四拍；《Choice》10K 有 8 个物件归为 `other`，含 1 条 LN。[验收记录](acceptance-20261118.md)给出来源和复听位置。两段均已备好试听与 6K–10K 谱包。当前未收集真人评分。

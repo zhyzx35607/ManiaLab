@@ -41,6 +41,8 @@ def test_separator_preserves_float_input_and_rebuilds_legacy_cache(tmp_path, mon
     def launch(command, **kwargs):
         if command[0] != sys.executable:
             return real_popen(command, **kwargs)  # Run the real ffmpeg input conversion.
+        assert command[command.index("--threads") + 1] == "2"
+        assert all(kwargs["env"][name] == "2" for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"))
         rate, data = wavfile.read(command[2])
         assert rate == 44100 and data.dtype == np.float32
         np.testing.assert_array_equal(data, samples)
