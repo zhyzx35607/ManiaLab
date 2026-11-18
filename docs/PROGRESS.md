@@ -1936,3 +1936,4 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 定向`.venv\Scripts\python.exe -m pytest -q tests/test_piano_transcription_chart_ab.py`为2 passed（1.68秒）；数值线程上限2时全量`.venv\Scripts\python.exe -m pytest -q`为2,568 passed、89 skipped（66.74秒）；`.venv\Scripts\python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。研究复现入口为`scripts/check_piano_transcription_chart_ab.py`；本地产物在ignored `test-data/audio-transcription-chart-ab-20261118/`，汇总SHA-256为`C05D1AADAB50CB5070E9F0B1EC5786FD40921A52BBBA69B73615065C32830B3C`。只提交脚本、测试和去逐音数据后的文档。
 - 既有采音研究仍是混合结论：11段历史开发实录起音F1从`0.953677`升至`0.986837`，但91份控制的漏采从8升至25，另有20个Kong能找到而Transkun漏掉的实录起音。此次对照没有直接听审、试打或读取Reference，故不证明《樱花草》钢琴采音正确，也不证明6–10K键型改善；当前证据不支持全局替换默认采音。
 - 下一步先对可追溯的新增/移除片段做盲化原声听审，再由玩家比较相同范围的6K–10K键型；结论记录完成前不将实验候选设为默认。长期歌曲泛化和真实音乐质量目标仍未完成。
+- PR #145 Windows validation run `44283528751`通过；合并提交`f20626f543508200a829bccb74c9e8199bf02b59`的 main run `44284232486`通过。Python/API与合成浏览器流程成功，模型下载和便携构建按触发条件跳过。
