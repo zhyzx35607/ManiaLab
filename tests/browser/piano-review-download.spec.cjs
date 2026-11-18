@@ -33,14 +33,25 @@ with open(sys.argv[1], newline='', encoding='utf-8-sig') as source:
 `;
 
 test('the offline piano review download matches the template and preserves ratings and comments', async ({page}, testInfo) => {
-  const source = testInfo.outputPath('synthetic'), output = testInfo.outputPath('review');
+  const source = testInfo.outputPath('synthetic');
+  const built = testInfo.outputPath('built-review');
+  const output = testInfo.outputPath('refreshed-review');
   execFileSync(python, ['-c', fixture, source]);
-  execFileSync(python, ['scripts/build_piano_onset_blind_review.py', '--input', source, '--output', output]);
+  execFileSync(python, ['scripts/build_piano_onset_blind_review.py', '--input', source, '--output', built]);
+  execFileSync(python, [
+    'scripts/refresh_piano_blind_review.py',
+    '--source-participant', path.join(built, 'participant'),
+    '--output', output,
+  ]);
   const participant = path.join(output, 'participant');
   const read = file => JSON.parse(execFileSync(python, ['-c', parseCSV, file], {encoding: 'utf8'}));
   const template = read(path.join(participant, 'review-template.csv'));
   expect(template[0]).toEqual(['clip_id', 'audio_file', 'audio_start_ms', 'pitch_midi', 'audibility', 'confidence_1_5', 'comment']);
   expect(template.slice(1).map(row => Number(row[2])).sort((a, b) => a-b)).toEqual([1010, 2073]);
+  expect(await fs.readFile(path.join(built, 'participant/review-template.csv'))).toEqual(
+    await fs.readFile(path.join(participant, 'review-template.csv')),
+  );
+  expect(await fs.readdir(output)).not.toContain('deblind-key.json');
   await page.goto(pathToFileURL(path.join(participant, 'index.html')).href);
   await expect(page.locator('tbody tr')).toHaveCount(2);
   const first = page.locator('tbody tr').first();
@@ -49,6 +60,12 @@ test('the offline piano review download matches the template and preserves ratin
   await first.locator('[data-field="audibility"]').selectOption('yes');
   await first.locator('[data-field="confidence_1_5"]').selectOption('4');
   await first.locator('[data-field="comment"]').fill(comment);
+  await page.reload();
+  await expect(page.locator('#draft-status')).toContainText('恢复草稿');
+  const restored = page.locator('tbody tr').first();
+  await expect(restored.locator('[data-field="audibility"]')).toHaveValue('yes');
+  await expect(restored.locator('[data-field="confidence_1_5"]')).toHaveValue('4');
+  await expect(restored.locator('[data-field="comment"]')).toHaveValue(comment);
   const received = page.waitForEvent('download');
   await page.locator('#export').click();
   const download = await received;
@@ -57,4 +74,8 @@ test('the offline piano review download matches the template and preserves ratin
   const bytes = await fs.readFile(file);
   expect(bytes.subarray(0, 3).toString('hex')).toBe('efbbbf');
   expect(read(file)).toEqual([template[0], [...template[1].slice(0, 4), 'yes', '4', comment], template[2]]);
+  await page.locator('#clear-draft').click();
+  await page.reload();
+  await expect(page.locator('#draft-status')).not.toContainText('恢复草稿');
+  await expect(page.locator('tbody tr').first().locator('[data-field="audibility"]')).toHaveValue('');
 });

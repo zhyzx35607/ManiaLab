@@ -8,6 +8,7 @@ from scripts.build_piano_onset_blind_review import (
     build_package,
     event_differences,
     render_review_html,
+    review_draft_key,
     slice_audio,
 )
 
@@ -103,6 +104,22 @@ def test_review_html_contains_no_condition_labels():
     assert "MIDI 60" in content
     assert "kong" not in content.casefold()
     assert "transkun" not in content.casefold()
+
+
+def test_review_draft_key_tracks_source_and_clip_identity():
+    rows = [
+        {
+            "clip_id": "R001",
+            "audio_file": "clips/R001.wav",
+            "audio_start_ms": 1010,
+            "pitch": 60,
+        }
+    ]
+
+    baseline = review_draft_key(rows, "a" * 64, {"R001": "b" * 64})
+
+    assert baseline != review_draft_key(rows, "c" * 64, {"R001": "b" * 64})
+    assert baseline != review_draft_key(rows, "a" * 64, {"R001": "d" * 64})
 
 
 def test_build_package_resolves_and_verifies_report_audio_reference(tmp_path, monkeypatch):

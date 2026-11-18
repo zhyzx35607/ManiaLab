@@ -117,7 +117,41 @@ def slice_audio(
     return result
 
 
-def render_review_html(rows: list[dict]) -> str:
+def review_draft_key(
+    rows: list[dict],
+    source_audio_sha256: str,
+    clip_sha256_by_id: dict[str, str],
+) -> str:
+    identity = {
+        "source_audio_sha256": source_audio_sha256,
+        "clips": [
+            (
+                row["clip_id"],
+                row["audio_file"],
+                row["audio_start_ms"],
+                row["pitch"],
+                clip_sha256_by_id[row["clip_id"]],
+            )
+            for row in rows
+        ],
+    }
+    return hashlib.sha256(
+        json.dumps(identity, ensure_ascii=True, separators=(",", ":")).encode("ascii")
+    ).hexdigest()[:24]
+
+
+def render_review_html(rows: list[dict], draft_key: str | None = None) -> str:
+    if draft_key is None:
+        draft_key = hashlib.sha256(
+            json.dumps(
+                [
+                    (row["clip_id"], row["audio_file"], row["audio_start_ms"], row["pitch"])
+                    for row in rows
+                ],
+                ensure_ascii=True,
+                separators=(",", ":"),
+            ).encode("ascii")
+        ).hexdigest()[:24]
     body_rows = []
     for row in rows:
         clip_id = html.escape(row["clip_id"], quote=True)
@@ -126,7 +160,7 @@ def render_review_html(rows: list[dict]) -> str:
         audio_start_ms = html.escape(str(row["audio_start_ms"]), quote=True)
         pitch = html.escape(str(row["pitch"]))
         body_rows.append(
-            "<tr>"
+            f"<tr data-clip-id=\"{clip_id}\">"
             f"<th scope=\"row\" data-field=\"clip_id\" data-value=\"{clip_id}\">{clip_id}</th>"
             f"<td data-field=\"audio_start_ms\" data-value=\"{audio_start_ms}\">{target_time}</td>"
             f"<td data-field=\"pitch_midi\" data-value=\"{pitch}\">MIDI {pitch}</td>"
@@ -163,8 +197,10 @@ button{font:inherit;padding:8px 12px;margin:12px 0}
 <body>
 <main>
 <h1>盲听复核</h1>
-<p>根据片段判断目标音高是否有清楚的钢琴起音。先完成并导出复核表，再查看解盲表。</p>
+<p>根据片段判断目标音高是否有清楚的钢琴起音。完成评分后先导出并锁定 CSV，再查看解盲表。</p>
 <button id="export" type="button">导出复核 CSV</button>
+<button id="clear-draft" type="button">清除本地草稿</button>
+<p id="draft-status" role="status" aria-live="polite"></p>
 <table>
 <thead><tr><th>编号</th><th>原音时间</th><th>目标音高</th><th>片段</th><th>听感</th><th>把握度</th><th>备注</th></tr></thead>
 <tbody>""" + "".join(body_rows) + """</tbody>
@@ -172,8 +208,61 @@ button{font:inherit;padding:8px 12px;margin:12px 0}
 </main>
 <script>
 const fields=""" + json.dumps(REVIEW_FIELDS) + """;
+const draftKey="manialab:piano-review:" + """ + json.dumps(draft_key) + """;
 const csvCell=value=>'"'+String(value??'').replaceAll('"','""')+'"';
+const rows=[...document.querySelectorAll('tbody tr')];
+const controls=tr=>[...tr.querySelectorAll('select,textarea')];
+const readDraft=()=>{
+  try{
+    const saved=localStorage.getItem(draftKey);
+    return saved===null?false:JSON.parse(saved);
+  }catch{return null}
+};
+const saveDraft=()=>{
+  try{
+    const draft=Object.fromEntries(rows.map(tr=>[
+      tr.dataset.clipId,
+      Object.fromEntries(controls(tr).map(control=>[control.dataset.field,control.value]))
+    ]));
+    localStorage.setItem(draftKey,JSON.stringify(draft));
+    document.getElementById('draft-status').textContent='草稿已保存在本机浏览器。';
+  }catch{
+    document.getElementById('draft-status').textContent='本机浏览器无法保存草稿，请及时导出 CSV。';
+  }
+};
+const draft=readDraft();
+if(draft){
+  for(const tr of rows){
+    for(const control of controls(tr)){
+      const value=draft[tr.dataset.clipId]?.[control.dataset.field];
+      if(typeof value==='string'&&control instanceof HTMLSelectElement&&
+         [...control.options].some(option=>option.value===value)){
+        control.value=value;
+      }else if(control instanceof HTMLTextAreaElement&&typeof value==='string'){
+        control.value=value.slice(0,500);
+      }
+    }
+  }
+  document.getElementById('draft-status').textContent='已从本机浏览器恢复草稿。';
+}else if(draft===null){
+  document.getElementById('draft-status').textContent='草稿读取失败，请及时导出 CSV。';
+}
+for(const tr of rows){
+  for(const control of controls(tr)){
+    control.addEventListener(control instanceof HTMLTextAreaElement?'input':'change',saveDraft);
+  }
+}
+document.getElementById('clear-draft').addEventListener('click',()=>{
+  try{
+    localStorage.removeItem(draftKey);
+    for(const tr of rows)for(const control of controls(tr))control.value='';
+    document.getElementById('draft-status').textContent='本地草稿已清除。';
+  }catch{
+    document.getElementById('draft-status').textContent='无法清除本地草稿。';
+  }
+});
 document.getElementById('export').addEventListener('click',()=>{
+  saveDraft();
   const rows=[fields];
   for(const tr of document.querySelectorAll('tbody tr')){
     rows.push(fields.map(name=>{
@@ -278,6 +367,7 @@ def build_package(input_dir: Path, output_dir: Path) -> dict:
     clips_dir.mkdir(parents=True)
     deblind = {}
     review_rows = []
+    clip_sha256_by_id = {}
     for index, private in enumerate(private_rows, start=1):
         clip_id = f"R{index:03d}"
         note = private["note"]
@@ -286,6 +376,8 @@ def build_package(input_dir: Path, output_dir: Path) -> dict:
         clipped = slice_audio(samples, SAMPLE_RATE, note["audio_start"])
         pcm = (np.clip(clipped, -1, 1) * 32767).astype(np.int16)
         wavfile.write(clip_path, SAMPLE_RATE, pcm)
+        clip_digest = sha256(clip_path)
+        clip_sha256_by_id[clip_id] = clip_digest
         review_row = {
             "clip_id": clip_id,
             "audio_file": f"clips/{clip_name}",
@@ -300,11 +392,18 @@ def build_package(input_dir: Path, output_dir: Path) -> dict:
             "audio_start_ms": note["audio_start"],
             "pitch": note["pitch"],
             "event_id": note.get("id"),
-            "clip_sha256": sha256(clip_path),
+            "clip_sha256": clip_digest,
         }
 
     (participant_dir / "index.html").write_text(
-        render_review_html(review_rows),
+        render_review_html(
+            review_rows,
+            draft_key=review_draft_key(
+                review_rows,
+                identity["source_sha256"]["audio"],
+                clip_sha256_by_id,
+            ),
+        ),
         encoding="utf-8",
     )
     with (participant_dir / "review-template.csv").open("w", encoding="utf-8-sig", newline="") as stream:
@@ -321,6 +420,9 @@ def build_package(input_dir: Path, output_dir: Path) -> dict:
         "使用原幅度，不做逐段归一化。时间使用原音频时钟，目标时刻位于片段中点前 1 秒处。\n\n"
         "样本只覆盖两张 10K 输出谱中不相同的钢琴音符，不代表所有模型候选或整首曲子的准确率。"
         "评分只记录听者对当前片段中目标起音的判断，不把它当作物理音高或按键松开真值。\n\n"
+        "网页会尝试把草稿保存在当前浏览器；定期导出 CSV，勿依赖浏览器草稿作为唯一副本。"
+        "使用项目 scripts/check_blind_review_scores.py 校验评分并生成解盲前快照，"
+        "完成快照后才查看包外解盲表。流程见 docs/human-review-integrity.md。\n\n"
         "完成后点“导出复核 CSV”，或填写 review-template.csv。保留导出的盲评表；"
         "解盲表单独存放在包外。\n",
         encoding="utf-8",
