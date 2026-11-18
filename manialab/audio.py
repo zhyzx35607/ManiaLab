@@ -26,6 +26,7 @@ from .audio_evidence import (
     source_evidence,
     timing_evidence_quality,
 )
+from .audio_cache import load_stem_activations, save_stem_activations
 
 _session = None
 _lock = threading.Lock()
@@ -196,19 +197,10 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
             candidates=[replace(n,voice=voice,id=f'{voice}:{n.id}') for n in pitched]
         else:
             cache = stem_root / f"{voice}-activations.npz"
-            data = None
-            if cache.is_file():
-                try:
-                    with np.load(cache, allow_pickle=False) as d:
-                        if (int(d["version"]) == 3 and str(d["audio_sha256"]) == separation["audio_sha256"]
-                                and str(d['separation_sha256']) == stem_identity):
-                            data = d["frames"], d["onsets"], d["times"]
-                except (ValueError, KeyError, OSError, EOFError):
-                    pass
+            data = load_stem_activations(cache, separation["audio_sha256"], stem_identity)
             if data is None:
                 data = infer(stem, model, lambda p, s: progress(stage + round(p * .60 / len(voices)), f"{voice} · {s}"), cancelled)
-                np.savez_compressed(cache, frames=data[0], onsets=data[1], times=data[2], version=3,
-                    audio_sha256=separation['audio_sha256'],separation_sha256=stem_identity)
+                save_stem_activations(cache, data, separation['audio_sha256'], stem_identity)
             else:
                 cached = True
             pitch_cached.append(cached)

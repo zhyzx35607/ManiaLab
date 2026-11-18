@@ -1887,3 +1887,10 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 新增合成复现：前后完整窗口各有24个对齐起音，中间完整12秒窗口有4个偏拍起音；旧逻辑仍标记稳定并允许未确认量化。共享窗口计数用于估速门槛和分析诊断；完整且非空、少于5次起音的窗口要求手动确认，并在结果中列出`sparse_windows`。完全静音窗口及不足12秒的尾段不因此拒绝；显式确认仍可继续。
 - 定向`.venv/Scripts/python.exe -m pytest -q tests/test_timing.py tests/test_timing_diagnostic_clock.py tests/test_generation_clock.py`为73 passed；设置`OMP_NUM_THREADS=2`、`MKL_NUM_THREADS=2`、`OPENBLAS_NUM_THREADS=2`后全量`.venv/Scripts/python.exe -m pytest -q`为2,535 passed、89 skipped（71.33秒）。`.venv/Scripts/python.exe -m compileall -q manialab scripts tests`和`git diff --check`通过。
 - 没有重跑冻结生成：冻结计划保存的是已算出的Timing，不会重新执行估速；新合成回归直接覆盖了缺陷边界。未运行研究脚本、模型或用户音频，未读取参考谱或保留的 MAESTRO 测试。PR #137 Windows run `44225629152`通过，合并后 main run `44226100575`成功；长期Timing与音乐质量仍需独立泛化数据、试听和 osu! 试打验收。
+
+## 2026-11-18 第四十阶段：通用声部激活缓存边界
+
+- 将分离声部 Basic Pitch 激活缓存的版本、NPZ 读写及音频/分离身份校验迁入`manialab/audio_cache.py`；`audio.py`继续负责推理与分析编排，并通过原路径使用缓存。缓存版本3、文件名、字段及压缩格式不变；钢琴、吉他和 Tsumugi 专用缓存保持独立。
+- 新增缓存格式往返、音频与分离身份失配、旧版本/缺字段/损坏/缺失缓存，以及新模块不加载 ONNX 推理运行时的测试。独立只读审查未发现行为兼容问题；既有`test_stems.py`与音尾来源测试覆盖`analyze_deep`缓存重建、复用和回读路径。
+- 定向`.venv/Scripts/python.exe -m pytest -q tests/test_audio_cache.py tests/test_audio_cache_boundary.py tests/test_stems.py tests/test_provided_stems.py tests/test_audio_release_provenance.py tests/test_separation.py`为53 passed（4.40秒）；`.venv/Scripts/python.exe -m compileall -q manialab/audio.py manialab/audio_cache.py tests/test_audio_cache.py tests/test_audio_cache_boundary.py`和`git diff --check`通过。尚未运行全量本地测试；后续以 PR Windows CI 做全量验证。
+- 未运行研究训练、音频模型或用户音频，未读取参考谱或保留的 MAESTRO 测试，也未改动研究脚本与研究产物。该结构调整不代表模型或音乐质量提升；独立泛化、试听与 osu! 试打仍待验收。
