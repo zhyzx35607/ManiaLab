@@ -2,6 +2,7 @@
 import io
 import logging
 from pathlib import Path
+import struct
 import threading
 import time
 import zipfile
@@ -45,6 +46,30 @@ def test_archive_entry_limit_is_checked_before_zipfile_materializes_entries(
 
     with pytest.raises(ValueError, match='文件数量'):
         extract_osz(uploaded, tmp_path, max_entries=2)
+
+    assert uploaded.tell() == 0
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_archive_central_directory_size_is_checked_before_zipfile_reads_it(
+    tmp_path, monkeypatch
+):
+    uploaded = package([('song.osu', b'chart')])
+    archive_bytes = bytearray(uploaded.getvalue())
+    endrec_offset = archive_bytes.rfind(zipfile.stringEndArchive)
+    assert endrec_offset >= 0
+    endrec = list(struct.unpack_from(zipfile.structEndArchive, archive_bytes, endrec_offset))
+    endrec[zipfile._ECD_SIZE] = storage.MAX_IMPORT_CENTRAL_DIRECTORY_BYTES + 1
+    struct.pack_into(zipfile.structEndArchive, archive_bytes, endrec_offset, *endrec)
+    uploaded = io.BytesIO(archive_bytes)
+
+    def unexpected_zipfile(*args, **kwargs):
+        raise AssertionError('ZipFile should not read an oversized central directory')
+
+    monkeypatch.setattr(storage.zipfile, 'ZipFile', unexpected_zipfile)
+
+    with pytest.raises(ValueError, match='中央目录'):
+        extract_osz(uploaded, tmp_path)
 
     assert uploaded.tell() == 0
     assert list(tmp_path.iterdir()) == []
