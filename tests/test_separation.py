@@ -3,12 +3,39 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
 from scipy.io import wavfile
 
 from manialab import separation
+
+
+def test_separator_cleans_temporary_input_when_worker_cannot_start(tmp_path, monkeypatch):
+    monkeypatch.setenv('MANIALAB_DEEP_PYTHON', sys.executable)
+    separator = separation.Separator(tmp_path)
+    separator.model.parent.mkdir(parents=True)
+    separator.model.write_bytes(b"synthetic model")
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"synthetic audio")
+    wave = tmp_path / "separation-input.wav"
+
+    def prepare_input(*args, **kwargs):
+        wave.write_bytes(b"synthetic converted audio")
+        return SimpleNamespace(returncode=0)
+
+    def fail_to_start(*args, **kwargs):
+        raise OSError("worker cannot start")
+
+    monkeypatch.setattr(separation, "run_hidden_cancellable", prepare_input)
+    monkeypatch.setattr(separation.imageio_ffmpeg, "get_ffmpeg_exe", lambda: "ffmpeg")
+    monkeypatch.setattr(separation.subprocess, "Popen", fail_to_start)
+
+    with pytest.raises(OSError, match="worker cannot start"):
+        separator.separate(source, tmp_path)
+
+    assert not wave.exists()
 
 
 @pytest.mark.parametrize('profile', ['four', 'six'])

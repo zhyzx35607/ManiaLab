@@ -5,6 +5,7 @@
 
 ## 当前状态（先读）
 
+- PR #180 修复嵌套谱面引用项目根目录父级音频的问题，已于2026-11-19合并为`6888912147e5deed81545cb2376ef2c5066cb65c`；PR run `44465032776`与main run `44466336310`均成功，Python/API为2,719 passed、89 skipped，Edge UI为38 passed；便携构建按触发条件跳过。第七十四阶段复现并修复声部分离 worker 启动失败后的临时 WAV 泄漏，定向测试12 passed，PR/main CI待补。
 - PR #176 全项目验收计划已于2026-11-19合并为`abf7c05ca8e9b15f26418daf61bc51a15417c889`；main Windows run `44454674214`成功，Python/API为2,712 passed、89 skipped，Edge UI为36 passed，Core便携构建按触发条件跳过。第一轮工程路径审计未发现P0，阶段1–3仍在收口；问题与证据入口见[全项目验收问题账本](full-project-acceptance-ledger-20261119.md)。
 - 第七十一阶段增加缺失 `AudioFilename` 的可见状态和重新导入说明；浏览器回归确保不借用上一难度音轨。本地全量Python/API为2,711 passed、90 skipped，Edge UI为37 passed；`compileall`、全部静态JS语法及`git diff --check`通过。PR #177 的 Windows runs `44457046075`、文档复验`44457739696`及合并后 main run `44458199401`均通过，Python/API为2,712 passed、89 skipped，Edge UI为37 passed；便携构建按触发条件跳过。PR 已合并为`b69acf7f1db7a3ae3aafde4ca3e744c64c466be9`。
 - PR #178 将第七十一阶段结果和验收账本同步到 main，PR Windows run `44458933001`与合并后 main run `44460183632`均成功；合并提交`0be4b24dea71aee4f604ebc6be7dd922d5e6090b`。第七十二阶段补上浏览器删除候选、切回父版本与重开持久化回归；PR #179 Windows run `44461711637`及合并后 main run `44462358541`均成功，Python/API为2,712 passed、89 skipped，Edge UI为38 passed；便携构建按触发条件跳过。PR #179 合并提交为`ef4e788d59c696b48af241ed40652549923449c6`，COV-01已闭合。阶段1–3跨路径审查、profile/许可处置与真人音乐验收仍未完成。
@@ -2177,3 +2178,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 定向`.venv\Scripts\python.exe -m pytest -q tests/test_import_reliability.py tests/test_project_routes.py tests/test_export_resources.py tests/test_core.py tests/test_server.py tests/test_official_decoder_compare.py`为102 passed。`.venv\Scripts\python.exe -m compileall -q manialab scripts tests launcher.py`、全部`static/*.js`的`node --check`及`git diff --check`通过。未运行模型、研究或读取用户媒体/盲评数据。
 - 本地未运行全量 pytest：部分测试会读取 `.gitignore` 下的研究与音频目录；完整回归交由无这些本地文件的 PR Windows runner。PR 与 main CI 待补。
 - 此阶段修复的是文件引用兼容性及导出完整性，不代表音质或音乐验收改善。阶段1–3其余跨路径审查、非Core profile许可处置及真人音乐门槛继续开放。
+- PR #180 Windows run `44465032776`与合并后main run `44466336310`均成功；Python/API为2,719 passed、89 skipped，Edge UI为38 passed，便携步骤按条件跳过。PR于2026-11-19合并为`6888912147e5deed81545cb2376ef2c5066cb65c`。
+
+## 2026-11-19 第七十四阶段：清理分离 worker 启动失败的临时音频
+
+- 声部分离预转码成功后，若 worker 的 `subprocess.Popen` 因 `OSError` 无法启动，旧实现会遗留 `separation-input.wav`。新增合成故障注入测试，先在旧实现上确认文件残留，再确认修复后删除。
+- 启动或日志打开抛出 `OSError` 且尚无进程对象时清理 WAV；进程启动后仍只在 `stop_process` 确认退出时删除，不能确认停止时保留可能仍被读取的输入。独立只读复核通过。
+- 定向`.venv\Scripts\python.exe -m pytest -q tests/test_separation.py tests/test_audio_cache.py`为12 passed；`compileall -q manialab tests`和`git diff --check`通过。未运行模型、研究或真实音频。
+- PR 与 main CI 待补；此修复只闭合一条资源失败路径，不代表阶段3集成审查或音乐质量验收完成。
