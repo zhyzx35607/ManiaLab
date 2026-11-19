@@ -166,3 +166,17 @@ def test_same_executable_with_changed_source_manifest_rejects_old_reports(releas
     fixture.portable.write_text(json.dumps(fixture.checks), encoding='utf-8')
     with pytest.raises(SystemExit, match='Shutdown verification identity'):
         _collect(fixture)
+
+
+def test_zip_manifest_bytes_must_match_the_verified_manifest(release_fixture):
+    fixture = release_fixture
+    archive = next((fixture.build / 'release').glob('*.zip'))
+    with zipfile.ZipFile(archive) as package:
+        files = {name: package.read(name) for name in package.namelist()}
+    manifest_bytes = files['ManiaLab/release-manifest.json']
+    files['ManiaLab/release-manifest.json'] = b'\n' + manifest_bytes
+    with zipfile.ZipFile(archive, 'w') as package:
+        for name, content in files.items():
+            package.writestr(name, content)
+    with pytest.raises(SystemExit, match='manifest bytes'):
+        _collect(fixture)

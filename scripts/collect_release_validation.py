@@ -71,7 +71,10 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
                 raise SystemExit("Release ZIP contains an unsafe entry path.")
         if sha256_bytes(archive.read("ManiaLab/ManiaLab.exe")) != executable_sha:
             raise SystemExit("Release ZIP executable does not match the verified build.")
-        if json.loads(archive.read("ManiaLab/release-manifest.json")) != manifest:
+        archive_manifest = archive.read("ManiaLab/release-manifest.json")
+        if sha256_bytes(archive_manifest) != sha256(manifest_path):
+            raise SystemExit("Release ZIP manifest bytes do not match the verified build.")
+        if json.loads(archive_manifest) != manifest:
             raise SystemExit("Release ZIP manifest does not match the verified build.")
         if profile == "core":
             try:
