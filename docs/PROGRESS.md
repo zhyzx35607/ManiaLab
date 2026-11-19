@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 2026-11-19当前整合：PR #193已合并为`575a4a5e83aa19d282a34f627a3488be744b0cab`，PR run `44537412322`成功（Python/API `2785 passed, 89 skipped`、浏览器`52 passed`），main run `44538269327`待最终核验；PR #192的main run `44536768911`已成功，ENG-13/14关闭，旧main失败事实仍保留。第八十六阶段已报告子进程回收失败后的新任务门禁，本地相关55 passed及真实child小修单项1 passed，准备PR。便携来源/验证器、报告身份、native播放状态修复独立排队。用户已授权最多5个子agent，实际工具上限为主agent+3子agent共4槽，3名持续工作。真人音乐、非Core实际包/许可和完整进程树回收仍开放。
+- 2026-11-19当前整合：PR #194已合并为`aba2d44b80219c1737247239859e528b02fcf7d1`，PR run `44538891542`通过（Python/API `2792 passed, 89 skipped`、浏览器`52 passed`），main run `44539773445`待核验；PR #193的main run `44538269327`成功，ENG-16关闭。第八十七阶段非Core试听验证请求及构建来源指纹修复本地相关15 passed，准备PR；报告身份、native播放状态与完整Windows进程树修复独立排队。3个子agent持续工作（工具总槽4，用户授权最多5个不改变硬上限）。真人音乐、非Core实际包/许可与Windows树同步回收仍开放；Core一次实际集成计划已准备，待相关阶段合齐后执行。
 
 - 2026-11-19当前续接：第八十一阶段候选声轨试听来源修复已由PR #188合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`；PR/main Windows runs `44525372079`、`44526302353`均成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按条件跳过。ENG-12已闭合；具体行为、本地验证与日志位置见文末。下一步继续阶段2的段落/LN证据在编辑、局部重写和导出间的一致性审查，以及阶段3剩余生命周期边界；不要重复模型实验。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
 - 2026-11-19历史续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。第八十阶段的手动参考 Offset/波形对齐 ties-to-even 修复随后由PR #187及main run `44508222088`验证；自动估计保留与服务端默认一致的 half-up 规则。
@@ -2293,6 +2293,7 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 主agent复跑`.venv\Scripts\python.exe -m pytest -q tests/test_timing_refit_precision.py tests/test_timing_diagnostic_clock.py`为19 passed（5.01秒）；Edge端口8978定向`timing-refit-precision.spec.cjs timing.spec.cjs task-cleanup.spec.cjs`合计20 passed（35.7秒），同时确认已合入的清理失败警告保持。相关`compileall`、两处JS语法与`git diff --check`通过。生命周期agent独立只读复审未发现阻断项。
 - 完整因果脚本/JSON/截图在ignored `build/timing-refit-precision-20261119-ln/`，不含用户资产；该阶段不读模型或真实研究音频。PR/main验证待补。native媒体快速切换归零/加载中显式暂停被旧回调恢复的问题已另列ENG-20，不由Timing mode修复代签；后续阶段单独整合。
 - PR #193已合并为`575a4a5e83aa19d282a34f627a3488be744b0cab`；PR run `44537412322`成功，Python/API `2785 passed, 89 skipped`、浏览器`52 passed`，Core便携与模型步骤按条件跳过。main run `44538269327`待核验；PR日志位于ignored `build/timing-identity-788f5f9/pr-193-windows.log`。
+- 合并后main run `44538269327`成功，同为Python/API `2785 passed, 89 skipped`、浏览器`52 passed`，Core便携与模型步骤按条件跳过；ENG-16关闭，完整日志位于ignored `build/timing-identity-788f5f9/main-193-windows.log`。
 
 ## 2026-11-19 第八十六阶段：已报告子进程回收失败后的任务门禁
 
@@ -2302,3 +2303,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 已运行命令为`.venv\Scripts\python.exe -m pytest -q tests/test_process_cleanup_gate.py tests/test_task_cleanup_errors.py tests/test_task_service.py tests/test_cancellation.py tests/test_audio_io_boundary.py tests/test_provided_cleanup_errors.py tests/test_task_lifecycle_flow.py tests/test_upstream.py -k 'not real_model'`，OMP/MKL/OPENBLAS=2。base直接child小修后仅复跑该真实进程用例，1 passed（3.66秒），不重复整组。
 - 此阶段只门禁已经上报的进程回收失败，不能证明通用`stop_process`自动回收完整Windows进程树。另已实测venv redirector根退出而payload仍活、旧helper返回True且无标记，列ENG-21；原型在ignored `build/task-process-tree-draft-20261119-01/`继续验证，不把设计当实现。复现/设计保留于ignored `build/task-child-quarantine-20261119-01/`。
 - PR/main验证待补；没有运行神经推理、真实用户素材或研究实验。神经推理仍串行，工具并发只用于互不冲突的工程检查。
+- PR #194已合并为`aba2d44b80219c1737247239859e528b02fcf7d1`；PR run `44538891542`成功：Python/API `2792 passed, 89 skipped`、浏览器`52 passed`，Core便携与模型步骤按条件跳过。main run `44539773445`待核验；日志在ignored `build/process-gate-05e6d18/pr-194-windows.log`。
+
+## 2026-11-19 第八十七阶段：便携验证请求与构建来源闭包
+
+- 真实合成API复现`verify_portable.py`非Core六声部检查仍使用缺少source_identity的声轨/波形请求，guitar/piano四条均400；Core不走此循环。现提取小helper，按当前采音`context=evidence`及身份请求，即使选中候选A、当前分析B，也核对B的实际声轨字节与波形峰值；身份缺失时在发送请求前拒绝。
+- 受控源树复现实际打包/运行依赖的vendored `event.py`、`template.osu`变化不进入旧指纹。source_snapshot现在覆盖vendor Python包闭包、模板、构建recipe，以及启用原模型安装器时的源码ZIP/requirements；排除后复制的uv二进制，Core不增加未包含组件要求。该修复只约束以后新构建，不为历史dev.18包补签源闭包。
+- 新增`tests/test_portable_capability_audit.py`9项；已运行`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_portable_capability_audit.py tests/test_verify_portable_core.py tests/test_build_provenance.py`为15 passed（2.04秒，PYTHONUTF8=1、OMP/MKL/OPENBLAS=2）。相关`compileall`、`git diff --check`通过，主agent只读复核未发现阻断项。测试只执行提取的纯source_snapshot函数与真实Flask合成API，不启动builder入口。
+- 本阶段没有构建、下载、运行EXE/模型或读取用户素材。真实nonCore包的离线/Unicode/专用模型/关停仍未验证，extended专用fixture也未由公共collector强制覆盖；ENG-05/06保持开放。PR/main待验证，Core真实集成在后续修复合齐后统一执行。
+- 后续阶段88绑定portable/shutdown到当前EXE，阶段89处理native加载/提示状态；手动CLI的JUnit报告尚无测试时源码身份，但现有CI同job唯一build_id顺序未发现自动混用。该CLI残余单列，不扩成本阶段音乐质量结论。
