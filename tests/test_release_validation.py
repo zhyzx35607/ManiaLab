@@ -1,15 +1,38 @@
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import zipfile
 
 import pytest
 
 from manialab import __version__
+from scripts import pytest_provenance
 from scripts.collect_release_validation import collect
 from scripts.package_assets import CORE_FILES, capabilities, verify_core_model_files
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def write_pytest_evidence(path, junit_report):
+    snapshot = pytest_provenance.source_snapshot(ROOT)
+    commit = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+    ).strip()
+    evidence = {
+        "schema": pytest_provenance.SOURCE_SCHEMA,
+        "source_commit": commit,
+        "argv": ["-m", "pytest", "-q", "--junitxml", str(junit_report)],
+        "junit_sha256": hashlib.sha256(junit_report.read_bytes()).hexdigest(),
+        "source_digest_before": snapshot["digest"],
+        "source_digest_after": snapshot["digest"],
+        "exit_code": 0,
+        "started_at": "2026-01-01T00:00:00+00:00",
+        "completed_at": "2026-01-01T00:00:01+00:00",
+        "file_count": snapshot["files"],
+    }
+    path.write_text(json.dumps(evidence), encoding="utf-8")
+    return path, evidence
 
 def make_release_fixture(root, profile='standard'):
     build_root = root / "build"
@@ -53,6 +76,7 @@ def make_release_fixture(root, profile='standard'):
         '<testsuite tests="3" failures="0" errors="0" skipped="1"/></testsuites>',
         encoding="utf-8",
     )
+    pytest_evidence, _ = write_pytest_evidence(reports / "pytest-evidence.json", pytest_report)
     portable_report = reports / "portable.json"
     portable_checks = [
         {"check": "release_manifest", "build_profile": profile,
@@ -100,13 +124,14 @@ def make_release_fixture(root, profile='standard'):
     shutdown_report.write_text(
         json.dumps(shutdown), encoding="utf-8"
     )
-    return build_root, pytest_report, portable_report, shutdown_report, archive_path
+    return build_root, pytest_report, portable_report, shutdown_report, archive_path, pytest_evidence
 
 
 def test_collect_release_validation_writes_hashes_and_sanitized_summary(tmp_path):
-    build_root, pytest_report, portable_report, shutdown_report, archive = make_release_fixture(tmp_path)
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = make_release_fixture(tmp_path)
     report, output, checksums = collect(
-        build_root, pytest_report, portable_report, shutdown_report
+        build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence,
     )
 
     assert report["version"] == __version__
@@ -121,10 +146,11 @@ def test_collect_release_validation_writes_hashes_and_sanitized_summary(tmp_path
 
 
 def test_collect_core_validation_requires_core_inventory_and_runtime_checks(tmp_path):
-    build_root, pytest_report, portable_report, shutdown_report, archive = make_release_fixture(
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = make_release_fixture(
         tmp_path, profile='core'
     )
-    report, output, checksums = collect(build_root, pytest_report, portable_report, shutdown_report)
+    report, output, checksums = collect(build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence)
     assert archive.name.endswith('-core.zip')
     assert report['build_profile'] == 'core'
     assert report['verification']['piano_model'] is None
@@ -137,7 +163,7 @@ def test_collect_core_validation_requires_core_inventory_and_runtime_checks(tmp_
 
 
 def test_collect_core_validation_rejects_declared_deep_components(tmp_path):
-    build_root, pytest_report, portable_report, shutdown_report, archive = make_release_fixture(
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = make_release_fixture(
         tmp_path, profile='core'
     )
     manifest_path = build_root / 'dist' / 'ManiaLab' / 'release-manifest.json'
@@ -156,11 +182,12 @@ def test_collect_core_validation_rejects_declared_deep_components(tmp_path):
             bundle.write(ROOT / 'assets' / name, 'ManiaLab/_internal/assets/' + name)
 
     with pytest.raises(SystemExit, match='Core manifest declares'):
-        collect(build_root, pytest_report, portable_report, shutdown_report)
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
 
 
 def test_collect_core_validation_rejects_changed_basic_pitch_bytes(tmp_path):
-    build_root, pytest_report, portable_report, shutdown_report, archive = make_release_fixture(
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = make_release_fixture(
         tmp_path, profile='core'
     )
     manifest = json.loads(
@@ -177,23 +204,93 @@ def test_collect_core_validation_rejects_changed_basic_pitch_bytes(tmp_path):
                 bundle.write(asset, 'ManiaLab/_internal/assets/' + name)
 
     with pytest.raises(SystemExit, match='Basic Pitch model checksum'):
-        collect(build_root, pytest_report, portable_report, shutdown_report)
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
 
 
 def test_collect_release_validation_rejects_missing_portable_checks(tmp_path):
-    build_root, pytest_report, portable_report, shutdown_report, _ = make_release_fixture(tmp_path)
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(tmp_path)
     portable_report.write_text(json.dumps([{"check": "release_manifest"}]), encoding="utf-8")
 
     with pytest.raises(SystemExit, match="missing required checks"):
-        collect(build_root, pytest_report, portable_report, shutdown_report)
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
 
 
 def test_collect_release_validation_rejects_piano_smoke_for_other_model(tmp_path):
-    build_root, pytest_report, portable_report, shutdown_report, _ = make_release_fixture(tmp_path)
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(tmp_path)
     checks = json.loads(portable_report.read_text(encoding="utf-8"))
     piano_check = next(item for item in checks if item["check"] == "piano_onnx_runtime")
     piano_check["sha256"] = "different-model-sha"
     portable_report.write_text(json.dumps(checks), encoding="utf-8")
 
     with pytest.raises(SystemExit, match="Piano runtime smoke does not match"):
-        collect(build_root, pytest_report, portable_report, shutdown_report)
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_release_validation_rejects_missing_pytest_evidence(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, _ = make_release_fixture(tmp_path)
+
+    with pytest.raises(SystemExit, match="pytest evidence"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=tmp_path / "missing-pytest-evidence.json")
+
+
+def test_collect_release_validation_rejects_legacy_pytest_evidence_schema(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(tmp_path)
+    sidecar = json.loads(pytest_evidence.read_text(encoding="utf-8"))
+    sidecar["schema"] = "legacy-junit-without-source-identity"
+    pytest_evidence.write_text(json.dumps(sidecar), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="pytest evidence"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_release_validation_rejects_replaced_junit_bytes(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(tmp_path)
+    pytest_report.write_text(
+        '<testsuites tests="4" failures="0" errors="0" skipped="0">'
+        '<testsuite tests="4" failures="0" errors="0" skipped="0"/></testsuites>',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(SystemExit, match="pytest evidence"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_release_validation_rejects_junit_from_different_source_digest(tmp_path, monkeypatch):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(tmp_path)
+    snapshot = pytest_provenance.source_snapshot(ROOT)
+    monkeypatch.setattr(pytest_provenance, "source_snapshot", lambda root: {
+        "digest": "f" * 64 if snapshot["digest"] != "f" * 64 else "e" * 64,
+        "files": snapshot["files"],
+    })
+
+    with pytest.raises(SystemExit, match="pytest evidence"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_release_validation_rejects_source_changes_during_pytest(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(tmp_path)
+    sidecar = json.loads(pytest_evidence.read_text(encoding="utf-8"))
+    sidecar["source_digest_after"] = "f" * 64 if sidecar["source_digest_before"] != "f" * 64 else "e" * 64
+    pytest_evidence.write_text(json.dumps(sidecar), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="pytest evidence"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_release_validation_rejects_failed_pytest_sidecar(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(tmp_path)
+    sidecar = json.loads(pytest_evidence.read_text(encoding="utf-8"))
+    sidecar["exit_code"] = 1
+    pytest_evidence.write_text(json.dumps(sidecar), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="pytest evidence"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
