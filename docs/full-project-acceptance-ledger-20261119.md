@@ -1,6 +1,6 @@
 # ManiaLab 全项目验收问题账本
 
-更新：2026-11-19。此账本区分已复现缺陷、覆盖缺口和外部验收门槛；测试通过不代表音乐质量通过。审计未读取 ignored 音频、谱包、评审/解盲文件、模型权重或研究产物，也未运行模型。
+更新：2026-11-19。此账本区分已复现缺陷、覆盖缺口和外部验收门槛；测试通过不代表音乐质量通过。第一轮工程审计未读取 ignored 音频、谱包、评审/解盲文件、模型权重或研究产物，也未运行模型；第九十一阶段另按计划执行Pinned Basic Pitch synthetic Core验收，未读取用户音频、研究产物或非Core权重。
 
 ## 当前结论
 
@@ -14,6 +14,8 @@
 - 第八十一阶段闭合候选逐音证据与声轨试听来源错配：候选保存分离身份，模型试听WAV按身份归档并校验内容，跨视图/跨标签请求和局部重写遵循来源边界。PR #188已合并为`0e1b7d6`，PR/main runs `44525372079`、`44526302353`成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`。ENG-12关闭，阶段2其他契约继续审查。
 - 导入、项目保存、谱面切换、候选编辑、证据快照、试听与导出已有大量合成 API/浏览器覆盖。独立只读子审计对编辑、证据、试听和导出的定向测试为 29 passed。
 - 真人音乐验收与非 Core profile 的许可/构建边界仍是最终停止条件，不由 CI 代签。
+- PR #196/#197/#198均已合并；其main Windows runs `44546117834`、`44549577592`、`44552057267`均成功。ENG-19/20/21源码与工程检查闭合，分别保留Core身份链、打包媒体和Job竞态的覆盖边界。
+- 第九十一阶段在冻结main `bee69cad232a01206051ba59f422961c17e94259`执行Core身份链验证：全量pytest `2856 passed, 90 skipped`、Edge `62 passed`、Core构建/portable/关停/collector均通过；Windows PowerShell 5.1原runner末尾因JSON根数组嵌套误报，但同一run产物重新做数组解包后最终断言全通过。Core run只验证合成能力和本机Core包，不关闭non-Core、许可或MUS-01门槛。
 
 ## 待闭合事项
 
@@ -37,9 +39,10 @@
 | ENG-16 | Timing重拟合时钟身份 / P2 / 已闭合 | PR #193合并为`575a4a5`，PR/main runs `44537412322`、`44538269327`通过：Python/API `2785 passed, 89 skipped`、浏览器`52 passed`。固定BPM精度、mode往返旧响应均保留回归，拟合算法/Offset舍入不变。 | 已闭合。 |
 | ENG-17 | 非Core便携声轨验证器请求过期 / P2 / 源码契约已闭合 | helper按当前采音context/身份核对真实声轨/波形，候选A/分析B回归不串接；缺身份预先拒绝。PR #195与main runs `44540158809`、`44541152663`均通过：Python/API `2801 passed, 89 skipped`、浏览器`52 passed`。未跑实际nonCore EXE。 | 源码契约已闭合；真实nonCore包能力仍由ENG-05约束。 |
 | ENG-18 | 打包来源fingerprint遗漏输入 / P2 / 源码契约已闭合 | 新构建指纹覆盖vendor闭包/模板/recipe及安装器源码；受控源树与API回归通过。PR #195与main run成功，历史dev.18不补签。 | 源码契约已闭合；最终Core真实包集成另验。 |
-| ENG-19 | 发布运行报告未绑定本次EXE/manifest / P2 / 源码契约已合并，main待验证 | portable、shutdown、collector均绑定实际manifest原始字节`release_manifest_sha256`；collector再核对ZIP内manifest原始字节，旧缺摘要、同EXE不同manifest、摘要错配、重复记录及仅改ZIP空白均拒绝。阶段88定向`47 passed`，未执行EXE/构建。PR #196合并提交`256ecf8`，PR run `44544668731`通过。 | main通过后闭合源码契约；随后一次真实Core EXE/关停/collector集成；历史dev.18报告不补签。 |
-| ENG-20 | native媒体切换播放状态 / P2 / 本地浏览器验证中 | 绑定最新加载请求并保留暂停位置；用户加载中显式pause不被旧回调恢复，native播放拒绝可见；`waiting`取消提示音并等待HAVE_FUTURE_DATA再排 cue。Chromium与Edge定向各`10 passed`，含真实缓冲/暂停/seek；未验证packaged EXE。 | 完成复审、PR/main通过；保留媒体播放不代表音乐质量验收。 |
-| ENG-21 | 通用Windows worker只回收根进程 / P2 / PR验证中 | Windows worker在初始线程运行前加入non-breakaway Job，stop按共享deadline终止job并等待根/成员句柄、检查active count与句柄清理失败；根退出/venv redirector、启动失败、外来PID不误杀及句柄故障均有合成覆盖。warning-as-error worker测试`20 passed`，生命周期/进程组合`62 passed`。另修复Popen句柄已closed后的基础析构WinError 6警告。PR #197 head `b7ef671`，Windows run `44547205708`进行中。成员快照到TerminateJobObject间的新生成员未逐个预持有句柄，active count不是内核同步屏障；不宣称任意竞态下绝对回收。 | PR/main通过后关闭ENG-21并保留句柄/Job边界说明；不可只改Python路径破坏依赖。 |
+| ENG-19 | 发布运行报告未绑定本次EXE/manifest / P2 / 源码契约与main已闭合 | portable、shutdown、collector均绑定实际manifest原始字节`release_manifest_sha256`；collector再核对ZIP内manifest原始字节，旧缺摘要、同EXE不同manifest、摘要错配、重复记录及仅改ZIP空白均拒绝。阶段88定向`47 passed`，未执行EXE/构建。PR/main runs `44544668731`、`44546117834`成功，merge commit `256ecf8`。Core实际运行证据另见阶段91。 | 源码契约和Core报告身份链已闭合；历史dev.18旧报告不补签。 |
+| ENG-20 | native媒体切换播放状态 / P2 / PR与main已闭合 | 绑定最新加载请求并保留暂停位置；用户加载中显式pause不被旧回调恢复，native播放拒绝可见；`waiting`取消提示音并等待HAVE_FUTURE_DATA再排 cue。Chromium/Edge定向各`10 passed`，main完整Edge `62 passed`；PR/main runs `44549463878`、`44552057267`成功，merge commit `bee69ca`。未验证packaged EXE媒体会话。 | 已闭合源码/浏览器契约；保留媒体播放不代表音乐质量或打包服务器验收。 |
+| ENG-21 | 通用Windows worker只回收根进程 / P2 / PR与main已闭合 | Windows worker在初始线程运行前加入non-breakaway Job，stop按共享deadline终止job并等待根/成员句柄、检查active count与句柄清理失败；根退出/venv redirector、启动失败、外来PID不误杀及句柄故障均有覆盖。warning-as-error worker测试`20 passed`，生命周期/进程组合`62 passed`；PR/main runs `44547867366`、`44549577592`成功，merge commit `75179ae`。成员快照到TerminateJobObject间的新生成员未逐个预持有句柄，active count不是内核同步屏障；不宣称任意竞态下绝对回收。 | 已闭合源码契约并保留句柄/Job边界说明；Core运行不扩展为任意竞态保证。 |
+| CORE-01 | 冻结main Core EXE/报告身份集成 / P2 / 已通过，范围受限 | 唯一run `core-evidence-20261119-bee69cad232a-20261119T232220475-32408`位于ignored build/test-data目录。fresh pytest `2856 passed, 90 skipped`、Edge `62 passed`、Core PyInstaller build、portable合成分析与6K–10K导出、Unicode重启/坏音频恢复、Core worker-free shutdown、collector及EXE/manifest/ZIP原始摘要交叉校验均通过。EXE SHA `d275ee2c4eb893d8ac350feb9da8867713c9c6826ddc92a95f8b929e9ebf07dc`；manifest SHA `719ad2ba71d5aa436aed879101dc6ae255598b15ba418d54f4b458e033012469`；Core ZIP SHA `83cb0453d1ad4e502cc619cb82949f6f285fa70c80980ab6d9f675b3fb35700c`。PowerShell 5.1首次最终断言因根数组包装误报，修正为显式枚举后在同一产物上通过，未重建/重跑EXE。 | Core profile工程链已验证；不代表standard/extended、non-Core worker/模型许可、打包浏览器媒体会话或真人音乐验收。历史产物保留，未创建Release。 |
 | COV-04 | 手动CLI JUnit与源码身份未绑定 / 条件性证据缺口 | 真实临时pytest先通过并保存JUnit，随后源码改为失败且另跑确认；旧通过JUnit仍可由手动collector配新源/构建接受。现有托管CI同job按测试→构建→运行→success收集，run_id+attempt目录唯一且无跨run下载，未发现自动混用。 | 手动同源验收需记录并核对测试时源码/测试集身份；当前CI证据仅按已核对同job路径解释，不宣称任意CLI报告均同源。 |
 | MUS-01 | 真人音乐验收 / 外部阻塞 | 84 段钢琴起音盲听、实际 6K–10K/LN 试打、Sweet Waltz 与 Choice 两首独立歌曲复听仍没有人工回收结果。流程见 `docs/human-review-integrity.md` 与 `docs/acceptance-20261118.md`。 | 评分身份/完整性校验后锁定再解盲；提供真实玩家键数与 LN 反馈；两首歌曲记录可定位的试听分歧、处置结论和复测。 |
 | COV-01 | 浏览器删除流程 / 已闭合 | `tests/browser/evidence.spec.cjs` 新增合成 Edge 流程，验证画布选择与删除会创建带来源记录的新候选、可切回父候选、重开后删除版仍保留。PR #179 run `44461711637`与合并后 main run `44462358541`均成功；Python/API `2712 passed, 89 skipped`，Edge `38 passed`。本次只补覆盖，未发现产品行为缺陷。 | 已闭合。 |
