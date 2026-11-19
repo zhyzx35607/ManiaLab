@@ -5,6 +5,7 @@
 
 ## 当前状态（先读）
 
+- 2026-11-19当前并行阶段：第八十二阶段PR #190已合并为`2e22f1e08952d267f970a33cd4d393ce3b96f6ab`，PR/main runs `44530422421`、`44531157525`成功，Python/API `2756 passed, 89 skipped`、浏览器`44 passed`；COV-02/03关闭。第八十三阶段资源清理失败可见性修复本地定向71 passed、Edge完整组45 passed，静态检查通过，PR/main待补。另有未提交的结构参考边界修复，及固定BPM重拟合精度/未回收子进程门禁排队事项；按独立阶段提交，不能把共享工作区全部改动混算成已合并。3名子agent持续并行，主agent整合。音乐验收与非Core许可继续开放。
 - 2026-11-19并行续接：用户最新授权3–4个子agent持续并行，当前使用3个子agent分别核对段落/LN来源、候选编辑/导出、取消/资源生命周期，不再受旧的同时最多1个限制；均禁止再派子agent，神经推理约束不变。主线`8243feb`（PR #189文档补录）及main run `44527791593`已成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`。第八十二阶段新增5项跨路径合成回归，本地相关组66 passed；产品代码未改，PR/main验证待补。生命周期审查另确认cleanup异常只写日志会掩盖未清理资源的问题，作为ENG-13单独修复；不要把下一阶段的未提交产品改动算入本阶段结果。音乐质量与非Core许可门槛仍开放。
 - 2026-11-19当前续接：第八十一阶段候选声轨试听来源修复已由PR #188合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`；PR/main Windows runs `44525372079`、`44526302353`均成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按条件跳过。ENG-12已闭合；具体行为、本地验证与日志位置见文末。下一步继续阶段2的段落/LN证据在编辑、局部重写和导出间的一致性审查，以及阶段3剩余生命周期边界；不要重复模型实验。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
 - 2026-11-19历史续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。第八十阶段的手动参考 Offset/波形对齐 ties-to-even 修复随后由PR #187及main run `44508222088`验证；自动估计保留与服务端默认一致的 half-up 规则。
@@ -2261,3 +2262,13 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 主agent复核与LN agent独立只读复审未发现新增测试的阻断问题。主agent定向`.venv\Scripts\python.exe -m pytest -q tests/test_candidate_source_export.py tests/test_task_lifecycle_flow.py tests/test_evidence_snapshot.py tests/test_editing.py tests/test_edited_candidate_bookmarks.py tests/test_export_resources.py tests/test_task_service.py tests/test_provided_stems.py tests/test_recommendations.py`为66 passed；新增文件`compileall`和`git diff --check`通过。LN两批现有回归分别121 passed和165 passed；remap保时/原始LN音效/资源引用/重开定向11 passed，未发现产品缺陷。
 - 本阶段仅增加5项非平凡集成回归，未修改产品逻辑。PR/main Windows验证待补；不重复本地全量/UI或模型实验。另一个确定性故障注入确认：操作被取消后`cleanup(False)`抛`PermissionError`时，任务仍显示cancelled、资源残留，但`shutdown()`返回True且清理失败列表为空；实际文件锁下的unlink/rollback适用。ENG-13已单列，下一阶段修复与本阶段测试分开提交。
 - 后续继续保持3名子agent推进独立检查点。阶段2–3及真人音乐、非Core profile/权重许可尚未整体验收，不以新增测试数量宣称音乐改善。
+- PR #190已合并为`2e22f1e08952d267f970a33cd4d393ce3b96f6ab`；PR Windows run `44530422421`及main run `44531157525`均成功：Python/API `2756 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型构建步骤按条件跳过。完整CI日志保存在ignored `build/cross-workflow-62e24c0/`；COV-02/03关闭。
+
+## 2026-11-19 第八十三阶段：资源清理失败的任务与关停可见性
+
+- 旧实现合成复现：取消或保存失败后的`cleanup(False)`抛`PermissionError`只写日志，任务仍可能cancelled、文件残留但`shutdown()`误报True。现在清理异常登记到取消上下文并向关停传播，job标记`cleanup_failed=true`；未提交时进入error并移除完整恢复保证，已提交时保留done/result，明确提示已保存但资源清理失败。文件清理失败不占住worker，后续正常任务不会继承旧job的失败状态；已有失败记录时关停不报完全成功。
+- 真实Windows无窗口合成进程/临时文件核查又确认提供声轨回滚使用`rmtree(ignore_errors=True)`会吞掉实际文件锁。声轨cleanup现在分别尝试本次上传目录与新解码目录，已不存在的路径正常忽略，其他删除失败汇总为`ExceptionGroup`交给任务服务；旧成功集合不删除。底层unlink故障注入覆盖上传/解码/两处同时失败×取消/最终保存失败共6例。
+- 浏览器`runJob`在保留已保存结果及成功摘要后，追加清理失败消息并保持可见提示。新增`tests/browser/task-cleanup.spec.cjs`先在旧界面复现普通成功文案覆盖警告，修复后单项1 passed，完整Edge组45 passed；测试使用真实重定轨与OSU导出，仅对job响应注入展示标记，与API真实故障注入互补。后续普通成功能清除旧警告。
+- 新增`tests/test_task_cleanup_errors.py`覆盖取消、最终保存失败、已提交成功、executor提交失败四个回调异常入口；与声轨6例、既有任务/取消/服务API/声轨回归合跑71 passed（20.60秒）。命令为`.venv\Scripts\python.exe -m pytest -q tests/test_task_cleanup_errors.py tests/test_provided_cleanup_errors.py tests/test_task_lifecycle_flow.py tests/test_task_service.py tests/test_cancellation.py tests/test_server.py tests/test_provided_stems.py`；OMP/MKL/OPENBLAS线程为2。Edge命令`MANIALAB_TEST_BROWSER=msedge`、端口8978后`npm run test:ui`，完整45 passed（1.6分钟）；相关`compileall`、两处JS语法与`git diff --check`通过。
+- 主agent独立复核声轨删除差异与新回归；候选/导出agent独立复核任务服务设计；生命周期agent独立复核UI及展示测试，均未发现阻断项。PR/main Windows验证待补。UI临时产物位于ignored `tests/artifacts/browser/`，本阶段不运行模型或读取用户媒体、权重和研究产物。
+- 剩余边界明确开放：ENG-14无可用参考书签/Kiai导致旧结构被清空，修复已在独立文件排队；ENG-15确认子进程未回收后仍可开始下一任务，可能破坏串行进程要求，需专用门禁，不能因本阶段允许文件清理失败后复用worker就宣称此项解决；ENG-16固定BPM重拟合把123.456789四舍五入成123.45679，真实Edge丢弃诊断，另行修复。本阶段不代表阶段2–3、音乐或发布许可整体验收完成。
