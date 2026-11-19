@@ -55,7 +55,11 @@ def make_release_fixture(root, profile='standard'):
     )
     portable_report = reports / "portable.json"
     portable_checks = [
-        {"check": "release_manifest"},
+        {"check": "release_manifest", "build_profile": profile,
+         "capabilities": manifest["capabilities"],
+         "executable_sha256": manifest["executable_sha256"],
+         "release_manifest_sha256": hashlib.sha256(
+             (executable.parent / "release-manifest.json").read_bytes()).hexdigest()},
         {"check": "startup"},
         {"check": "restart"},
     ]
@@ -81,7 +85,12 @@ def make_release_fixture(root, profile='standard'):
     shutdown_report = reports / "shutdown.json"
     shutdown = {
         "passed": True,
+        "version": manifest["version"],
         "build_profile": profile,
+        "capabilities": manifest["capabilities"],
+        "executable_sha256": manifest["executable_sha256"],
+        "release_manifest_sha256": hashlib.sha256(
+            (executable.parent / "release-manifest.json").read_bytes()).hexdigest(),
         "worker_expected": profile != 'core',
         "application_exited": True,
         "worker_stopped_on_parent_exit": profile != 'core',
@@ -135,6 +144,11 @@ def test_collect_core_validation_rejects_declared_deep_components(tmp_path):
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     manifest['worker_sha256'] = 'unexpected-worker'
     manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+    for report_path in (portable_report, shutdown_report):
+        document = json.loads(report_path.read_text(encoding='utf-8'))
+        identity = document[0] if isinstance(document, list) else document
+        identity['release_manifest_sha256'] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+        report_path.write_text(json.dumps(document), encoding='utf-8')
     with zipfile.ZipFile(archive, 'w') as bundle:
         bundle.writestr('ManiaLab/ManiaLab.exe', (build_root / 'dist/ManiaLab/ManiaLab.exe').read_bytes())
         bundle.writestr('ManiaLab/release-manifest.json', json.dumps(manifest))

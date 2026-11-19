@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 2026-11-19当前整合：PR #194已合并为`aba2d44b80219c1737247239859e528b02fcf7d1`，PR run `44538891542`通过（Python/API `2792 passed, 89 skipped`、浏览器`52 passed`），main run `44539773445`待核验；PR #193的main run `44538269327`成功，ENG-16关闭。第八十七阶段非Core试听验证请求及构建来源指纹修复本地相关15 passed，准备PR；报告身份、native播放状态与完整Windows进程树修复独立排队。3个子agent持续工作（工具总槽4，用户授权最多5个不改变硬上限）。真人音乐、非Core实际包/许可与Windows树同步回收仍开放；Core一次实际集成计划已准备，待相关阶段合齐后执行。
+- 2026-11-19当前整合：PR #195已通过检查并合并为`ed16855bfb0b911dab5d97874f72719d79a2d31e`，PR run `44540158809`与main run `44541152663`均成功（Python/API `2801 passed, 89 skipped`、浏览器`52 passed`）；PR #194 main run `44539773445`成功，ENG-15关闭。PR #196已打开，当前head `b4be5b1`，Windows run `44543912596`进行中；第八十八阶段报告身份绑定补齐ZIP内manifest原始字节核验，本地定向47 passed。ENG-20 native播放修复在Chromium/Edge各10项通过；ENG-21 Windows树回收本地定向组72 passed、独立审查保留成员快照竞态边界。上述两项尚未提交/合并。PR/main结果与当前产物必须续接时重新核验；Core实际集成、真实音乐与发布许可继续开放。当前并发受工具限制为主agent加最多3个子agent。
 
 - 2026-11-19当前续接：第八十一阶段候选声轨试听来源修复已由PR #188合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`；PR/main Windows runs `44525372079`、`44526302353`均成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按条件跳过。ENG-12已闭合；具体行为、本地验证与日志位置见文末。下一步继续阶段2的段落/LN证据在编辑、局部重写和导出间的一致性审查，以及阶段3剩余生命周期边界；不要重复模型实验。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
 - 2026-11-19历史续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。第八十阶段的手动参考 Offset/波形对齐 ties-to-even 修复随后由PR #187及main run `44508222088`验证；自动估计保留与服务端默认一致的 half-up 规则。
@@ -2304,6 +2304,7 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 此阶段只门禁已经上报的进程回收失败，不能证明通用`stop_process`自动回收完整Windows进程树。另已实测venv redirector根退出而payload仍活、旧helper返回True且无标记，列ENG-21；原型在ignored `build/task-process-tree-draft-20261119-01/`继续验证，不把设计当实现。复现/设计保留于ignored `build/task-child-quarantine-20261119-01/`。
 - PR/main验证待补；没有运行神经推理、真实用户素材或研究实验。神经推理仍串行，工具并发只用于互不冲突的工程检查。
 - PR #194已合并为`aba2d44b80219c1737247239859e528b02fcf7d1`；PR run `44538891542`成功：Python/API `2792 passed, 89 skipped`、浏览器`52 passed`，Core便携与模型步骤按条件跳过。main run `44539773445`待核验；日志在ignored `build/process-gate-05e6d18/pr-194-windows.log`。
+- PR #194合并后main run `44539773445`成功，同为Python/API `2792 passed, 89 skipped`、浏览器`52 passed`；ENG-15关闭，日志在ignored `build/process-gate-05e6d18/main-194-windows.log`。
 
 ## 2026-11-19 第八十七阶段：便携验证请求与构建来源闭包
 
@@ -2311,4 +2312,11 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 受控源树复现实际打包/运行依赖的vendored `event.py`、`template.osu`变化不进入旧指纹。source_snapshot现在覆盖vendor Python包闭包、模板、构建recipe，以及启用原模型安装器时的源码ZIP/requirements；排除后复制的uv二进制，Core不增加未包含组件要求。该修复只约束以后新构建，不为历史dev.18包补签源闭包。
 - 新增`tests/test_portable_capability_audit.py`9项；已运行`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_portable_capability_audit.py tests/test_verify_portable_core.py tests/test_build_provenance.py`为15 passed（2.04秒，PYTHONUTF8=1、OMP/MKL/OPENBLAS=2）。相关`compileall`、`git diff --check`通过，主agent只读复核未发现阻断项。测试只执行提取的纯source_snapshot函数与真实Flask合成API，不启动builder入口。
 - 本阶段没有构建、下载、运行EXE/模型或读取用户素材。真实nonCore包的离线/Unicode/专用模型/关停仍未验证，extended专用fixture也未由公共collector强制覆盖；ENG-05/06保持开放。PR/main待验证，Core真实集成在后续修复合齐后统一执行。
+- PR #195已合并为`ed16855bfb0b911dab5d97874f72719d79a2d31e`；PR run `44540158809`成功，Python/API `2801 passed, 89 skipped`、浏览器`52 passed`，Core便携与模型步骤按条件跳过。main run `44541152663`待核验；日志在ignored `build/portable-source-d7ddc19/pr-195-windows.log`。
+
+## 2026-11-19 第八十八阶段：发布运行报告绑定清单摘要
+
+- 合成复现确认：同一EXE字节配上不同source/static内容和新`release-manifest.json`/ZIP时，旧portable与shutdown报告原先仍可被collector接受；仅EXE SHA无法证明来源声明一致。portable唯一`release_manifest`记录、shutdown身份和collector均绑定实际manifest原始字节`release_manifest_sha256`，且collector另要求ZIP内manifest字节与本地已验证manifest完全相同；旧缺字段、摘要错配、重复身份和仅改ZIP内空白均拒绝。
+- 新增同EXE改source/static后旧报告拒绝、仅旧portable摘要更新而shutdown仍拒绝、跨Core/standard身份缺失/重复/版本错误及ZIP manifest字节变化等回归。阶段88定向命令为`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_release_evidence_identity.py tests/test_verify_shutdown.py tests/test_release_validation.py`，最终`47 passed`（执行时长见PR日志，本地使用PYTHONUTF8=1、OMP/MKL/OPENBLAS=2）；相关compileall、`git diff --check`通过。未构建/执行EXE/模型，合成EXE/ZIP字节明确不代表实际便携运行。PR #196 head `b4be5b1`验证进行中。
+- 报告字段不从旧结果默认填充；manifest摘要来自实际校验路径的原始文件字节，不来自另一次格式化JSON。声明capabilities仍只说明profile预期，worker/启动/退出事实继续由原检查独立验证。历史dev.18及旧报告不自动补签新摘要；ENG-19等待PR #196及main验证。
 - 后续阶段88绑定portable/shutdown到当前EXE，阶段89处理native加载/提示状态；手动CLI的JUnit报告尚无测试时源码身份，但现有CI同job唯一build_id顺序未发现自动混用。该CLI残余单列，不扩成本阶段音乐质量结论。
