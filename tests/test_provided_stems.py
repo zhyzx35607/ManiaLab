@@ -88,6 +88,7 @@ def test_imported_float_stem_preserves_overrange_samples_in_analysis(tmp_path):
 
 
 def test_provided_upload_keeps_existing_analysis_and_old_set_on_failure(tmp_path):
+    from manialab.chart_workspace import audio_work
     from manialab.server import create_app
     from tests.test_server import wait_job
     from manialab.storage import Projects
@@ -105,8 +106,15 @@ def test_provided_upload_keeps_existing_analysis_and_old_set_on_failure(tmp_path
         assert wait_job(client,response.json)['status']=='done'
         saved=client.get(f'/api/projects/{pid}').json
         assert saved['analysis']==state['analysis'] and saved['provided_stems']['sources']['piano']['filename']=='钢琴.wav'
+        work=audio_work(Projects(tmp_path/'data/projects').path(pid),saved)
+        upload_root=work/'provided-uploads'
+        decoded_root=work/'stems-provided'
+        previous_uploads=set(upload_root.iterdir())
+        previous_decoded=set(decoded_root.iterdir())
         response=upload(short);assert wait_job(client,response.json)['status']=='error'
         assert client.get(f'/api/projects/{pid}').json==saved
+        assert set(upload_root.iterdir())==previous_uploads
+        assert set(decoded_root.iterdir())==previous_decoded
         assert client.post(f'/api/projects/{pid}/provided-stems',
             data={'unknown':(io.BytesIO(mix.read_bytes()),'bad.wav')},headers=headers).status_code==400
     finally:app.extensions['executor'].shutdown()
