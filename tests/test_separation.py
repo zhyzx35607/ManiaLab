@@ -30,7 +30,7 @@ def test_separator_cleans_temporary_input_when_worker_cannot_start(tmp_path, mon
 
     monkeypatch.setattr(separation, "run_hidden_cancellable", prepare_input)
     monkeypatch.setattr(separation.imageio_ffmpeg, "get_ffmpeg_exe", lambda: "ffmpeg")
-    monkeypatch.setattr(separation.subprocess, "Popen", fail_to_start)
+    monkeypatch.setattr(separation, "start_worker", fail_to_start)
 
     with pytest.raises(OSError, match="worker cannot start"):
         separator.separate(source, tmp_path)
@@ -84,7 +84,7 @@ def test_separator_rebuilds_stale_algorithm_revision(tmp_path, monkeypatch, prof
 
     monkeypatch.setattr(separation, "run_hidden_cancellable", prepare_input)
     monkeypatch.setattr(separation.imageio_ffmpeg, "get_ffmpeg_exe", lambda: "ffmpeg")
-    monkeypatch.setattr(separation.subprocess, "Popen", launch)
+    monkeypatch.setattr(separation, "start_worker", launch)
 
     if worker_revision != separator.spec['algorithm_revision']:
         with pytest.raises(ValueError):
@@ -164,7 +164,7 @@ def test_separator_preserves_float_input_and_rebuilds_legacy_cache(tmp_path, mon
         manifest.write_text(json.dumps(report), encoding='utf-8')
         return FinishedWorker()
 
-    monkeypatch.setattr(separation.subprocess, 'Popen', launch)
+    monkeypatch.setattr(separation, 'start_worker', launch)
     _, report = separator.separate(source, tmp_path)
     assert len(launches) == 1 and not report['cached']
     assert report['input_processing'] == separation.INPUT_PROCESSING

@@ -89,7 +89,7 @@ def setup(tmp_path, monkeypatch):
         launches.append((command,kwargs))
         create_result(command)
         return Finished()
-    monkeypatch.setattr(module.subprocess,'Popen',launch)
+    monkeypatch.setattr(module,'start_worker',launch)
     samples = np.full(22050, .1, dtype=np.float32)
     return detector, samples, tmp_path/'specialist-cache', launches, runtime
 
@@ -140,7 +140,7 @@ def test_ceil_resampling_can_preserve_only_unknown_tail_at_recorded_model_bounda
         result['predicted_release_hypotheses'] = int(reason == 'model_predicted_offset')
         write(output/'result.json', result)
         return Finished()
-    monkeypatch.setattr(module.subprocess, 'Popen', launch)
+    monkeypatch.setattr(module, 'start_worker', launch)
     if accepted:
         notes, report = detector.analyze(samples, 44100, cache, 'stem', 'bass', allow_predicted_releases=True)
         assert notes[0].end == 14894 and notes[0].release_reason in module.UNOBSERVED_RELEASES
@@ -203,7 +203,7 @@ def test_invalid_fresh_worker_results_never_commit(setup,monkeypatch,damage):
         worker=Finished()
         if damage=='nonzero':worker.returncode=2
         return worker
-    monkeypatch.setattr(module.subprocess,'Popen',launch)
+    monkeypatch.setattr(module,'start_worker',launch)
     with pytest.raises(ValueError):detector.analyze(samples,22050,cache,'stem','bass')
     assert not list(cache.glob('*/current.json'))
     assert list(cache.glob('*/attempt-*/worker.log'))
@@ -225,7 +225,7 @@ def test_cancel_terminates_silent_worker_and_preserves_old_analysis_cache(setup,
         def kill(self):self.killed=True
     worker=Silent();launched=[]
     def launch(*args,**kwargs):launched.append(True);return worker
-    monkeypatch.setattr(module.subprocess,'Popen',launch)
+    monkeypatch.setattr(module,'start_worker',launch)
     samples[0]=.2
     with pytest.raises(InterruptedError):
         detector.analyze(samples,22050,cache,'stem','bass',cancelled=lambda:bool(launched))

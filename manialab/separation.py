@@ -12,6 +12,7 @@ import imageio_ffmpeg
 from .audio_io import run_hidden_cancellable
 from .audio_cache import sha256_file
 from .cancellation import stop_process
+from .worker_process import start_worker
 from .stems import PROFILES, profile_for
 
 MODEL_SHA256 = "a004b2790d73ffeaa535db458a1a79b539dfdbafbccc31f275d07e632ebd7816"
@@ -101,7 +102,7 @@ class Separator:
         process = None
         try:
             with log.open("w", encoding="utf-8") as stream:
-                process = subprocess.Popen(command, stdout=stream, stderr=stream,
+                process = start_worker(command, cancelled=cancelled, stdout=stream, stderr=stream,
                     creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
                     env=os.environ | {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8",
                                       "OMP_NUM_THREADS": "2", "MKL_NUM_THREADS": "2", "OPENBLAS_NUM_THREADS": "2"})

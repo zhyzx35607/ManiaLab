@@ -88,6 +88,9 @@ def report_process_cleanup_failure(cancelled, message):
 
 
 def stop_process(process, cancelled, *, terminate_timeout, kill_timeout):
+    owned_tree = getattr(process, '_manialab_stop_tree', None)
+    if owned_tree is not None:
+        return owned_tree(cancelled, terminate_timeout + kill_timeout)
     if process.poll() is not None:
         return True
     try:
