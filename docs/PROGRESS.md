@@ -5,10 +5,11 @@
 
 ## 当前状态（先读）
 
+- 2026-11-19续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。下一项第八十阶段修复手动参考 Offset 与波形对齐在半毫秒时未遵循 ties-to-even 的一致性问题；自动估计仍保留与服务端默认一致的 half-up 规则。当前 PR/主线验证待补。
 - PR #183 已于2026-11-19合并为`3427f179e17068f4b4581c70fa37d96583e5816e`，修复Basic Pitch整曲/声部activation缓存及ONNX session未绑定模型身份/推理修订的问题；PR run `44476736699`与合并后main run `44477712665`均通过，Python/API为2,728 passed、89 skipped，Edge UI为38 passed，Core便携步骤按条件跳过。独立只读复审通过，没有加载真实模型或读取用户音频。
 - 第七十七阶段复现并修复 `/api/import` 创建项目时子目录失败会留下不可见UUID目录的问题；`Projects.create()` 现在清理本次半创建目录后重抛原异常。PR #184 已合并为`d5d1e374e9d315c9d39662da796e14008ee193c7`；PR Windows run `44479294481`及合并后 main run `44480110018`均成功，Python/API为2,729 passed、89 skipped，Edge UI为38 passed，Core便携步骤按触发条件跳过。定向故障注入和相关回归为37 passed。
 - 第七十八阶段修复计划 API 同步 HTTP 请求阻塞唯一任务 worker、取消不能及时终止的问题，并补充 1xx、HTTP/HTTPS 代理和非法端口边界。PR #185 已合并为`25460346bf87e847b68ae1aad00300b22d4590a3`；PR runs `44493364596`、文档复验`44495044806`及合并后main run `44496133010`均通过，Python/API为`2741 passed, 89 skipped`、Edge为`38 passed`，Core便携与模型步骤按触发条件跳过。90秒只约束 asyncio 网络任务，不覆盖被取消的系统 DNS `getaddrinfo` 与 `asyncio.run()` 默认执行器收尾；该限制及真实 HTTPS 代理握手测试缺口已列入 ENG-10。
-- 第七十九阶段只为已识别的候选发布/状态保存失败回滚和提供声轨长度不匹配目录清理缺口增加合成集成断言，没有确认产品逻辑缺陷。PR #186 Windows run `44498461836`成功，Python/API为`2743 passed, 89 skipped`、Edge为`38 passed`，Core便携与模型步骤按触发条件跳过；合并后main CI待补。
+- 第七十九阶段只为已识别的候选发布/状态保存失败回滚和提供声轨长度不匹配目录清理缺口增加合成集成断言，没有确认产品逻辑缺陷。PR #186 Windows runs `44498461836`、最新 head 文档复验`44499686610`成功，Python/API为`2743 passed, 89 skipped`、Edge为`38 passed`，Core便携与模型步骤按触发条件跳过；已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`，main run `44500510492`同样成功。阶段1生命周期跨路径审查收口。
 - PR #182 修复分离算法修订未纳入缓存身份的问题，已于2026-11-19合并为`58c48b9966da2b8a798fe5baa32d0fdc932bfaf7`；PR run `44471599763`与合并后main run `44472118121`均通过，Python/API为2,725 passed、89 skipped，Edge UI为38 passed，Core便携构建按条件跳过。第七十五阶段还将`scripts/separate_six.py`纳入worker源码fingerprint。PR #181 修复分离worker启动失败后的临时WAV泄漏，合并为`a9e5844632d3db10b2cba6fea4185f9314420f97`；PR/main run `44468079196`、`44468606711`成功，Python/API为2,720 passed、89 skipped，Edge UI为38 passed。此前PR #180修复嵌套谱面父目录音频引用，合并为`6888912147e5deed81545cb2376ef2c5066cb65c`；PR/main run `44465032776`、`44466336310`的Python/API为2,719 passed、89 skipped，Edge UI为38 passed。
 - PR #176 全项目验收计划已于2026-11-19合并为`abf7c05ca8e9b15f26418daf61bc51a15417c889`；main Windows run `44454674214`成功，Python/API为2,712 passed、89 skipped，Edge UI为36 passed，Core便携构建按触发条件跳过。第一轮工程路径审计未发现P0，阶段1–3仍在收口；问题与证据入口见[全项目验收问题账本](full-project-acceptance-ledger-20261119.md)。
 - 第七十一阶段增加缺失 `AudioFilename` 的可见状态和重新导入说明；浏览器回归确保不借用上一难度音轨。本地全量Python/API为2,711 passed、90 skipped，Edge UI为37 passed；`compileall`、全部静态JS语法及`git diff --check`通过。PR #177 的 Windows runs `44457046075`、文档复验`44457739696`及合并后 main run `44458199401`均通过，Python/API为2,712 passed、89 skipped，Edge UI为37 passed；便携构建按触发条件跳过。PR 已合并为`b69acf7f1db7a3ae3aafde4ca3e744c64c466be9`。
@@ -2230,5 +2231,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 阶段1跨路径只读审计没有确认产品行为缺陷，但发现两处失败路径的集成断言不足：原模型候选发布、工作区归档后若最终项目状态保存失败；已提交声轨后再导入长度不匹配文件。
 - 为原模型最终保存失败增加两种工作区状态的故障注入：原先无快照与已有快照。两种情形均验证任务报错、旧项目状态保持、刚发布的谱面被删除、临时/回滚文件不残留；已有快照的原始字节恢复，无快照时新工作区目录移除。
 - 强化声轨长度不匹配的 API 回归，验证失败请求不改变旧项目和先前成功的上传/解码目录集合；本次新增上传目录与解码缓存目录会清除。
-- 定向`.venv\Scripts\python.exe -m pytest -q tests/test_server.py::test_original_model_save_failure_rolls_back_files_and_workspace tests/test_provided_stems.py::test_provided_upload_keeps_existing_analysis_and_old_set_on_failure`为3 passed。Windows PR run `44498461836`成功，Python/API `2743 passed, 89 skipped`、Edge `38 passed`，Core便携与模型步骤按触发条件跳过；合并后main CI待补。
-- 本阶段仅增加合成失败注入覆盖，不代表声部或音乐质量改善；未运行模型、研究或音乐验收，也未读取ignored音频、谱包、评分、解盲表、权重或研究产物。阶段1生命周期跨路径审查仍开放。
+- 定向`.venv\Scripts\python.exe -m pytest -q tests/test_server.py::test_original_model_save_failure_rolls_back_files_and_workspace tests/test_provided_stems.py::test_provided_upload_keeps_existing_analysis_and_old_set_on_failure`为3 passed。Windows PR runs `44498461836`、最新 head 文档复验`44499686610`成功；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`、Edge `38 passed`，Core便携与模型步骤按触发条件跳过。
+- 本阶段仅增加合成失败注入覆盖，不代表声部或音乐质量改善；未运行模型、研究或音乐验收，也未读取ignored音频、谱包、评分、解盲表、权重或研究产物。合并后 main run `44500510492`通过后，阶段1生命周期跨路径工程审查收口；阶段2–3及外部验收仍开放。
+
+## 2026-11-19 第八十阶段：统一手动 Offset 的半毫秒舍入
+
+- 阶段2 Timing/时钟审查确认自动投影与手动输入使用不同规则是有意边界：自动 Offset 推导保留 JavaScript `Math.round`，与服务端缺省 Offset 的`floor(value + .5)`一致；用户显式提交的小数 Offset 使用 ties-to-even，与`chartOffset()`及服务端显式 Offset 的 Python `round()`一致。
+- 复现到两条显式输入路径遗漏该规则：粘贴参考 BPM/Offset 和波形「对齐到拍线」仍调用`Math.round`。合成输入`-1.5 ms`时旧实现写入`-1 ms`，而检查/生成归一化得到`-2 ms`；现已改用`chartOffset()`。自动候选、自动估计与提前量投影保持原行为。
+- `tests/browser/timing.spec.cjs`新增回归并明确锁定自动与手动两种规则；浏览器 Timing 全组`12 passed`，Python `tests/test_audio_meter.py tests/test_timing_diagnostic_clock.py`为`40 passed`；两处 JS `node --check`、fixture `compileall`和`git diff --check`通过。没有运行模型或真实音频。
+- PR 与合并后 main CI 待补；本地验证只覆盖合成 Timing 工作流，不证明音乐 Timing 已验收。

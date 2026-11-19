@@ -28,6 +28,8 @@ function duration(){return Math.max(state?.analysis?.duration||0,Number.isFinite
 function currentTime(){return audio.src&&Number.isFinite(audio.currentTime)?audio.currentTime:manualTime;}
 function currentTimingClock(){return {bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),audio_shift_ms:clockShift()};}
 function sameTimingClock(clock){const current=currentTimingClock();return !!clock&&Object.keys(current).every(key=>clock[key]===current[key]);}
+// Keep inferred clocks aligned with the server default; explicit edits use chartOffset.
+function autoChartOffset(value){return Math.round(value);}
 function captureTimingDraft(extraFields=[]){
   const fields=['bpm','offset','division','audioShift','auditionOffset','mode',...extraFields];
   return {values:Object.fromEntries(fields.map(id=>[id,$(id).value])),confirmed:$('timingConfirmed').checked,anchor:clockAnchor};
@@ -38,7 +40,7 @@ function restoreTimingDraft(draft){
   // loadState may have displayed the saved candidate's diagnosis. Restoring a
   // different draft clock cannot reuse that result or its marked windows.
   if(timingDiagnostics&&!sameTimingClock(timingDiagnostics.clock)){clearTimingDiagnostics();renderTimingLocations();}
-  tempoChoices=tempoChoices.map(c=>({...c,offset:Math.round(c.audio_offset-clockShift())}));showTempoChoices();
+  tempoChoices=tempoChoices.map(c=>({...c,offset:autoChartOffset(c.audio_offset-clockShift())}));showTempoChoices();
   $('structurePanel')?.classList.toggle('hidden',$('mode').value==='remap');
   setMode();updateGridStatus();draw();
   // Invalidate the recommendation request made by loadState with its temporary
@@ -93,10 +95,10 @@ function loadState(s){
   audioStatus.classList.toggle('hidden',!chartAudioMissing);
   const v=variant();if(v)$('mode').value=v.mode;if(s.analysis)$('analysisEngine').value=s.analysis.separation?(s.analysis.separation.source==='provided'?'provided':s.analysis.separation.profile==='six'?'deep6':'deep'):'basic';options($('voice'),[['mix','全部声部'],...(s.analysis?.voices||[]).map(v=>[v.voice,({drums:'鼓 / 打击',bass:'贝斯',vocals:'人声',other:'其余伴奏',guitar:'吉他',piano:'钢琴'})[v.voice]||v.voice])]);$('voice').value='mix';$('voice').disabled=!s.analysis?.separation;
   lastClockShift=v?.audio_shift_ms??s.audio_shift_ms??(s.analysis?0:22.5);$('audioShift').value=lastClockShift;
-  const tempo=v||s.analysis?.tempo;$('bpm').value=tempo?.bpm??120;$('offset').value=Math.round((tempo?.offset??0)-(v||!s.analysis?0:clockShift()));
+  const tempo=v||s.analysis?.tempo;$('bpm').value=tempo?.bpm??120;$('offset').value=autoChartOffset((tempo?.offset??0)-(v||!s.analysis?0:clockShift()));
   clockAnchor=!v&&s.analysis?s.analysis.tempo.offset:Number($('offset').value)+clockShift();
   if(changed)$('auditionOffset').value=$('offset').value;$('timingConfirmed').checked=!!v?.timing_confirmed;$('division').value=tempo?.division||4;
-  tempoChoices=[...(s.analysis?.tempo?.candidates||[]),...(s.analysis?.tempo?.precise_candidates||[])].map(c=>({...c,audio_offset:c.offset,offset:Math.round(c.offset-clockShift())}));showTempoChoices();
+  tempoChoices=[...(s.analysis?.tempo?.candidates||[]),...(s.analysis?.tempo?.precise_candidates||[])].map(c=>({...c,audio_offset:c.offset,offset:autoChartOffset(c.offset-clockShift())}));showTempoChoices();
   renderOriginalTempoNote();clearTimingDiagnostics();
   if(v?.timing_diagnostics)showTimingDiagnostics(v.timing_diagnostics);
   else if(v?.mode==='audio')$('timingReport').textContent='当前拍线尚未检查；旧候选未记录完整诊断，请重新检查整曲。';
@@ -211,7 +213,7 @@ function audioMeter(bpm,offset){
     return saved.meter??4;
   }
   const detected=state?.analysis?.tempo;
-  if(detected&&bpm===detected.bpm&&offset===Math.round(detected.offset-shift))return state.detected_meter??4;
+  if(detected&&bpm===detected.bpm&&offset===autoChartOffset(detected.offset-shift))return state.detected_meter??4;
   return 4;
 }
 function timingPoints(){
@@ -263,7 +265,7 @@ function drawBeatGrid(c,left,width,bottom,scale,t,span){
 }
 function timingChanged(preserveClockAnchor=false){ if(!preserveClockAnchor)clockAnchor=Number($('offset').value)+clockShift();cueClock.reset();$('timingConfirmed').checked=false;clearTimingDiagnostics();renderTimingLocations();lastScheduledBeat=-Infinity;updateGridStatus();draw();window.drawWaveDetail?.(); }
 ['bpm','offset','division'].forEach(id=>$(id).addEventListener('input',()=>timingChanged(id!=='offset')));
-$('audioShift').addEventListener('change',()=>{const value=clockShift();if(!Number.isFinite(value)||Math.abs(value)>100)return;$('offset').value=Math.round(clockAnchor-value);lastClockShift=value;tempoChoices=tempoChoices.map(c=>({...c,offset:Math.round(c.audio_offset-value)}));showTempoChoices();timingChanged(true);msg(`制谱提前量 ${value} ms；Offset 已同步调整。原始采音保留，需重新生成整谱。`);});
+$('audioShift').addEventListener('change',()=>{const value=clockShift();if(!Number.isFinite(value)||Math.abs(value)>100)return;$('offset').value=autoChartOffset(clockAnchor-value);lastClockShift=value;tempoChoices=tempoChoices.map(c=>({...c,offset:autoChartOffset(c.audio_offset-value)}));showTempoChoices();timingChanged(true);msg(`制谱提前量 ${value} ms；Offset 已同步调整。原始采音保留，需重新生成整谱。`);});
 $('tempoCandidates').onchange=()=>{const i=$('tempoCandidates').value;if(i==='')return;const c=tempoChoices[Number(i)];$('bpm').value=c.bpm;$('offset').value=c.offset;$('division').value=c.division;clockAnchor=c.audio_offset;timingChanged(true);if(c.precision_suggestion)msg(`已采用 ${c.bpm} BPM 精确候选；请在歌曲开头和结尾试听，确认没有逐渐漂移。`);};
 $('halfBpm').onclick=()=>{$('bpm').value=Math.max(10,Number($('bpm').value)/2);timingChanged(true);};
 $('doubleBpm').onclick=()=>{$('bpm').value=Math.min(1000,Number($('bpm').value)*2);timingChanged(true);};
@@ -273,7 +275,8 @@ $('applyTiming').onclick=guarded(()=>{
   const pair=text.trim().split(/[\s,，;；]+/).map(Number);
   const b=bpm?Number(bpm[1]):pair.length===2?pair[0]:NaN,o=offset?Number(offset[1]):pair.length===2?pair[1]:NaN;
   if(!Number.isFinite(b)||b<10||b>1000||!Number.isFinite(o)||Math.abs(o)>600000)throw Error('请粘贴 BPM: 210 与 Offset: 91，或两个用空格分隔的数字');
-  $('bpm').value=b;$('offset').value=Math.round(o);timingChanged();msg(`已应用参考：${b} BPM，Offset ${Math.round(o)} ms。请试听确认后重新生成整谱。`);
+  const roundedOffset=chartOffset(o);
+  $('bpm').value=b;$('offset').value=roundedOffset;timingChanged();msg(`已应用参考：${b} BPM，Offset ${roundedOffset} ms。请试听确认后重新生成整谱。`);
 });
 $('refitTiming').onclick=guarded(async()=>{
   if(!state)throw Error('请先分析音频');
