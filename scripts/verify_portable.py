@@ -332,7 +332,8 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),
             worker_files=0 if worker is None else len(worker['worker_files']),
             build_profile=release_manifest['build_profile'],
-            capabilities=declared, executable_sha256=release_manifest['executable_sha256']))
+            capabilities=declared, executable_sha256=release_manifest['executable_sha256'],
+            release_manifest_sha256=sha256(executable.parent/'release-manifest.json')))
         checks.append(dict(check='core_model',**core_model_identity))
         prior_path=executable.parent/'_internal/assets/pattern-prior.json'
         if declared['pattern_prior']:
