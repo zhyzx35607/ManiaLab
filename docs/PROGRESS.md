@@ -5,6 +5,7 @@
 
 ## 当前状态（先读）
 
+- 2026-11-19并行续接：用户最新授权3–4个子agent持续并行，当前使用3个子agent分别核对段落/LN来源、候选编辑/导出、取消/资源生命周期，不再受旧的同时最多1个限制；均禁止再派子agent，神经推理约束不变。主线`8243feb`（PR #189文档补录）及main run `44527791593`已成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`。第八十二阶段新增5项跨路径合成回归，本地相关组66 passed；产品代码未改，PR/main验证待补。生命周期审查另确认cleanup异常只写日志会掩盖未清理资源的问题，作为ENG-13单独修复；不要把下一阶段的未提交产品改动算入本阶段结果。音乐质量与非Core许可门槛仍开放。
 - 2026-11-19当前续接：第八十一阶段候选声轨试听来源修复已由PR #188合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`；PR/main Windows runs `44525372079`、`44526302353`均成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按条件跳过。ENG-12已闭合；具体行为、本地验证与日志位置见文末。下一步继续阶段2的段落/LN证据在编辑、局部重写和导出间的一致性审查，以及阶段3剩余生命周期边界；不要重复模型实验。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
 - 2026-11-19历史续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。第八十阶段的手动参考 Offset/波形对齐 ties-to-even 修复随后由PR #187及main run `44508222088`验证；自动估计保留与服务端默认一致的 half-up 规则。
 - PR #183 已于2026-11-19合并为`3427f179e17068f4b4581c70fa37d96583e5816e`，修复Basic Pitch整曲/声部activation缓存及ONNX session未绑定模型身份/推理修订的问题；PR run `44476736699`与合并后main run `44477712665`均通过，Python/API为2,728 passed、89 skipped，Edge UI为38 passed，Core便携步骤按条件跳过。独立只读复审通过，没有加载真实模型或读取用户音频。
@@ -2251,3 +2252,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - PR #188已合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`。PR Windows run `44525372079`及合并后main run `44526302353`均成功：Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按触发条件跳过。本地保存的完整CI日志为ignored `build/source-identity-93d3460/pr-188-windows.log`和`main-188-windows.log`；本阶段ENG-12关闭。
 - 本阶段保证来源可追溯与故障可见，不声明采音准确率、音乐Timing、声部听感或LN可玩性改善。未读取用户音频、参考谱、保留测试曲、权重或逐音研究产物；真人音乐与发布许可门槛继续开放。
 - 下一步：继续核对段落/LN来源证据经过手动编辑、局部重写、候选切换及JSON/OSU/OSZ导出后的对应关系，仅对可复现差异做最小修复。阶段2整体尚未收口；ENG-10的DNS取消与真实HTTPS代理边界、非Core profile/许可和MUS-01人工回收继续开放。此次没有创建新Release。
+
+## 2026-11-19 第八十二阶段：并行跨路径审查与来源/取消集成回归
+
+- 用户明确允许3–4个子agent同时持续工作，覆盖旧的最大1个限制；当前3名分别负责段落/LN来源证据、候选编辑与导出、取消和资源生命周期，由主agent整合。每名只操作分配文件，不再分派子agent，神经模型与研究脚本不运行。PR #189合并提交`8243feb`的main run `44527791593`成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`；完整日志与阶段81回执保存于ignored `build/source-identity-93d3460/`。
+- 新增`tests/test_candidate_source_export.py`：整谱/局部两种父候选使用不同的合成WAV与复用ID，连续修改起尾、增加人工LN、删除tap后，核对JSON保留候选快照与当前分析的区别、OSU/OSZ端点/轨道及音乐字节、旧声轨字节，再切回父候选并重开应用。人工新增物件没有采音证据。此测试从人工seed父候选开始，不冒称覆盖模型生成。
+- 新增`tests/test_task_lifecycle_flow.py`：排队取消不执行解码、解码/清单完成后取消、最终状态保存失败三条合成故障路径，均验证旧项目/声轨字节及目录集合保持、本次新资源清理，随后worker能处理新任务。晚失败使用Event屏障固定时序，未依赖概率竞争。
+- 主agent复核与LN agent独立只读复审未发现新增测试的阻断问题。主agent定向`.venv\Scripts\python.exe -m pytest -q tests/test_candidate_source_export.py tests/test_task_lifecycle_flow.py tests/test_evidence_snapshot.py tests/test_editing.py tests/test_edited_candidate_bookmarks.py tests/test_export_resources.py tests/test_task_service.py tests/test_provided_stems.py tests/test_recommendations.py`为66 passed；新增文件`compileall`和`git diff --check`通过。LN两批现有回归分别121 passed和165 passed；remap保时/原始LN音效/资源引用/重开定向11 passed，未发现产品缺陷。
+- 本阶段仅增加5项非平凡集成回归，未修改产品逻辑。PR/main Windows验证待补；不重复本地全量/UI或模型实验。另一个确定性故障注入确认：操作被取消后`cleanup(False)`抛`PermissionError`时，任务仍显示cancelled、资源残留，但`shutdown()`返回True且清理失败列表为空；实际文件锁下的unlink/rollback适用。ENG-13已单列，下一阶段修复与本阶段测试分开提交。
+- 后续继续保持3名子agent推进独立检查点。阶段2–3及真人音乐、非Core profile/权重许可尚未整体验收，不以新增测试数量宣称音乐改善。
