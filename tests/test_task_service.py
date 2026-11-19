@@ -194,6 +194,135 @@ def test_shutdown_cancels_active_work_waits_for_cleanup_and_rejects_submits(task
         service.submit(project_id, lambda *args: None)
 
 
+def test_shutdown_deadline_bounds_wait_and_stays_out_of_job_json(task_store):
+    projects, service = task_store
+    project_id = create_project(projects)
+    started, release = threading.Event(), threading.Event()
+    received = []
+
+    def operation(state, progress, cancelled):
+        received.append(cancelled)
+        started.set()
+        assert release.wait(5)
+
+    job = service.submit(project_id, operation)
+    assert started.wait(5)
+    deadline = time.monotonic() + 0.05
+    try:
+        assert service.shutdown(wait=True, deadline=deadline) is False
+        assert received[0]()
+        assert received[0].deadline == deadline
+        assert service.get(job["id"])["cancel"] is True
+        assert "deadline" not in service.get(job["id"])
+        with pytest.raises(ValueError, match="任务服务已关闭"):
+            service.submit(project_id, lambda *args: None)
+    finally:
+        release.set()
+        service.shutdown()
+
+    assert service.get(job["id"])["status"] == "cancelled"
+
+
+def test_shutdown_does_not_wait_past_deadline_for_task_lock(task_store):
+    projects, service = task_store
+    project_id = create_project(projects)
+    locked, release = threading.Event(), threading.Event()
+
+    def hold_task_lock():
+        with service.lock:
+            locked.set()
+            release.wait(5)
+
+    holder = threading.Thread(target=hold_task_lock)
+    holder.start()
+    assert locked.wait(5)
+    deadline = time.monotonic() + 0.05
+    try:
+        started = time.monotonic()
+        assert service.shutdown(wait=True, deadline=deadline) is False
+        assert time.monotonic() - started < 0.5
+        assert service._shutdown_requested.is_set()
+        with pytest.raises(ValueError, match="任务服务已关闭"):
+            service.submit(project_id, lambda *args: None)
+    finally:
+        release.set()
+        holder.join(timeout=5)
+        service.shutdown()
+
+    assert not holder.is_alive()
+
+
+def test_shutdown_during_project_load_skips_operation(task_store, monkeypatch):
+    projects, service = task_store
+    project_id = create_project(projects)
+    loading, release = threading.Event(), threading.Event()
+    operation_calls = []
+    original_load = projects.load
+
+    def delayed_load(value):
+        loading.set()
+        assert release.wait(5)
+        return original_load(value)
+
+    monkeypatch.setattr(projects, "load", delayed_load)
+    job = service.submit(
+        project_id,
+        lambda *args: operation_calls.append(True),
+    )
+    assert loading.wait(5)
+    assert service.shutdown(wait=False) is False
+    release.set()
+
+    assert service._idle.wait(5)
+    assert service.get(job["id"])["status"] == "cancelled"
+    assert service.get(job["id"])["cancel"] is True
+    assert not operation_calls
+
+
+def test_shutdown_reports_child_cleanup_failure(task_store):
+    projects, service = task_store
+    project_id = create_project(projects)
+    started = threading.Event()
+
+    def operation(state, progress, cancelled):
+        started.set()
+        while not cancelled():
+            time.sleep(0.001)
+        cancelled.report_cleanup_failure("synthetic child did not stop")
+        raise ChildProcessError("synthetic child did not stop")
+
+    job = service.submit(project_id, operation)
+    assert started.wait(5)
+
+    assert service.shutdown(wait=True, deadline=time.monotonic() + 2) is False
+    assert service.get(job["id"])["status"] == "error"
+    assert service._shutdown_cancellation.cleanup_failures == (
+        "synthetic child did not stop",
+    )
+
+
+def test_completed_task_clears_shutdown_request_during_commit(task_store, monkeypatch):
+    projects, service = task_store
+    project_id = create_project(projects)
+    saving, release = threading.Event(), threading.Event()
+    original_save = projects.save
+
+    def delayed_save(state):
+        saving.set()
+        assert release.wait(5)
+        return original_save(state)
+
+    monkeypatch.setattr(projects, "save", delayed_save)
+    job = service.submit(project_id, lambda *args: {"saved": True})
+    assert saving.wait(5)
+    assert service.shutdown(wait=False) is False
+    release.set()
+
+    result = wait_for_job(service, job["id"])
+    assert result["status"] == "done"
+    assert result["cancel"] is False
+
+
 def test_completed_job_history_is_bounded_without_pruning_active_job(task_store):
     projects, _ = task_store
     project_id = create_project(projects)

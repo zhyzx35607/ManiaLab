@@ -157,6 +157,88 @@ def test_arrangement_context_is_explicit_and_never_returned_as_prediction(tmp_pa
             arrangement_reference=reference,timing_reference=reference)
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows process tree handling")
+@pytest.mark.parametrize("child_wait,should_raise", [(0, False), (258, True)])
+def test_mapper_shutdown_verifies_children_after_root_exits(monkeypatch, child_wait, should_raise):
+    from manialab import upstream
+    from manialab.cancellation import CancellationContext
+
+    events = []
+
+    class ApiCall:
+        def __init__(self, callback):
+            self.callback = callback
+
+        def __call__(self, *args):
+            return self.callback(*args)
+
+    class Kernel:
+        def __init__(self):
+            self.OpenProcess = ApiCall(lambda access, inherit, pid: 42)
+            self.TerminateProcess = ApiCall(
+                lambda handle, code: events.append(("terminate", handle)) or True
+            )
+            self.WaitForSingleObject = ApiCall(
+                lambda handle, timeout: events.append(("wait", handle, timeout)) or child_wait
+            )
+            self.CloseHandle = ApiCall(
+                lambda handle: events.append(("close", handle)) or True
+            )
+
+    class FinishedParent:
+        pid = 123
+        returncode = 0
+
+        def poll(self):
+            return self.returncode
+
+    monkeypatch.setattr(upstream.ctypes, "WinDLL", lambda *args, **kwargs: Kernel())
+    monkeypatch.setattr(MapperEngine, "_windows_descendants", lambda pid: [456])
+    context = CancellationContext()
+    context.cancel(deadline=time.monotonic())
+
+    if should_raise:
+        with pytest.raises(ChildProcessError, match="Child process 456 did not exit"):
+            MapperEngine.stop_process(FinishedParent(), context)
+        assert context.cleanup_failures
+    else:
+        assert MapperEngine.stop_process(FinishedParent(), context)
+        assert not context.cleanup_failures
+    assert ("terminate", 42) in events
+    assert any(event[0] == "wait" and event[1] == 42 for event in events)
+
+
+def test_mapper_cleanup_failure_is_reported_on_non_windows(monkeypatch):
+    from manialab import upstream
+    from manialab.cancellation import CancellationContext
+
+    monkeypatch.setattr(upstream.os, "name", "posix")
+    context = CancellationContext()
+    context.cancel(deadline=time.monotonic())
+
+    class UnstoppableProcess:
+        pid = 123
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            pass
+
+        def kill(self):
+            pass
+
+        def wait(self, timeout):
+            raise subprocess.TimeoutExpired("mapper", timeout)
+
+    with pytest.raises(ChildProcessError, match="Mapperatorinator process did not exit"):
+        MapperEngine.stop_process(UnstoppableProcess(), context)
+
+    assert context.cleanup_failures == (
+        "Mapperatorinator process did not exit before its cleanup deadline",
+    )
+
+
 @pytest.mark.skipif(os.name!='nt',reason='Windows venv process trees')
 def test_cancelling_model_stops_its_child_process(tmp_path):
     import ctypes

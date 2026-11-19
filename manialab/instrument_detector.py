@@ -21,6 +21,7 @@ import numpy as np
 from scipy.io import wavfile
 
 from .domain import UNOBSERVED_RELEASES, note_from
+from .cancellation import stop_process
 from .instrument_bundle import (MODEL_REVISION, MODELS, RUNTIME_FILES, SOURCE_COMMIT, VOICE_MODELS,
                                 runtime_identity, sha, verify_model, verify_source)
 
@@ -257,13 +258,7 @@ class InstrumentDetector:
                             break
                         time.sleep(.25)
             finally:
-                if process.poll() is None:
-                    process.terminate()
-                    try:
-                        process.wait(timeout=3)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                        process.wait(timeout=10)
+                stop_process(process, cancelled, terminate_timeout=3, kill_timeout=10)
         if process.returncode:
             raise ValueError('专用采音失败，诊断日志：' + str(log))
 

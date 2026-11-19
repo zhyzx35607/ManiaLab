@@ -8,22 +8,35 @@ from pathlib import Path
 import socket
 import sys
 import threading
+import time
 import webbrowser
+
+from manialab.cancellation import remaining_until
+
+SHUTDOWN_GRACE_SECONDS = 15
 
 
 def _run_server(server, task_service):
     try:
         server.run()
     finally:
+        deadline = time.monotonic() + SHUTDOWN_GRACE_SECONDS
         try:
-            server.close()
+            task_service.shutdown(wait=False, deadline=deadline)
         finally:
             try:
-                dispatcher = getattr(server, "task_dispatcher", None)
-                if dispatcher is not None:
-                    dispatcher.shutdown()
+                server.close()
             finally:
-                task_service.shutdown(wait=True)
+                try:
+                    dispatcher = getattr(server, "task_dispatcher", None)
+                    if dispatcher is not None:
+                        dispatcher.shutdown(cancel_pending=True, timeout=remaining_until(deadline))
+                finally:
+                    stopped = task_service.shutdown(wait=True, deadline=deadline)
+                    if not stopped:
+                        message = "Task service did not stop before the shutdown deadline"
+                        logging.error(message)
+                        raise ChildProcessError(message)
 
 
 def main():

@@ -11,6 +11,7 @@ import imageio_ffmpeg
 
 from .audio_io import run_hidden_cancellable
 from .audio_cache import sha256_file
+from .cancellation import stop_process
 from .stems import PROFILES, profile_for
 
 MODEL_SHA256 = "a004b2790d73ffeaa535db458a1a79b539dfdbafbccc31f275d07e632ebd7816"
@@ -121,13 +122,9 @@ class Separator:
                         progress(2 + round(position * .28), last_message+f' · 已运行 {int(time.monotonic()-started)} 秒')
                         time.sleep(.25)
             finally:
-                if process.poll() is None:
-                    process.terminate()
-                    try:
-                        process.wait(timeout=10)
-                    except subprocess.TimeoutExpired:
-                        process.kill();process.wait(timeout=10)
-                wave.unlink(missing_ok=True)
+                stopped = stop_process(process, cancelled, terminate_timeout=10, kill_timeout=10)
+                if stopped:
+                    wave.unlink(missing_ok=True)
         if process.returncode or not manifest.is_file():
             raise ValueError(f"声部分离失败，诊断日志：{log}")
         report = json.loads(manifest.read_text(encoding="utf-8"))

@@ -1,6 +1,7 @@
 """Optional, isolated Mapperatorinator v32 CPU backend. Baseline needs no setup."""
 from __future__ import annotations
 
+import ctypes
 import json
 import os
 from pathlib import Path
@@ -8,6 +9,8 @@ import shutil
 import subprocess
 import time
 import zipfile
+
+from .cancellation import report_process_cleanup_failure, timeout_for
 
 SOURCE_COMMIT = "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa"
 MODEL_REVISION = "74f22583400d259bf424819e11027c17933efe54"
@@ -146,20 +149,33 @@ class MapperEngine:
         return result
 
     @staticmethod
-    def stop_process(process):
-        if process.poll() is not None:
-            return
+    def stop_process(process, cancelled=None):
+        windows = os.name == "nt"
+        descendants = MapperEngine._windows_descendants(process.pid) if windows else []
+        if not windows and process.poll() is not None:
+            return True
         # The Windows venv launcher and uv create children. Killing only the
         # launcher leaves model inference running after a timeout/cancellation.
-        if os.name == "nt":
-            descendants = MapperEngine._windows_descendants(process.pid)
+        if windows and process.poll() is None:
+            taskkill_timeout = timeout_for(cancelled, 30)
+            if taskkill_timeout > 0:
+                try:
+                    subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True,
+                                   creationflags=subprocess.CREATE_NO_WINDOW, timeout=taskkill_timeout)
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
+
+        root_signal_error = None
+        failures = []
+        if process.poll() is None:
             try:
-                subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True,
-                               creationflags=subprocess.CREATE_NO_WINDOW, timeout=30)
-            except subprocess.TimeoutExpired:
-                pass
+                (process.kill if windows else process.terminate)()
+            except OSError as error:
+                if process.poll() is None:
+                    root_signal_error = error
+
+        if windows:
             descendants.extend(MapperEngine._windows_descendants(process.pid))
-            import ctypes
             from ctypes import wintypes
             kernel = ctypes.WinDLL("kernel32", use_last_error=True)
             kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
@@ -168,17 +184,55 @@ class MapperEngine:
             kernel.TerminateProcess.restype = wintypes.BOOL
             kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
             kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+            child_handles = []
             for pid in dict.fromkeys(descendants):
                 handle = kernel.OpenProcess(0x00100001, False, pid)
-                if handle:
-                    kernel.TerminateProcess(handle, 1)
-                    kernel.WaitForSingleObject(handle, 5000)
-                    kernel.CloseHandle(handle)
+                if not handle:
+                    error_code = ctypes.get_last_error()
+                    if error_code != 87:
+                        failures.append(f"Could not open child process {pid} (Windows error {error_code})")
+                    continue
+                terminated = bool(kernel.TerminateProcess(handle, 1))
+                child_handles.append((pid, handle, terminated))
+
+            for pid, handle, terminated in child_handles:
+                wait_ms = round(timeout_for(cancelled, 5) * 1000)
+                state = kernel.WaitForSingleObject(handle, wait_ms)
+                if state != 0:
+                    detail = "termination was rejected" if not terminated else "did not exit"
+                    failures.append(f"Child process {pid} {detail} before the cleanup deadline")
+                kernel.CloseHandle(handle)
+
+        root_stopped = process.poll() is not None
+        try:
+            if not root_stopped:
+                process.wait(timeout=timeout_for(cancelled, 15))
+                root_stopped = process.poll() is not None
+        except subprocess.TimeoutExpired:
             if process.poll() is None:
-                process.kill()
-        else:
-            process.terminate()
-        process.wait(timeout=15)
+                try:
+                    process.kill()
+                except OSError as error:
+                    root_signal_error = root_signal_error or error
+                try:
+                    process.wait(timeout=timeout_for(cancelled, 15))
+                except subprocess.TimeoutExpired:
+                    pass
+            root_stopped = process.poll() is not None
+
+        if not root_stopped:
+            detail = "Mapperatorinator process did not exit before its cleanup deadline"
+            if root_signal_error is not None:
+                detail += " after a failed termination request"
+            failures.append(detail)
+        for message in failures:
+            report_process_cleanup_failure(cancelled, message)
+        if failures:
+            error = ChildProcessError("; ".join(failures))
+            if root_signal_error is not None and not root_stopped:
+                raise error from root_signal_error
+            raise error
+        return True
 
     def run(self, argv, message, progress, cancelled, percent=10, cwd=None, log_path=None):
         self.root.mkdir(parents=True, exist_ok=True)
@@ -196,15 +250,15 @@ class MapperEngine:
             try:
                 while process.poll() is None:
                     if cancelled():
-                        self.stop_process(process)
+                        self.stop_process(process, cancelled)
                         raise InterruptedError("已取消原模型任务")
                     if time.monotonic() - started > 3600:
-                        self.stop_process(process)
+                        self.stop_process(process, cancelled)
                         raise ValueError("原模型步骤超过一小时，已停止；请查看 engine.log")
                     progress(percent, f"{message} · 已运行 {int(time.monotonic()-started)} 秒")
                     time.sleep(.6)
             finally:
-                self.stop_process(process)
+                self.stop_process(process, cancelled)
             if process.returncode:
                 raise ValueError(f"{message}失败（退出码 {process.returncode}），日志：{log}")
         return log.read_bytes()[log_start:].decode("utf-8", errors="replace")

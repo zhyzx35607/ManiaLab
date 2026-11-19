@@ -2114,3 +2114,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 定向`.venv\Scripts\python.exe -m pytest -q tests/test_server.py -k "original_model_cancel or archive_active_chart"`为4 passed、18 deselected。全量设置 OpenMP / OpenBLAS / MKL 线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,690 passed、90 skipped（87.92秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9017 npm run test:ui`为36 passed（1.4分钟）。`.venv\Scripts\python.exe -m compileall -q manialab scripts tests launcher.py`、全部`static/*.js`的`node --check`及`git diff --check`通过。
 - PR #170 Windows runs `44430965427`、`44431613071`和最终文档复验`44432358696`均通过，Python/API为2,691 passed、89 skipped，Edge UI为36 passed；Core EXE步骤按触发条件跳过。PR合并提交为`3cf043aa7c027a905aaa1aa88ca551e84c9557d5`；合并后main run `44432819183`成功，Python/API为2,691 passed、89 skipped，Edge UI为36 passed。本阶段没有运行模型、研究或音乐质量实验，也没有读取 ignored 音频、谱包、盲评评分、解盲表、权重或研究产物。
 - 本阶段只改进取消后的文件事务完整性，不代表采音或谱面音乐性改善。公开 Pre-release 仍为 dev.18；真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍待完成。后续工程审查重点为进程关停是否需要统一总截止时间。
+
+## 2026-11-19 第六十七阶段：统一任务与子进程关停期限
+
+- 启动器在关停入口创建单调时钟绝对 deadline（15秒）；先关闭任务提交入口并广播取消，再关闭 Waitress 服务和 dispatcher，最后只等待同一个 deadline 的剩余时间。任务服务的关闭锁获取、运行任务和清理等待均受该时间约束。已通过最终取消检查并进入原子项目保存的任务允许完成提交，关闭结果仍反映是否在 deadline 内等到它结束。
+- 任务内部使用 callable `CancellationContext`，普通 `cancelled()` 调用保持兼容；deadline 与任务 JSON 布尔 `cancel` 分离。FFmpeg 回收、Mapperatorinator/uv Windows 子进程树终止、声部分离和专用采音 worker 都复用该 deadline，终止与 kill 阶段不会重新获得完整预算。
+- 若 OS 未能在期限内确认子进程退出，清理会明确抛出 `ChildProcessError`，保留原取消异常链、标记任务失败并使关停结果返回失败；不会把“Python 任务线程结束”误报为“子进程已退出”。Windows Mapperatorinator 清理即使根进程已先退出，也会再次枚举并终止子进程；无法打开、终止或确认子进程退出都会写入共享失败状态。启动器将任务服务未能在期限内停止提升为关停异常，原服务器异常保留为异常上下文。合成测试覆盖锁竞争、共享预算耗尽、FFmpeg 无法回收、信号失败、根进程先退出及任务服务失败结果。
+- 验证：关停/进程边界定向测试76 passed；全量设置 OpenMP / OpenBLAS / MKL 线程上限2运行 `.venv\Scripts\python.exe -m pytest -q` 为2,704 passed、90 skipped（82.74秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9022 npm run test:ui` 为36 passed（1.6分钟）。`compileall`、全部`static/*.js`的`node --check`及`git diff --check`通过。
+- 关停期限只约束协作式清理和等待，不是任意 native 算子或卡死 Python 线程的硬退出 SLA；`ThreadPoolExecutor`中的非守护线程仍可能阻止解释器退出。未运行模型、研究或音乐质量实验，也未读取 ignored 音频、谱包、盲评评分、解盲表、权重或研究产物。
+- 本地验证完成，带 `[portable]` 的 PR Windows 检查、便携 EXE/worker 清理验证、合并后 main 检查待执行。本阶段不代表音乐质量改善；真人钢琴盲听、6K–10K/LN 玩家试打和两首独立歌曲听审仍待完成，公开 Pre-release 仍为 dev.18。
