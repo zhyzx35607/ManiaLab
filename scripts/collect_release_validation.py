@@ -71,7 +71,10 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
                 raise SystemExit("Release ZIP contains an unsafe entry path.")
         if sha256_bytes(archive.read("ManiaLab/ManiaLab.exe")) != executable_sha:
             raise SystemExit("Release ZIP executable does not match the verified build.")
-        if json.loads(archive.read("ManiaLab/release-manifest.json")) != manifest:
+        archive_manifest = archive.read("ManiaLab/release-manifest.json")
+        if sha256_bytes(archive_manifest) != sha256(manifest_path):
+            raise SystemExit("Release ZIP manifest bytes do not match the verified build.")
+        if json.loads(archive_manifest) != manifest:
             raise SystemExit("Release ZIP manifest does not match the verified build.")
         if profile == "core":
             try:
@@ -114,6 +117,15 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
     portable_checks = [item.get("check") for item in portable if isinstance(item, dict)]
     if not required_checks.issubset(portable_checks):
         raise SystemExit("Portable verification report is missing required checks.")
+    portable_identities = [item for item in portable
+        if isinstance(item, dict) and item.get('check') == 'release_manifest']
+    if len(portable_identities) != 1:
+        raise SystemExit('Portable verification must contain exactly one release_manifest identity check.')
+    expected_identity = {field: manifest[field] for field in
+        ('build_profile', 'capabilities', 'executable_sha256')}
+    expected_identity['release_manifest_sha256'] = sha256(manifest_path)
+    if any(portable_identities[0].get(field) != value for field, value in expected_identity.items()):
+        raise SystemExit('Portable verification identity differs from this build; rerun EXE verification.')
     piano_model = manifest.get("piano_model")
     if profile == "core":
         if any(manifest.get(key) is not None for key in (
@@ -135,6 +147,10 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
             raise SystemExit("Piano runtime smoke does not match the release manifest.")
 
     shutdown = json.loads(Path(shutdown_report).read_text(encoding="utf-8"))
+    expected_shutdown_identity = dict(expected_identity, version=manifest['version'])
+    if not isinstance(shutdown, dict) or any(
+            shutdown.get(field) != value for field, value in expected_shutdown_identity.items()):
+        raise SystemExit('Shutdown verification identity differs from this build; rerun shutdown verification.')
     if declared_capabilities["separation_four"]:
         if (
             shutdown.get("passed") is not True

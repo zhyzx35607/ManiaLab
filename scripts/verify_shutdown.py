@@ -13,6 +13,7 @@ import urllib.request
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from scripts.package_assets import capabilities
+from scripts.build_provenance import sha256
 from scripts.verify_portable import synthetic
 
 
@@ -40,11 +41,23 @@ def verify_core_shutdown(status, version, worker_processes_before_exit,
     )
 
 
+def shutdown_report_identity(executable, manifest):
+    """Bind the report to EXE bytes; profile fields remain manifest declarations."""
+    declared = capabilities(manifest.get('build_profile'))
+    digest = sha256(executable)
+    if manifest.get('executable_sha256') != digest or manifest.get('capabilities') != declared:
+        raise ValueError('Shutdown executable identity differs from the release manifest')
+    return dict(version=manifest['version'], build_profile=manifest['build_profile'],
+        capabilities=declared, executable_sha256=digest,
+        release_manifest_sha256=sha256(Path(executable).parent/'release-manifest.json'))
+
+
 def run(executable, work):
     executable=Path(executable).resolve()
     release_manifest=json.loads((executable.parent/'release-manifest.json').read_text(encoding='utf-8'))
-    build_profile=release_manifest.get('build_profile')
-    declared=capabilities(build_profile)
+    identity=shutdown_report_identity(executable,release_manifest)
+    build_profile=identity['build_profile']
+    declared=identity['capabilities']
     expects_worker=declared['separation_four']
     work=work.resolve();work.mkdir(parents=True,exist_ok=True)
     data=work/'shutdown-data';data.mkdir(exist_ok=True)
@@ -132,6 +145,7 @@ def run(executable, work):
                 if kernel.WaitForSingleObject(handle,0)==258:
                     kernel.TerminateProcess(handle,1);kernel.WaitForSingleObject(handle,5000)
                 kernel.CloseHandle(handle)
+            result.update(identity)
             (work/'report.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
     print(json.dumps(result),flush=True)
 
