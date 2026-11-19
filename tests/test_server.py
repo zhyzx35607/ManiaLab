@@ -151,7 +151,7 @@ def test_audio_generation_uses_confirmed_grid_and_real_ln_target(tmp_path):
 def wait_job(client, job):
     for _ in range(500):
         result=client.get('/api/jobs/'+job['id']).json
-        if result['status'] in ('done','error'):
+        if result['status'] in ('done','error','cancelled'):
             return result
         time.sleep(.02)
     raise AssertionError('job timed out')
@@ -268,6 +268,137 @@ def test_original_model_conflicts_are_reported_without_silent_reassignment(tmp_p
         assert '结构冲突' in variant['selection']['message']
         assert client.get(base+'/export/osu').status_code==400
     finally:app.extensions['executor'].shutdown()
+
+
+def test_original_model_cancel_during_postprocessing_stops_before_publication(tmp_path,monkeypatch):
+    from manialab.upstream import MapperEngine
+
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    fake_mapper_install(tmp_path)
+    projects=Projects(tmp_path/'projects')
+    imported=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=imported['id'];base=f'/api/projects/{pid}';project=projects.path(pid)
+    (project/'preview.wav').write_bytes(b'placeholder')
+    previous=projects.load(pid)
+    postprocessing=threading.Event();release=threading.Event()
+
+    def model(self,audio,output,prefs,progress,cancelled,seconds,tempo):
+        output.mkdir(parents=True)
+        target=output/'generated.osu'
+        target.write_text(export_osu([Note(1000,4000,0),Note(2000,2000,1)],10,
+            ROOT/'vendor/mapperatorinator/template.osu'),encoding='utf-8')
+        return target
+
+    def blocked_layout(*args):
+        postprocessing.set()
+        assert release.wait(5)
+        return {}
+
+    monkeypatch.setattr(MapperEngine,'generate',model)
+    monkeypatch.setattr('manialab.upstream_routes.layout_metrics',blocked_layout)
+    monkeypatch.setattr('manialab.upstream_routes.review_chart',
+        lambda *args:pytest.fail('Cancelled model output continued into review'))
+    try:
+        response=client.post(base+'/engine-generate',json={'settings':{'keys':10}},headers=headers)
+        assert response.status_code==200,response.json
+        job=response.json
+        assert postprocessing.wait(5)
+        assert client.post('/api/jobs/'+job['id']+'/cancel',headers=headers).json=={'ok':True}
+        release.set()
+        result=wait_job(client,job)
+
+        assert result['status']=='cancelled',result
+        assert projects.load(pid)==previous
+        assert not list((project/'files').glob('Mapperatorinator-*.osu'))
+        assert not (project/'chart-workspaces').exists()
+    finally:
+        release.set()
+        app.extensions['executor'].shutdown()
+
+
+@pytest.mark.parametrize('has_previous_snapshot',[True,False])
+def test_original_model_cancel_during_publication_rolls_back_files_and_workspace(tmp_path,monkeypatch,has_previous_snapshot):
+    from manialab.chart_workspace import archive_active_chart, chart_workspace_snapshot_path
+    from manialab.upstream import MapperEngine
+
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    fake_mapper_install(tmp_path)
+    projects=Projects(tmp_path/'projects')
+    imported=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=imported['id'];base=f'/api/projects/{pid}';project=projects.path(pid)
+    (project/'preview.wav').write_bytes(b'placeholder')
+    previous=projects.load(pid)
+    snapshot_path=chart_workspace_snapshot_path(project,None)
+    previous_snapshot=b'{"original":null,"sentinel":"previous workspace"}'
+    if has_previous_snapshot:
+        snapshot_path.parent.mkdir()
+        snapshot_path.write_bytes(previous_snapshot)
+    archived=threading.Event();release=threading.Event()
+
+    def model(self,audio,output,prefs,progress,cancelled,seconds,tempo):
+        output.mkdir(parents=True)
+        target=output/'generated.osu'
+        target.write_text(export_osu([Note(1000,4000,0),Note(2000,2000,1)],10,
+            ROOT/'vendor/mapperatorinator/template.osu'),encoding='utf-8')
+        return target
+
+    def blocked_archive(path,state):
+        archive_active_chart(path,state)
+        archived.set()
+        assert release.wait(5)
+
+    monkeypatch.setattr(MapperEngine,'generate',model)
+    monkeypatch.setattr('manialab.upstream_routes.archive_active_chart',blocked_archive)
+    try:
+        response=client.post(base+'/engine-generate',json={'settings':{'keys':10}},headers=headers)
+        assert response.status_code==200,response.json
+        job=response.json
+        assert archived.wait(5)
+        assert len(list((project/'files').glob('Mapperatorinator-*.osu')))==1
+        assert list((project/'chart-workspaces').glob('*.json'))
+        if has_previous_snapshot:
+            assert list((project/'chart-workspaces').glob('.*.rollback'))
+        assert client.post('/api/jobs/'+job['id']+'/cancel',headers=headers).json=={'ok':True}
+        release.set()
+        result=wait_job(client,job)
+
+        assert result['status']=='cancelled',result
+        assert projects.load(pid)==previous
+        assert not list((project/'files').glob('Mapperatorinator-*.osu'))
+        assert not snapshot_path.with_suffix('.tmp').exists()
+        if has_previous_snapshot:
+            assert snapshot_path.read_bytes()==previous_snapshot
+        else:
+            assert not snapshot_path.parent.exists()
+    finally:
+        release.set()
+        app.extensions['executor'].shutdown()
+
+
+def test_archive_active_chart_removes_partial_snapshot_after_write_failure(tmp_path,monkeypatch):
+    from manialab.chart_workspace import archive_active_chart, chart_workspace_snapshot_path
+
+    project=tmp_path/'project'
+    project.mkdir()
+    state={'audio':'song.wav','original':None,'charts':[],'settings':{}}
+    snapshot_path=chart_workspace_snapshot_path(project,None)
+    temporary=snapshot_path.with_suffix('.tmp')
+    write_text=Path.write_text
+
+    def fail_after_partial_write(path,text,*args,**kwargs):
+        if path==temporary:
+            with path.open('w',encoding=kwargs.get('encoding','utf-8')) as output:
+                output.write(text[:8])
+                output.flush()
+            raise OSError('simulated snapshot write failure')
+        return write_text(path,text,*args,**kwargs)
+
+    monkeypatch.setattr(Path,'write_text',fail_after_partial_write)
+    with pytest.raises(OSError,match='simulated snapshot write failure'):
+        archive_active_chart(project,state)
+
+    assert not temporary.exists()
+    assert not snapshot_path.exists()
 
 
 def test_mapping_clock_changes_export_once_and_audition_uses_actual_chart_time(tmp_path):
