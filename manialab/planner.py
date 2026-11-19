@@ -1,10 +1,16 @@
 """Optional API planner: only bounded preferences; never creates note timestamps."""
+import asyncio
+import base64
 import json
-import urllib.error
+import ssl
 import urllib.parse
 import urllib.request
 
 from .arrange_config import parameters
+
+MAX_RESPONSE_BYTES = 128 * 1024
+REQUEST_TIMEOUT_SECONDS = 90
+HEADER_LIMIT_BYTES = 64 * 1024
 
 ALLOWED = {"density", "ln_ratio", "min_ln", "max_held", "chord_size", "focus", "pitch_follow", "balance", "jack_avoid", "release_gap",
            "phrase_ln", "drums_weight", "bass_weight", "vocals_weight", "other_weight", "guitar_weight", "piano_weight",
@@ -40,14 +46,267 @@ def validate_plan(value, segments):
     return {"preferences": prefs, "segments": result, "explanation": explanation[:3000]}
 
 
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise ValueError("API 地址返回重定向；请填写最终接口地址")
+class HTTPStatusError(Exception):
+    def __init__(self, status):
+        self.status = status
 
 
-def plan(endpoint, model, key, instruction, segments, current, review=None):
+def _host_header(host, port, scheme):
+    host = host.encode("idna").decode("ascii")
+    if ":" in host:
+        host = f"[{host}]"
+    default_port = 443 if scheme == "https" else 80
+    return host if port == default_port else f"{host}:{port}"
+
+
+def _proxy_for(parsed):
+    if urllib.request.proxy_bypass(parsed.hostname):
+        return None
+    proxies = urllib.request.getproxies()
+    value = proxies.get(parsed.scheme) or proxies.get("all")
+    if not value:
+        return None
+    if "://" not in value:
+        value = "http://" + value
+    proxy = urllib.parse.urlsplit(value)
+    if proxy.scheme not in ("http", "https") or not proxy.hostname:
+        raise ValueError("API 代理地址格式无效")
+    try:
+        port = proxy.port
+    except ValueError:
+        raise ValueError("API 代理地址格式无效") from None
+    if port == 0:
+        raise ValueError("API 代理地址格式无效")
+    if port is None:
+        port = 443 if proxy.scheme == "https" else 80
+    authorization = None
+    if proxy.username is not None or proxy.password is not None:
+        credentials = base64.b64encode(
+            f"{urllib.parse.unquote(proxy.username or '')}:{urllib.parse.unquote(proxy.password or '')}".encode()
+        ).decode("ascii")
+        authorization = "Basic " + credentials
+    return proxy, port, authorization
+
+
+async def _read_headers(reader):
+    try:
+        raw = await reader.readuntil(b"\r\n\r\n")
+    except asyncio.LimitOverrunError as error:
+        raise ValueError("API 响应头过大") from error
+    if len(raw) > HEADER_LIMIT_BYTES:
+        raise ValueError("API 响应头过大")
+    lines = raw[:-4].split(b"\r\n")
+    status_line = lines[0].split(b" ", 2)
+    if len(status_line) < 2 or not status_line[0].startswith(b"HTTP/"):
+        raise ValueError("API 响应格式无效")
+    try:
+        status = int(status_line[1])
+    except ValueError:
+        raise ValueError("API 响应状态无效") from None
+    headers = {}
+    for line in lines[1:]:
+        if b":" not in line:
+            raise ValueError("API 响应头格式无效")
+        name, value = line.split(b":", 1)
+        try:
+            key = name.decode("ascii").lower()
+            item = value.decode("latin-1").strip()
+        except UnicodeError:
+            raise ValueError("API 响应头格式无效") from None
+        headers.setdefault(key, []).append(item)
+    return status, headers
+
+
+async def _read_final_headers(reader):
+    for _ in range(8):
+        status, headers = await _read_headers(reader)
+        if 100 <= status < 200:
+            if status == 101:
+                raise ValueError("API 不支持协议升级")
+            continue
+        return status, headers
+    raise ValueError("API 临时响应次数过多")
+
+
+async def _read_chunked(reader):
+    body = bytearray()
+    while True:
+        line = await reader.readline()
+        if not line.endswith(b"\r\n"):
+            raise ValueError("API 分块响应格式无效")
+        try:
+            size = int(line[:-2].split(b";", 1)[0], 16)
+        except ValueError:
+            raise ValueError("API 分块响应格式无效") from None
+        if size < 0 or len(body) + size > MAX_RESPONSE_BYTES:
+            raise ValueError("API 响应过大")
+        if size == 0:
+            trailer_size = 0
+            while True:
+                trailer = await reader.readline()
+                trailer_size += len(trailer)
+                if trailer_size > HEADER_LIMIT_BYTES:
+                    raise ValueError("API 响应尾部过大")
+                if trailer in (b"\r\n", b"\n", b""):
+                    return bytes(body)
+        body.extend(await reader.readexactly(size))
+        if await reader.readexactly(2) != b"\r\n":
+            raise ValueError("API 分块响应格式无效")
+
+
+async def _read_body(reader, headers):
+    transfer_encoding = [
+        item.strip().lower()
+        for value in headers.get("transfer-encoding", [])
+        for item in value.split(",")
+    ]
+    lengths = headers.get("content-length", [])
+    if transfer_encoding and lengths:
+        raise ValueError("API 响应长度格式冲突")
+    if transfer_encoding:
+        if transfer_encoding != ["chunked"]:
+            raise ValueError("API 响应编码不受支持")
+        return await _read_chunked(reader)
+    if lengths:
+        if len(set(lengths)) != 1:
+            raise ValueError("API 响应长度格式冲突")
+        try:
+            length = int(lengths[0])
+        except ValueError:
+            raise ValueError("API 响应长度格式无效") from None
+        if length < 0:
+            raise ValueError("API 响应长度格式无效")
+        if length > MAX_RESPONSE_BYTES:
+            raise ValueError("API 响应过大")
+        return await reader.readexactly(length)
+
+    body = bytearray()
+    while len(body) <= MAX_RESPONSE_BYTES:
+        chunk = await reader.read(min(16 * 1024, MAX_RESPONSE_BYTES + 1 - len(body)))
+        if not chunk:
+            return bytes(body)
+        body.extend(chunk)
+    raise ValueError("API 响应过大")
+
+
+async def _post_json(url, body, headers):
+    parsed = urllib.parse.urlsplit(url)
+    host = parsed.hostname.encode("idna").decode("ascii")
+    port = parsed.port if parsed.port is not None else (443 if parsed.scheme == "https" else 80)
+    proxy_info = _proxy_for(parsed)
+    proxy = proxy_info[0] if proxy_info else None
+    proxy_port = proxy_info[1] if proxy_info else None
+    proxy_authorization = proxy_info[2] if proxy_info else None
+
+    request = urllib.request.Request(url, data=body, headers=headers)
+    writer = None
+    try:
+        connect_host = proxy.hostname if proxy else host
+        connect_port = proxy_port if proxy else port
+        proxy_tls = bool(proxy and proxy.scheme == "https")
+        context = ssl.create_default_context() if proxy_tls or parsed.scheme == "https" else None
+        reader, writer = await asyncio.open_connection(
+            connect_host,
+            connect_port,
+            ssl=context if proxy_tls or (not proxy and parsed.scheme == "https") else None,
+            server_hostname=connect_host if proxy_tls else (host if not proxy and parsed.scheme == "https" else None),
+            limit=HEADER_LIMIT_BYTES,
+        )
+
+        if proxy and parsed.scheme == "https":
+            authority = f"[{host}]:{port}" if ":" in host else f"{host}:{port}"
+            connect_headers = [("Host", authority), ("Connection", "keep-alive")]
+            if proxy_authorization:
+                connect_headers.append(("Proxy-Authorization", proxy_authorization))
+            writer.write(
+                (f"CONNECT {authority} HTTP/1.1\r\n" +
+                 "".join(f"{name}: {value}\r\n" for name, value in connect_headers) +
+                 "\r\n").encode("latin-1")
+            )
+            await writer.drain()
+            status, _ = await _read_final_headers(reader)
+            if status != 200:
+                raise ValueError(f"API 代理连接失败（HTTP {status}）")
+            await writer.start_tls(ssl.create_default_context(), server_hostname=host)
+
+        target = url if proxy and parsed.scheme == "http" else request.selector
+        target = urllib.parse.quote(target, safe="/%:@!$&'()*+,;=-._~")
+        request_headers = {
+            "Host": _host_header(host, port, parsed.scheme),
+            "Content-Length": str(len(body)),
+            "Connection": "close",
+        }
+        request_headers.update(request.headers)
+        if proxy and parsed.scheme == "http" and proxy_authorization:
+            request_headers["Proxy-Authorization"] = proxy_authorization
+        if any("\r" in value or "\n" in value for value in request_headers.values()):
+            raise ValueError("API 请求头格式无效")
+        encoded_headers = "".join(
+            f"{name}: {value}\r\n" for name, value in request_headers.items()
+        )
+        writer.write(f"POST {target} HTTP/1.1\r\n{encoded_headers}\r\n".encode("latin-1") + body)
+        await writer.drain()
+        status, response_headers = await _read_final_headers(reader)
+        if 300 <= status < 400:
+            raise ValueError("API 地址返回重定向；请填写最终接口地址")
+        if status >= 400:
+            raise HTTPStatusError(status)
+        return await _read_body(reader, response_headers)
+    finally:
+        if writer is not None:
+            writer.close()
+            try:
+                await asyncio.wait_for(writer.wait_closed(), timeout=0.2)
+            except (asyncio.CancelledError, OSError, ssl.SSLError, asyncio.TimeoutError):
+                pass
+
+
+async def _request_cancellable(url, body, headers, cancelled):
+    request = asyncio.create_task(_post_json(url, body, headers))
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + REQUEST_TIMEOUT_SECONDS
+    try:
+        while True:
+            if cancelled is not None and cancelled():
+                request.cancel()
+                try:
+                    await request
+                except asyncio.CancelledError:
+                    pass
+                raise InterruptedError("已取消，原有谱面已保留")
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                request.cancel()
+                try:
+                    await request
+                except asyncio.CancelledError:
+                    pass
+                raise asyncio.TimeoutError
+            done, _ = await asyncio.wait({request}, timeout=min(0.05, remaining))
+            if done:
+                if cancelled is not None and cancelled():
+                    raise InterruptedError("已取消，原有谱面已保留")
+                return request.result()
+    finally:
+        if not request.done():
+            request.cancel()
+            try:
+                await request
+            except asyncio.CancelledError:
+                pass
+
+
+def plan(endpoint, model, key, instruction, segments, current, review=None, cancelled=None):
+    if isinstance(endpoint, str) and any(ord(char) < 0x20 or ord(char) == 0x7f for char in endpoint):
+        raise ValueError("API 地址格式无效")
     parsed = urllib.parse.urlparse(endpoint)
     if parsed.username or parsed.password or parsed.query or parsed.fragment or not parsed.hostname:
+        raise ValueError("API 地址格式无效")
+    try:
+        port = parsed.port
+    except ValueError:
+        raise ValueError("API 地址格式无效") from None
+    if port == 0:
         raise ValueError("API 地址格式无效")
     if parsed.scheme != "https" and not (parsed.scheme == "http" and parsed.hostname in ("localhost", "127.0.0.1", "::1")):
         raise ValueError("API 地址必须为 HTTPS（本地服务可用 HTTP）")
@@ -73,19 +332,24 @@ def plan(endpoint, model, key, instruction, segments, current, review=None):
     url = endpoint.rstrip("/")
     if not url.endswith("/chat/completions"):
         url += "/chat/completions"
-    request = urllib.request.Request(url, data=json.dumps(payload).encode(), headers=headers)
+    if cancelled is not None and cancelled():
+        raise InterruptedError("已取消，原有谱面已保留")
     try:
-        with urllib.request.build_opener(NoRedirect).open(request, timeout=90) as response:
-            body = response.read(128 * 1024 + 1)
-        if len(body) > 128 * 1024:
-            raise ValueError("API 响应过大")
+        body = asyncio.run(_request_cancellable(
+            url, json.dumps(payload).encode(), headers, cancelled,
+        ))
+    except InterruptedError:
+        raise
+    except HTTPStatusError as error:
+        raise ValueError(f"API 请求失败（HTTP {error.status}）；检查地址、模型、额度和密钥") from None
+    except (OSError, ssl.SSLError, asyncio.IncompleteReadError, asyncio.LimitOverrunError, asyncio.TimeoutError):
+        if cancelled is not None and cancelled():
+            raise InterruptedError("已取消，原有谱面已保留") from None
+        raise ValueError("API 连接失败或超时") from None
+    try:
         result = json.loads(body)["choices"][0]["message"]["content"].strip()
         if result.startswith("```"):
             result = result.split("\n", 1)[1].rsplit("```", 1)[0]
         return validate_plan(json.loads(result), segments)
-    except urllib.error.HTTPError as error:
-        raise ValueError(f"API 请求失败（HTTP {error.code}）；检查地址、模型、额度和密钥") from None
-    except (urllib.error.URLError, TimeoutError):
-        raise ValueError("API 连接失败或超时") from None
     except (KeyError, IndexError, TypeError, json.JSONDecodeError):
         raise ValueError("API 未返回可用的 JSON 编排参数") from None
