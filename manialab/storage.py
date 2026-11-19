@@ -124,7 +124,12 @@ class Projects:
     def create(self):
         project_id = uuid.uuid4().hex
         path = self.path(project_id)
-        (path / "files").mkdir(parents=True)
+        path.mkdir()
+        try:
+            (path / "files").mkdir()
+        except BaseException:
+            shutil.rmtree(path, ignore_errors=True)
+            raise
         return project_id, path
 
     def save(self, state):

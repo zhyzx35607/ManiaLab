@@ -53,6 +53,32 @@ def test_failed_import_removes_partial_project(tmp_path):
     app.extensions['executor'].shutdown()
 
 
+def test_import_removes_project_when_creation_fails_after_parent_mkdir(tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    project_root = tmp_path / 'projects'
+    original_mkdir = Path.mkdir
+
+    def fail_files_creation(path, *args, **kwargs):
+        if path.name == 'files' and path.parent.parent == project_root:
+            original_mkdir(path.parent)
+            raise OSError('synthetic files directory failure')
+        return original_mkdir(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, 'mkdir', fail_files_creation)
+    try:
+        response = client.post(
+            '/api/import',
+            data={'files': (io.BytesIO(b'synthetic audio'), 'song.wav')},
+            headers=headers,
+        )
+        assert response.status_code == 500
+        assert list(project_root.iterdir()) == []
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 def test_optional_mapper_routes_reject_profiles_without_installer(tmp_path, monkeypatch):
     from manialab.upstream import MapperEngine
     monkeypatch.setattr(MapperEngine, 'status', lambda self: {
