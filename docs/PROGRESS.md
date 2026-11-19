@@ -5,9 +5,9 @@
 
 ## 当前状态（先读）
 
-- 2026-11-19当前整合：PR #195已通过检查并合并为`ed16855bfb0b911dab5d97874f72719d79a2d31e`，PR run `44540158809`与main run `44541152663`均成功（Python/API `2801 passed, 89 skipped`、浏览器`52 passed`）；PR #194 main run `44539773445`成功，ENG-15关闭。PR #196已合并为`256ecf8`，其PR run `44544668731`成功，main run待核验；ENG-19源码契约已在main，真实Core集成仍待单次冻结验收。PR #197当前head含Windows worker树回收与closed-handle析构保护，本地warning-as-error worker回归20 passed、生命周期组合62 passed，Windows run `44547205708`待核验。ENG-20 native播放改动在Chromium/Edge各10项通过，尚未提交。Core实际集成、真实音乐与发布许可继续开放；当前并发受工具限制为主agent加最多3个子代理。
+- 2026-11-19当前整合：PR #196/#197/#198均已合并至main，合并提交分别为`256ecf8`、`75179ae`、`bee69ca`；对应PR/main Windows runs `44544668731/44546117834`、`44547867366/44549577592`、`44549463878/44552057267`均成功。PR #198 main回归为Python/API `2857 passed, 89 skipped`、Edge `62 passed`；Core步骤按触发条件跳过，已另按冻结main执行一次本机Core证据链。Core run `core-evidence-20261119-bee69cad232a-20261119T232220475-32408`的全量pytest为`2856 passed, 90 skipped`、Edge `62 passed`；Core build、portable EXE、Basic Pitch合成分析、6K–10K导出、Unicode重启/坏音频恢复、worker-free shutdown及collector都通过。原PowerShell 5.1 runner在末尾把portable根数组保留为嵌套数组，错误报EXE身份不匹配；复核确认实际EXE、manifest、portable、shutdown摘要一致后，用同一报告/产物修正数组解包并完成所有最终断言，没有重建或重跑EXE。完整记录见第九十一阶段。真实音乐质量、非Core profile与权重许可仍开放；并发仍受工具上限主agent+3个子代理约束。
 
-- 2026-11-19当前续接：第八十一阶段候选声轨试听来源修复已由PR #188合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`；PR/main Windows runs `44525372079`、`44526302353`均成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按条件跳过。ENG-12已闭合；具体行为、本地验证与日志位置见文末。下一步继续阶段2的段落/LN证据在编辑、局部重写和导出间的一致性审查，以及阶段3剩余生命周期边界；不要重复模型实验。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
+- 2026-11-19历史续接记录：第八十一阶段候选声轨试听来源修复由PR #188合并为0e1b7d687fbf503339c0b7175fca57ad9324d5d8；PR/main Windows runs 44525372079、44526302353均成功，Python/API 2751 passed, 89 skipped、浏览器44 passed。ENG-12已闭合；阶段88–91的后续工程验证见本文件末尾。整体音乐验收仍未完成：真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可保持开放。
 - 2026-11-19历史续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。第八十阶段的手动参考 Offset/波形对齐 ties-to-even 修复随后由PR #187及main run `44508222088`验证；自动估计保留与服务端默认一致的 half-up 规则。
 - PR #183 已于2026-11-19合并为`3427f179e17068f4b4581c70fa37d96583e5816e`，修复Basic Pitch整曲/声部activation缓存及ONNX session未绑定模型身份/推理修订的问题；PR run `44476736699`与合并后main run `44477712665`均通过，Python/API为2,728 passed、89 skipped，Edge UI为38 passed，Core便携步骤按条件跳过。独立只读复审通过，没有加载真实模型或读取用户音频。
 - 第七十七阶段复现并修复 `/api/import` 创建项目时子目录失败会留下不可见UUID目录的问题；`Projects.create()` 现在清理本次半创建目录后重抛原异常。PR #184 已合并为`d5d1e374e9d315c9d39662da796e14008ee193c7`；PR Windows run `44479294481`及合并后 main run `44480110018`均成功，Python/API为2,729 passed、89 skipped，Edge UI为38 passed，Core便携步骤按触发条件跳过。定向故障注入和相关回归为37 passed。
@@ -2317,13 +2317,27 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 ## 2026-11-19 第八十八阶段：发布运行报告绑定清单摘要
 
 - 合成复现确认：同一EXE字节配上不同source/static内容和新`release-manifest.json`/ZIP时，旧portable与shutdown报告原先仍可被collector接受；仅EXE SHA无法证明来源声明一致。portable唯一`release_manifest`记录、shutdown身份和collector均绑定实际manifest原始字节`release_manifest_sha256`，且collector另要求ZIP内manifest字节与本地已验证manifest完全相同；旧缺字段、摘要错配、重复身份和仅改ZIP内空白均拒绝。
-- 新增同EXE改source/static后旧报告拒绝、仅旧portable摘要更新而shutdown仍拒绝、跨Core/standard身份缺失/重复/版本错误及ZIP manifest字节变化等回归。阶段88定向命令为`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_release_evidence_identity.py tests/test_verify_shutdown.py tests/test_release_validation.py`，最终`47 passed`（执行时长见PR日志，本地使用PYTHONUTF8=1、OMP/MKL/OPENBLAS=2）；相关compileall、`git diff --check`通过。未构建/执行EXE/模型，合成EXE/ZIP字节明确不代表实际便携运行。PR #196 head `b4be5b1`验证进行中。
-- 报告字段不从旧结果默认填充；manifest摘要来自实际校验路径的原始文件字节，不来自另一次格式化JSON。声明capabilities仍只说明profile预期，worker/启动/退出事实继续由原检查独立验证。历史dev.18及旧报告不自动补签新摘要；ENG-19源码契约已由PR #196合入，main run待核验。
-- 后续阶段89处理Windows worker树回收，阶段90处理native加载/提示状态；手动CLI的JUnit报告尚无测试时源码身份，但现有CI同job唯一build_id顺序未发现自动混用。该CLI残余单列，不扩成本阶段音乐质量结论。
+- 新增同EXE改source/static后旧报告拒绝、仅旧portable摘要更新而shutdown仍拒绝、跨Core/standard身份缺失/重复/版本错误及ZIP manifest字节变化等回归。定向命令为`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_release_evidence_identity.py tests/test_verify_shutdown.py tests/test_release_validation.py`，最终`47 passed`；相关compileall、`git diff --check`通过。未执行EXE；合成字节不代表实际便携运行。
+- portable/shutdown/collector绑定实际manifest原始字节，collector同时核对ZIP内manifest字节。历史dev.18及旧报告不自动补签。PR #196 merge commit `256ecf8`，PR run `44544668731`与main run `44546117834`均成功。ENG-19源码契约已闭合；真实Core集成另记第九十一阶段。
+- 手动CLI JUnit与源码身份残余仍由COV-04记录；托管CI同job没有发现跨run混用。该边界不扩大成本阶段音乐质量结论。
 
 ## 2026-11-19 第八十九阶段：Windows worker 进程树回收
 
 - 真实venv redirector复现旧stop_process只等待根PID返回成功、payload仍存活；Windows worker现以CREATE_SUSPENDED创建，先加入non-breakaway Job再恢复初始线程，覆盖分离与专用乐器worker。停止时按统一取消deadline终止Job、等待根和可验证成员句柄，并把成员枚举、终止、等待、active count或句柄关闭异常传播到既有进程清理门禁；PID在打开句柄后还会以IsProcessInJob确认，避免误杀Job外复用PID。
 - 启动故障注入额外复现Popen Handle已关闭后基础析构仍调用WaitForSingleObject，触发unraisable WinError 6；子类析构现检查closed标志。warning-as-error tests/test_worker_process_tree.py为20 passed；完整生命周期/进程组合为62 passed（OMP/MKL/OPENBLAS=2），compileall与git diff --check通过。没有运行模型、EXE或真实音频。
-- PR #197当前head为closed-handle保护提交b7ef671，分支已包含PR #196合并后的main提交；Windows run 44547205708待核验。外来PID、venv与根已退出子进程、启动/回收故障、句柄关闭与共享deadline均有合成覆盖。成员PID快照和TerminateJobObject间仍可能出现没有逐个预持有句柄的新成员；Job终止及active count是补充验证，不宣称所有竞态下内核同步回收。
-- ENG-21待PR/main检查闭合后，再继续ENG-20播放器状态。之后根据Core实际集成计划，等待ENG-19、ENG-21、ENG-20全部合入同一冻结main后单次运行；该计划会运行Basic Pitch与Core EXE，因此不在准备阶段启动。此阶段只提高Windows worker生命周期可验证性，不等于声部或音乐质量改善。
+- PR #197 merge commit `75179ae`；最终PR run `44547867366`及main run `44549577592`成功。外来PID、venv与根已退出子进程、启动/回收故障、closed-handle析构、句柄关闭与共享deadline均有覆盖；warning-as-error worker测试20 passed，本地生命周期组合62 passed。成员PID快照和TerminateJobObject间仍可能出现没有逐个预持有句柄的新成员；Job终止及active count是补充验证，不宣称所有竞态下内核同步回收。
+- ENG-21源码契约已闭合；Core合成运行不证明任意worker竞态，也不等于音乐质量改善。
+
+## 2026-11-19 第九十阶段：native媒体切换与提示音等待状态
+
+- 快速切换声部、视图、候选或项目时，native媒体source请求递增身份并清理旧metadata listener；暂停播放保留目标位置，加载中显式pause不会被旧回调恢复，播放拒绝显示为错误。`waiting`事件清理已排提示音，只有媒体达到`HAVE_FUTURE_DATA`后再安排后续提示音。
+- Playwright helper先检查`readyState`再等`loadedmetadata`，修复Edge上事件早于listener注册而超时的测试竞态。定向Chromium/Edge各10 passed；PR #198 run `44549463878`、main run `44552057267`成功，main全组Python/API `2857 passed, 89 skipped`、Edge `62 passed`。合并提交`bee69ca`。本地回归覆盖真实HTMLMediaElement缓冲/暂停/seek，不是打包EXE浏览器端到端。
+- ENG-20源码/浏览器契约已闭合；打包Core静态服务器里的媒体播放仍未验证。此阶段不证明音乐可听性、Timing或玩家体验改善。
+
+## 2026-11-19 第九十一阶段：冻结main上的Core构建与身份链验证
+
+- 前置核对：main `bee69cad232a01206051ba59f422961c17e94259`与origin/main相同、工作区干净；`licenses/FFmpeg-GPLv3.txt`存在；`licenses/FFmpeg-build-info.txt`构建后无tracked diff；没有ManiaLab/pytest/研究进程。唯一产物ID为`core-evidence-20261119-bee69cad232a-20261119T232220475-32408`，位于ignored的`build/core-evidence-runs/`、`build/portable/`、`test-data/core-evidence/`，没有覆盖历史目录或创建Release。
+- 指定计划执行的新鲜pytest为`2856 passed, 90 skipped`（JUnit tests=2946、failures/errors=0），Edge完整组`62 passed`；Core PyInstaller build成功。新EXE的portable verifier通过：打包Basic Pitch v0.4.0 synthetic analysis、6/7/8/9/10键生成导出、提供合成other stem分析导出、缺失deep engine错误、重启保持、Unicode音频路径和坏音频后服务继续；Core关停验证通过且退出前/后均无worker。Collector验证fresh JUnit、source snapshot、EXE/manifest/ZIP身份、CRC、Core精确payload与Basic Pitch身份。
+- Core ZIP为`ManiaLab-0.1.0-alpha.6-dev.18-windows-x64-core.zip`，SHA-256 `83cb0453d1ad4e502cc619cb82949f6f285fa70c80980ab6d9f675b3fb35700c`；EXE SHA-256 `d275ee2c4eb893d8ac350feb9da8867713c9c6826ddc92a95f8b929e9ebf07dc`；raw release-manifest SHA-256 `719ad2ba71d5aa436aed879101dc6ae255598b15ba418d54f4b458e033012469`。portable/shutdown与实际文件、collector一致。
+- 原计划脚本执行到所有build、portable、shutdown和collector步骤后，在最终PowerShell 5.1断言因JSON根数组被包装为嵌套`Object[]`而返回非零，误报`EXE identity chain differs`；实际EXE SHA在manifest/portable/shutdown中完全一致。ignored计划脚本已显式枚举portable报告数组；在Windows PowerShell 5.1下用同一run目录里的JUnit、browser JSON、portable/shutdown报告、collector、manifest和EXE重新执行最终断言，逐项通过，没有再次build或启动EXE。保留首次exit code=1及后续final reconciliation；详细审计保存在该run目录内。
+- 本阶段只证明Core profile合成/打包检查，不证明standard/extended包、非Core声部分离/专用模型/权重许可、Tsumugi parity、真实歌曲质量、Timing听感、真人盲听、6K–10K/LN实玩或打包服务器里的浏览器播放。没有读取或修改ignored音频、谱包、权重及逐音研究产物，也没有创建Release。
