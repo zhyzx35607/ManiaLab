@@ -5,6 +5,7 @@
 
 ## 当前状态（先读）
 
+- 2026-11-19当前整合：第八十三阶段PR #191已合并为`0f89440ab8563fd57b1348da605fc901252e7d96`，PR run `44532957056`成功，Python/API `2766 passed, 89 skipped`、浏览器`45 passed`；main run `44533920894`待最终核验。第八十四阶段参考结构边界修复本地相关83 passed，准备PR；共享区另有Timing身份、未回收进程门禁与便携来源/验证器修复，已各自定向验证，按阶段独立提交。3个子agent继续审查/复核，不停留在首轮结果。音乐验收与非Core发布许可仍未闭环。
 - 2026-11-19当前并行阶段：第八十二阶段PR #190已合并为`2e22f1e08952d267f970a33cd4d393ce3b96f6ab`，PR/main runs `44530422421`、`44531157525`成功，Python/API `2756 passed, 89 skipped`、浏览器`44 passed`；COV-02/03关闭。第八十三阶段资源清理失败可见性修复本地定向71 passed、Edge完整组45 passed，静态检查通过，PR/main待补。另有未提交的结构参考边界修复，及固定BPM重拟合精度/未回收子进程门禁排队事项；按独立阶段提交，不能把共享工作区全部改动混算成已合并。3名子agent持续并行，主agent整合。音乐验收与非Core许可继续开放。
 - 2026-11-19并行续接：用户最新授权3–4个子agent持续并行，当前使用3个子agent分别核对段落/LN来源、候选编辑/导出、取消/资源生命周期，不再受旧的同时最多1个限制；均禁止再派子agent，神经推理约束不变。主线`8243feb`（PR #189文档补录）及main run `44527791593`已成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`。第八十二阶段新增5项跨路径合成回归，本地相关组66 passed；产品代码未改，PR/main验证待补。生命周期审查另确认cleanup异常只写日志会掩盖未清理资源的问题，作为ENG-13单独修复；不要把下一阶段的未提交产品改动算入本阶段结果。音乐质量与非Core许可门槛仍开放。
 - 2026-11-19当前续接：第八十一阶段候选声轨试听来源修复已由PR #188合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`；PR/main Windows runs `44525372079`、`44526302353`均成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按条件跳过。ENG-12已闭合；具体行为、本地验证与日志位置见文末。下一步继续阶段2的段落/LN证据在编辑、局部重写和导出间的一致性审查，以及阶段3剩余生命周期边界；不要重复模型实验。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
@@ -2272,3 +2273,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 新增`tests/test_task_cleanup_errors.py`覆盖取消、最终保存失败、已提交成功、executor提交失败四个回调异常入口；与声轨6例、既有任务/取消/服务API/声轨回归合跑71 passed（20.60秒）。命令为`.venv\Scripts\python.exe -m pytest -q tests/test_task_cleanup_errors.py tests/test_provided_cleanup_errors.py tests/test_task_lifecycle_flow.py tests/test_task_service.py tests/test_cancellation.py tests/test_server.py tests/test_provided_stems.py`；OMP/MKL/OPENBLAS线程为2。Edge命令`MANIALAB_TEST_BROWSER=msedge`、端口8978后`npm run test:ui`，完整45 passed（1.6分钟）；相关`compileall`、两处JS语法与`git diff --check`通过。
 - 主agent独立复核声轨删除差异与新回归；候选/导出agent独立复核任务服务设计；生命周期agent独立复核UI及展示测试，均未发现阻断项。PR/main Windows验证待补。UI临时产物位于ignored `tests/artifacts/browser/`，本阶段不运行模型或读取用户媒体、权重和研究产物。
 - 剩余边界明确开放：ENG-14无可用参考书签/Kiai导致旧结构被清空，修复已在独立文件排队；ENG-15确认子进程未回收后仍可开始下一任务，可能破坏串行进程要求，需专用门禁，不能因本阶段允许文件清理失败后复用worker就宣称此项解决；ENG-16固定BPM重拟合把123.456789四舍五入成123.45679，真实Edge丢弃诊断，另行修复。本阶段不代表阶段2–3、音乐或发布许可整体验收完成。
+- PR #191已合并为`0f89440ab8563fd57b1348da605fc901252e7d96`；PR Windows run `44532957056`成功，Python/API `2766 passed, 89 skipped`、浏览器`45 passed`，Core便携与模型步骤按条件跳过。main run `44533920894`待最终核验；日志保存于ignored `build/task-cleanup-00080e0/`。
+
+## 2026-11-19 第八十四阶段：拒绝不可用的参考结构边界
+
+- 合成API先复现全部书签越界时仍接受空结果、把旧结构改为整曲单段并清空plan/手动expression；Kiai虽已有空结果拒绝，先过滤浮点时间再round仍允许±0.1ms回落到首尾端点，触发相同状态变化。两轮旧实现分别出现2项和4项真实失败。
+- bookmarks/Kiai现在先按既定Python规则得到整数音频时间，再过滤最终音频范围；全部不可用时拒绝任务并保留完整旧状态。合法正负提前量仍只平移毫秒边界，不按BPM缩放。用户显式手动`action=edit,boundaries=[]`仍可清成整曲单段，此修复只拒绝不可用参考。
+- 新增`tests/test_structure_clock_audit.py`14项API回归，覆盖越界/舍入端点、合法bookmarks/Kiai×±50ms、非法手动边界，核对旧项目/候选不变及合法操作正确失效当前plan/expression。`.venv\Scripts\python.exe -m pytest -q tests/test_structure_clock_audit.py tests/test_structure_expression.py tests/test_generation_clock.py tests/test_edited_candidate_bookmarks.py tests/test_timing_diagnostic_clock.py`为83 passed（4.61秒，OMP/MKL/OPENBLAS=2）；相关`compileall`、`git diff --check`通过。主agent只读复核未发现阻断项。
+- 未新增正式测试文件的临时合成核验确认最终状态保存失败保留旧项目，以及两难度参考标记/结构往返独立恢复；不把这些核验冒称为完整媒体或音乐验收。PR/main Windows验证待补；本阶段不改Timing拟合算法、Offset舍入、音符或音频，不读取用户素材/模型和研究产物。
+- 下一阶段分别整合ENG-16的固定BPM精度与mode迟到响应失效、ENG-15的进程专用门禁，以及非Core验证请求/打包来源fingerprint缺口；仍由3名子agent持续推进不同检查点。
