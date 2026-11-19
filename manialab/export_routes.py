@@ -1,13 +1,13 @@
 import io
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import tempfile
 import zipfile
 
 from flask import send_file
 
 from .domain import export_osu, note_from, parse_osu
-from .storage import safe_path
+from .storage import resolve_project_reference, safe_path
 
 
 def register_export_routes(app, projects, resources, current_audio):
@@ -36,7 +36,7 @@ def register_export_routes(app, projects, resources, current_audio):
         folder = Path()
         if variant["mode"] == "remap":
             original = safe_path(base, state["original"]).read_text(encoding="utf-8-sig")
-            folder = Path(state["original"]).parent
+            folder = PurePosixPath(state["original"]).parent
         content = export_osu(notes, variant["settings"]["keys"], resources / "vendor" / "mapperatorinator" / "template.osu",
                              title=state["title"], artist=state["artist"], audio=state.get("audio") or "audio.ogg",
                              bpm=variant["bpm"], offset=variant["offset"], original=original, meter=variant.get("meter", 4),
@@ -65,7 +65,7 @@ def register_export_routes(app, projects, resources, current_audio):
                 # Keep the chart's timing metadata while closing its audio reference in the archive.
                 audio_name = parse_osu(content)['general'].get('AudioFilename', '')
                 if audio_name:
-                    referenced = safe_path(base, (folder / audio_name).as_posix())
+                    referenced = resolve_project_reference(base, folder, audio_name)
                     if not referenced.is_file():
                         archive.write(current_audio(state), referenced.relative_to(base).as_posix())
             buffer.seek(0)

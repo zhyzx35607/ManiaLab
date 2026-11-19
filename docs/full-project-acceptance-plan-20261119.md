@@ -13,7 +13,7 @@
 
 ## 当前基线
 
-- `main` 当前为 `32564c4ae08382dc29e802cd8704bb0689d1febf`。PR #175 合并后 main run `44452857369`成功，Python/API 为 2,712 passed、89 skipped，Edge UI 为36 passed。此次工作流按触发条件跳过 Core EXE 构建；此前 PR #174 合并后 main run `44449536131`完成 Core 便携包、离线/Unicode 路径和关停验证。
+- `main` 当前为 `ef4e788d59c696b48af241ed40652549923449c6`。PR #179 的 Windows run `44461711637`与合并后 main run `44462358541`均成功，Python/API 为2,712 passed、89 skipped，Edge UI为38 passed；Core便携步骤按触发条件跳过。此前 PR #174 合并后 main run `44449536131`完成 Core 便携包、离线/Unicode路径和关停验证。
 - 当前公开 Pre-release 仍为 `v0.1.0-alpha.6-dev.18`；主线修复不自动包含在该包中。
 - 架构已经按服务端路由、领域逻辑、音频组件、存储与浏览器分层。先验证边界契约和用户路径，不做没有缺陷证据的大面积重写。
 - 现有记录已明确真实盲听、玩家试打和两首独立歌曲评审尚未回收；Demucs 四/六声部 checkpoint 的独立再分发授权也尚未核实。
