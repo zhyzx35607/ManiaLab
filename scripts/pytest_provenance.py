@@ -6,6 +6,9 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,17 +17,18 @@ _TEXT_EXTENSIONS = frozenset({
     ".cjs", ".cfg", ".css", ".html", ".ini", ".js", ".json", ".md", ".mjs",
     ".osu", ".py", ".toml", ".txt", ".xml", ".yaml", ".yml",
 })
-_SOURCE_DIRS = ("docs", "manialab", "scripts", "static", "tests", "vendor", ".github")
+_SOURCE_DIRS = (".github", "assets", "docs", "licenses", "manialab", "scripts", "static", "tests", "vendor")
 _ROOT_FILES = frozenset({
     ".gitattributes", ".gitignore", "AGENTS.md", "LICENSE", "README.md",
     "THIRD_PARTY_NOTICES.md", "launcher.py", "package.json", "package-lock.json",
-    "pytest.ini", "requirements-lock.txt", "requirements-deep-lock.txt",
-    "assets/arrangement-profiles.json", "assets/deep-models.json",
-    "assets/guitar-model.json", "assets/model-manifest.json",
-    "assets/pattern-prior.json", "assets/piano-model.json", "assets/basic-pitch.onnx",
-    "assets/mapperatorinator-requirements.txt",
+    "playwright.config.cjs", "pytest.ini", "requirements.txt", "requirements-dev.txt",
+    "requirements-lock.txt", "requirements-deep.txt", "requirements-deep-lock.txt",
+    "requirements-banquet-research.txt", "requirements-timbre-trap-research.txt",
+    "requirements-tsumugi-research.txt", "requirements-vocal-research.txt",
+    "assets/basic-pitch.onnx",
 })
 _EXCLUDED_FILES = frozenset({"licenses/FFmpeg-build-info.txt"})
+_SESSION_STATE = pytest.StashKey[dict]()
 
 
 def _run_git(root: Path, *arguments: str) -> list[str]:
@@ -42,14 +46,16 @@ def _run_git(root: Path, *arguments: str) -> list[str]:
 
 
 def _is_source(relative: str) -> bool:
-    if relative in _ROOT_FILES or relative in _EXCLUDED_FILES:
-        return relative in _ROOT_FILES
+    if relative in _EXCLUDED_FILES:
+        return False
+    if relative in _ROOT_FILES:
+        return True
     path = Path(relative)
+    if path.parent == Path(".") and path.name.startswith("requirements") and path.suffix == ".txt":
+        return True
     parts = path.parts
     if not parts or path.suffix.lower() not in _TEXT_EXTENSIONS:
         return False
-    if relative in _ROOT_FILES or relative in _EXCLUDED_FILES:
-        return relative in _ROOT_FILES
     return parts[0] in _SOURCE_DIRS
 
 
@@ -99,6 +105,77 @@ def source_commit(root: Path = ROOT) -> str:
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def pytest_sessionstart(session) -> None:
+    """Capture the checkout before tests when pytest is asked to write JUnit."""
+    xmlpath = getattr(session.config.option, "xmlpath", None)
+    if not xmlpath:
+        return
+    junit_path = Path(str(xmlpath)).resolve()
+    state = {
+        "junit_path": junit_path,
+        "evidence_path": junit_path.with_name(junit_path.name + ".provenance.json"),
+        "source_commit": "",
+        "snapshot_before": {"digest": "", "files": 0},
+        "started_at": utc_now(),
+        "argv": [sys.executable, *sys.argv],
+        "provenance_error": None,
+    }
+    try:
+        state["source_commit"] = source_commit(ROOT)
+        state["snapshot_before"] = source_snapshot(ROOT)
+    except (OSError, ValueError) as exc:
+        state["provenance_error"] = str(exc)
+    session.config.stash[_SESSION_STATE] = state
+
+
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_sessionfinish(session, exitstatus) -> None:
+    """Write the sidecar after pytest's JUnit plugin has flushed its report."""
+    state = session.config.stash.get(_SESSION_STATE, None)
+    if state is None:
+        yield
+        return
+    hook_error = None
+    try:
+        yield
+    except Exception as exc:
+        # A JUnit plugin/write error must not prevent recording failed evidence.
+        hook_error = exc
+    junit_path = state["junit_path"]
+    evidence_path = state["evidence_path"]
+    provenance_error = state.get("provenance_error")
+    if hook_error is not None:
+        provenance_error = str(hook_error)
+    try:
+        snapshot_after = source_snapshot(ROOT)
+        after_digest = snapshot_after["digest"]
+        after_files = snapshot_after["files"]
+    except (OSError, ValueError) as exc:
+        after_digest, after_files = "", 0
+        provenance_error = str(exc)
+    document = {
+        "schema": SOURCE_SCHEMA,
+        "source_commit": state["source_commit"],
+        "argv": state["argv"],
+        "junit_sha256": sha256_file(junit_path) if junit_path.is_file() else "",
+        "source_digest_before": state["snapshot_before"]["digest"],
+        "source_digest_after": after_digest,
+        "exit_code": int(exitstatus),
+        "started_at": state["started_at"],
+        "completed_at": utc_now(),
+        "file_count": state["snapshot_before"]["files"],
+    }
+    if provenance_error is not None:
+        document["provenance_error"] = provenance_error
+    evidence_path.parent.mkdir(parents=True, exist_ok=True)
+    evidence_path.write_text(json.dumps(document, ensure_ascii=False, indent=2) + chr(10),
+        encoding="utf-8")
+    if (provenance_error is not None or not junit_path.is_file()
+            or state["snapshot_before"]["digest"] != after_digest
+            or state["snapshot_before"]["files"] != after_files):
+        session.exitstatus = pytest.ExitCode.TESTS_FAILED
 
 
 def validate_evidence(

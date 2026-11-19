@@ -1,16 +1,13 @@
-import hashlib
 import json
 from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
+import uuid
 
 import pytest
 
-from scripts import run_verified_pytest as runner
 from scripts import pytest_provenance
-
-
-def _snapshot(digest='a' * 64, files=12):
-    return {'digest': digest, 'files': files}
 
 
 def test_source_snapshot_includes_release_metadata_without_hashing_model_weights():
@@ -19,117 +16,95 @@ def test_source_snapshot_includes_release_metadata_without_hashing_model_weights
     assert 'assets/guitar-model.json' in names
     assert 'assets/model-manifest.json' in names
     assert 'assets/basic-pitch.onnx' in names
+    assert 'assets/run_mapper.py' in names
+    assert 'assets/arrangement-profiles.json' in names
+    assert 'assets/deep-models.json' in names
+    assert 'licenses/HFGuitar-Model-Card.md' in names
+    assert 'licenses/HFGuitar-Source-Setup.py.txt' in names
+    assert 'licenses/FFmpeg-build-info.txt' not in names
+    assert 'assets/deep/hdemucs_high_trained.pt' not in names
     assert 'docs/tsumugi-attack-recovery-protocol.md' in names
     assert 'assets/mapperatorinator-source.zip' not in names
 
 
-def test_verified_runner_writes_source_and_junit_identity_without_running_pytest(tmp_path, monkeypatch):
-    root = tmp_path / 'repo'
-    root.mkdir()
-    junit = root / 'reports' / 'junit.xml'
-    sidecar = root / 'reports' / 'evidence.json'
-    junit_bytes = b'<testsuite tests="1" failures="0"/>'
-    calls = []
-    snapshots = iter([_snapshot(), _snapshot()])
+def _pytest_subprocess(case, *extra):
+    return subprocess.run(
+        [sys.executable, '-m', 'pytest', '-q', '-c', str(pytest_provenance.ROOT / 'pytest.ini'), str(case), *extra],
+        cwd=pytest_provenance.ROOT, capture_output=True, text=True, check=False,
+    )
 
-    def fake_run(command, *, cwd, check):
-        calls.append((command, cwd, check))
-        junit.parent.mkdir(parents=True, exist_ok=True)
-        junit.write_bytes(junit_bytes)
-        return SimpleNamespace(returncode=0)
 
-    times = iter(['2026-01-01T00:00:00Z', '2026-01-01T00:00:01Z'])
-    monkeypatch.setattr(runner, 'source_snapshot', lambda path: next(snapshots))
-    monkeypatch.setattr(runner, 'source_commit', lambda path: 'b' * 40)
-    monkeypatch.setattr(runner, 'utc_now', lambda: next(times))
-    monkeypatch.setattr(runner.subprocess, 'run', fake_run)
+def test_autoloaded_hook_writes_valid_sidecar_after_real_small_pytest(tmp_path):
+    case = pytest_provenance.ROOT / 'tests' / ('_pytest_provenance_smoke_' + uuid.uuid4().hex + '.py')
+    junit = tmp_path / 'smoke.xml'
+    try:
+        case.write_text('def test_tiny():\n    assert 2 + 2 == 4\n', encoding='utf-8')
+        result = _pytest_subprocess(case, f'--junitxml={junit}')
+        sidecar = junit.with_name(junit.name + '.provenance.json')
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert junit.is_file() and sidecar.is_file(), result.stdout + result.stderr
+        evidence = pytest_provenance.validate_evidence(sidecar, junit)
+        assert evidence['exit_code'] == 0
+        assert evidence['argv'][-1] == f'--junitxml={junit}'
+    finally:
+        case.unlink(missing_ok=True)
 
-    result = runner.run(Path('reports/junit.xml'), Path('reports/evidence.json'),
-        ['tests/synthetic_test.py', '-k', 'small'], root=root)
 
-    assert result == 0
-    assert len(calls) == 1
-    command, cwd, check = calls[0]
-    assert command[:4] == [runner.sys.executable, '-m', 'pytest', '-q']
-    assert command[4:6] == ['tests/synthetic_test.py', '-k']
-    assert command[-1] == f'--junitxml={junit}'
-    assert cwd == root and check is False
-    evidence = json.loads(sidecar.read_text(encoding='utf-8'))
-    assert evidence == {
-        'schema': pytest_provenance.SOURCE_SCHEMA,
-        'source_commit': 'b' * 40,
-        'argv': command,
-        'junit_sha256': hashlib.sha256(junit_bytes).hexdigest(),
-        'source_digest_before': 'a' * 64,
-        'source_digest_after': 'a' * 64,
-        'exit_code': 0,
-        'started_at': '2026-01-01T00:00:00Z',
-        'completed_at': '2026-01-01T00:00:01Z',
-        'file_count': 12,
+def test_autoloaded_hook_fails_when_sources_change_during_pytest(tmp_path):
+    case = pytest_provenance.ROOT / 'tests' / ('_pytest_provenance_mutation_' + uuid.uuid4().hex + '.py')
+    junit = tmp_path / 'mutation.xml'
+    try:
+        case.write_text(
+            'from pathlib import Path' + chr(10)
+            + 'def test_mutates_its_own_source():' + chr(10)
+            + '    Path(__file__).write_text("# changed", encoding="utf-8")' + chr(10),
+            encoding='utf-8',
+        )
+        result = _pytest_subprocess(case, f'--junitxml={junit}')
+        sidecar = junit.with_name(junit.name + '.provenance.json')
+        assert result.returncode != 0, result.stdout + result.stderr
+        assert sidecar.is_file()
+        evidence = json.loads(sidecar.read_text(encoding='utf-8'))
+        assert evidence['source_digest_before'] != evidence['source_digest_after']
+        assert evidence['exit_code'] == 0
+        with pytest.raises(ValueError, match='source (digest|file count)'):
+            pytest_provenance.validate_evidence(sidecar, junit)
+    finally:
+        case.unlink(missing_ok=True)
+
+
+def test_autoloaded_hook_does_not_create_sidecar_without_junit_option(tmp_path):
+    case = tmp_path / 'no_junit_case.py'
+    case.write_text('def test_tiny():\n    assert True\n', encoding='utf-8')
+    result = _pytest_subprocess(case)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert not list(tmp_path.glob('*.provenance.json'))
+
+
+def test_sessionfinish_writes_failure_sidecar_when_junit_is_missing(tmp_path):
+    from _pytest.stash import Stash
+
+    junit = tmp_path / 'missing.xml'
+    evidence = junit.with_name(junit.name + '.provenance.json')
+    stash = Stash()
+    snapshot = pytest_provenance.source_snapshot()
+    stash[pytest_provenance._SESSION_STATE] = {
+        'junit_path': junit,
+        'evidence_path': evidence,
+        'source_commit': pytest_provenance.source_commit(),
+        'snapshot_before': snapshot,
+        'started_at': pytest_provenance.utc_now(),
+        'argv': [sys.executable, '-m', 'pytest'],
     }
-
-
-def test_runner_fails_when_sources_change_during_pytest_but_keeps_evidence(tmp_path, monkeypatch):
-    root = tmp_path / 'repo'
-    root.mkdir()
-    junit = root / 'junit.xml'
-    sidecar = root / 'pytest-evidence.json'
-    snapshots = iter([_snapshot('a' * 64), _snapshot('c' * 64)])
-    monkeypatch.setattr(runner, 'source_snapshot', lambda path: next(snapshots))
-    monkeypatch.setattr(runner, 'source_commit', lambda path: 'd' * 40)
-    monkeypatch.setattr(runner, 'utc_now', lambda: '2026-01-01T00:00:00Z')
-
-    def fake_run(command, *, cwd, check):
-        junit.write_text('<testsuite/>', encoding='utf-8')
-        return SimpleNamespace(returncode=0)
-
-    monkeypatch.setattr(runner.subprocess, 'run', fake_run)
-    assert runner.run(junit, sidecar, [], root=root) == 1
-    evidence = json.loads(sidecar.read_text(encoding='utf-8'))
-    assert evidence['source_digest_before'] == 'a' * 64
-    assert evidence['source_digest_after'] == 'c' * 64
-    assert evidence['exit_code'] == 0
-    assert evidence['source_digest_before'] != evidence['source_digest_after']
-
-
-def test_runner_fails_when_junit_is_missing_and_persists_failure_sidecar(tmp_path, monkeypatch):
-    root = tmp_path / 'repo'
-    root.mkdir()
-    junit = root / 'missing' / 'junit.xml'
-    sidecar = root / 'missing' / 'evidence.json'
-    snapshots = iter([_snapshot(), _snapshot()])
-    monkeypatch.setattr(runner, 'source_snapshot', lambda path: next(snapshots))
-    monkeypatch.setattr(runner, 'source_commit', lambda path: 'e' * 40)
-    monkeypatch.setattr(runner, 'utc_now', lambda: '2026-01-01T00:00:00Z')
-    monkeypatch.setattr(runner.subprocess, 'run',
-        lambda *args, **kwargs: SimpleNamespace(returncode=0))
-
-    assert runner.run(junit, sidecar, [], root=root) == 1
-    evidence = json.loads(sidecar.read_text(encoding='utf-8'))
-    assert evidence['junit_sha256'] == ''
-    assert evidence['source_digest_before'] == evidence['source_digest_after']
+    session = SimpleNamespace(config=SimpleNamespace(stash=stash), exitstatus=pytest.ExitCode.OK)
+    finish = pytest_provenance.pytest_sessionfinish(session, pytest.ExitCode.OK)
+    next(finish)
+    with pytest.raises(StopIteration):
+        next(finish)
+    assert session.exitstatus == pytest.ExitCode.TESTS_FAILED
+    assert evidence.is_file()
+    sidecar = json.loads(evidence.read_text(encoding='utf-8'))
+    assert sidecar['junit_sha256'] == ''
+    assert sidecar['source_digest_before'] == sidecar['source_digest_after']
     with pytest.raises(ValueError, match='junit_sha256|JUnit'):
-        pytest_provenance.validate_evidence(sidecar, junit, root=root)
-
-
-def test_runner_passes_through_pytest_failure_and_records_report_hash(tmp_path, monkeypatch):
-    root = tmp_path / 'repo'
-    root.mkdir()
-    junit = root / 'junit.xml'
-    sidecar = root / 'evidence.json'
-    content = b'<testsuite tests="1" failures="1"/>'
-    monkeypatch.setattr(runner, 'source_snapshot', lambda path: _snapshot())
-    monkeypatch.setattr(runner, 'source_commit', lambda path: 'f' * 40)
-    monkeypatch.setattr(runner, 'utc_now', lambda: '2026-01-01T00:00:00Z')
-
-    def fake_run(command, *, cwd, check):
-        junit.write_bytes(content)
-        return SimpleNamespace(returncode=1)
-
-    monkeypatch.setattr(runner.subprocess, 'run', fake_run)
-    assert runner.run(junit, sidecar, [], root=root) == 1
-    evidence = json.loads(sidecar.read_text(encoding='utf-8'))
-    assert evidence['exit_code'] == 1
-    assert evidence['junit_sha256'] == hashlib.sha256(content).hexdigest()
-    with pytest.raises(ValueError, match='failed pytest|nonzero'):
-        pytest_provenance.validate_evidence(sidecar, junit, root=root)
+        pytest_provenance.validate_evidence(evidence, junit)

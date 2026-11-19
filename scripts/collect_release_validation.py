@@ -24,7 +24,7 @@ def sha256(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def collect(build_root, pytest_report, portable_report, shutdown_report, *, pytest_evidence):
+def collect(build_root, pytest_report, portable_report, shutdown_report, *, pytest_evidence=None):
     build_root = Path(build_root).resolve()
     package_dir = build_root / "release"
     executable = build_root / "dist" / "ManiaLab" / "ManiaLab.exe"
@@ -55,6 +55,9 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
     commit = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
     ).strip()
+    if pytest_evidence is None:
+        pytest_path = Path(pytest_report)
+        pytest_evidence = pytest_path.with_name(pytest_path.name + ".provenance.json")
     try:
         pytest_identity = validate_evidence(
             pytest_evidence, pytest_report, root=ROOT, expected_commit=commit
@@ -196,7 +199,9 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
                 **totals,
                 "passed": True,
                 "junit_sha256": sha256(pytest_report),
+                "evidence_sha256": sha256(pytest_evidence),
                 "evidence_schema": pytest_identity["schema"],
+                "source_commit": pytest_identity["source_commit"],
                 "source_digest": pytest_identity["source_digest_before"],
             },
             "portable": {
@@ -251,7 +256,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build-root", type=Path, required=True)
     parser.add_argument("--pytest-report", type=Path, required=True)
-    parser.add_argument("--pytest-evidence", type=Path, required=True)
+    parser.add_argument("--pytest-evidence", type=Path)
     parser.add_argument("--portable-report", type=Path, required=True)
     parser.add_argument("--shutdown-report", type=Path, required=True)
     args = parser.parse_args()

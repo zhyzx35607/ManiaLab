@@ -76,7 +76,9 @@ def make_release_fixture(root, profile='standard'):
         '<testsuite tests="3" failures="0" errors="0" skipped="1"/></testsuites>',
         encoding="utf-8",
     )
-    pytest_evidence, _ = write_pytest_evidence(reports / "pytest-evidence.json", pytest_report)
+    pytest_evidence, _ = write_pytest_evidence(
+        reports / (pytest_report.name + ".provenance.json"), pytest_report
+    )
     portable_report = reports / "portable.json"
     portable_checks = [
         {"check": "release_manifest", "build_profile": profile,
@@ -143,6 +145,13 @@ def test_collect_release_validation_writes_hashes_and_sanitized_summary(tmp_path
     assert report["limitations"]["musical_acceptance"] is False
     assert "song.wav" not in output.read_text(encoding="utf-8")
     assert archive.name in checksums.read_text(encoding="utf-8")
+
+
+def test_collector_discovers_the_adjacent_required_pytest_sidecar(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(tmp_path)
+    report, _, _ = collect(build_root, pytest_report, portable_report, shutdown_report)
+    assert pytest_evidence == pytest_report.with_name(pytest_report.name + ".provenance.json")
+    assert report["verification"]["pytest"]["evidence_schema"] == pytest_provenance.SOURCE_SCHEMA
 
 
 def test_collect_core_validation_requires_core_inventory_and_runtime_checks(tmp_path):
@@ -230,11 +239,11 @@ def test_collect_release_validation_rejects_piano_smoke_for_other_model(tmp_path
 
 
 def test_collect_release_validation_rejects_missing_pytest_evidence(tmp_path):
-    build_root, pytest_report, portable_report, shutdown_report, _, _ = make_release_fixture(tmp_path)
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(tmp_path)
+    pytest_evidence.unlink()
 
     with pytest.raises(SystemExit, match="pytest evidence"):
-        collect(build_root, pytest_report, portable_report, shutdown_report,
-            pytest_evidence=tmp_path / "missing-pytest-evidence.json")
+        collect(build_root, pytest_report, portable_report, shutdown_report)
 
 
 def test_collect_release_validation_rejects_legacy_pytest_evidence_schema(tmp_path):
