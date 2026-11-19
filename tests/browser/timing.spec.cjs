@@ -116,6 +116,28 @@ test('precision BPM candidate preserves its adjusted clock through confirmation,
   expect(errors).toEqual([]);
 });
 
+test('automatic clock projection and manual offset input keep their rounding policies', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#recent option')).toContainText(['UI timing offset rounding']);
+  await page.locator('#recent').selectOption({ label: 'UI timing offset rounding' });
+  await expect(page.locator('#offset')).toHaveValue('21');
+
+  const candidate = page.locator('#tempoCandidates option').filter({ hasText: '120 BPM · 偏移 21 ms' });
+  await expect(candidate).toHaveCount(1);
+  await page.locator('#tempoCandidates').selectOption(await candidate.getAttribute('value'));
+  await page.locator('#audioShift').fill('22.5');
+  await page.locator('#audioShift').blur();
+
+  await expect(page.locator('#offset')).toHaveValue('-1');
+  await expect(page.locator('#tempoCandidates')).toContainText('偏移 -1 ms');
+  expect(await page.evaluate(() => chartOffset(-1.5))).toBe(-2);
+
+  await page.locator('#referenceTiming').fill('BPM: 120 Offset: -1.5');
+  await page.locator('#applyTiming').click();
+  await expect(page.locator('#offset')).toHaveValue('-2');
+  await expect(page.locator('#message')).toContainText('Offset -2 ms');
+});
+
 for (const edit of ['bpm', 'division', 'halfBpm', 'doubleBpm']) {
   test(`${edit} preserves the original offset anchor before changing the lead`, async ({ page }) => {
     await openTiming(page);
@@ -225,10 +247,10 @@ test('raw and shifted wave views align the same physical point and locate candid
   await page.locator('#waveCursor').fill('1115');
   await expect(page.locator('#waveDetailInfo')).toContainText('距最近细分线 -0.50 ms');
   await page.locator('#waveAlign').click();
-  await expect(page.locator('#offset')).toHaveValue('93');
+  await expect(page.locator('#offset')).toHaveValue('92');
   await page.locator('#waveClock').check();
   await page.locator('#waveCursor').fill('1092.5');
   await page.locator('#waveAlign').click();
-  await expect(page.locator('#offset')).toHaveValue('93');
+  await expect(page.locator('#offset')).toHaveValue('92');
   expect(errors).toEqual([]);
 });

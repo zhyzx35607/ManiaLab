@@ -62,7 +62,7 @@ $('waveAlign').onclick=guarded(()=>{
   const cursor=waveToChartTime(Number($('waveCursor').value)),offset=Number($('offset').value),tick=60000/Number($('bpm').value)/Number($('division').value);
   if(!Number.isFinite(cursor)||!Number.isFinite(tick)||tick<=0)throw Error('请填写有效 BPM 和选中时间');
   const change=cursor-(offset+Math.round((cursor-offset)/tick)*tick);
-  $('offset').value=Math.round(offset+change);timingChanged();
+  $('offset').value=chartOffset(offset+change);timingChanged();
   msg(`Offset 调整为 ${$('offset').value} ms。请在歌曲多个位置试听确认，再重新生成整谱。`);
 });
 $('voice').addEventListener('change',()=>{resetWaveDetail();if($('waveDetailPanel').open)guarded(()=>loadWaveDetail())();});

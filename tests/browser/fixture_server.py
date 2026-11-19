@@ -57,6 +57,19 @@ def precise_timing_fixture(projects):
     return pid
 
 
+def offset_rounding_fixture(projects):
+    pid = timing_fixture(projects, 'UI timing offset rounding')
+    state = projects.load(pid)
+    state['audio_shift_ms'] = 0
+    state['analysis']['tempo'].update(
+        offset=21,
+        candidates=[dict(bpm=120, offset=21, division=4, coverage=.95)],
+        precise_candidates=[],
+    )
+    projects.save(state)
+    return pid
+
+
 def audio_meter_fixture(projects):
     pid = timing_fixture(projects, 'UI audio meter')
     state = projects.load(pid)
@@ -199,6 +212,7 @@ def main():
         timing_fixture(projects, 'UI timing saved')
         timing_fixture(projects, 'UI timing style')
         precise_timing_fixture(projects)
+        offset_rounding_fixture(projects)
         audio_meter_fixture(projects)
         timing_fixture(projects, 'UI LN navigation audio')
         ln_remap_fixture(projects)
