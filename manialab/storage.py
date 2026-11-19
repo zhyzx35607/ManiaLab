@@ -28,6 +28,23 @@ def safe_path(root, name):
     return path
 
 
+def resolve_project_reference(root, relative_to, name):
+    """Resolve a chart-relative asset path while keeping it inside project files."""
+    root = Path(root).resolve()
+    folder_name = str(relative_to).replace("\\", "/")
+    folder = root if folder_name in ("", ".") else safe_path(root, folder_name)
+    name = str(name).replace("\\", "/")
+    part = PurePosixPath(name)
+    if (not name or "\x00" in name or part.is_absolute()
+            or any(":" in item or re.match(r"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)", item, re.I)
+                   for item in part.parts if item != "..")):
+        raise ValueError("文件路径不安全")
+    path = (folder / Path(*part.parts)).resolve()
+    if path == root or not path.is_relative_to(root):
+        raise ValueError("文件路径越界")
+    return path
+
+
 def validate_import_paths(root, entries):
     """Reserve case-insensitive file/directory names before writing uploads."""
     root = Path(root).resolve()

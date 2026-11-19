@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from .domain import parse_osu
-from .storage import safe_path
+from .storage import resolve_project_reference, safe_path
 
 
 _PROJECT_FIELDS = ("id", "charts", "cache_origin_audio")
@@ -47,12 +47,12 @@ def archive_active_chart(project, state):
 def _chart_audio(base, relative, audio_name):
     if not audio_name:
         return None
-    name = Path(audio_name.replace("\\", "/"))
-    referenced = safe_path(base, (Path(relative).parent / name).as_posix())
+    name = PurePosixPath(str(audio_name).replace("\\", "/"))
+    referenced = resolve_project_reference(base, PurePosixPath(relative).parent, audio_name)
     if referenced.is_file():
         return referenced.relative_to(base).as_posix()
     # A separately uploaded audio file is stored at the root of the import.
-    uploaded = safe_path(base, name.name)
+    uploaded = resolve_project_reference(base, PurePosixPath(), name.name)
     if uploaded.is_file():
         return uploaded.relative_to(base).as_posix()
     return None

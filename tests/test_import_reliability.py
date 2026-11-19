@@ -1,6 +1,7 @@
 """Uploads must preserve source identity and leave export references usable."""
 import io
 import logging
+import posixpath
 from pathlib import Path
 import struct
 import threading
@@ -278,6 +279,60 @@ def test_nested_chart_supplemental_audio_export_closes_reference_and_preserves_o
     source = parse_osu(original)
     assert parsed['timing'] == source['timing']
     assert sorted(n.raw.split(',', 1)[1] for n in parsed['notes']) == sorted(n.raw.split(',', 1)[1] for n in source['notes'])
+
+
+@pytest.mark.parametrize('audio_reference', ['../song.wav', r'..\song.wav'])
+def test_nested_chart_parent_audio_reference_round_trips_without_duplicate_audio(api, audio_reference):
+    client, headers, _ = api
+    original = export_osu([Note(1000, 2000, 0)], 6, TEMPLATE, audio=audio_reference)
+    uploaded = client.post('/api/import', data={'files': (
+        package([('charts/diff.osu', original), ('song.wav', b'parent-audio')]), 'charts.osz',
+    )}, headers=headers)
+
+    assert uploaded.status_code == 200, uploaded.json
+    pid = uploaded.json['id']
+    base = f'/api/projects/{pid}'
+    assert uploaded.json['audio'] == 'song.wav'
+    assert client.get(base + '/audio').data == b'parent-audio'
+    generated = wait_job(
+        client,
+        client.post(base + '/generate', json={'mode': 'remap', 'settings': {'keys': 6}},
+                    headers=headers).json,
+    )
+    assert generated['status'] == 'done', generated
+
+    response = client.get(base + '/export/osz')
+    assert response.status_code == 200
+    with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
+        chart_path = 'charts/ManiaLab.osu'
+        parsed = parse_osu(archive.read(chart_path).decode())
+        reference = posixpath.normpath(
+            (Path(chart_path).parent / parsed['general']['AudioFilename'].replace('\\', '/')).as_posix()
+        )
+        assert parsed['general']['AudioFilename'] == audio_reference
+        assert reference == 'song.wav'
+        assert archive.read(reference) == b'parent-audio'
+        assert [name for name in archive.namelist() if name.endswith('song.wav')] == ['song.wav']
+
+
+@pytest.mark.parametrize('audio_reference', [
+    '../../outside.wav', '/outside.wav', 'C:/outside.wav',
+    r'..\..\outside.wav', r'\\server\share.wav',
+])
+def test_import_rejects_unsafe_chart_audio_reference_and_cleans_new_project(api, tmp_path, audio_reference):
+    client, headers, _ = api
+    previous = client.post(
+        '/api/import', data={'files': (io.BytesIO(b'previous'), 'old.wav')}, headers=headers,
+    ).json
+    outside = export_osu([Note(1000, 2000, 0)], 6, TEMPLATE, audio=audio_reference)
+
+    response = client.post('/api/import', data={'files': (
+        package([('charts/diff.osu', outside), ('outside.wav', b'not-the-reference')]), 'charts.osz',
+    )}, headers=headers)
+
+    assert response.status_code == 400
+    assert [path.name for path in (tmp_path / 'projects').iterdir()] == [previous['id']]
+    assert (tmp_path / 'projects' / previous['id'] / 'files/old.wav').read_bytes() == b'previous'
 
 
 def import_mix(client, headers):
