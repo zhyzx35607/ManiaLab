@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 2026-11-19当前整合：PR #192已合并为`f3b7707c8700dcc58e4294b154394b731f9031d6`，新head PR run `44535877376`通过（Python/API `2780 passed, 89 skipped`、浏览器`45 passed`），main run `44536768911`待最终核验；此前PR #191 main浏览器失败事实与选择等待修补保留在阶段83–84记录。第八十五阶段Timing重拟合时钟身份本地Python/API19 passed、Edge相关组20 passed，PR待创建。未回收进程门禁、便携来源/验证器与报告身份修复分阶段排队。用户已授权最多5个子agent，但工具硬上限为主agent+3子agent共4槽，实际保持3名持续工作。音乐验收、非Core实际包/许可、进程树回收与native播放状态仍有明确开放项。
+- 2026-11-19当前整合：PR #193已合并为`575a4a5e83aa19d282a34f627a3488be744b0cab`，PR run `44537412322`成功（Python/API `2785 passed, 89 skipped`、浏览器`52 passed`），main run `44538269327`待最终核验；PR #192的main run `44536768911`已成功，ENG-13/14关闭，旧main失败事实仍保留。第八十六阶段已报告子进程回收失败后的新任务门禁，本地相关55 passed及真实child小修单项1 passed，准备PR。便携来源/验证器、报告身份、native播放状态修复独立排队。用户已授权最多5个子agent，实际工具上限为主agent+3子agent共4槽，3名持续工作。真人音乐、非Core实际包/许可和完整进程树回收仍开放。
 
 - 2026-11-19当前续接：第八十一阶段候选声轨试听来源修复已由PR #188合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`；PR/main Windows runs `44525372079`、`44526302353`均成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按条件跳过。ENG-12已闭合；具体行为、本地验证与日志位置见文末。下一步继续阶段2的段落/LN证据在编辑、局部重写和导出间的一致性审查，以及阶段3剩余生命周期边界；不要重复模型实验。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
 - 2026-11-19历史续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。第八十阶段的手动参考 Offset/波形对齐 ties-to-even 修复随后由PR #187及main run `44508222088`验证；自动估计保留与服务端默认一致的 half-up 规则。
@@ -2283,6 +2283,7 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 下一阶段分别整合ENG-16的固定BPM精度与mode迟到响应失效、ENG-15的进程专用门禁，以及非Core验证请求/打包来源fingerprint缺口；仍由3名子agent持续推进不同检查点。
 - PR #192首轮后另补主线浏览器验证等待：`selectNote`原先只等hitbox存在并单次点击，失败日志中检查器仍为未选择提示；现按当前hitbox重试点击并等待实际选择的ID，不降低原始/未知来源断言。失败单项Edge重复10次通过，完整evidence组待汇总，新head CI仍需通过。此为验证交互同步，不能代替另已发现的native媒体加载/播放状态产品问题。
 - 完整evidence组复验10 passed（29.5秒）；新head PR run `44535877376`成功，Python/API `2780 passed, 89 skipped`、浏览器`45 passed`，Core便携与模型步骤按条件跳过。PR #192已合并为`f3b7707c8700dcc58e4294b154394b731f9031d6`；main run `44536768911`待最终核验。PR日志位于ignored `build/reference-boundary-68af4d7/pr-192-windows.log`。
+- 合并后main run `44536768911`实际成功：Python/API `2780 passed, 89 skipped`、浏览器`45 passed`，Core便携与模型步骤按条件跳过。ENG-13/14关闭；主线完整日志为ignored `build/reference-boundary-68af4d7/main-192-windows.log`，不覆写此前失败记录。
 
 ## 2026-11-19 第八十五阶段：Timing重拟合保留固定时钟身份
 
@@ -2291,3 +2292,13 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 新增`tests/test_timing_refit_precision.py`5例与`tests/browser/timing-refit-precision.spec.cjs`7例，覆盖精度BPM、正负提前量、负Offset ties-to-even、BPM10/1000和Offset±600000、模式切换与往返。浏览器旧响应先由真实API计算，再以明确屏障释放并等待原handler结束，未mock修复后的成功数据。
 - 主agent复跑`.venv\Scripts\python.exe -m pytest -q tests/test_timing_refit_precision.py tests/test_timing_diagnostic_clock.py`为19 passed（5.01秒）；Edge端口8978定向`timing-refit-precision.spec.cjs timing.spec.cjs task-cleanup.spec.cjs`合计20 passed（35.7秒），同时确认已合入的清理失败警告保持。相关`compileall`、两处JS语法与`git diff --check`通过。生命周期agent独立只读复审未发现阻断项。
 - 完整因果脚本/JSON/截图在ignored `build/timing-refit-precision-20261119-ln/`，不含用户资产；该阶段不读模型或真实研究音频。PR/main验证待补。native媒体快速切换归零/加载中显式暂停被旧回调恢复的问题已另列ENG-20，不由Timing mode修复代签；后续阶段单独整合。
+- PR #193已合并为`575a4a5e83aa19d282a34f627a3488be744b0cab`；PR run `44537412322`成功，Python/API `2785 passed, 89 skipped`、浏览器`52 passed`，Core便携与模型步骤按条件跳过。main run `44538269327`待核验；PR日志位于ignored `build/timing-identity-788f5f9/pr-193-windows.log`。
+
+## 2026-11-19 第八十六阶段：已报告子进程回收失败后的任务门禁
+
+- 真实无窗口Python sleep子进程在terminate故障注入后仍活着，旧服务允许第二任务运行；根进程已退、后代回收失败的Mapper路径也缺少门禁。`CancellationContext`现将进程回收失败与普通文件清理失败分开，专用标记向父上下文传播且保持粘性；`ensure_idle()`持锁在注册新job/分配上传目录前拒绝继续计算，提示先确认相关进程退出后重启。
+- 文件cleanup失败继续保持阶段83的worker可复用契约，不触发进程门禁。旧callable仅有普通报告接口时保留诊断fallback；生产ProjectTasks使用专用context。即使旧根后来退出也不自动解除标记，因为没有完整后代身份/句柄证据，不能凭PID或根poll声称全部回收。
+- 新增`tests/test_process_cleanup_gate.py`7项：真实子进程失败、成功回收、普通文件失败兼容、跨context粘性、旧callable、Windows根退后代失败、API预分配门禁。旧实现先为6 failed/1 passed，修复后相关组55 passed（8.24秒）；真实child启动另外改用`sys._base_executable`避开Windows venv redirector测试歧义，修改后单项1 passed，精确PID核验及finally kill/wait确认无遗留。相关`compileall`、`git diff --check`通过；候选/发布agent独立只读复审未发现阻断项。
+- 已运行命令为`.venv\Scripts\python.exe -m pytest -q tests/test_process_cleanup_gate.py tests/test_task_cleanup_errors.py tests/test_task_service.py tests/test_cancellation.py tests/test_audio_io_boundary.py tests/test_provided_cleanup_errors.py tests/test_task_lifecycle_flow.py tests/test_upstream.py -k 'not real_model'`，OMP/MKL/OPENBLAS=2。base直接child小修后仅复跑该真实进程用例，1 passed（3.66秒），不重复整组。
+- 此阶段只门禁已经上报的进程回收失败，不能证明通用`stop_process`自动回收完整Windows进程树。另已实测venv redirector根退出而payload仍活、旧helper返回True且无标记，列ENG-21；原型在ignored `build/task-process-tree-draft-20261119-01/`继续验证，不把设计当实现。复现/设计保留于ignored `build/task-child-quarantine-20261119-01/`。
+- PR/main验证待补；没有运行神经推理、真实用户素材或研究实验。神经推理仍串行，工具并发只用于互不冲突的工程检查。

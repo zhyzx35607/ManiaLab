@@ -54,8 +54,11 @@ class ProjectTasks:
             raise ValueError("该项目已有任务运行，请等待或取消")
 
     def ensure_idle(self, message):
-        if self.has_active():
-            raise ValueError(message)
+        with self.lock:
+            if self._shutdown_cancellation.process_cleanup_failed:
+                raise ValueError("子进程回收未完成，已暂停新任务；请确认相关进程已退出后重启程序")
+            if self.has_active():
+                raise ValueError(message)
 
     def submit(self, project_id, operation, *, identity=None, cleanup=None):
         submission_error = None
