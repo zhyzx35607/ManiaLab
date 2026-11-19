@@ -13,7 +13,7 @@
 | ID | 类型 / 级别 | 当前状态与证据 | 关闭条件 |
 | --- | --- | --- | --- |
 | ENG-01 | 导入身份 / 已修复 | PR #175 已合并：没有有效 mania 谱且包含多个音频时拒绝任意挑选，并清理本次新项目。PR run `44452212429`、main run `44452857369`通过；对应测试在 `tests/test_import_reliability.py`。 | 保持回归覆盖；最终主线回归通过。 |
-| ENG-02 | 音轨恢复提示 / P2 覆盖缺口 | 有效谱面引用音频缺失时，后端保留 `audio=None`，API 不会沿用上一难度音轨；`tests/test_project_routes.py` 已覆盖。PR #177 新增持续提示与重新导入指引；PR run `44457046075`中 Python/API 与 37 项 Edge 测试通过。项目内没有单独补配入口；现有恢复方式是把该 `.osu` 与对应音频重新导入为一个项目。 | 合并后主线浏览器测试确认切换后提示出现、前一音轨不再播放，并明确告知恢复步骤。 |
+| ENG-02 | 音轨恢复提示 / P2 / 已闭合 | 后端在缺音频时保留 `audio=None`，不会沿用上一难度音轨；API 行为由 `tests/test_project_routes.py` 覆盖。PR #177 加入持续提示与重新导入指引；PR Windows run `44457739696` 和合并后 main run `44458199401` 均为 Python/API `2712 passed, 89 skipped`、Edge `37 passed`。浏览器用例确认播放器来源被清除且恢复步骤可见。项目内没有单独补配入口；当前恢复方式是将 `.osu` 与对应音频重新导入为新项目。 | 已闭合。若以后增加项目内补配入口，需另行定义音频身份变更和缓存/声部失效契约。 |
 | ENG-03 | 文件生命周期 / 阶段 1 | #173 OSZ 临时文件、#174 状态保存临时文件、#175 导入清理均有针对性合成测试和 Windows CI 证据；独立审计映射了导入、编辑、快照、试听、导出测试。 | 完成剩余跨路径审查，确认失败时旧项目/候选保持有效且本次资源清理；必要时补最小回归。 |
 | ENG-04 | 任务与关停 / 阶段 3 | PR #172 合入统一 15 秒协作 deadline，Core 便携 EXE、离线、Unicode 路径和关停验证通过。已知边界：它不是任意卡死 Python/native 调用的硬退出 SLA，线程池非守护线程可能阻止解释器退出。 | 集成复核取消、事务提交和子进程回收；把协作式限制留在用户文档，不宣称硬退出保证。 |
 | ENG-05 | profile 支持范围 / 发布门槛 | GitHub Windows workflow 默认验证 `core`；它不证明 `standard`/`extended` 的完整包可运行。开发文档与工作流需作为能力矩阵一起维护。 | 明确公开支持的 profile；仅对拟公开支持的配置执行匹配的构建、离线/Unicode/导入/生成/导出/关停验证。 |
@@ -23,7 +23,7 @@
 
 ## 已核对的验证基线
 
-- PR #176 合并提交：`abf7c05ca8e9b15f26418daf61bc51a15417c889`。main Windows run `44454674214`成功；Python/API `2712 passed, 89 skipped`，Edge UI `36 passed`。本次按触发条件跳过 Core 便携构建步骤。
-- 当前本地工作阶段：Python/API `2711 passed, 90 skipped`；Edge UI `37 passed`（含 ENG-02 新增浏览器测试）；`compileall`、所有 `static/*.js` 的 `node --check` 与 `git diff --check`通过。此为本地变更验证，不是 PR 或 main 验证。
-- PR #177 初始 Windows run `44457046075`通过：Python/API `2712 passed, 89 skipped`，Edge UI `37 passed`；便携构建按触发条件跳过。合并后 main run 尚待完成。
-- 下一步继续阶段 1–3 的跨层时钟、采音证据、Timing/段落/LN 候选映射；不重复模型实验。任何新增缺陷需有最小复现、回归测试、来源和适用范围。
+- PR #176 验收计划合并提交：`abf7c05ca8e9b15f26418daf61bc51a15417c889`。main Windows run `44454674214`成功；Python/API `2712 passed, 89 skipped`，Edge UI `36 passed`。本次按触发条件跳过 Core 便携构建步骤。
+- PR #177 与文档复验 Windows runs `44457046075`、`44457739696`均通过，Python/API `2712 passed, 89 skipped`，Edge UI `37 passed`；便携构建按触发条件跳过。合并提交 `b69acf7f1db7a3ae3aafde4ca3e744c64c466be9` 的 main run `44458199401`成功，测试计数相同。
+- 本地开发验证（合并前）Python/API `2711 passed, 90 skipped`，Edge UI `37 passed`；`compileall`、所有 `static/*.js` 的 `node --check` 与 `git diff --check`通过。当前该变更已由 main CI 重新验证。
+- 下一步继续阶段 1–3 的跨层时钟、采音证据、Timing/段落/LN 候选映射及取消/资源生命周期集成审查；不重复模型实验。任何新增缺陷需有最小复现、回归测试、来源和适用范围。
