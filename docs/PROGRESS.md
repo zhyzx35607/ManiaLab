@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 2026-11-19最新续接核验：第六十八阶段 PR #173 已合并为`aac6bfee354b1fad3cf4cbf5e308ecbd7915d18c`；PR Windows run `44446658555`与合并后 main run `44447294349`均成功。合并后Windows Core EXE、离线运行、Unicode数据路径与关停验证通过，Python/API为2,707 passed、89 skipped，Edge UI为36 passed。当前第六十九阶段项目状态保存失败清理已完成本地验证，PR/Windows CI待执行。公开Pre-release仍为dev.18；真人钢琴盲听、6K–10K/LN玩家试打及两首独立歌曲听审仍未取得人工结果，音乐质量目标未结项。
+- 2026-11-19最新续接核验：第六十九阶段 PR #174 已合并为`d5d1cc70201bbb6556a849587cc52d7261e82b37`；PR Windows run `44448768663`和合并后 main run `44449536131`均成功，Python/API均为2,709 passed、89 skipped，Edge UI为36 passed；Core便携EXE、离线运行、Unicode数据路径与关停验证通过。第七十阶段多音频导入歧义修复目前在分支`codex/import-ambiguous-audio-20261119`，本地全量测试2,711 passed、90 skipped，Edge UI为36 passed，静态检查通过；尚未提交或运行PR CI。公开Pre-release仍为dev.18；真人钢琴盲听、6K–10K/LN玩家试打及两首独立歌曲听审仍未取得人工结果，音乐质量目标未结项。
 - 最新状态（2026-11-19）：PR #164 任务取消与进程关停已合并为`6d779209561b6b767b5f6886d75e9713bf371227`；PR Windows run `44403326416`及合并后 main run `44405337764`成功，Python/API均为2,682 passed、89 skipped，Edge UI均为36 passed；便携构建按触发条件跳过。PR #165 补录验证结果并合并为`265414e7f59d5875079b86e040ae4cfd6a457a8b`，PR run `44406379629`通过；合并后 main run `44407019369`被后续 main 工作流取消，不记作成功。PR #166 结构分析分块 STFT 已合并为`e684551abd5071d75f33febefe76e0bd7b182135`；PR runs `44410686981`和进度同步后 `44411505246`均通过，合并后 main run `44412123852`成功，Python/API为2,683 passed、89 skipped，Edge UI为36 passed，便携构建按触发条件跳过。PR #167 音频身份哈希流式化已合并为`76c3dc00b6466682f4bd3bbbacd5e50535b3a370`；PR runs `44415178836`和进度同步后`44416022976`均通过；合并后 main run `44417472152`成功，Python/API为2,686 passed、89 skipped，Edge UI为36 passed。第六十四阶段本地全量回归为2,686 passed、90 skipped，Edge UI为36 passed，compileall、JS语法和差异检查通过；PR #168 的首轮 `44418933013`、文档复验 `44420164907`和 EOCD 字节测试复验 `44420946296`均通过，最后一轮 Python/API为2,687 passed、89 skipped，Edge UI为36 passed。当前公开 Pre-release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
 - PR #168 已合并为`87f168cca73d2937a879aa38178655769606b02f`；合并后 main run `44422409442`通过，Python/API为2,687 passed、89 skipped，Edge UI为36 passed。PR #169 迁移`actions/setup-node`至 Node 24 action runtime 的 Windows runs `44424536788`和进度同步后`44426309442`均通过，Python/API为2,687 passed、89 skipped，Edge UI为36 passed；Node 20 弃用告警已消失。PR #169 已合并为`4c9fdae8fb9a1f9eb36b0c0df1e34419042028f`，合并后 main run `44427013041`成功，测试计数相同。PR #170 的 Windows runs `44430965427`、`44431613071`和最终文档复验`44432358696`均通过，Python/API为2,691 passed、89 skipped，Edge UI为36 passed。PR #170 已合并为`3cf043aa7c027a905aaa1aa88ca551e84c9557d5`；合并后 main run `44432819183`成功，Python/API为2,691 passed、89 skipped，Edge UI为36 passed；Core EXE步骤按触发条件跳过。
 
@@ -2139,4 +2139,13 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - `Projects.save()`在JSON写入或原子替换成功/失败后统一清理同目录`state.tmp`；正常保存仍使用`os.replace`发布完整`state.json`，失败时不覆盖之前有效的状态文件。
 - 两条合成故障注入先在旧实现上复现：部分写入抛错与`os.replace`抛错都会遗留`state.tmp`；修复后均确认旧状态字节不变且临时文件不存在。
 - 定向`.venv\Scripts\python.exe -m pytest -q tests/test_storage.py tests/test_task_service.py tests/test_server.py -k "not test_real_http_planner_mock"`为36 passed、1 deselected。全量设置OpenMP / OpenBLAS / MKL线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,708 passed、90 skipped（89.42秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9025 npm run test:ui`为36 passed（1.5分钟）。`compileall`与`git diff --check`通过。
-- 本阶段只清理状态写入失败后的临时文件，不更改状态格式或音乐处理；未运行模型、研究或音乐质量实验，也未读取ignored音频、谱包、评审评分、解盲表、权重或研究产物。PR Windows检查与合并后main结果待记录；真人音乐验收仍未完成。
+- PR #174 Windows run `44448768663`通过，Python/API为2,709 passed、89 skipped，Edge UI为36 passed；Core便携EXE构建、离线运行、Unicode路径和关停检查通过。合并提交为`d5d1cc70201bbb6556a849587cc52d7261e82b37`；合并后 main run `44449536131`成功，验证结果相同。
+- 本阶段只清理状态写入失败后的临时文件，不更改状态格式或音乐处理；未运行模型、研究或音乐质量实验，也未读取ignored音频、谱包、评审评分、解盲表、权重或研究产物。真人音乐验收仍未完成。
+
+## 2026-11-19 第七十阶段：拒绝无有效谱面时的多音频歧义导入
+
+- 导入项目时继续统计可用音频；当没有可解析的原生 mania 谱面且存在多个音频文件时返回明确的 400 错误，由既有失败清理删除本次新项目。有效谱面选择流程和单音频回退行为保持不变。
+- 新增合成 API 测试覆盖：无谱面/无效 `.osu` 搭配多个音频时拒绝并清理新项目、保留此前项目；无效 `.osu` 搭配单音频时仍成功且没有虚构谱面。
+- 定向`.venv\Scripts\python.exe -m pytest -q tests/test_import_reliability.py`为26 passed。全量设置 OpenMP / OpenBLAS / MKL 线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,711 passed、90 skipped（73.20秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9026 npm run test:ui`为36 passed（1.5分钟）。`compileall`、全部`static/*.js`的`node --check`及`git diff --check`通过。
+- 当前工作树分支为`codex/import-ambiguous-audio-20261119`；本阶段改动尚未提交，PR Windows CI与合并后 main 验证待执行。没有运行模型、研究或音乐质量实验，也没有读取ignored音频、谱包、评审评分、解盲表、权重或研究产物。
+- 本阶段只让歧义输入显式失败，不代表音频或谱面音乐质量改善。公开 Pre-release 仍为dev.18；真人钢琴盲听、6K–10K/LN玩家试打及两首独立歌曲听审仍未完成。

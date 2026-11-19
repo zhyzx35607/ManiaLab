@@ -208,6 +208,49 @@ def test_import_does_not_parse_osu_named_directories_as_charts(api):
     assert response.json['charts'] == []
 
 
+@pytest.mark.parametrize('files', [
+    [
+        (io.BytesIO(b'first'), 'first.wav'),
+        (io.BytesIO(b'second'), 'second.wav'),
+    ],
+    [
+        (package([('broken.osu', b'')]), 'broken.osz'),
+        (io.BytesIO(b'first'), 'first.wav'),
+        (io.BytesIO(b'second'), 'second.wav'),
+    ],
+])
+def test_import_rejects_multiple_audio_files_without_valid_chart_and_cleans_project(
+    api, tmp_path, files
+):
+    client, headers, _ = api
+    previous = client.post(
+        '/api/import',
+        data={'files': (io.BytesIO(b'previous'), 'old.wav')},
+        headers=headers,
+    ).json
+
+    response = client.post('/api/import', data={'files': files}, headers=headers)
+
+    assert response.status_code == 400
+    assert '多个音频文件' in response.json['error']
+    assert [path.name for path in (tmp_path / 'projects').iterdir()] == [previous['id']]
+    assert (
+        tmp_path / 'projects' / previous['id'] / 'files/old.wav'
+    ).read_bytes() == b'previous'
+
+
+def test_import_keeps_single_audio_fallback_when_chart_is_invalid(api):
+    client, headers, _ = api
+    response = client.post('/api/import', data={'files': [
+        (package([('broken.osu', b'')]), 'broken.osz'),
+        (io.BytesIO(b'audio'), 'song.wav'),
+    ]}, headers=headers)
+
+    assert response.status_code == 200
+    assert response.json['audio'] == 'song.wav'
+    assert response.json['charts'] == []
+
+
 def test_nested_chart_supplemental_audio_export_closes_reference_and_preserves_objects(api):
     client, headers, _ = api
     original = export_osu([Note(1000, 2000, 0), Note(3000, 3000, 1)], 6, TEMPLATE, audio='song.wav')

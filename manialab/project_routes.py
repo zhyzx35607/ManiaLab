@@ -61,7 +61,11 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
                 else:
                     raise ValueError("支持 MP3/WAV/FLAC/OGG/M4A/OPUS、.osu 和 .osz")
             candidates = list((path / "files").rglob("*"))
-            audio = next((item for item in candidates if item.is_file() and item.suffix.lower() in AUDIO), None)
+            audio_candidates = [
+                item for item in candidates
+                if item.is_file() and item.suffix.lower() in AUDIO
+            ]
+            audio = audio_candidates[0] if audio_candidates else None
             if audio:
                 state.update(audio=audio.relative_to(path / "files").as_posix(), title=audio.stem)
             for chart in sorted(item for item in candidates if item.is_file() and item.suffix.lower() == ".osu"):
@@ -73,6 +77,8 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
                     continue
             if state["charts"]:
                 state = select_chart(path, state, state["charts"][0]["path"], initial=True)
+            elif len(audio_candidates) > 1:
+                raise ValueError("没有可用谱面且包含多个音频文件，请只上传一个音频文件")
             elif not state["audio"]:
                 raise ValueError("没有可用音频或原生 mania 谱面")
             projects.save(state)
