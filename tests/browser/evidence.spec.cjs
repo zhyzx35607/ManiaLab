@@ -12,15 +12,15 @@ async function generateEvidence(page, title) {
 }
 
 async function selectNote(page, id, time) {
-  let box;
   await expect.poll(async()=>{
-    box=await page.evaluate(({id,time})=>{
+    const box=await page.evaluate(({id,time})=>{
       seek(time);draw();const b=hitboxes.find(b=>b.n.id===id);
       return b?{x:b.x+b.w/2,y:b.y+b.h/2}:null;
     },{id,time});
-    return box!==null;
+    if(!box)return false;
+    await page.locator('#roll').click({position:box});
+    return page.evaluate(id=>selected===id,id);
   }).toBe(true);
-  await page.locator('#roll').click({position:box});
 }
 
 async function reopenProject(page,pid){
