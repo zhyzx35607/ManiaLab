@@ -65,11 +65,11 @@
 
 ### 阶段 3：异步任务、取消、资源与关停
 
-**状态：已有多阶段改进；第七十八阶段补上 planner 网络取消，定向测试通过，待 PR/main CI 与 DNS/HTTPS 代理边界处置。**
+**状态：已有多阶段改进；第七十八阶段补上 planner 网络取消，PR #185 Windows validation 已通过，合并后 main CI 与 DNS/HTTPS 代理边界处置待完成。**
 
 复核单工作线程、锁边界、任务终态保留、请求快照、协作取消、子进程终止/回收、15 秒共享关停 deadline、保存提交边界、缓存和大型频谱/导出内存使用。第七十四阶段复现分离 worker 启动失败后遗留 `separation-input.wav` 并修复；PR #181/main run `44468079196`、`44468606711`通过，Core便携构建按触发条件跳过。第七十五、七十六阶段修复的缓存身份问题分别由PR #182、#183验证。保留已知限制：deadline 是协作式等待和清理上限，不是任意 native 运算或卡死线程的硬退出 SLA。
 
-第七十八阶段发现计划 API 的同步 HTTP 调用无法及时响应任务取消，会占住唯一任务 worker。当前分支将取消上下文传至 planner，复测确认真实本机 HTTP 请求取消后2秒内结束、旧项目状态不变且 worker 可继续服务；HTTP 1xx、chunked、HTTP代理认证、HTTPS CONNECT 分支及端口边界均有定向回归。本地定向 Python/API为27 passed，计划面板 Edge为3 passed，编译、JS语法与差异检查通过；PR/main CI待补。90秒仅是 asyncio 网络任务 deadline：Python 3.12 中系统 DNS `getaddrinfo` 在线程池运行，取消不能杀掉正在执行的 resolver；`asyncio.run()`收尾还可能等待默认执行器最多5分钟。HTTPS代理分支当前用模拟 transport 检查 CONNECT 与 TLS 升级调用，尚未验证真实 TLS-over-TLS 握手/证书链。两项残余和后续闭合条件见问题账本 ENG-10。
+第七十八阶段发现计划 API 的同步 HTTP 调用无法及时响应任务取消，会占住唯一任务 worker。当前分支将取消上下文传至 planner，复测确认真实本机 HTTP 请求取消后2秒内结束、旧项目状态不变且 worker 可继续服务；HTTP 1xx、chunked、HTTP代理认证、HTTPS CONNECT 分支及端口边界均有定向回归。本地定向 Python/API为27 passed，计划面板 Edge为3 passed，编译、JS语法与差异检查通过。PR #185 Windows run `44493364596`成功，Python/API为`2741 passed, 89 skipped`、Edge为`38 passed`；Core便携步骤按触发条件跳过。合并后main CI待补。90秒仅是 asyncio 网络任务 deadline：Python 3.12 中系统 DNS `getaddrinfo` 在线程池运行，取消不能杀掉正在执行的 resolver；`asyncio.run()`收尾还可能等待默认执行器最多5分钟。HTTPS代理分支当前用模拟 transport 检查 CONNECT 与 TLS 升级调用，尚未验证真实 TLS-over-TLS 握手/证书链。两项残余和后续闭合条件见问题账本 ENG-10。
 
 **验证：**已有取消/故障注入、线程竞争、FFmpeg/Windows 子进程测试、资源基准及便携启动/退出报告；在合并版本上确认真实覆盖，不重复执行无关模型实验。
 
