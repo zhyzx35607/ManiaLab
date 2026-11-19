@@ -5,7 +5,8 @@
 
 ## 当前状态（先读）
 
-- PR #180 修复嵌套谱面引用项目根目录父级音频的问题，已于2026-11-19合并为`6888912147e5deed81545cb2376ef2c5066cb65c`；PR run `44465032776`与main run `44466336310`均成功，Python/API为2,719 passed、89 skipped，Edge UI为38 passed；便携构建按触发条件跳过。第七十四阶段复现并修复声部分离 worker 启动失败后的临时 WAV 泄漏，定向测试12 passed，PR/main CI待补。
+- PR #181 修复声部分离 worker 启动失败后的临时 WAV 泄漏，已于2026-11-19合并为`a9e5844632d3db10b2cba6fea4185f9314420f97`；PR run `44468079196`和合并后main run `44468606711`均成功，Python/API为2,720 passed、89 skipped，Edge UI为38 passed，Core便携构建按条件跳过。第七十四阶段的定向合成测试12 passed。此前PR #180于同日合并为`6888912147e5deed81545cb2376ef2c5066cb65c`，修复嵌套谱面父目录音频引用；PR/main run `44465032776`、`44466336310`均为Python/API 2,719 passed、89 skipped，Edge UI 38 passed。
+- 第七十五阶段正在当前分支`codex/separation-cache-revision-20261119`处理分离缓存未区分算法修订的问题：旧清单即使音频、模型、预处理和stem文件均匹配，仍可能复用旧算法结果；下游activation identity也遗漏该修订。修复已覆盖四/六声部profile、worker输出校验及打包worker源码指纹。定向测试`tests/test_separation.py tests/test_audio_cache.py tests/test_build_provenance.py`为19 passed；`compileall`、静态JS语法和`git diff --check`通过。PR/CI待补；没有运行全量测试或模型实验。
 - PR #176 全项目验收计划已于2026-11-19合并为`abf7c05ca8e9b15f26418daf61bc51a15417c889`；main Windows run `44454674214`成功，Python/API为2,712 passed、89 skipped，Edge UI为36 passed，Core便携构建按触发条件跳过。第一轮工程路径审计未发现P0，阶段1–3仍在收口；问题与证据入口见[全项目验收问题账本](full-project-acceptance-ledger-20261119.md)。
 - 第七十一阶段增加缺失 `AudioFilename` 的可见状态和重新导入说明；浏览器回归确保不借用上一难度音轨。本地全量Python/API为2,711 passed、90 skipped，Edge UI为37 passed；`compileall`、全部静态JS语法及`git diff --check`通过。PR #177 的 Windows runs `44457046075`、文档复验`44457739696`及合并后 main run `44458199401`均通过，Python/API为2,712 passed、89 skipped，Edge UI为37 passed；便携构建按触发条件跳过。PR 已合并为`b69acf7f1db7a3ae3aafde4ca3e744c64c466be9`。
 - PR #178 将第七十一阶段结果和验收账本同步到 main，PR Windows run `44458933001`与合并后 main run `44460183632`均成功；合并提交`0be4b24dea71aee4f604ebc6be7dd922d5e6090b`。第七十二阶段补上浏览器删除候选、切回父版本与重开持久化回归；PR #179 Windows run `44461711637`及合并后 main run `44462358541`均成功，Python/API为2,712 passed、89 skipped，Edge UI为38 passed；便携构建按触发条件跳过。PR #179 合并提交为`ef4e788d59c696b48af241ed40652549923449c6`，COV-01已闭合。阶段1–3跨路径审查、profile/许可处置与真人音乐验收仍未完成。
@@ -2185,4 +2186,13 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 声部分离预转码成功后，若 worker 的 `subprocess.Popen` 因 `OSError` 无法启动，旧实现会遗留 `separation-input.wav`。新增合成故障注入测试，先在旧实现上确认文件残留，再确认修复后删除。
 - 启动或日志打开抛出 `OSError` 且尚无进程对象时清理 WAV；进程启动后仍只在 `stop_process` 确认退出时删除，不能确认停止时保留可能仍被读取的输入。独立只读复核通过。
 - 定向`.venv\Scripts\python.exe -m pytest -q tests/test_separation.py tests/test_audio_cache.py`为12 passed；`compileall -q manialab tests`和`git diff --check`通过。未运行模型、研究或真实音频。
-- PR 与 main CI 待补；此修复只闭合一条资源失败路径，不代表阶段3集成审查或音乐质量验收完成。
+- PR #181及合并后main run `44468079196`、`44468606711`均通过；main Python/API为2,720 passed、89 skipped，Edge UI为38 passed，Core便携步骤按触发条件跳过。此修复只闭合一条资源失败路径，不代表阶段3集成审查或音乐质量验收完成。
+
+## 2026-11-19 第七十五阶段：分离算法修订纳入缓存身份
+
+- 复现缓存清单只校验音频哈希、模型哈希、输入处理版本和stem文件是否存在，没有校验分离算法版本；下游`separation_identity`也未包含算法修订。因此算法实现变化但输入和模型不变时，旧stem及其activation可能被复用。
+- 为四/六声部profile增加独立`algorithm_revision`，由父进程传递至worker；缓存命中、worker返回清单和下游分离身份都检查/记录该字段。缺少该字段的历史清单会重算，原有`revision`用途不变。
+- 将`scripts/separate_six.py`加入便携音频worker源码fingerprint，并新增合成测试保证六声部脚本变化会令旧worker manifest校验失败，避免以后只改六声部实现时被漏检。
+- 定向`.venv\Scripts\python.exe -m pytest -q tests/test_separation.py tests/test_audio_cache.py tests/test_build_provenance.py`为19 passed；`compileall -q manialab scripts tests`、全部`static/*.js`的`node --check`及`git diff --check`通过。没有运行全量测试、真实音频或模型。
+- 独立只读审查确认缓存修订链路一致，未发现阻断问题；源码fingerprint遗漏由本阶段一并补齐。当前改动尚未提交，PR/CI待补。
+- 本阶段仅保证分离结果身份与缓存一致性，不代表分离音质或音乐验收改善。公开Pre-release仍为dev.18；人工盲听、6K–10K/LN试打、两首独立歌曲复听及Demucs权重再分发许可仍未闭环。

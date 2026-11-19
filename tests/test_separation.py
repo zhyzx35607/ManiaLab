@@ -39,6 +39,78 @@ def test_separator_cleans_temporary_input_when_worker_cannot_start(tmp_path, mon
 
 
 @pytest.mark.parametrize('profile', ['four', 'six'])
+@pytest.mark.parametrize('worker_revision', [1, 2])
+def test_separator_rebuilds_stale_algorithm_revision(tmp_path, monkeypatch, profile, worker_revision):
+    monkeypatch.setenv('MANIALAB_DEEP_PYTHON', sys.executable)
+    separator = separation.Separator(tmp_path, profile)
+    separator.spec = separator.spec | {'algorithm_revision': 2}
+    separator.model.parent.mkdir(parents=True)
+    separator.model.write_bytes(b"synthetic model")
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"synthetic audio")
+    output = tmp_path / separator.spec['directory']
+    output.mkdir()
+    manifest = output / "separation.json"
+    old_report = dict(
+        revision=1,
+        algorithm_revision=1,
+        audio_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+        model_sha256=separator.spec['sha256'],
+        profile=profile,
+        input_processing=dict(separation.INPUT_PROCESSING),
+    )
+    manifest.write_text(json.dumps(old_report), encoding="utf-8")
+    for voice in separator.spec['voices']:
+        np.save(output / f"{voice}.npy", np.zeros(8, dtype=np.float32))
+
+    wave = tmp_path / "separation-input.wav"
+    launches = []
+
+    def prepare_input(*args, **kwargs):
+        wave.write_bytes(b"synthetic converted audio")
+        return SimpleNamespace(returncode=0)
+
+    class FinishedWorker:
+        returncode = 0
+
+        def poll(self):
+            return self.returncode
+
+    def launch(command, **kwargs):
+        launches.append(command)
+        assert command[command.index("--algorithm-revision") + 1] == "2"
+        manifest.write_text(json.dumps(old_report | {'algorithm_revision': worker_revision}), encoding="utf-8")
+        return FinishedWorker()
+
+    monkeypatch.setattr(separation, "run_hidden_cancellable", prepare_input)
+    monkeypatch.setattr(separation.imageio_ffmpeg, "get_ffmpeg_exe", lambda: "ffmpeg")
+    monkeypatch.setattr(separation.subprocess, "Popen", launch)
+
+    if worker_revision != separator.spec['algorithm_revision']:
+        with pytest.raises(ValueError):
+            separator.separate(source, tmp_path)
+        assert len(launches) == 1
+        assert not wave.exists()
+        return
+
+    _, report = separator.separate(source, tmp_path)
+
+    assert len(launches) == 1
+    assert report['algorithm_revision'] == 2
+    assert not report['cached']
+    assert not wave.exists()
+
+
+def test_model_separation_identity_includes_algorithm_revision():
+    from manialab.stems import separation_identity
+
+    report = dict(source='model', audio_sha256='audio', model_sha256='model',
+                  profile='four', input_processing=separation.INPUT_PROCESSING,
+                  algorithm_revision=1)
+    assert separation_identity(report) != separation_identity(report | {'algorithm_revision': 2})
+
+
+@pytest.mark.parametrize('profile', ['four', 'six'])
 def test_separator_preserves_float_input_and_rebuilds_legacy_cache(tmp_path, monkeypatch, profile):
     monkeypatch.setenv('MANIALAB_DEEP_PYTHON', sys.executable)
     monkeypatch.delenv('MANIALAB_DEEP_MODEL', raising=False)
@@ -79,12 +151,14 @@ def test_separator_preserves_float_input_and_rebuilds_legacy_cache(tmp_path, mon
         if command[0] != sys.executable:
             return real_popen(command, **kwargs)  # Run the real ffmpeg input conversion.
         assert command[command.index("--threads") + 1] == "2"
+        assert command[command.index("--algorithm-revision") + 1] == str(separator.spec['algorithm_revision'])
         assert all(kwargs["env"][name] == "2" for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"))
         rate, data = wavfile.read(command[2])
         assert rate == 44100 and data.dtype == np.float32
         np.testing.assert_array_equal(data, samples)
         launches.append(command)
         report = json.loads(manifest.read_text(encoding='utf-8'))
+        report['algorithm_revision'] = int(command[command.index("--algorithm-revision") + 1])
         if '--beat-model' in command:
             report['beat_evidence'] = dict(model_sha256=separation.BEAT_MODEL_SHA256)
         manifest.write_text(json.dumps(report), encoding='utf-8')

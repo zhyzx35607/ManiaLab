@@ -8,10 +8,12 @@ VOICES = {'drums':'鼓 / 打击', 'bass':'贝斯', 'vocals':'人声',
 PROFILES = {
     'four': dict(directory='stems', filename='hdemucs_high_trained.pt',
         sha256='a004b2790d73ffeaa535db458a1a79b539dfdbafbccc31f275d07e632ebd7816',
-        voices=('drums','bass','vocals','other'), label='四声部 · Hybrid Demucs'),
+        algorithm_revision=1, voices=('drums','bass','vocals','other'),
+        label='四声部 · Hybrid Demucs'),
     'six': dict(directory='stems-six', filename='htdemucs_6s.th',
         sha256='34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd',
-        voices=('drums','bass','vocals','other','guitar','piano'), label='六声部 · HTDemucs'),
+        algorithm_revision=1, voices=('drums','bass','vocals','other','guitar','piano'),
+        label='六声部 · HTDemucs'),
 }
 
 
@@ -61,5 +63,6 @@ def separation_identity(separation):
     else:
         identity = dict(source='model', audio=separation['audio_sha256'],
                         model=separation['model_sha256'], profile=separation.get('profile','four'),
-                        input_processing=separation.get('input_processing'))
+                        input_processing=separation.get('input_processing'),
+                        algorithm_revision=separation.get('algorithm_revision'))
     return hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()

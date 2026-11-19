@@ -14,7 +14,8 @@ MODEL_SHA256='34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd'
 MODEL_URL='https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th'
 
 
-def separate_six(source,output,model_path,seconds,threads,beat_model,progress,beat_evidence):
+def separate_six(source,output,model_path,seconds,threads,beat_model,progress,beat_evidence,
+    algorithm_revision=1):
     from demucs.htdemucs import HTDemucs
     from demucs.apply import apply_model
     started=time.perf_counter()
@@ -50,7 +51,8 @@ def separate_six(source,output,model_path,seconds,threads,beat_model,progress,be
     output.mkdir(parents=True,exist_ok=True)
     for name,stem in zip(model.sources,result):
         np.save(output/f'{name}.npy',resample_poly(stem,1,2).astype(np.float32))
-    report=dict(revision=1,profile='six',sample_rate=22050,frames=(len(samples)+1)//2,
+    report=dict(revision=1,algorithm_revision=algorithm_revision,profile='six',
+        sample_rate=22050,frames=(len(samples)+1)//2,
         sources={name:f'{name}.npy' for name in model.sources},model_sha256=MODEL_SHA256,
         model_url=MODEL_URL,elapsed_seconds=round(time.perf_counter()-started,2),
         reconstruction_rmse=float(np.sqrt(np.mean((result.sum(axis=0)-samples.mean(axis=1))**2))))

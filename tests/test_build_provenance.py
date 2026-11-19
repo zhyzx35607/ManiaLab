@@ -9,7 +9,7 @@ from scripts.worker_inventory import worker_inventory
 def test_packaging_rejects_stale_worker_sources_and_executable(tmp_path):
     scripts = tmp_path/'scripts'
     scripts.mkdir()
-    for name in ('separate_audio.py', 'worker_lifetime.py'):
+    for name in ('separate_audio.py', 'separate_six.py', 'worker_lifetime.py'):
         (scripts/name).write_text('# original', encoding='utf-8')
     directory = tmp_path/'assets/deep'
     worker = directory/'ManiaLabAudio/ManiaLabAudio.exe'
@@ -27,6 +27,10 @@ def test_packaging_rejects_stale_worker_sources_and_executable(tmp_path):
     with pytest.raises(ValueError, match='sources changed'):
         verify_worker(tmp_path, directory)
     (scripts/'separate_audio.py').write_text('# original', encoding='utf-8')
+    (scripts/'separate_six.py').write_text('# six-source change', encoding='utf-8')
+    with pytest.raises(ValueError, match='sources changed'):
+        verify_worker(tmp_path, directory)
+    (scripts/'separate_six.py').write_text('# original', encoding='utf-8')
     worker.write_bytes(b'old executable')
     with pytest.raises(ValueError, match='executable'):
         verify_worker(tmp_path, directory)
