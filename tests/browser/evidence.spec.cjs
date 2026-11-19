@@ -80,6 +80,42 @@ test('manual tap extensions and additions stay distinct from detected endpoints'
   await expect(page.locator('#reviewSummary')).toContainText('15 个 LN 尾端');
 });
 
+test('deleting a selected note creates a reversible candidate that survives reopening', async ({ page }) => {
+  await generateEvidence(page,'UI evidence edits');
+  const pid=await page.locator('#recent').inputValue();
+  const original=await page.evaluate(()=>({
+    created:variant().created,
+    count:variant().notes.length,
+  }));
+  await selectNote(page,'unobserved',8.8);
+  await page.locator('#noteEditor').evaluate(el=>{el.open=true;});
+  await page.locator('#editDelete').click();
+  await expect.poll(()=>page.evaluate(()=>variant().notes.some(note=>note.id==='unobserved'))).toBe(false);
+  await expect(page.locator('#editDelete')).toBeDisabled();
+
+  const deleted=await page.evaluate(()=>state);
+  const originalIndex=deleted.variants.findIndex(candidate=>candidate.created===original.created);
+  const deletedIndex=deleted.active;
+  expect(originalIndex).toBeGreaterThanOrEqual(0);
+  expect(deleted.variants[originalIndex].notes).toHaveLength(original.count);
+  expect(deleted.variants[deletedIndex].notes).toHaveLength(original.count-1);
+  expect(deleted.variants[deletedIndex].edits.at(-1)).toMatchObject({
+    op:'delete',
+    parent_created:original.created,
+    before:{id:'unobserved'},
+    after:null,
+  });
+
+  await page.locator('#variants').selectOption(String(originalIndex));
+  await expect.poll(()=>page.evaluate(()=>variant().notes.some(note=>note.id==='unobserved'))).toBe(true);
+  await page.locator('#variants').selectOption(String(deletedIndex));
+  await expect.poll(()=>page.evaluate(()=>variant().notes.some(note=>note.id==='unobserved'))).toBe(false);
+  await reopenProject(page,pid);
+  await expect.poll(()=>page.evaluate(()=>variant().notes.some(note=>note.id==='unobserved'))).toBe(false);
+  await page.locator('#variants').selectOption(String(originalIndex));
+  await expect.poll(()=>page.evaluate(()=>variant().notes.some(note=>note.id==='unobserved'))).toBe(true);
+});
+
 test('saved evidence survives changed analysis and legacy gaps remain unknown', async ({ page }) => {
   await generateEvidence(page,'UI evidence snapshots');
   const pid=await page.locator('#recent').inputValue();
