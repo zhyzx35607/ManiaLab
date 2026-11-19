@@ -149,9 +149,18 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
 
             def cleanup(committed):
                 if not committed:
-                    shutil.rmtree(folder, ignore_errors=True)
-                    if new_decoded_folder is not None:
-                        shutil.rmtree(new_decoded_folder, ignore_errors=True)
+                    failures = []
+                    for target in (folder, new_decoded_folder):
+                        if target is None:
+                            continue
+                        try:
+                            shutil.rmtree(target)
+                        except OSError as error:
+                            if isinstance(error, FileNotFoundError) and not target.exists():
+                                continue
+                            failures.append(error)
+                    if failures:
+                        raise ExceptionGroup('声轨导入资源清理失败', failures)
 
             def operation(state, progress, cancelled):
                 nonlocal new_decoded_folder

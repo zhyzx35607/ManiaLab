@@ -81,6 +81,20 @@ class ProjectTasks:
                 with self.lock:
                     job.update(progress=value, message=message)
 
+            def record_cleanup_failure(outcome, committed):
+                self.logger.exception(
+                    "Project task cleanup failed: project=%s job=%s", project_id, job_id)
+                cancellation.report_cleanup_failure(
+                    f"Project task cleanup failed: project={project_id} job={job_id}")
+                outcome["cleanup_failed"] = True
+                if committed:
+                    outcome["message"] = "结果已保存，但资源清理失败，请查看本地日志并重新打开项目核对"
+                else:
+                    message = ("任务已取消" if outcome["status"] == "cancelled"
+                               else outcome["message"])
+                    outcome.update(status="error",
+                        message=message + "；资源清理失败，请重新打开项目核对")
+
             def run():
                 started = time.perf_counter()
                 with self.lock:
@@ -116,7 +130,7 @@ class ProjectTasks:
                         try:
                             cleanup(committed)
                         except BaseException:
-                            self.logger.exception("Project task cleanup failed: %s", project_id)
+                            record_cleanup_failure(outcome, committed)
                     with self.lock:
                         job.update(outcome)
                         if outcome["status"] == "done":
@@ -144,10 +158,7 @@ class ProjectTasks:
                     try:
                         cleanup(False)
                     except BaseException:
-                        self.logger.exception(
-                            "Project task cleanup after submit failure failed: %s",
-                            project_id,
-                        )
+                        record_cleanup_failure(job, False)
 
         if submission_error is not None:
             if not isinstance(submission_error, Exception):
