@@ -4,7 +4,16 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from manialab.audio_cache import load_stem_activations, save_stem_activations, sha256_file
+from manialab.audio_cache import (
+    BASIC_PITCH_INFERENCE_REVISION,
+    STEM_ACTIVATION_CACHE_VERSION,
+    load_stem_activations,
+    save_stem_activations,
+    sha256_file,
+)
+
+
+MODEL_IDENTITY = "sha256:model"
 
 
 def activations():
@@ -69,34 +78,47 @@ def test_sha256_file_checks_cancellation_between_chunks(tmp_path, monkeypatch):
     assert opened[0].bytes_read == 1024 * 1024
 
 
-def test_stem_activation_cache_round_trips_the_existing_format(tmp_path):
+def test_stem_activation_cache_round_trips_the_current_format(tmp_path):
     cache = tmp_path / "vocals-activations.npz"
     expected = activations()
 
-    save_stem_activations(cache, expected, "audio-hash", "separation-hash")
+    save_stem_activations(
+        cache, expected, "audio-hash", "separation-hash",
+        MODEL_IDENTITY, BASIC_PITCH_INFERENCE_REVISION)
 
-    loaded = load_stem_activations(cache, "audio-hash", "separation-hash")
+    loaded = load_stem_activations(
+        cache, "audio-hash", "separation-hash",
+        MODEL_IDENTITY, BASIC_PITCH_INFERENCE_REVISION)
     assert loaded is not None
     for actual, wanted in zip(loaded, expected):
         np.testing.assert_array_equal(actual, wanted)
     with np.load(cache, allow_pickle=False) as data:
         assert set(data.files) == {
-            "frames", "onsets", "times", "version", "audio_sha256", "separation_sha256"
+            "frames", "onsets", "times", "version", "audio_sha256",
+            "separation_sha256", "model_identity", "inference_revision"
         }
-        assert int(data["version"]) == 3
+        assert int(data["version"]) == STEM_ACTIVATION_CACHE_VERSION
 
 
 @pytest.mark.parametrize(
-    "audio_hash,separation_hash",
-    [("other-audio", "separation-hash"), ("audio-hash", "other-separation")],
+    "audio_hash,separation_hash,model_identity,inference_revision",
+    [
+        ("other-audio", "separation-hash", MODEL_IDENTITY, BASIC_PITCH_INFERENCE_REVISION),
+        ("audio-hash", "other-separation", MODEL_IDENTITY, BASIC_PITCH_INFERENCE_REVISION),
+        ("audio-hash", "separation-hash", "sha256:other-model", BASIC_PITCH_INFERENCE_REVISION),
+        ("audio-hash", "separation-hash", MODEL_IDENTITY, BASIC_PITCH_INFERENCE_REVISION + 1),
+    ],
 )
-def test_stem_activation_cache_requires_both_source_identities(
-    tmp_path, audio_hash, separation_hash
+def test_stem_activation_cache_requires_all_source_and_detector_identities(
+    tmp_path, audio_hash, separation_hash, model_identity, inference_revision
 ):
     cache = tmp_path / "activations.npz"
-    save_stem_activations(cache, activations(), "audio-hash", "separation-hash")
+    save_stem_activations(
+        cache, activations(), "audio-hash", "separation-hash",
+        MODEL_IDENTITY, BASIC_PITCH_INFERENCE_REVISION)
 
-    assert load_stem_activations(cache, audio_hash, separation_hash) is None
+    assert load_stem_activations(
+        cache, audio_hash, separation_hash, model_identity, inference_revision) is None
 
 
 @pytest.mark.parametrize("kind", ["old-version", "missing-field", "corrupt", "missing-file"])
@@ -108,13 +130,19 @@ def test_stem_activation_cache_treats_invalid_entries_as_misses(tmp_path, kind):
             frames=activations()[0],
             onsets=activations()[1],
             times=activations()[2],
-            version=2,
+            version=STEM_ACTIVATION_CACHE_VERSION - 1,
             audio_sha256="audio-hash",
             separation_sha256="separation-hash",
+            model_identity=MODEL_IDENTITY,
+            inference_revision=BASIC_PITCH_INFERENCE_REVISION,
         )
     elif kind == "missing-field":
-        np.savez_compressed(cache, version=3, audio_sha256="audio-hash")
+        np.savez_compressed(
+            cache, version=STEM_ACTIVATION_CACHE_VERSION,
+            audio_sha256="audio-hash")
     elif kind == "corrupt":
         cache.write_bytes(b"not an npz archive")
 
-    assert load_stem_activations(cache, "audio-hash", "separation-hash") is None
+    assert load_stem_activations(
+        cache, "audio-hash", "separation-hash",
+        MODEL_IDENTITY, BASIC_PITCH_INFERENCE_REVISION) is None

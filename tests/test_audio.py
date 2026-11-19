@@ -8,7 +8,7 @@ from manialab.audio import SR, analyze, rhythmic_evidence
 from manialab.arrange import parameters
 
 
-def test_basic_pitch_inference_respects_cpu_thread_limits(monkeypatch):
+def test_basic_pitch_inference_respects_cpu_thread_limits(tmp_path, monkeypatch):
     from manialab import audio
 
     captured = {}
@@ -23,14 +23,48 @@ def test_basic_pitch_inference_respects_cpu_thread_limits(monkeypatch):
                         providers=providers)
         raise RuntimeError('captured configuration')
 
+    model = tmp_path / 'model.onnx'
+    model.write_bytes(b'synthetic model')
     monkeypatch.setattr(audio, '_session', None)
     monkeypatch.setattr(audio.ort, 'SessionOptions', Options)
     monkeypatch.setattr(audio.ort, 'InferenceSession', session)
     import pytest
     with pytest.raises(RuntimeError, match='captured configuration'):
-        audio.infer(np.zeros(audio.SR, dtype=np.float32), Path('unused.onnx'))
+        audio.infer(np.zeros(audio.SR, dtype=np.float32), model)
 
     assert captured == dict(intra=2, inter=1, providers=['CPUExecutionProvider'])
+
+
+def test_basic_pitch_session_reloads_when_model_identity_changes(tmp_path, monkeypatch):
+    monkeypatch.setattr(audio, '_session', None)
+    monkeypatch.setattr(audio, '_session_model_identity', None)
+    model_a = tmp_path / 'model-a.onnx'
+    model_b = tmp_path / 'model-b.onnx'
+    model_a.write_bytes(b'synthetic model A')
+    model_b.write_bytes(b'synthetic model B')
+    loaded = []
+
+    class Options:
+        intra_op_num_threads = None
+        inter_op_num_threads = None
+
+    class Session:
+        def run(self, outputs, inputs):
+            result = np.zeros((1, 172, 88), dtype=np.float32)
+            return result, result
+
+    def session(model, sess_options, providers):
+        loaded.append(Path(model))
+        return Session()
+
+    monkeypatch.setattr(audio.ort, 'SessionOptions', Options)
+    monkeypatch.setattr(audio.ort, 'InferenceSession', session)
+
+    samples = np.zeros(audio.SR, dtype=np.float32)
+    audio.infer(samples, model_a)
+    audio.infer(samples, model_b)
+
+    assert loaded == [model_a, model_b]
 
 
 def test_stem_eof_rounding_never_changes_the_attack_clock():
@@ -50,6 +84,10 @@ def test_stem_eof_rounding_never_changes_the_attack_clock():
 def test_audio_analysis_streams_identity_hash_and_reuses_cache(tmp_path, monkeypatch):
     source = tmp_path / "source.wav"
     source.write_bytes(b"synthetic audio identity")
+    model_a = tmp_path / "model-a.onnx"
+    model_b = tmp_path / "model-b.onnx"
+    model_a.write_bytes(b"synthetic model A")
+    model_b.write_bytes(b"synthetic model B")
     inferred = []
 
     def fake_infer(*args, **kwargs):
@@ -79,11 +117,19 @@ def test_audio_analysis_streams_identity_hash_and_reuses_cache(tmp_path, monkeyp
         reject_read_bytes,
     )
 
-    first = analyze(source, tmp_path, tmp_path / "model.onnx", parameters())
-    second = analyze(source, tmp_path, tmp_path / "model.onnx", parameters())
+    first = analyze(source, tmp_path, model_a, parameters())
+    second = analyze(source, tmp_path, model_a, parameters())
+    third = analyze(source, tmp_path, model_b, parameters())
+    fourth = analyze(source, tmp_path, model_b, parameters())
 
     assert not first["cached"] and second["cached"]
-    assert len(inferred) == 1
+    assert not third["cached"] and fourth["cached"]
+    assert len(inferred) == 2
+    monkeypatch.setattr(audio, "BASIC_PITCH_INFERENCE_REVISION", 2)
+    fifth = analyze(source, tmp_path, model_b, parameters())
+    sixth = analyze(source, tmp_path, model_b, parameters())
+    assert not fifth["cached"] and sixth["cached"]
+    assert len(inferred) == 3
 
 
 def test_silence():

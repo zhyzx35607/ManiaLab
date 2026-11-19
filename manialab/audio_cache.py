@@ -1,12 +1,23 @@
-"""Versioned Basic Pitch activation cache for separated audio stems."""
+"""Versioned Basic Pitch activation caches without inference-runtime imports."""
 import hashlib
 from pathlib import Path
 
 import numpy as np
 
 
-STEM_ACTIVATION_CACHE_VERSION = 3
+WHOLE_AUDIO_ACTIVATION_CACHE_VERSION = 3
+STEM_ACTIVATION_CACHE_VERSION = 4
+# Bump when infer() changes its activation inputs, clock, or output semantics.
+BASIC_PITCH_INFERENCE_REVISION = 1
 _SHA256_CHUNK_SIZE = 1024 * 1024
+
+
+def model_identity(path, cancelled=None):
+    """Use model bytes when available; keep synthetic/cache-only paths stable."""
+    path = Path(path)
+    if path.is_file():
+        return "sha256:" + sha256_file(path, cancelled)
+    return "missing:" + str(path.resolve())
 
 
 def sha256_file(path, cancelled=None):
@@ -22,8 +33,9 @@ def sha256_file(path, cancelled=None):
             digest.update(chunk)
 
 
-def load_stem_activations(path, audio_sha256, separation_sha256):
-    """Load cached activations only when both source identities still match."""
+def load_stem_activations(path, audio_sha256, separation_sha256,
+                          model_identity_value, inference_revision):
+    """Load cached activations only when all detector and source identities match."""
     path = Path(path)
     if not path.is_file():
         return None
@@ -31,14 +43,17 @@ def load_stem_activations(path, audio_sha256, separation_sha256):
         with np.load(path, allow_pickle=False) as data:
             if (int(data["version"]) != STEM_ACTIVATION_CACHE_VERSION
                     or str(data["audio_sha256"]) != audio_sha256
-                    or str(data["separation_sha256"]) != separation_sha256):
+                    or str(data["separation_sha256"]) != separation_sha256
+                    or str(data["model_identity"]) != model_identity_value
+                    or int(data["inference_revision"]) != inference_revision):
                 return None
             return data["frames"], data["onsets"], data["times"]
     except (ValueError, KeyError, OSError, EOFError):
         return None
 
 
-def save_stem_activations(path, activations, audio_sha256, separation_sha256):
+def save_stem_activations(path, activations, audio_sha256, separation_sha256,
+                          model_identity_value, inference_revision):
     """Write the current cache format used by generic separated-stem analysis."""
     path = Path(path)
     frames, onsets, times = activations
@@ -50,4 +65,6 @@ def save_stem_activations(path, activations, audio_sha256, separation_sha256):
         version=STEM_ACTIVATION_CACHE_VERSION,
         audio_sha256=audio_sha256,
         separation_sha256=separation_sha256,
+        model_identity=model_identity_value,
+        inference_revision=inference_revision,
     )

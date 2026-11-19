@@ -5,8 +5,8 @@
 
 ## 当前状态（先读）
 
-- PR #181 修复声部分离 worker 启动失败后的临时 WAV 泄漏，已于2026-11-19合并为`a9e5844632d3db10b2cba6fea4185f9314420f97`；PR run `44468079196`和合并后main run `44468606711`均成功，Python/API为2,720 passed、89 skipped，Edge UI为38 passed，Core便携构建按条件跳过。第七十四阶段的定向合成测试12 passed。此前PR #180于同日合并为`6888912147e5deed81545cb2376ef2c5066cb65c`，修复嵌套谱面父目录音频引用；PR/main run `44465032776`、`44466336310`均为Python/API 2,719 passed、89 skipped，Edge UI 38 passed。
-- 第七十五阶段正在当前分支`codex/separation-cache-revision-20261119`处理分离缓存未区分算法修订的问题：旧清单即使音频、模型、预处理和stem文件均匹配，仍可能复用旧算法结果；下游activation identity也遗漏该修订。修复已覆盖四/六声部profile、worker输出校验及打包worker源码指纹。定向测试`tests/test_separation.py tests/test_audio_cache.py tests/test_build_provenance.py`为19 passed；`compileall`、静态JS语法和`git diff --check`通过。PR/CI待补；没有运行全量测试或模型实验。
+- PR #182 修复分离算法修订未纳入缓存身份的问题，已于2026-11-19合并为`58c48b9966da2b8a798fe5baa32d0fdc932bfaf7`；PR run `44471599763`与合并后main run `44472118121`均通过，Python/API为2,725 passed、89 skipped，Edge UI为38 passed，Core便携构建按条件跳过。第七十五阶段还将`scripts/separate_six.py`纳入worker源码fingerprint。PR #181 修复分离worker启动失败后的临时WAV泄漏，合并为`a9e5844632d3db10b2cba6fea4185f9314420f97`；PR/main run `44468079196`、`44468606711`成功，Python/API为2,720 passed、89 skipped，Edge UI为38 passed。此前PR #180修复嵌套谱面父目录音频引用，合并为`6888912147e5deed81545cb2376ef2c5066cb65c`；PR/main run `44465032776`、`44466336310`的Python/API为2,719 passed、89 skipped，Edge UI为38 passed。
+- 第七十六阶段正在分支`codex/audio-cache-model-identity-20261119`修复Basic Pitch activation缓存与ONNX session未绑定模型身份/推理修订的问题。用合成模型A/B先在旧实现上复现：整曲缓存及六声部activation在换模型后仍命中，session单例也仍调用旧模型。当前改动纳入模型内容身份和`BASIC_PITCH_INFERENCE_REVISION`，按模型哈希重建session，并将整曲/声部缓存格式分别升级。定向合成回归76 passed、1 deselected；`compileall`、静态JS语法和`git diff --check`通过。PR/CI待补；没有加载真实模型或运行全量测试。
 - PR #176 全项目验收计划已于2026-11-19合并为`abf7c05ca8e9b15f26418daf61bc51a15417c889`；main Windows run `44454674214`成功，Python/API为2,712 passed、89 skipped，Edge UI为36 passed，Core便携构建按触发条件跳过。第一轮工程路径审计未发现P0，阶段1–3仍在收口；问题与证据入口见[全项目验收问题账本](full-project-acceptance-ledger-20261119.md)。
 - 第七十一阶段增加缺失 `AudioFilename` 的可见状态和重新导入说明；浏览器回归确保不借用上一难度音轨。本地全量Python/API为2,711 passed、90 skipped，Edge UI为37 passed；`compileall`、全部静态JS语法及`git diff --check`通过。PR #177 的 Windows runs `44457046075`、文档复验`44457739696`及合并后 main run `44458199401`均通过，Python/API为2,712 passed、89 skipped，Edge UI为37 passed；便携构建按触发条件跳过。PR 已合并为`b69acf7f1db7a3ae3aafde4ca3e744c64c466be9`。
 - PR #178 将第七十一阶段结果和验收账本同步到 main，PR Windows run `44458933001`与合并后 main run `44460183632`均成功；合并提交`0be4b24dea71aee4f604ebc6be7dd922d5e6090b`。第七十二阶段补上浏览器删除候选、切回父版本与重开持久化回归；PR #179 Windows run `44461711637`及合并后 main run `44462358541`均成功，Python/API为2,712 passed、89 skipped，Edge UI为38 passed；便携构建按触发条件跳过。PR #179 合并提交为`ef4e788d59c696b48af241ed40652549923449c6`，COV-01已闭合。阶段1–3跨路径审查、profile/许可处置与真人音乐验收仍未完成。
@@ -2194,5 +2194,13 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 为四/六声部profile增加独立`algorithm_revision`，由父进程传递至worker；缓存命中、worker返回清单和下游分离身份都检查/记录该字段。缺少该字段的历史清单会重算，原有`revision`用途不变。
 - 将`scripts/separate_six.py`加入便携音频worker源码fingerprint，并新增合成测试保证六声部脚本变化会令旧worker manifest校验失败，避免以后只改六声部实现时被漏检。
 - 定向`.venv\Scripts\python.exe -m pytest -q tests/test_separation.py tests/test_audio_cache.py tests/test_build_provenance.py`为19 passed；`compileall -q manialab scripts tests`、全部`static/*.js`的`node --check`及`git diff --check`通过。没有运行全量测试、真实音频或模型。
-- 独立只读审查确认缓存修订链路一致，未发现阻断问题；源码fingerprint遗漏由本阶段一并补齐。当前改动尚未提交，PR/CI待补。
+- 独立只读审查确认缓存修订链路一致，未发现阻断问题；源码fingerprint遗漏由本阶段一并补齐。PR #182 run `44471599763`和合并后main run `44472118121`均成功，Python/API `2725 passed, 89 skipped`、Edge `38 passed`，Core便携步骤按条件跳过；合并提交为`58c48b9966da2b8a798fe5baa32d0fdc932bfaf7`。
 - 本阶段仅保证分离结果身份与缓存一致性，不代表分离音质或音乐验收改善。公开Pre-release仍为dev.18；人工盲听、6K–10K/LN试打、两首独立歌曲复听及Demucs权重再分发许可仍未闭环。
+
+## 2026-11-19 第七十六阶段：Basic Pitch 模型身份进入 activation 缓存
+
+- 合成回归先在旧实现上复现三条路径：整曲`activations.npz`只校验格式版本与音频哈希；分离声部缓存只校验音频与分离身份；ONNX session全局单例不跟踪模型身份。同一输入切换模型A/B时，旧缓存仍被复用，直接推理也不会重建session。
+- 增加Basic Pitch模型内容身份与独立`BASIC_PITCH_INFERENCE_REVISION`。整曲缓存格式升级到3，分离声部格式升级到4；旧格式自动miss。整曲与每声部缓存均校验音频、分离（适用时）、模型身份和推理修订。
+- ONNX session按模型身份缓存；分析开始时绑定本地session引用，避免并发调用替换全局session后改变当前推理所用模型。模型文件缺失的纯合成/cache-only路径使用稳定路径身份；实际文件使用SHA-256。
+- 定向合成测试为`tests/test_audio_cache.py tests/test_audio.py -k "not real_model" tests/test_stems.py tests/test_audio_release_provenance.py tests/test_provided_stems.py tests/test_instrument_integration.py tests/test_guitar_integration.py`，结果76 passed、1 deselected；真实模型测试明确排除。复核时修正session回归对真实`_session_model_identity`字段的重置，并将整曲cache identity变量改名为`model_fingerprint`。复跑`compileall`、全部`static/*.js`的`node --check`和`git diff --check`通过；未运行全量测试、未读取模型权重或用户音频。
+- 独立只读复审未发现阻断问题；PR/CI待补。本阶段只保证模型和推理身份变更后重算，不代表Basic Pitch音准提升或音乐验收完成。公开Pre-release仍为dev.18。
