@@ -5,6 +5,7 @@ import shutil
 import sys
 import tempfile
 import threading
+import time
 import wave
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -153,30 +154,27 @@ def reanalyzed_regional_fixture(projects):
 def install_fixture_planner(app):
     # Replace only this disposable server's external call. Real plan HTTP,
     # queued jobs, cancellation, validation and project commits still execute.
-    waiting, release = threading.Event(), threading.Event()
-    def fixture_plan(endpoint, model, key, instruction, segments, current, review=None):
+    waiting = threading.Event()
+    def fixture_plan(endpoint, model, key, instruction, segments, current, review=None, cancelled=None):
         if endpoint != 'fixture://planner' or model not in ('success', 'error', 'cancel'):
             raise ValueError('Fixture planner rejects external requests')
         if model == 'error':
             raise ValueError('Deterministic fixture planner error')
         if model == 'cancel':
-            release.clear()
             waiting.set()
-            if not release.wait(15):
-                raise ValueError('Fixture planner release timed out')
-            waiting.clear()
+            try:
+                while True:
+                    if cancelled is not None and cancelled():
+                        raise InterruptedError('已取消，原有谱面已保留')
+                    time.sleep(0.01)
+            finally:
+                waiting.clear()
         return validate_plan(dict(preferences={'density':11}, segments=[],
             explanation='Deterministic fixture plan'), segments)
     app.extensions['planner'] = fixture_plan
     @app.get('/__fixture/planner-state')
     def planner_state():
         return dict(waiting=waiting.is_set())
-    @app.post('/__fixture/planner-release')
-    def planner_release():
-        release.set()
-        return dict(ok=True)
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, required=True)

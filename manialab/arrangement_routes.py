@@ -21,7 +21,10 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
             result = app.extensions["planner"](
                 payload.get("endpoint", ""), payload.get("model", ""), payload.get("key", ""),
                 payload.get("instruction", ""), state["analysis"]["segments"], prefs, review=review,
+                cancelled=cancelled,
             )
+            if cancelled():
+                raise InterruptedError("已取消，原有谱面已保留")
             state["plan"] = result
             state["settings"] = parameters(prefs | result["preferences"])
             return result

@@ -82,8 +82,6 @@ for(const outcome of ['error','cancel'])test(`API plan ${outcome} preserves the 
     await expect.poll(async()=> (await (await page.request.get('/__fixture/planner-state')).json()).waiting).toBe(true);
     const cancelled=page.waitForResponse(`**/api/jobs/${jid}/cancel`);
     await page.locator('#cancel').click();expect((await cancelled).ok()).toBeTruthy();
-    const token=await page.locator('meta[name="manialab-token"]').getAttribute('content');
-    expect((await page.request.post('/__fixture/planner-release',{headers:{'X-ManiaLab-Token':token}})).ok()).toBeTruthy();
     await expect(page.locator('#message')).toContainText('已取消');
   }else await expect(page.locator('#message')).toContainText('Deterministic fixture planner error');
   await expect(page.locator('#generate')).toBeEnabled();

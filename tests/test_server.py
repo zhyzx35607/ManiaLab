@@ -1,15 +1,17 @@
+import asyncio
 import io
 import json
 import os
 from pathlib import Path
 import threading
 import time
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 import zipfile
 import pytest
 
 from manialab.server import create_app
 from manialab.domain import Note, export_osu, parse_osu
+from manialab import planner as planner_module
 from manialab.planner import plan
 from manialab.storage import Projects
 
@@ -143,6 +145,412 @@ def test_real_http_planner_mock():
         result=plan(f'http://127.0.0.1:{server.server_port}/v1','test','fake-test-key','prefer sustain',[{'start_ms':0,'end_ms':1000}],{})
         assert result['preferences']['ln_ratio']==.8
     finally:server.shutdown();thread.join();server.server_close()
+
+
+@pytest.mark.parametrize(
+    ('status', 'location', 'message'),
+    [
+        (401, None, 'HTTP 401'),
+        (302, 'https://127.0.0.1/redirected', '重定向'),
+    ],
+)
+def test_real_http_planner_rejects_status_and_redirect(status, location, message):
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers['Content-Length']))
+            self.send_response(status)
+            if location:
+                self.send_header('Location', location)
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(('127.0.0.1', 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with pytest.raises(ValueError, match=message):
+            plan(
+                f'http://127.0.0.1:{server.server_port}/v1',
+                'test',
+                'fake-test-key',
+                'prefer sustain',
+                [{'start_ms': 0, 'end_ms': 1000}],
+                {},
+            )
+    finally:
+        server.shutdown()
+        thread.join()
+        server.server_close()
+
+
+def test_real_http_planner_accepts_chunked_response():
+    result = {
+        'choices': [{'message': {'content': json.dumps({
+            'preferences': {'density': 12},
+            'segments': [],
+            'explanation': 'chunked fixture',
+        })}}],
+    }
+    payload = json.dumps(result).encode()
+
+    class Handler(BaseHTTPRequestHandler):
+        protocol_version = 'HTTP/1.1'
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers['Content-Length']))
+            chunk = f'{len(payload):X}\r\n'.encode() + payload + b'\r\n0\r\n\r\n'
+            self.send_response(200)
+            self.send_header('Transfer-Encoding', 'chunked')
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            self.wfile.write(chunk)
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(('127.0.0.1', 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        response = plan(
+            f'http://127.0.0.1:{server.server_port}/v1',
+            'test',
+            '',
+            'prefer sustain',
+            [{'start_ms': 0, 'end_ms': 1000}],
+            {},
+        )
+        assert response['preferences']['density'] == 12
+        assert response['explanation'] == 'chunked fixture'
+    finally:
+        server.shutdown()
+        thread.join()
+        server.server_close()
+
+
+def test_real_http_planner_skips_informational_response():
+    result = {
+        'choices': [{'message': {'content': json.dumps({
+            'preferences': {'density': 13},
+            'segments': [],
+            'explanation': 'after continue',
+        })}}],
+    }
+    payload = json.dumps(result).encode()
+
+    class Handler(BaseHTTPRequestHandler):
+        protocol_version = 'HTTP/1.1'
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers['Content-Length']))
+            self.wfile.write(b'HTTP/1.1 100 Continue\r\n\r\n')
+            self.wfile.flush()
+            self.send_response(200)
+            self.send_header('Content-Length', str(len(payload)))
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(('127.0.0.1', 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        response = plan(
+            f'http://127.0.0.1:{server.server_port}/v1',
+            'test',
+            '',
+            'prefer sustain',
+            [{'start_ms': 0, 'end_ms': 1000}],
+            {},
+        )
+        assert response['preferences']['density'] == 13
+        assert response['explanation'] == 'after continue'
+    finally:
+        server.shutdown()
+        thread.join()
+        server.server_close()
+
+
+def test_real_http_planner_uses_authenticated_http_proxy(monkeypatch):
+    result = {
+        'choices': [{'message': {'content': json.dumps({
+            'preferences': {'density': 14},
+            'segments': [],
+            'explanation': 'through proxy',
+        })}}],
+    }
+    payload = json.dumps(result).encode()
+    observed = {}
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers['Content-Length']))
+            observed['path'] = self.path
+            observed['authorization'] = self.headers.get('Proxy-Authorization')
+            self.send_response(200)
+            self.send_header('Content-Length', str(len(payload)))
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(('127.0.0.1', 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    monkeypatch.setattr(planner_module.urllib.request, 'proxy_bypass', lambda host: False)
+    monkeypatch.setattr(
+        planner_module.urllib.request,
+        'getproxies',
+        lambda: {'http': f'http://proxy%40user:secret%3Apass@127.0.0.1:{server.server_port}'},
+    )
+    try:
+        response = plan(
+            'http://127.0.0.1:12345/v1',
+            'test',
+            '',
+            'prefer sustain',
+            [{'start_ms': 0, 'end_ms': 1000}],
+            {},
+        )
+        assert response['preferences']['density'] == 14
+        assert observed['path'] == 'http://127.0.0.1:12345/v1/chat/completions'
+        assert observed['authorization'] == 'Basic cHJveHlAdXNlcjpzZWNyZXQ6cGFzcw=='
+    finally:
+        server.shutdown()
+        thread.join()
+        server.server_close()
+
+
+def test_real_http_planner_tunnels_through_https_proxy(monkeypatch):
+    result = {
+        'choices': [{'message': {'content': json.dumps({
+            'preferences': {'density': 15},
+            'segments': [],
+            'explanation': 'through secure proxy',
+        })}}],
+    }
+    payload = json.dumps(result).encode()
+    response_bytes = (
+        b'HTTP/1.1 200 Connection Established\r\n\r\n'
+        + b'HTTP/1.1 200 OK\r\n'
+        + f'Content-Length: {len(payload)}\r\nConnection: close\r\n\r\n'.encode()
+        + payload
+    )
+
+    class Writer:
+        def __init__(self):
+            self.writes = []
+            self.start_tls_server_name = None
+            self.closed = False
+
+        def write(self, value):
+            self.writes.append(value)
+
+        async def drain(self):
+            pass
+
+        async def start_tls(self, context, server_hostname=None):
+            self.start_tls_server_name = server_hostname
+
+        def close(self):
+            self.closed = True
+
+        async def wait_closed(self):
+            pass
+
+    writer = Writer()
+    connection = {}
+
+    async def open_connection(host, port, **kwargs):
+        reader = asyncio.StreamReader()
+        reader.feed_data(response_bytes)
+        reader.feed_eof()
+        connection.update(host=host, port=port, **kwargs)
+        return reader, writer
+
+    monkeypatch.setattr(planner_module.urllib.request, 'proxy_bypass', lambda host: False)
+    monkeypatch.setattr(
+        planner_module.urllib.request,
+        'getproxies',
+        lambda: {'https': 'https://proxy%40user:secret%3Apass@proxy.example:8443'},
+    )
+    monkeypatch.setattr(planner_module.asyncio, 'open_connection', open_connection)
+    response = plan(
+        'https://api.example/v1',
+        'test',
+        'api-key',
+        'prefer sustain',
+        [{'start_ms': 0, 'end_ms': 1000}],
+        {},
+    )
+    assert response['preferences']['density'] == 15
+    assert connection['host'] == 'proxy.example'
+    assert connection['port'] == 8443
+    assert connection['ssl'] is not None
+    assert writer.start_tls_server_name == 'api.example'
+    assert writer.closed
+    connect_request, tunneled_request = writer.writes
+    assert connect_request.startswith(b'CONNECT api.example:443 HTTP/1.1\r\n')
+    assert b'Proxy-Authorization: Basic cHJveHlAdXNlcjpzZWNyZXQ6cGFzcw==\r\n' in connect_request
+    assert tunneled_request.startswith(b'POST /v1/chat/completions HTTP/1.1\r\n')
+    assert b'Authorization: Bearer api-key\r\n' in tunneled_request
+    assert b'Proxy-Authorization:' not in tunneled_request
+
+
+def test_planner_rejects_control_characters_in_endpoint():
+    with pytest.raises(ValueError, match='API 地址格式无效'):
+        plan(
+            'http://127.0.0.1/v1\r\nX-Injected: yes',
+            'test',
+            '',
+            'prefer sustain',
+            [{'start_ms': 0, 'end_ms': 1000}],
+            {},
+        )
+
+
+@pytest.mark.parametrize('endpoint', [
+    'https://api.example:0/v1',
+    'https://api.example:65536/v1',
+])
+def test_planner_rejects_invalid_endpoint_port(endpoint):
+    with pytest.raises(ValueError, match='API 地址格式无效'):
+        plan(
+            endpoint,
+            'test',
+            '',
+            'prefer sustain',
+            [{'start_ms': 0, 'end_ms': 1000}],
+            {},
+        )
+
+
+@pytest.mark.parametrize('proxy', [
+    'http://127.0.0.1:0',
+    'http://127.0.0.1:65536',
+])
+def test_planner_rejects_invalid_proxy_port(monkeypatch, proxy):
+    monkeypatch.setattr(planner_module.urllib.request, 'proxy_bypass', lambda host: False)
+    monkeypatch.setattr(planner_module.urllib.request, 'getproxies', lambda: {'http': proxy})
+    with pytest.raises(ValueError, match='API 代理地址格式无效'):
+        plan(
+            'http://127.0.0.1/v1',
+            'test',
+            '',
+            'prefer sustain',
+            [{'start_ms': 0, 'end_ms': 1000}],
+            {},
+        )
+
+
+def test_cancelled_http_planner_releases_task_worker(tmp_path):
+    first_request_received = threading.Event()
+    release_first_request = threading.Event()
+    request_lock = threading.Lock()
+    request_count = 0
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            nonlocal request_count
+            self.rfile.read(int(self.headers['Content-Length']))
+            with request_lock:
+                request_count += 1
+                current_request = request_count
+            if current_request == 1:
+                first_request_received.set()
+                release_first_request.wait(5)
+            payload = json.dumps({
+                'choices': [{'message': {'content': json.dumps({
+                    'preferences': {'density': 11},
+                    'segments': [],
+                    'explanation': 'cancellable fixture',
+                })}}],
+            }).encode()
+            try:
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            except OSError:
+                pass
+
+        def log_message(self, *args):
+            pass
+
+    http_server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+    http_thread = threading.Thread(target=http_server.serve_forever, daemon=True)
+    http_thread.start()
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    try:
+        imported = client.post(
+            '/api/import',
+            data={'files': (io.BytesIO(b'synthetic audio'), 'song.wav')},
+            headers=headers,
+        )
+        assert imported.status_code == 200
+        project_id = imported.json['id']
+        projects = app.extensions['projects']
+        state = projects.load(project_id)
+        state['analysis'] = {'segments': [{'start_ms': 0, 'end_ms': 1000}]}
+        state['plan'] = {'sentinel': 'previous'}
+        projects.save(state)
+        previous = projects.load(project_id)
+        endpoint = f'http://127.0.0.1:{http_server.server_port}/v1'
+        request = {
+            'endpoint': endpoint,
+            'model': 'cancel',
+            'instruction': 'Use deterministic fixture preferences',
+            'settings': {},
+        }
+
+        submitted = client.post(f'/api/projects/{project_id}/plan', json=request, headers=headers)
+        assert submitted.status_code == 200
+        job_id = submitted.json['id']
+        assert first_request_received.wait(5)
+
+        started = time.monotonic()
+        cancelled = client.post(f'/api/jobs/{job_id}/cancel', headers=headers)
+        assert cancelled.status_code == 200
+        deadline = started + 2
+        while time.monotonic() < deadline:
+            job = client.get(f'/api/jobs/{job_id}').json
+            if job['status'] in ('done', 'error', 'cancelled'):
+                break
+            time.sleep(0.01)
+        assert job['status'] == 'cancelled'
+        assert time.monotonic() - started < 2
+        assert projects.load(project_id) == previous
+
+        resumed = client.post(
+            f'/api/projects/{project_id}/plan',
+            json=request | {'model': 'success'},
+            headers=headers,
+        )
+        assert resumed.status_code == 200
+        resumed_id = resumed.json['id']
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            resumed_job = client.get(f'/api/jobs/{resumed_id}').json
+            if resumed_job['status'] in ('done', 'error', 'cancelled'):
+                break
+            time.sleep(0.01)
+        assert resumed_job['status'] == 'done', resumed_job
+        assert projects.load(project_id)['plan']['explanation'] == 'cancellable fixture'
+    finally:
+        release_first_request.set()
+        app.extensions['executor'].shutdown()
+        http_server.shutdown()
+        http_thread.join()
+        http_server.server_close()
 
 
 def test_audio_generation_uses_confirmed_grid_and_real_ln_target(tmp_path):
