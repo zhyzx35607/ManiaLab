@@ -133,16 +133,24 @@ def test_generic_release_eligibility_in_global_and_section_expression(voice, end
 
 def test_cached_analysis_reconstructs_generic_release_metadata_without_inference(tmp_path, monkeypatch):
     from manialab.stems import separation_identity
+    from manialab.audio_cache import (
+        BASIC_PITCH_INFERENCE_REVISION,
+        model_identity,
+        save_stem_activations,
+    )
     frames, onsets, times, duration = activations()
     samples = np.full(round(duration * audio.SR), .2, dtype=np.float32)
     voices = ['bass', 'guitar', 'vocals', 'other', 'piano']
+    model = Path('unused.onnx')
+    model_fingerprint = model_identity(model)
     separation = dict(source='provided', voices=voices, audio_sha256='audio',
                       set_sha256='stems', model_sha256='stems', cached=True)
     for voice in voices:
         np.save(tmp_path / f'{voice}.npy', samples)
-        np.savez_compressed(tmp_path / f'{voice}-activations.npz',
-                            frames=frames, onsets=onsets, times=times, version=3,
-                            audio_sha256='audio', separation_sha256=separation_identity(separation))
+        save_stem_activations(
+            tmp_path / f'{voice}-activations.npz', (frames, onsets, times),
+            'audio', separation_identity(separation), model_fingerprint,
+            BASIC_PITCH_INFERENCE_REVISION)
 
     class Sources:
         def separate(self, *args):
@@ -152,7 +160,7 @@ def test_cached_analysis_reconstructs_generic_release_metadata_without_inference
     def unused(*args):
         raise AssertionError('Existing activations must be reused')
     monkeypatch.setattr(audio, 'infer', unused)
-    result = audio.analyze_deep(Path('mix.wav'), tmp_path, Path('unused.onnx'), parameters(), Sources())
+    result = audio.analyze_deep(Path('mix.wav'), tmp_path, model, parameters(), Sources())
     assert result['cached']
     assert {n['voice'] for n in result['candidates']} == set(voices)
     assert all(n['release_reason'] == 'input_boundary' for n in result['candidates'])

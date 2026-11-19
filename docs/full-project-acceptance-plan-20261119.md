@@ -13,7 +13,7 @@
 
 ## 当前基线
 
-- `main` 当前为 `a9e5844632d3db10b2cba6fea4185f9314420f97`。PR #181 修复声部分离 worker 启动失败后的临时 WAV 泄漏；PR run `44468079196`和合并后 main run `44468606711`均成功，Python/API为2,720 passed、89 skipped，Edge UI为38 passed，Core便携步骤按触发条件跳过。PR #180 修复嵌套谱面父目录音频引用；PR/main run `44465032776`、`44466336310`均成功，Python/API为2,719 passed、89 skipped，Edge UI为38 passed。此前 PR #174 合并后 main run `44449536131`完成 Core 便携包、离线/Unicode路径和关停验证。
+- `main` 当前为 `58c48b9966da2b8a798fe5baa32d0fdc932bfaf7`。PR #182 修复分离算法修订未纳入stem和下游activation缓存身份的问题；PR run `44471599763`与合并后 main run `44472118121`均成功，Python/API为2,725 passed、89 skipped，Edge UI为38 passed，Core便携步骤按触发条件跳过。PR #181 修复声部分离 worker 启动失败后的临时 WAV 泄漏；PR/main run `44468079196`、`44468606711`成功，Python/API为2,720 passed、89 skipped，Edge UI为38 passed。此前 PR #180 修复嵌套谱面父目录音频引用；PR/main run `44465032776`、`44466336310`成功，Python/API为2,719 passed、89 skipped，Edge UI为38 passed。PR #174 main run `44449536131`完成 Core 便携包、离线/Unicode路径和关停验证。
 - 当前公开 Pre-release 仍为 `v0.1.0-alpha.6-dev.18`；主线修复不自动包含在该包中。
 - 架构已经按服务端路由、领域逻辑、音频组件、存储与浏览器分层。先验证边界契约和用户路径，不做没有缺陷证据的大面积重写。
 - 现有记录已明确真实盲听、玩家试打和两首独立歌曲评审尚未回收；Demucs 四/六声部 checkpoint 的独立再分发授权也尚未核实。
@@ -23,7 +23,7 @@
 
 ### 阶段 0：固定基线与问题账本
 
-**状态：进行中；第七十五阶段发现并正在修复分离算法版本未进入缓存身份的问题。**
+**状态：进行中；第七十五阶段已修复分离算法版本缓存身份，第七十六阶段 Basic Pitch activation/session 模型身份修复已完成本地验证并通过只读复审，等待 PR CI。**
 
 - 以 `main`、GitHub Actions、`docs/PROGRESS.md` 和已跟踪文档为事实来源；不得仅凭旧进度条目推断当前状态。
 - 维护一张可复核问题账本：用户影响、复现方式、严重级别、所有者、所需证据、PR/CI 结果。
@@ -57,7 +57,7 @@
 
 只把能够由测试或确定性合成流程复现的行为差异列为代码缺陷。`off_grid=0`、结构有效、报告分数或候选数量不得独立作为采音质量结论。对有效谱面引用缺失音频的行为，先确认界面提示和显式补配契约；不能未经评估就回退到目录中的另一个音频。
 
-第七十五阶段旧实现复现了分离算法升级后仍命中四/六声部旧缓存、且下游activation identity不区分算法修订的问题。当前分支已加入profile修订号、worker输出校验、下游identity和打包worker源码fingerprint覆盖；定向测试17 passed，PR/CI待补。
+第七十五阶段旧实现复现了分离算法升级后仍命中四/六声部旧缓存、且下游activation identity不区分算法修订的问题；PR #182已合并，PR/main验证通过。第七十六阶段用合成模型A/B复现Basic Pitch整曲与声部activation缓存跨模型命中、ONNX session单例仍使用旧模型的问题。当前分支已加入模型内容身份、显式推理修订和按模型身份重建session；定向合成测试76 passed、1 deselected，独立只读复审未发现阻断问题，PR/CI待补。
 
 **验证：**现有 Python 领域/API 测试、Edge 合成端到端工作流、冻结输入的既有结果和官方解码器。冻结对照只复用已保存输入身份及适用结论，不重新运行模型；凡没有证据的历史结果标为“需复验”，不伪称通过。
 

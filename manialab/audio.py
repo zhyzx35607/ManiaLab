@@ -25,9 +25,17 @@ from .audio_evidence import (
     source_evidence,
     timing_evidence_quality,
 )
-from .audio_cache import load_stem_activations, save_stem_activations, sha256_file
+from .audio_cache import (
+    BASIC_PITCH_INFERENCE_REVISION,
+    WHOLE_AUDIO_ACTIVATION_CACHE_VERSION,
+    load_stem_activations,
+    model_identity,
+    save_stem_activations,
+    sha256_file,
+)
 
 _session = None
+_session_model_identity = None
 _lock = threading.Lock()
 
 
@@ -35,14 +43,21 @@ def decode(path, work, cancelled=None):
     return decode_audio(path, work, runner=run_hidden, cancelled=cancelled)
 
 
-def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):
-    global _session
+def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False,
+          model_identity_value=None):
+    global _session, _session_model_identity
+    if model_identity_value is None:
+        model_identity_value = model_identity(model, cancelled)
     with _lock:
-        if _session is None:
+        if _session is None or _session_model_identity != model_identity_value:
             options = ort.SessionOptions()
             options.intra_op_num_threads = 2
             options.inter_op_num_threads = 1
-            _session = ort.InferenceSession(str(model), sess_options=options, providers=["CPUExecutionProvider"])
+            session = ort.InferenceSession(
+                str(model), sess_options=options, providers=["CPUExecutionProvider"])
+            _session = session
+            _session_model_identity = model_identity_value
+        session = _session
     padded = np.pad(samples, (OVERLAP // 2, 0))
     hop = WINDOW - OVERLAP
     frames, onsets, times = [], [], []
@@ -51,8 +66,8 @@ def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False):
         if cancelled():
             raise InterruptedError("已取消分析")
         chunk = np.pad(padded[pos:pos + WINDOW], (0, max(0, pos + WINDOW - len(padded))))
-        output = _session.run(["StatefulPartitionedCall:1", "StatefulPartitionedCall:2"],
-                              {"serving_default_input_2:0": chunk.astype(np.float32)[None, :, None]})
+        output = session.run(["StatefulPartitionedCall:1", "StatefulPartitionedCall:2"],
+                             {"serving_default_input_2:0": chunk.astype(np.float32)[None, :, None]})
         frames.append(output[0][0, 15:-15])
         onsets.append(output[1][0, 15:-15])
         times.extend((pos + np.arange(142) * FRAME) / SR)
@@ -69,11 +84,15 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     duration = len(samples) / SR
     cache = Path(work) / "activations.npz"
     audio_hash = sha256_file(path, cancelled=cancelled)
+    model_fingerprint = model_identity(model, cancelled)
     cached = None
     if cache.exists():
         try:
             with np.load(cache, allow_pickle=False) as data:
-                if "version" in data and int(data["version"]) == 2 and str(data["audio_sha256"]) == audio_hash:
+                if (int(data["version"]) == WHOLE_AUDIO_ACTIVATION_CACHE_VERSION
+                        and str(data["audio_sha256"]) == audio_hash
+                        and str(data["model_identity"]) == model_fingerprint
+                        and int(data["inference_revision"]) == BASIC_PITCH_INFERENCE_REVISION):
                     cached = (data["frames"], data["onsets"], data["times"])
         except (ValueError, KeyError, OSError, EOFError):
             cached = None
@@ -81,9 +100,13 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
         frames, onsets, times = cached
         progress(85, "复用已分析的音频，重新提取候选")
     else:
-        frames, onsets, times = infer(samples, model, progress, cancelled)
+        frames, onsets, times = infer(
+            samples, model, progress, cancelled, model_fingerprint)
         temporary = cache.with_name("activations.pending.npz")
-        np.savez_compressed(temporary, frames=frames, onsets=onsets, times=times, version=2, audio_sha256=audio_hash)
+        np.savez_compressed(
+            temporary, frames=frames, onsets=onsets, times=times,
+            version=WHOLE_AUDIO_ACTIVATION_CACHE_VERSION, audio_sha256=audio_hash,
+            model_identity=model_fingerprint, inference_revision=BASIC_PITCH_INFERENCE_REVISION)
         temporary.replace(cache)
     if cancelled():
         raise InterruptedError("已取消分析")
@@ -137,6 +160,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     unit_weight_voices = instrument_voices | ({'guitar'} if guitar_detector is not None else set())
     pitch_cached = []
     all_candidates, phrases, summaries, drum_attacks, tempos = [], [], [], [], {}
+    basic_pitch_model_identity = None
     for index, voice in enumerate(voices):
         if cancelled():
             raise InterruptedError("已取消声部分析")
@@ -196,10 +220,19 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
             candidates=[replace(n,voice=voice,id=f'{voice}:{n.id}') for n in pitched]
         else:
             cache = stem_root / f"{voice}-activations.npz"
-            data = load_stem_activations(cache, separation["audio_sha256"], stem_identity)
+            if basic_pitch_model_identity is None:
+                basic_pitch_model_identity = model_identity(model, cancelled)
+            data = load_stem_activations(
+                cache, separation["audio_sha256"], stem_identity,
+                basic_pitch_model_identity, BASIC_PITCH_INFERENCE_REVISION)
             if data is None:
-                data = infer(stem, model, lambda p, s: progress(stage + round(p * .60 / len(voices)), f"{voice} · {s}"), cancelled)
-                save_stem_activations(cache, data, separation['audio_sha256'], stem_identity)
+                data = infer(
+                    stem, model,
+                    lambda p, s: progress(stage + round(p * .60 / len(voices)), f"{voice} · {s}"),
+                    cancelled, basic_pitch_model_identity)
+                save_stem_activations(
+                    cache, data, separation['audio_sha256'], stem_identity,
+                    basic_pitch_model_identity, BASIC_PITCH_INFERENCE_REVISION)
             else:
                 cached = True
             pitch_cached.append(cached)
