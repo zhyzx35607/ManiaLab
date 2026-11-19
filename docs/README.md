@@ -13,6 +13,7 @@
 ## 项目状态
 
 - [全项目验收计划](full-project-acceptance-plan-20261119.md)：工程、音乐、支持 profile、许可和最终停止条件。
+- [全项目验收问题账本](full-project-acceptance-ledger-20261119.md)：当前问题、覆盖缺口、外部依赖、证据和关闭条件。
 - [2026-11-18 工程与音乐验收记录](acceptance-20261118.md)：真实谱包往返、两首外部歌曲及真人试打入口。
 - [真人评审回收与解盲顺序](human-review-integrity.md)：校验并锁定盲听/试打评分后再解盲；不替代真人音乐判断。
 - [osu!mania 官方解码对照](../scripts/verify_official_decoder/README.md)：固定 ppy 版本交叉校验导出谱包的物件、拍号、滚速和音频引用。

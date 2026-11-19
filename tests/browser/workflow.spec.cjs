@@ -58,3 +58,20 @@ test('imported chart retains strict times after changing target keys', async ({ 
   expect(content).toContain(',3009,1,0,');
   expect(content).toMatch(/CircleSize:\s*6/);
 });
+
+test('switching to a chart with missing audio shows a recovery instruction', async ({ page }) => {
+  await page.goto('/');
+  const chart = audio => `osu file format v14\n\n[General]\nAudioFilename: ${audio}\nMode: 3\n\n[Metadata]\nTitle: Audio mapping\nArtist: Fixture\nVersion: Test\n\n[Difficulty]\nCircleSize:7\n\n[TimingPoints]\n0,500,4,2,0,70,1,0\n\n[HitObjects]\n25,192,1003,128,0,2007:0:0:0:0:\n`;
+  await page.locator('#files').setInputFiles([
+    { name: 'a.osu', mimeType: 'text/plain', buffer: Buffer.from(chart('song.wav')) },
+    { name: 'b.osu', mimeType: 'text/plain', buffer: Buffer.from(chart('missing.wav')) },
+    { name: 'song.wav', mimeType: 'audio/wav', buffer: Buffer.from('synthetic audio') },
+  ]);
+  await expect(page.locator('#projectTitle')).toHaveText('Audio mapping');
+  await expect(page.locator('#audioStatus')).toBeHidden();
+  await page.locator('#charts').selectOption('b.osu');
+  await expect(page.locator('#audioStatus')).toBeVisible();
+  await expect(page.locator('#audioStatus')).toContainText('不会自动借用其他难度的音轨');
+  await expect(page.locator('#audioStatus')).toContainText('重新导入此 .osu 文件和对应音频');
+  await expect(page.locator('#audio')).not.toHaveAttribute('src', /.+/);
+});
