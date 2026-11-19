@@ -5,6 +5,7 @@
 
 ## 当前状态（先读）
 
+- 2026-11-19续接：本阶段目标为闭合候选、独立声轨试听和波形的来源一致性。分支`codex/evidence-review-source-identity-20261119`从已合并PR #187的`5b51d049`续接；PR #187/main runs `44507507235`、`44508222088`成功，main Python/API `2743 passed, 89 skipped`、浏览器`39 passed`，Core便携步骤按条件跳过。声轨身份改动与验证记录见文末第八十一阶段；在PR合并前不计入main。其他项目的开发服务保持原状。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
 - 2026-11-19续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。下一项第八十阶段修复手动参考 Offset 与波形对齐在半毫秒时未遵循 ties-to-even 的一致性问题；自动估计仍保留与服务端默认一致的 half-up 规则。当前 PR/主线验证待补。
 - PR #183 已于2026-11-19合并为`3427f179e17068f4b4581c70fa37d96583e5816e`，修复Basic Pitch整曲/声部activation缓存及ONNX session未绑定模型身份/推理修订的问题；PR run `44476736699`与合并后main run `44477712665`均通过，Python/API为2,728 passed、89 skipped，Edge UI为38 passed，Core便携步骤按条件跳过。独立只读复审通过，没有加载真实模型或读取用户音频。
 - 第七十七阶段复现并修复 `/api/import` 创建项目时子目录失败会留下不可见UUID目录的问题；`Projects.create()` 现在清理本次半创建目录后重抛原异常。PR #184 已合并为`d5d1e374e9d315c9d39662da796e14008ee193c7`；PR Windows run `44479294481`及合并后 main run `44480110018`均成功，Python/API为2,729 passed、89 skipped，Edge UI为38 passed，Core便携步骤按触发条件跳过。定向故障注入和相关回归为37 passed。
@@ -2239,4 +2240,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 阶段2 Timing/时钟审查确认自动投影与手动输入使用不同规则是有意边界：自动 Offset 推导保留 JavaScript `Math.round`，与服务端缺省 Offset 的`floor(value + .5)`一致；用户显式提交的小数 Offset 使用 ties-to-even，与`chartOffset()`及服务端显式 Offset 的 Python `round()`一致。
 - 复现到两条显式输入路径遗漏该规则：粘贴参考 BPM/Offset 和波形「对齐到拍线」仍调用`Math.round`。合成输入`-1.5 ms`时旧实现写入`-1 ms`，而检查/生成归一化得到`-2 ms`；现已改用`chartOffset()`。自动候选、自动估计与提前量投影保持原行为。
 - `tests/browser/timing.spec.cjs`新增回归并明确锁定自动与手动两种规则；浏览器 Timing 全组`12 passed`，Python `tests/test_audio_meter.py tests/test_timing_diagnostic_clock.py`为`40 passed`；两处 JS `node --check`、fixture `compileall`和`git diff --check`通过。没有运行模型或真实音频。
-- PR 与合并后 main CI 待补；本地验证只覆盖合成 Timing 工作流，不证明音乐 Timing 已验收。
+- PR #187 已合并为`5b51d049f608772413251da28f0d2e1948e72a97`；PR run `44507507235`及main run `44508222088`成功，main Python/API `2743 passed, 89 skipped`、浏览器`39 passed`，Core便携步骤按触发条件跳过。该结果只覆盖工程契约，不证明音乐 Timing 已验收。
+
+## 2026-11-19 第八十一阶段：候选声轨试听与波形来源一致性
+
+- 核对实际Git、进程与产物后，从上一暂停点的未提交实现续接；没有运行研究脚本或重新执行模型实验。候选保存`source_separation`身份和清单副本；模型生成的试听WAV存入`stems-review/<identity>/`，独立于可被替换的分离缓存。导入声轨继续使用原有不可变集合。播放前核对快照清单与WAV内容哈希，缺失、篡改或历史来源未知时显式报错。
+- 试听、原声轨播放与波形按候选/当前采音上下文绑定来源；切换视图、声部、项目时丢弃旧的异步试听/波形响应。跨标签切换后，携带旧来源身份或旧音频路径的请求被拒绝。混音只切换视图时保留播放位置。局部重写不允许把新声轨来源与旧候选的锁定部分混合。
+- 续接审查补上跨视图点击「试听谱面起止」/「试听原始采音」时自动采用目标上下文的修复与浏览器回归，避免按钮模式与来源身份冲突。Python定向回归初次为72 passed、1 failed，原因是拍号集成夹具缺少新增契约要求的音频/模型身份；已补齐合成身份，保留原有拍号断言。最终本地Python/API全量为`2749 passed, 90 skipped, 1 deselected`（167.64秒，显式排除真实模型单测），Edge完整组`44 passed`（2.3分钟）。
+- 本地验证命令：`$env:MANIALAB_TEST_BROWSER='msedge'; $env:MANIALAB_TEST_PORT='8978'; npm run test:ui`；Python使用`.venv\Scripts\python.exe -m pytest -q -k 'not real_model'`，并限制OMP/MKL/OPENBLAS线程为2。`compileall -q manialab scripts tests launcher.py`、全部静态JS与新增浏览器测试`node --check`、`git diff --check`通过。UI临时产物位于ignored `tests/artifacts/browser/`，`.last-run.json`为passed且无失败项；测试结束后未发现ManiaLab测试进程。PR/main验证待补。
+- 本阶段保证来源可追溯与故障可见，不声明采音准确率、音乐Timing、声部听感或LN可玩性改善。未读取用户音频、参考谱、保留测试曲、权重或逐音研究产物；真人音乐与发布许可门槛继续开放。

@@ -78,4 +78,17 @@ def meter_for_clock(analysis, clock):
 
 def project_with_meter(state):
     """Expose the draft meter without rewriting saved analysis or historical candidates."""
-    return dict(state, detected_meter=detected_meter(state.get("analysis") or {}))
+    result = dict(state, detected_meter=detected_meter(state.get("analysis") or {}))
+    analysis = state.get("analysis")
+    separation = analysis.get("separation") if isinstance(analysis, dict) else None
+    if isinstance(separation, dict):
+        from .stems import separation_identity
+
+        try:
+            exposed_analysis = dict(analysis)
+            exposed_analysis["separation"] = dict(
+                separation, playback_identity=separation_identity(separation))
+            result["analysis"] = exposed_analysis
+        except (KeyError, TypeError, ValueError):
+            pass
+    return result

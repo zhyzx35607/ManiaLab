@@ -26,7 +26,114 @@ async function selectNote(page, id, time) {
 async function reopenProject(page,pid){
   await page.reload();await page.locator('#recent').selectOption(pid);
   await expect.poll(()=>page.evaluate(pid=>state?.id===pid&&!!variant(),pid)).toBe(true);
+  await expect(page.locator('#gridReport')).toContainText('落线检查');
 }
+
+function peakTime(data) {
+  const index=data.high.indexOf(Math.max(...data.high));
+  return (data.first_sample+index*data.step_samples)*1000/data.sample_rate;
+}
+
+test('selected candidate keeps its voice source while raw evidence uses the current analysis', async ({page})=>{
+  await page.goto('/');
+  await expect(page.locator('#recent option')).toContainText(['UI evidence source identity']);
+  await page.locator('#recent').selectOption({label:'UI evidence source identity'});
+  await expect(page.locator('#variants option:checked')).toContainText('候选 1');
+  await page.locator('#voice').selectOption('other');
+  await expect.poll(()=>page.locator('#audio').evaluate(el=>new URL(el.src).searchParams.get('context'))).toBe('chart');
+  await page.locator('#waveDetailPanel').evaluate(el=>{el.open=true;});
+
+  const chartResponse=page.waitForResponse(response=>response.url().includes('/waveform?')&&response.url().includes('context=chart'));
+  await page.locator('#waveHere').click();
+  const chart=await (await chartResponse).json();
+  expect(Math.abs(peakTime(chart)-100)).toBeLessThan(15);
+
+  await page.locator('#evidenceView').click();
+  await expect.poll(()=>page.locator('#audio').evaluate(el=>new URL(el.src).searchParams.get('context'))).toBe('evidence');
+  const evidenceResponse=page.waitForResponse(response=>response.url().includes('/waveform?')&&response.url().includes('context=evidence'));
+  await page.locator('#waveHere').click();
+  const evidence=await (await evidenceResponse).json();
+  expect(Math.abs(peakTime(evidence)-600)).toBeLessThan(15);
+});
+
+test('audition buttons adopt the source of the requested review mode', async ({page})=>{
+  await page.goto('/');
+  await page.locator('#recent').selectOption({label:'UI evidence source identity'});
+  await expect(page.locator('#projectTitle')).toHaveText('UI evidence source identity');
+  await page.locator('#voice').selectOption('other');
+  await page.locator('.audition-panel').evaluate(panel=>{panel.open=true;});
+  for(const mode of ['evidence','chart']){
+    const responsePromise=page.waitForResponse(response=>response.url().endsWith('/audition'));
+    await page.locator(mode==='chart'?'#auditionChart':'#auditionEvidence').click();
+    const response=await responsePromise,payload=response.request().postDataJSON();
+    expect(response.status()).toBe(200);
+    expect(payload.context).toBe(mode);
+    expect(payload.mode).toBe(mode);
+    expect(payload.voice).toBe('other');
+    const identity=await page.evaluate(mode=>mode==='chart'?
+      variant().source_separation.identity:state.analysis.separation.playback_identity,mode);
+    expect(payload.source_identity).toBe(identity);
+    await expect(page.locator(mode==='chart'?'#chartView':'#evidenceView')).toHaveClass('active');
+  }
+});
+
+test('waveform response from an old review context cannot replace the current source', async ({page})=>{
+  await page.goto('/');
+  await page.locator('#recent').selectOption({label:'UI evidence source identity'});
+  await expect(page.locator('#projectTitle')).toHaveText('UI evidence source identity');
+  await page.locator('#voice').selectOption('other');
+  await page.locator('#waveDetailPanel').evaluate(el=>{el.open=true;});
+  let releaseChart;
+  const chartGate=new Promise(resolve=>{releaseChart=resolve;});
+  await page.route('**/waveform?*',async route=>{
+    const context=new URL(route.request().url()).searchParams.get('context');
+    if(context==='chart')await chartGate;
+    await route.continue();
+  });
+  const staleResponse=page.waitForResponse(response=>response.url().includes('/waveform?')&&response.url().includes('context=chart'));
+  await page.locator('#waveHere').click();
+  const evidenceResponse=page.waitForResponse(response=>response.url().includes('/waveform?')&&response.url().includes('context=evidence'));
+  await page.locator('#evidenceView').click();
+  const evidence=await (await evidenceResponse).json();
+  releaseChart();
+  await staleResponse;
+  expect(Math.abs(peakTime(evidence)-600)).toBeLessThan(15);
+  const finalPeak=await page.evaluate(()=>{
+    const data=waveDetail,index=data.high.indexOf(Math.max(...data.high));
+    return (data.first_sample+index*data.step_samples)*1000/data.sample_rate;
+  });
+  expect(Math.abs(finalPeak-600)).toBeLessThan(15);
+});
+
+test('mix playback keeps its source and playhead when only the review view changes', async ({page})=>{
+  await page.goto('/');
+  await page.locator('#recent').selectOption({label:'UI evidence source identity'});
+  await page.locator('#voice').selectOption('mix');
+  const srcBefore=await page.locator('#audio').evaluate(el=>el.getAttribute('src'));
+  await page.locator('#audio').evaluate(el=>{el.currentTime=3;});
+  await page.locator('#evidenceView').click();
+  await expect(page.locator('#audio')).toHaveAttribute('src',srcBefore);
+  await expect.poll(()=>page.locator('#audio').evaluate(el=>el.currentTime)).toBeCloseTo(3,1);
+});
+
+test('switching review context discards an in-flight audition from the previous context', async ({page})=>{
+  await page.goto('/');
+  await page.locator('#recent').selectOption({label:'UI evidence source identity'});
+  await page.locator('.audition-panel').evaluate(panel=>{panel.open=true;});
+  let releaseResponse;
+  const responseGate=new Promise(resolve=>{releaseResponse=resolve;});
+  await page.route('**/audition',async route=>{
+    await responseGate;
+    await route.fulfill({status:200,contentType:'audio/wav',body:'stale audition'});
+  });
+  const request=page.waitForRequest(req=>req.url().endsWith('/audition')&&req.method()==='POST');
+  await page.locator('#auditionChart').click();
+  await request;
+  await page.locator('#evidenceView').click();
+  releaseResponse();
+  await page.waitForResponse(res=>res.url().endsWith('/audition'));
+  await expect.poll(()=>page.locator('#auditionAudio').evaluate(player=>player.getAttribute('src'))).toBeNull();
+});
 
 test('head and tail review locations use candidate time and the corresponding stem', async ({ page }) => {
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -152,6 +259,7 @@ test('regional rewrites never substitute fresh decisions for locked legacy evide
   await expect(page.locator('#recent option')).toContainText(['UI evidence legacy region']);
   await page.locator('#recent').selectOption({label:'UI evidence legacy region'});
   await expect(page.locator('#projectTitle')).toHaveText('UI evidence legacy region');
+  await expect.poll(()=>page.evaluate(()=>variant()?.notes.some(n=>n.id==='evidence0'))).toBe(true);
   await selectNote(page,'evidence0',.8);
   await expect(page.locator('#inspector')).toContainText('原始候选尾（原音频）1710 ms');
   const before=await page.evaluate(()=>variant().notes.find(n=>n.id==='evidence0'));

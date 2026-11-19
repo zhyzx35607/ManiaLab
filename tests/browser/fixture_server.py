@@ -1,5 +1,6 @@
 """Disposable synthetic project for UI checks; never runs a neural model."""
 import argparse
+import hashlib
 from pathlib import Path
 import shutil
 import sys
@@ -12,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from manialab.arrange import parameters
+from manialab.chart_workspace import audio_work
 from manialab.domain import Note
 from manialab.generation import generate_variant
 from manialab import server
@@ -19,6 +21,10 @@ from manialab.planner import validate_plan
 from manialab.server import create_app
 from manialab.timing import grid_diagnostics
 from waitress import serve
+
+
+def sha256(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def timing_fixture(projects, title):
@@ -74,7 +80,9 @@ def audio_meter_fixture(projects):
     pid = timing_fixture(projects, 'UI audio meter')
     state = projects.load(pid)
     beats = [115 + i * 500 for i in range(24)]
-    state['analysis']['separation'] = dict(profile='four', beat_evidence=dict(beats_ms=beats, downbeats_ms=beats[::3]))
+    state['analysis']['separation'] = dict(profile='four', audio_sha256='a'*64,
+        model_sha256='b'*64, input_processing=dict(revision=2), algorithm_revision=1,
+        beat_evidence=dict(beats_ms=beats, downbeats_ms=beats[::3]))
     projects.save(state)
 
 
@@ -100,6 +108,8 @@ def evidence_fixture(projects, title):
     stem_folder.mkdir(parents=True)
     for voice in ('other', 'piano'):
         shutil.copyfile(folder / 'preview.wav', stem_folder / f'{voice}.wav')
+    decoded_files = {voice:dict(wav_sha256=sha256(stem_folder/f'{voice}.wav'))
+                     for voice in ('other', 'piano')}
     notes = [Note(1040+i*500, 1710+i*500, pitch=60+i%8, source='pitch', voice='other',
         id=f'evidence{i}', release_reason='model_predicted_offset') for i in range(14)]
     notes += [Note(9000, 9600, source='pitch', voice='other', id='unobserved', release_reason='input_boundary'),
@@ -109,9 +119,48 @@ def evidence_fixture(projects, title):
         analysis=dict(revision=13, duration=12, candidates=[n.data() for n in notes], phrase_candidates=[],
             timing_attacks=[n.data() for n in notes], waveform=[0]*100,
             voices=[dict(voice=v) for v in ('other', 'piano')],
-            separation=dict(source='provided', voices=['other', 'piano'], set_sha256='a'*64),
+            separation=dict(source='provided', audio_sha256='c'*64, voices=['other', 'piano'],
+                set_sha256='a'*64, decoded_files=decoded_files),
             structure=dict(boundaries=[0,12000], segments=[dict(start_ms=0,end_ms=12000)]),
             tempo=dict(bpm=120, offset=0, division=4, stable=True))))
+    return pid
+
+
+def evidence_source_identity_fixture(projects):
+    pid = evidence_fixture(projects, 'UI evidence source identity')
+    state = projects.load(pid)
+    generate_variant(state, dict(mode='audio', timing_confirmed=True), state['settings'],
+        dict(bpm=120, offset=-22, division=4, audio_shift_ms=22.5), lambda *_:None, lambda:False)
+    state['analysis']['separation'] = dict(
+        source='provided', audio_sha256='c'*64, voices=['other', 'piano'], set_sha256='b'*64)
+    state['analysis']['candidates'] = [
+        note | {'start': note['start'] + 400, 'end': note['end'] + 400}
+        for note in state['analysis']['candidates']
+    ]
+    work = audio_work(projects.path(pid), state)
+    for identity, sample in (('a'*64, 2205), ('b'*64, 13230)):
+        samples = bytearray(22050 * 12 * 2)
+        start = sample * 2
+        samples[start:start+2] = b'\x00\x7f'
+        path = work / 'stems-provided' / identity / 'other.wav'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with wave.open(str(path), 'wb') as output:
+            output.setnchannels(1)
+            output.setsampwidth(2)
+            output.setframerate(22050)
+            output.writeframes(samples)
+        shutil.copyfile(projects.path(pid)/'preview.wav', path.parent/'piano.wav')
+    references = (
+        (state['variants'][state['active']]['source_separation']['separation'],
+            work/'stems-provided'/('a'*64)),
+        (state['analysis']['separation'], work/'stems-provided'/('b'*64)),
+    )
+    for separation, folder in references:
+        separation['decoded_files'] = {
+            voice:dict(wav_sha256=sha256(folder/f'{voice}.wav'))
+            for voice in ('other', 'piano')
+        }
+    projects.save(state)
     return pid
 
 
@@ -219,6 +268,7 @@ def main():
         for title in ('UI evidence review', 'UI evidence edits', 'UI evidence snapshots',
                       'UI draft expression', 'UI draft structure', 'UI draft recommendation'):
             evidence_fixture(projects, title)
+        evidence_source_identity_fixture(projects)
         legacy_region_fixture(projects)
         for action in ('clear', 'success', 'error', 'cancel', 'scope'):
             plan_fixture(projects, f'UI plan {action}')

@@ -61,7 +61,9 @@
 
 第七十五阶段分离算法修订缓存身份问题由PR #182合并并验证。第七十六阶段用合成模型A/B复现Basic Pitch整曲与声部activation缓存跨模型命中、ONNX session单例仍使用旧模型的问题；修复经PR #183及合并后main CI验证，分别`2728 passed, 89 skipped`、Edge `38 passed`，独立只读复审未发现阻断问题。第七十七阶段在阶段1导入审计中发现项目创建半途失败残留孤儿目录，旧实现复现成立；修复由PR #184与合并后main CI验证，Python/API `2729 passed, 89 skipped`、Edge `38 passed`，ENG-09关闭。
 
-第八十阶段的 Timing 审计确认自动推导 Offset 与手动输入 Offset 采用不同舍入策略是服务端契约的一部分：缺省推导使用 half-up，显式输入按 Python ties-to-even。粘贴参考 Offset 和波形对齐此前误用`Math.round`；本地合成浏览器回归将其复现并修复到`chartOffset()`。自动候选与提前量投影保持不变；Timing 浏览器组12 passed，相关 Python 时钟测试40 passed。PR/main CI待补；不构成音乐 Timing 质量证据。
+第八十阶段的 Timing 审计确认自动推导 Offset 与手动输入 Offset 采用不同舍入策略是服务端契约的一部分：缺省推导使用 half-up，显式输入按 Python ties-to-even。粘贴参考 Offset 和波形对齐此前误用`Math.round`；现使用`chartOffset()`。PR #187及main run `44508222088`通过，main Python/API `2743 passed, 89 skipped`、浏览器`39 passed`；不构成音乐Timing质量证据。
+
+第八十一阶段继续核对候选证据与真实试听来源：候选保存声轨集合身份，模型试听WAV按身份归档，声轨/波形/试听请求按候选或当前采音上下文核对身份与内容哈希；旧来源未知时给出重新生成提示，局部重写不混用来源。跨视图按钮、异步旧响应与跨标签旧来源请求都有合成回归，结果与PR/main状态见问题账本ENG-12及`PROGRESS.md`文末。阶段2其余跨模块路径仍待收口。
 
 **验证：**现有 Python 领域/API 测试、Edge 合成端到端工作流、冻结输入的既有结果和官方解码器。冻结对照只复用已保存输入身份及适用结论，不重新运行模型；凡没有证据的历史结果标为“需复验”，不伪称通过。
 
