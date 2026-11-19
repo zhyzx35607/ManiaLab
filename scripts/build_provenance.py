@@ -12,7 +12,8 @@ def sha256(path):
 
 def worker_sources(root):
     return {name: sha256(Path(root)/name) for name in
-            ('scripts/separate_audio.py', 'scripts/worker_lifetime.py')}
+            ('scripts/separate_audio.py', 'scripts/separate_six.py',
+             'scripts/worker_lifetime.py')}
 
 
 def validate_piano_model_metadata(root):

@@ -57,7 +57,7 @@ def beat_evidence(source, model_path, seconds=0):
         purpose="beat-unit selection and fixed-clock bar accents; onset audio establishes the offset")
 
 
-def separate(source, output, model_path, seconds=0, threads=2, beat_model=None):
+def separate(source, output, model_path, seconds=0, threads=2, beat_model=None, algorithm_revision=1):
     started = time.perf_counter()
     torch.set_num_threads(threads)
     torch.set_num_interop_threads(1)
@@ -125,7 +125,8 @@ def separate(source, output, model_path, seconds=0, threads=2, beat_model=None):
         path = output / f"{name}.npy"
         np.save(path, resample_poly(stem, 1, 2).astype(np.float32))
         files[name] = path.name
-    report = dict(revision=1, sample_rate=22050, frames=(length + 1) // 2,
+    report = dict(revision=1, algorithm_revision=algorithm_revision,
+        sample_rate=22050, frames=(length + 1) // 2,
         model_url=MODEL_URL, model_sha256=model_hash, sources=files,
         elapsed_seconds=round(time.perf_counter() - started, 2),
         reconstruction_rmse=float(np.sqrt(np.mean((result.sum(axis=0) - samples.mean(axis=1)) ** 2))))
@@ -149,6 +150,7 @@ if __name__ == "__main__":
     parser.add_argument("--beat-model", type=Path)
     parser.add_argument("--beats-only", action="store_true")
     parser.add_argument('--profile',choices=('four','six'),default='four')
+    parser.add_argument('--algorithm-revision', type=int, default=1)
     args = parser.parse_args()
     if args.beats_only:
         torch.set_num_threads(args.threads)
@@ -160,6 +162,8 @@ if __name__ == "__main__":
         progress(100, "Beat structure complete")
     elif args.profile=='six':
         from separate_six import separate_six
-        separate_six(args.input,args.output,args.model,args.seconds,args.threads,args.beat_model,progress,beat_evidence)
+        separate_six(args.input,args.output,args.model,args.seconds,args.threads,args.beat_model,
+            progress,beat_evidence,algorithm_revision=args.algorithm_revision)
     else:
-        separate(args.input, args.output, args.model, args.seconds, args.threads, args.beat_model)
+        separate(args.input, args.output, args.model, args.seconds, args.threads, args.beat_model,
+            algorithm_revision=args.algorithm_revision)

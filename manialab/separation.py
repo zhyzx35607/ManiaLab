@@ -61,6 +61,7 @@ class Separator:
                 if (cached.get("audio_sha256") == digest
                         and cached.get("model_sha256") == self.spec['sha256']
                         and cached.get('input_processing') == INPUT_PROCESSING
+                        and cached.get('algorithm_revision') == self.spec['algorithm_revision']
                         and all((output / f"{s}.npy").is_file() for s in self.spec['voices'])):
                     stems_cached = True
                     if not self.beat_model.is_file() or cached.get("beat_evidence", {}).get("model_sha256") == BEAT_MODEL_SHA256:
@@ -86,7 +87,8 @@ class Separator:
             wave.unlink(missing_ok=True)
             raise ValueError("声部分离无法解码音频")
         command = [str(self.python), str(self.resources/'scripts/separate_audio.py')] if self.python else [str(self.executable)]
-        command += [str(wave), str(output), "--model", str(self.model), "--threads", "2"]
+        command += [str(wave), str(output), "--model", str(self.model), "--threads", "2",
+                    "--algorithm-revision", str(self.spec['algorithm_revision'])]
         if self.profile != 'four':
             command += ['--profile', self.profile]
         if self.beat_model.is_file():
@@ -134,6 +136,8 @@ class Separator:
         if process.returncode or not manifest.is_file():
             raise ValueError(f"声部分离失败，诊断日志：{log}")
         report = json.loads(manifest.read_text(encoding="utf-8"))
+        if report.get("algorithm_revision") != self.spec['algorithm_revision']:
+            raise ValueError("声部分离算法版本与应用不匹配，请更新分离 worker")
         if self.beat_model.is_file() and report.get("beat_evidence", {}).get("model_sha256") != BEAT_MODEL_SHA256:
             raise ValueError("节拍模型没有完成分析，请重新分析或检查本地日志")
         report["audio_sha256"] = digest
