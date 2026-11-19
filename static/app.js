@@ -88,6 +88,9 @@ function loadState(s){
   projectLoadRequest++;const changed=state?.id!==s.id||state?.original!==s.original;auditionRequest++;cueClock.reset();$('auditionAudio').pause();if(auditionUrl){URL.revokeObjectURL(auditionUrl);auditionUrl=null;}$('auditionAudio').removeAttribute('src');state=s;setSettings(s.settings);$('projectTitle').textContent=s.title;$('projectSub').textContent=s.mode==='remap'?`已导入 ${s.input_keys}K 原谱 · ${s.input_notes.length} 个物件`:'本地音频项目 · 先检查采音，再调整编排';
   $('mode').value=s.mode;options($('charts'),s.charts.map(c=>[c.path,c.label]));$('charts').classList.toggle('hidden',!s.charts.length);$('charts').value=s.original||'';
   if(s.audio){const src=`/api/projects/${s.id}/audio?revision=${s.analysis?.revision||0}&elapsed=${s.analysis?.elapsed_seconds||0}`;if(changed||!audio.src||!audio.src.endsWith(src)){audio.src=src;manualTime=0;}}else{audio.removeAttribute('src');audio.load();}
+  const chartAudioMissing=s.mode==='remap'&&!!s.original&&!s.audio,audioStatus=$('audioStatus');
+  audioStatus.textContent=chartAudioMissing?'此难度引用的音频未导入。请重新导入此 .osu 文件和对应音频；不会自动借用其他难度的音轨。':'';
+  audioStatus.classList.toggle('hidden',!chartAudioMissing);
   const v=variant();if(v)$('mode').value=v.mode;if(s.analysis)$('analysisEngine').value=s.analysis.separation?(s.analysis.separation.source==='provided'?'provided':s.analysis.separation.profile==='six'?'deep6':'deep'):'basic';options($('voice'),[['mix','全部声部'],...(s.analysis?.voices||[]).map(v=>[v.voice,({drums:'鼓 / 打击',bass:'贝斯',vocals:'人声',other:'其余伴奏',guitar:'吉他',piano:'钢琴'})[v.voice]||v.voice])]);$('voice').value='mix';$('voice').disabled=!s.analysis?.separation;
   lastClockShift=v?.audio_shift_ms??s.audio_shift_ms??(s.analysis?0:22.5);$('audioShift').value=lastClockShift;
   const tempo=v||s.analysis?.tempo;$('bpm').value=tempo?.bpm??120;$('offset').value=Math.round((tempo?.offset??0)-(v||!s.analysis?0:clockShift()));
