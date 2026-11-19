@@ -109,3 +109,30 @@ def test_regional_generation_rejects_reused_id_that_moved_across_locked_boundary
         generate_variant(state,dict(mode='audio',timing_confirmed=True,region=[3000,5000]),
             prefs,tempo,lambda *_:None,lambda:False)
     assert state['variants'] == previous and state['active'] == 0
+
+
+def test_regional_generation_rejects_changed_separation_source():
+    from copy import deepcopy
+    from manialab.stems import separation_identity
+
+    raw = Note(1000, 1800, id='piano:source', source='pitch', voice='piano')
+    source_a = dict(source='provided', audio_sha256='audio', set_sha256='a'*64,
+        voices=['piano'])
+    source_b = source_a | {'set_sha256':'b'*64}
+    state = dict(analysis=dict(revision=13, duration=5, candidates=[raw.data()],
+        phrase_candidates=[], timing_attacks=[], separation=source_a), variants=[], active=-1)
+    prefs = parameters(dict(ln_ratio=1))
+    tempo = dict(bpm=120, offset=0, division=4, audio_shift_ms=0)
+    generate_variant(state, dict(mode='audio', timing_confirmed=True), prefs, tempo,
+        lambda *_:None, lambda:False)
+    previous = deepcopy(state['variants'])
+    state['analysis']['separation'] = source_b
+
+    with pytest.raises(ValueError, match='不能混用不同或未知的声轨来源'):
+        generate_variant(state, dict(mode='audio', timing_confirmed=True, region=[3000, 5000]),
+            prefs, tempo, lambda *_:None, lambda:False)
+
+    reference = state['variants'][0]['source_separation']
+    assert reference['identity'] == separation_identity(source_a)
+    assert reference['separation'] == source_a
+    assert state['variants'] == previous and state['active'] == 0

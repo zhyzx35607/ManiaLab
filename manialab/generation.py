@@ -20,10 +20,32 @@ from .evidence import capture_source_evidence
 from .selection_report import regional_selection_report
 from .regional import validate_phrase_scope
 from .recommendation_plan import adjusted_segments, plan_evidence, validate_plan
+from .stems import separation_identity
 
 
 def generate_variant(state, payload, prefs, tempo, progress, cancelled):
     mode = payload.get("mode", "audio")
+    region = payload.get("region")
+    if region is not None and mode == 'audio' and state.get('active', -1) >= 0:
+        previous = state['variants'][state['active']]
+        previous_source = previous.get('source_separation')
+        current_separation = (state.get('analysis') or {}).get('separation')
+        previous_identity = None
+        if isinstance(previous_source, dict) and isinstance(previous_source.get('separation'), dict):
+            try:
+                previous_identity = separation_identity(previous_source['separation'])
+            except KeyError:
+                pass
+            if previous_identity != previous_source.get('identity'):
+                previous_identity = None
+        try:
+            current_identity = separation_identity(current_separation) if current_separation else None
+        except KeyError as exc:
+            raise ValueError('当前分析的声轨来源身份无效，请重新分析') from exc
+        if (previous_source is not None or current_separation is not None) and (
+                previous_identity is None or current_identity is None or
+                previous_identity != current_identity):
+            raise ValueError('局部重写不能混用不同或未知的声轨来源；请先重新生成整谱')
     started = time.perf_counter()
     segment_preferences=adjusted_segments(state.get('plan',{}),prefs)
     progress(15, "选择音乐物件 / 保留原始物件")
@@ -78,7 +100,6 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
     previous_evidence = None
     previous_meter = None
     locked_edits = []
-    region = payload.get("region")
     if region is not None:
         if state["active"] < 0:
             raise ValueError("请先生成完整谱面")
@@ -135,6 +156,12 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
             tempo["meter"] if "meter" in tempo else meter_for_clock(state["analysis"], tempo))
         variant['source_evidence'] = capture_source_evidence(state['analysis'], evidence, output,
             locked=locked, previous=previous_evidence)
+        separation = state['analysis'].get('separation')
+        if separation:
+            variant['source_separation'] = {
+                'identity': separation_identity(separation),
+                'separation': deepcopy(separation),
+            }
     if locked_edits:
         variant['edits'] = locked_edits
     state["variants"] = (state["variants"] + [variant])[-8:]

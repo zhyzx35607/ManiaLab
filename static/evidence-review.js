@@ -84,10 +84,10 @@ function inspectNote(note){
 async function locateReviewNote(note,endpoint){
   const candidate=variant(),shift=candidate?.mode==='audio'?(candidate.audio_shift_ms||0):0;
   const audioTime=note[endpoint]+shift;
-  audio.pause();seek(Math.max(0,audioTime/1000-.3));
+  setView('chart');
   const voice=$('voice'),wanted=!voice.disabled&&[...voice.options].some(option=>option.value===note.voice)?note.voice:'mix';
   if(voice.value!==wanted){voice.value=wanted;voice.dispatchEvent(new Event('change'));}
-  setView('chart');inspectNote(note);
+  audio.pause();seek(Math.max(0,audioTime/1000-.3));inspectNote(note);
   if(window.loadWaveDetail)await loadWaveDetail(waveChartTime(note[endpoint],shift,waveShift()));
 }
 

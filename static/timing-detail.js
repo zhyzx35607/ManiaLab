@@ -10,11 +10,13 @@ const waveNoteTime=time=>view==='evidence'?waveAudioTime(time,waveShift()):waveC
 function resetWaveDetail(){waveDetailRequest++;waveDetail=null;$('waveDetailInfo').textContent='查看当前播放位置，或选中音符后检查起止。';drawWaveDetail();}
 async function loadWaveDetail(timeMs=Math.max(0,currentTime()*1000-waveShift())){
   if(!state?.analysis)throw Error('请先分析音频，再查看波形细节');
-  const requestNumber=++waveDetailRequest,pid=state.id,voice=$('voice').value;
+  const requestNumber=++waveDetailRequest,pid=state.id,voice=$('voice').value,context=view;
+  const sourceIdentity=voice==='mix'?'':playbackSourceIdentity();
   const span=Number($('waveSpan').value),shift=waveShift(),start=Math.max(0,timeMs+shift-span*.25);
   $('waveDetailPanel').open=true;$('waveDetailInfo').textContent='正在读取原始采样波形…';
-  const data=await api(`/api/projects/${pid}/waveform?start_ms=${start}&duration_ms=${span}&voice=${voice}`);
-  if(state?.id!==pid||requestNumber!==waveDetailRequest)return;
+  const data=await api(`/api/projects/${pid}/waveform?start_ms=${start}&duration_ms=${span}&voice=${voice}&context=${context}&audio=${encodeURIComponent(state.audio||'')}&source_identity=${encodeURIComponent(sourceIdentity)}`);
+  if(state?.id!==pid||requestNumber!==waveDetailRequest||view!==context||
+      $('voice').value!==voice||(voice!=='mix'&&playbackSourceIdentity()!==sourceIdentity))return;
   waveDetail={...data,voice,shift,start_ms:data.start_ms-shift,end_ms:data.end_ms-shift};$('waveCursor').value=Number(timeMs.toFixed(3));drawWaveDetail();
 }
 function drawWaveDetail(){
@@ -38,7 +40,10 @@ function drawWaveDetail(){
     c.moveTo(at,mid-d.low[i]*scale);c.lineTo(at,mid-d.high[i]*scale);
   }c.stroke();
   const relevant=n=>d.voice==='mix'||n.voice===d.voice;
-  for(const n of (state.analysis?.candidates||[]).filter(relevant))line(waveAudioTime(n.start),'#ffb978',h-54,h-34);
+  const sourceEvents=view==='evidence'?(state.analysis?.candidates||[]):
+    Object.entries(variant()?.source_evidence||{}).map(([id,evidence])=>
+      evidence.detected?{id,...evidence.detected}:null).filter(Boolean);
+  for(const n of sourceEvents.filter(relevant))line(waveAudioTime(n.start),'#ffb978',h-54,h-34);
   for(const n of (variant()?.notes||state.input_notes||[]).filter(relevant)){
     line(waveChartTime(n.start,waveCandidateShift()),'#eef4ff',h-32,h-14);if(n.end>n.start)line(waveChartTime(n.end,waveCandidateShift()),'#78e4c4',27,h-14,true);
   }

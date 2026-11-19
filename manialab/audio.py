@@ -138,7 +138,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
                  guitar_detector=None, allow_guitar_predicted_releases=False):
     """Separate sources, then run pitch/attack analysis on each isolated voice."""
     from .voices import vocal_phrases
-    from .stems import separation_voices,separation_label,separation_identity
+    from .stems import archive_review_stems,separation_voices,separation_label,separation_identity
     if type(allow_predicted_releases) is not bool or (allow_predicted_releases and instrument_detector is None):
         raise ValueError('模型音尾选项需要显式选择专用采音')
     if type(allow_guitar_predicted_releases) is not bool or (allow_guitar_predicted_releases and guitar_detector is None):
@@ -275,6 +275,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
         summary['rejected_cross_source_bleed'] = sum(r['note']['voice']==summary['voice'] for r in bleed_rejections)
         summary['cross_source_bleed_checked'] = summary['voice'] not in unit_weight_voices
         summary['candidates'] = sum(n.voice==summary['voice'] for n in all_candidates)
+    separation = archive_review_stems(work, stem_root, separation, voices)
     drum_tempo = tempos.get("drums",mix_tempo)
     drum_quality, mix_quality = timing_evidence_quality(drum_tempo), timing_evidence_quality(mix_tempo)
     use_drums = len(drum_attacks) >= 24 and drum_quality.get("coverage", 0) >= .7 and drum_quality.get("score", 0) >= mix_quality.get("score", 0) * .9

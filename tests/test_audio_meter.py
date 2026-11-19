@@ -20,7 +20,9 @@ def analysis(meter=3, bars=6):
     beats = [115 + i * 400 for i in range(meter * bars + 1)]
     return dict(revision=3, duration=(beats[-1] + 50) / 1000,
                 tempo=dict(bpm=150, offset=115, division=4, stable=True),
-                separation=dict(beat_evidence=dict(beats_ms=beats, downbeats_ms=beats[::meter])))
+                separation=dict(profile='four', audio_sha256='a'*64, model_sha256='b'*64,
+                    input_processing=dict(revision=2), algorithm_revision=1,
+                    beat_evidence=dict(beats_ms=beats, downbeats_ms=beats[::meter])))
 
 
 @pytest.mark.parametrize("meter", [2, 3, 4, 5, 7])

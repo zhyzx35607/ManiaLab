@@ -5,14 +5,51 @@ from flask import jsonify, request, send_file
 from .audition import grid_events, imported_grid_events, render_audition, waveform_window
 from .chart_workspace import audio_work
 from .domain import parse_osu
-from .stems import stem_path
+from .stems import candidate_stem_path, separation_identity
 from .storage import safe_path
+
+
+def _current_source_reference(state):
+    separation = (state.get('analysis') or {}).get('separation')
+    if not separation:
+        raise ValueError('当前采音结果没有可试听的独立声部')
+    try:
+        identity = separation_identity(separation)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError('当前采音没有有效的声轨来源身份，请重新分析') from exc
+    return dict(identity=identity, separation=separation)
+
+
+def _playback_source_reference(state, context):
+    if context not in ('chart', 'evidence'):
+        raise ValueError('声部试听上下文无效')
+    if context == 'chart' and state.get('active', -1) >= 0:
+        variant = state['variants'][state['active']]
+        if variant.get('mode') == 'audio':
+            reference = variant.get('source_separation')
+            if reference is None:
+                raise ValueError('此旧候选未保存声轨来源，不能准确回看声部；请重新分析并生成候选')
+            return reference
+    return _current_source_reference(state)
+
+
+def _context_stem_path(work, state, voice, context, expected_identity):
+    reference = _playback_source_reference(state, context)
+    if expected_identity != reference.get('identity'):
+        raise ValueError('试听来源已切换，请刷新项目后重试')
+    return candidate_stem_path(work, reference, voice)
+
+
+def _validate_audio_reference(state, expected_audio):
+    if expected_audio is not None and expected_audio != (state.get('audio') or ''):
+        raise ValueError('试听音频已切换，请刷新项目后重试')
 
 
 def register_playback_routes(app, *, projects, current_audio, requested_tempo):
     @app.get("/api/projects/<pid>/audio")
     def audio(pid):
         state = projects.load(pid)
+        _validate_audio_reference(state, request.args.get('audio'))
         source = current_audio(state)
         preview = audio_work(projects.path(pid), state) / "preview.wav"
         return send_file(preview if preview.is_file() else source, conditional=True)
@@ -20,7 +57,11 @@ def register_playback_routes(app, *, projects, current_audio, requested_tempo):
     @app.get("/api/projects/<pid>/stem/<voice>")
     def stem_audio(pid, voice):
         state = projects.load(pid)
-        return send_file(stem_path(audio_work(projects.path(pid), state), state.get("analysis"), voice), conditional=True)
+        context = request.args.get('context', 'evidence')
+        path = _context_stem_path(
+            audio_work(projects.path(pid), state), state, voice, context,
+            request.args.get('source_identity'))
+        return send_file(path, conditional=True)
 
     @app.post("/api/projects/<pid>/audition")
     def audition(pid):
@@ -28,12 +69,16 @@ def register_playback_routes(app, *, projects, current_audio, requested_tempo):
         payload = request.json
         voice = payload.get("voice", "mix")
         work = audio_work(projects.path(pid), state)
-        preview = work / "preview.wav" if voice == "mix" else stem_path(work, state.get("analysis"), voice)
+        _validate_audio_reference(state, payload.get('audio'))
+        mode = payload.get("mode", "beats")
+        context = ('chart' if mode == 'chart' else 'evidence' if mode == 'evidence'
+                   else payload.get('context', 'evidence'))
+        preview = work / "preview.wav" if voice == "mix" else _context_stem_path(
+            work, state, voice, context, payload.get('source_identity'))
         start = float(payload.get("start_ms", 0))
         length = float(payload.get("duration_ms", 12000))
         if not math.isfinite(start) or not math.isfinite(length) or start < 0 or not 1000 <= length <= 30000:
             raise ValueError("试听范围必须为 1–30 秒，起点不能为负")
-        mode = payload.get("mode", "beats")
         remap_mix = False
         meter = None
         if mode == "beats":
@@ -102,8 +147,11 @@ def register_playback_routes(app, *, projects, current_audio, requested_tempo):
     def waveform(pid):
         state = projects.load(pid)
         voice = request.args.get("voice", "mix")
+        context = request.args.get('context', 'evidence')
+        _validate_audio_reference(state, request.args.get('audio'))
         work = audio_work(projects.path(pid), state)
-        preview = work / "preview.wav" if voice == "mix" else stem_path(work, state.get("analysis"), voice)
+        preview = work / "preview.wav" if voice == "mix" else _context_stem_path(
+            work, state, voice, context, request.args.get('source_identity'))
         if not preview.is_file():
             raise ValueError("请先分析音频，再查看波形细节")
         return jsonify(
