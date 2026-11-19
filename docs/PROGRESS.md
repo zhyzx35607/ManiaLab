@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 2026-11-19最新续接核验：第六十七阶段 PR #172 已合并为`a1cb5375bd54f7998aa0ae395f0aa0064dabfee1`；PR Windows run `44443163914`与合并后 main run `44443998819`均成功。合并后 Windows Core EXE、离线运行、Unicode 数据路径与关停验证通过，Python/API为2,705 passed、89 skipped，Edge UI为36 passed。当前第六十八阶段 OSZ 磁盘临时文件导出已完成本地完整验证，PR/Windows CI待执行。公开 Pre-release 仍为dev.18；真人钢琴盲听、6K–10K/LN玩家试打及两首独立歌曲听审仍未取得人工结果，音乐质量目标未结项。
+- 2026-11-19最新续接核验：第六十八阶段 PR #173 已合并为`aac6bfee354b1fad3cf4cbf5e308ecbd7915d18c`；PR Windows run `44446658555`与合并后 main run `44447294349`均成功。合并后Windows Core EXE、离线运行、Unicode数据路径与关停验证通过，Python/API为2,707 passed、89 skipped，Edge UI为36 passed。当前第六十九阶段项目状态保存失败清理已完成本地验证，PR/Windows CI待执行。公开Pre-release仍为dev.18；真人钢琴盲听、6K–10K/LN玩家试打及两首独立歌曲听审仍未取得人工结果，音乐质量目标未结项。
 - 最新状态（2026-11-19）：PR #164 任务取消与进程关停已合并为`6d779209561b6b767b5f6886d75e9713bf371227`；PR Windows run `44403326416`及合并后 main run `44405337764`成功，Python/API均为2,682 passed、89 skipped，Edge UI均为36 passed；便携构建按触发条件跳过。PR #165 补录验证结果并合并为`265414e7f59d5875079b86e040ae4cfd6a457a8b`，PR run `44406379629`通过；合并后 main run `44407019369`被后续 main 工作流取消，不记作成功。PR #166 结构分析分块 STFT 已合并为`e684551abd5071d75f33febefe76e0bd7b182135`；PR runs `44410686981`和进度同步后 `44411505246`均通过，合并后 main run `44412123852`成功，Python/API为2,683 passed、89 skipped，Edge UI为36 passed，便携构建按触发条件跳过。PR #167 音频身份哈希流式化已合并为`76c3dc00b6466682f4bd3bbbacd5e50535b3a370`；PR runs `44415178836`和进度同步后`44416022976`均通过；合并后 main run `44417472152`成功，Python/API为2,686 passed、89 skipped，Edge UI为36 passed。第六十四阶段本地全量回归为2,686 passed、90 skipped，Edge UI为36 passed，compileall、JS语法和差异检查通过；PR #168 的首轮 `44418933013`、文档复验 `44420164907`和 EOCD 字节测试复验 `44420946296`均通过，最后一轮 Python/API为2,687 passed、89 skipped，Edge UI为36 passed。当前公开 Pre-release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
 - PR #168 已合并为`87f168cca73d2937a879aa38178655769606b02f`；合并后 main run `44422409442`通过，Python/API为2,687 passed、89 skipped，Edge UI为36 passed。PR #169 迁移`actions/setup-node`至 Node 24 action runtime 的 Windows runs `44424536788`和进度同步后`44426309442`均通过，Python/API为2,687 passed、89 skipped，Edge UI为36 passed；Node 20 弃用告警已消失。PR #169 已合并为`4c9fdae8fb9a1f9eb36b0c0df1e34419042028f`，合并后 main run `44427013041`成功，测试计数相同。PR #170 的 Windows runs `44430965427`、`44431613071`和最终文档复验`44432358696`均通过，Python/API为2,691 passed、89 skipped，Edge UI为36 passed。PR #170 已合并为`3cf043aa7c027a905aaa1aa88ca551e84c9557d5`；合并后 main run `44432819183`成功，Python/API为2,691 passed、89 skipped，Edge UI为36 passed；Core EXE步骤按触发条件跳过。
 
@@ -2131,4 +2131,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - `/api/projects/<pid>/export/osz`不再把完整压缩包累积在`BytesIO`；改用磁盘`TemporaryFile`承接归档，交由Flask响应关闭回调释放。压缩构建或响应创建失败时立即关闭临时文件。归档成员、路径、内容与压缩格式保持不变。
 - 新增合成项目测试验证临时文件仍开放至响应消费/关闭，下载归档CRC、谱面和音频内容正确；注入归档构建异常时确认临时文件立即关闭。未访问用户音频或谱包。
 - 定向`.venv\Scripts\python.exe -m pytest -q tests/test_export_resources.py tests/test_server.py tests/test_project_routes.py tests/test_import_reliability.py tests/test_audio_meter.py tests/test_edited_candidate_bookmarks.py`为86 passed；异常注入强化后`tests/test_export_resources.py`为2 passed。最终全量设置OpenMP / OpenBLAS / MKL线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,706 passed、90 skipped（70.95秒）。`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9024 npm run test:ui`为36 passed（1.6分钟）；`compileall`、全部`static/*.js`的`node --check`及`git diff --check`通过。
-- 本阶段只降低大型OSZ导出的内存驻留量，不改变谱面音乐结果；未运行模型、研究或音乐质量实验，未读取ignored音频、谱包、评审评分、解盲表、权重或研究产物。PR检查与合并后main验证待记录；音乐质量验收仍需真人盲听、玩家试打及独立歌曲复听。
+- PR #173 Windows run `44446658555`通过，Python/API为2,707 passed、89 skipped，Edge UI为36 passed；Core便携EXE构建、离线运行、Unicode数据路径和进程关停均通过。PR合并提交为`aac6bfee354b1fad3cf4cbf5e308ecbd7915d18c`；合并后main run `44447294349`成功，测试计数相同。
+- 本阶段只降低大型OSZ导出的内存驻留量，不改变谱面音乐结果；未运行模型、研究或音乐质量实验，未读取ignored音频、谱包、评审评分、解盲表、权重或研究产物。音乐质量验收仍需真人盲听、玩家试打及独立歌曲复听。
+
+## 2026-11-19 第六十九阶段：项目状态保存临时文件清理
+
+- `Projects.save()`在JSON写入或原子替换成功/失败后统一清理同目录`state.tmp`；正常保存仍使用`os.replace`发布完整`state.json`，失败时不覆盖之前有效的状态文件。
+- 两条合成故障注入先在旧实现上复现：部分写入抛错与`os.replace`抛错都会遗留`state.tmp`；修复后均确认旧状态字节不变且临时文件不存在。
+- 定向`.venv\Scripts\python.exe -m pytest -q tests/test_storage.py tests/test_task_service.py tests/test_server.py -k "not test_real_http_planner_mock"`为36 passed、1 deselected。全量设置OpenMP / OpenBLAS / MKL线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,708 passed、90 skipped（89.42秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9025 npm run test:ui`为36 passed（1.5分钟）。`compileall`与`git diff --check`通过。
+- 本阶段只清理状态写入失败后的临时文件，不更改状态格式或音乐处理；未运行模型、研究或音乐质量实验，也未读取ignored音频、谱包、评审评分、解盲表、权重或研究产物。PR Windows检查与合并后main结果待记录；真人音乐验收仍未完成。
