@@ -6,7 +6,7 @@ class ManiaAudioClock {
   constructor(media, events) {
     this.media=media;this.events=events;this.context=null;this.nodes=new Set();this.scheduled=new Set();
     this.timer=null;
-    for(const name of ['pause','seeking','ratechange','ended'])media.addEventListener(name,()=>this.reset());
+    for(const name of ['pause','seeking','ratechange','ended','waiting'])media.addEventListener(name,()=>this.reset());
     media.addEventListener('play',()=>{if(this.context)this.enable();});
     media.addEventListener('seeked',()=>{this.reset();this.schedule();});
   }
@@ -25,7 +25,7 @@ class ManiaAudioClock {
   }
   schedule() {
     const ctx=this.context,media=this.media;
-    if(!ctx||ctx.state!=='running'||media.paused||media.seeking||media.ended)return;
+    if(!ctx||ctx.state!=='running'||media.paused||media.seeking||media.ended||media.readyState<media.HAVE_FUTURE_DATA)return;
     const now=media.currentTime,rate=media.playbackRate;
     for(const e of this.events(now,now+.14*rate)){
       if(e.time<now||e.time>now+.14*rate)continue;

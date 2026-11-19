@@ -9,7 +9,7 @@ let lastClockShift=22.5;
 let clockAnchor=22.5;
 const clockShift=()=>Number($('audioShift').value);
 const timingLocations=document.createElement('div');timingLocations.id='timingLocations';$('timingReport').after(timingLocations);
-let state = null, keys = 10, view = 'chart', busy = false, jobId = null, displayed = [], hitboxes = [], selected = null, manualTime = 0, audioContext = null, lastAudioTime = 0, projectLoadRequest = 0, auditionUrl = null, auditionRequest = 0;
+let state = null, keys = 10, view = 'chart', busy = false, jobId = null, displayed = [], hitboxes = [], selected = null, manualTime = 0, audioContext = null, lastAudioTime = 0, projectLoadRequest = 0, auditionUrl = null, auditionRequest = 0, playbackSourceRequest = 0, playbackMetadataHandler = null;
 const audio = $('audio');
 const msg = (text, error=false) => { $('message').textContent=text; $('message').classList.toggle('error',error); };
 async function api(path, data, form=false) {
@@ -25,7 +25,7 @@ function options(el,items){el.replaceChildren(...items.map(([value,text])=>{cons
 function showTempoChoices(){options($('tempoCandidates'),[['','选择其他节拍解释…'],...tempoChoices.map((c,i)=>[i,`${c.precision_suggestion?'精确候选 · ':''}${c.bpm} BPM · 偏移 ${c.offset} ms · 匹配 ${(c.coverage*100).toFixed(0)}%${c.precision_suggestion?` · 取整漂移约 ${c.rounding_drift_ms}ms`:''}`])]);}
 function variant(){return state&&state.active>=0?state.variants[state.active]:null;}
 function duration(){return Math.max(state?.analysis?.duration||0,Number.isFinite(audio.duration)?audio.duration:0,displayed.reduce((m,n)=>Math.max(m,n.end/1000),0),(state?.input_notes||[]).reduce((m,n)=>Math.max(m,n.end/1000),0));}
-function currentTime(){return audio.src&&Number.isFinite(audio.currentTime)?audio.currentTime:manualTime;}
+function currentTime(){return audio.src&&audio.readyState>=audio.HAVE_METADATA&&Number.isFinite(audio.currentTime)?audio.currentTime:manualTime;}
 function cancelAuditionPlayback(){
   auditionRequest++;$('auditionAudio').pause();$('auditionAudio').removeAttribute('src');
   if(auditionUrl){URL.revokeObjectURL(auditionUrl);auditionUrl=null;}
@@ -74,14 +74,26 @@ function updateAudioStatus(){
   $('audioStatus').classList.toggle('hidden',!warnings.length);
 }
 function setPlaybackSource(resetTime=false){
-  if(!state?.audio){audio.removeAttribute('src');audio.load();return;}
-  const src=playbackSourceUrl();
-  if(audio.getAttribute('src')===src)return;
+  const src=state?.audio?playbackSourceUrl():null;
+  if(src&&audio.getAttribute('src')===src)return;
   const wasPlaying=!audio.paused;
   manualTime=resetTime?0:currentTime();
+  const request=++playbackSourceRequest;
+  if(playbackMetadataHandler)audio.removeEventListener('loadedmetadata',playbackMetadataHandler);
+  playbackMetadataHandler=null;
   audio.pause();
-  audio.addEventListener('loadedmetadata',()=>{audio.currentTime=Math.min(manualTime,audio.duration||manualTime);draw();if(wasPlaying)audio.play().catch(()=>{});},{once:true});
+  if(!src){audio.removeAttribute('src');audio.load();return;}
+  playbackMetadataHandler=()=>{
+    if(request!==playbackSourceRequest||audio.getAttribute('src')!==src)return;
+    playbackMetadataHandler=null;
+    audio.currentTime=Math.min(manualTime,audio.duration||manualTime);draw();
+  };
+  audio.addEventListener('loadedmetadata',playbackMetadataHandler,{once:true});
   audio.src=src;audio.load();
+  // Let a later native pause cancel playback while this source is loading.
+  if(wasPlaying)audio.play().catch(error=>{
+    if(request===playbackSourceRequest&&error.name!=='AbortError')msg('音频播放失败：'+error.message,true);
+  });
 }
 function currentTimingClock(){return {bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),audio_shift_ms:clockShift()};}
 function sameTimingClock(clock){const current=currentTimingClock();return !!clock&&Object.keys(current).every(key=>clock[key]===current[key]);}
