@@ -23,7 +23,7 @@ def audio_work(project, state):
     return project / "audio-cache" / _key(audio or "")
 
 
-def _snapshot_path(project, source):
+def chart_workspace_snapshot_path(project, source):
     return project / "chart-workspaces" / (_key(source or "") + ".json")
 
 
@@ -31,12 +31,15 @@ def archive_active_chart(project, state):
     # Existing projects keep using their original project-root audio caches.
     state.setdefault("cache_origin_audio", state.get("audio"))
     source = state.get("original")
-    path = _snapshot_path(project, source)
+    path = chart_workspace_snapshot_path(project, source)
     path.parent.mkdir(exist_ok=True)
     snapshot = {key: value for key, value in state.items() if key not in _PROJECT_FIELDS}
     temporary = path.with_suffix(".tmp")
-    temporary.write_text(json.dumps(snapshot, ensure_ascii=False), encoding="utf-8")
-    temporary.replace(path)
+    try:
+        temporary.write_text(json.dumps(snapshot, ensure_ascii=False), encoding="utf-8")
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
     if source is None and not any(c["path"] == "" for c in state["charts"]):
         state["charts"].insert(0, {"path": "", "label": "原始音频项目"})
 
@@ -82,7 +85,7 @@ def _new_chart(project, state, relative):
 
 def select_chart(project, state, relative, *, initial=False):
     source = relative or None
-    saved = _snapshot_path(project, source)
+    saved = chart_workspace_snapshot_path(project, source)
     if saved.is_file():
         chart = json.loads(saved.read_text(encoding="utf-8"))
         if chart.get("original") != source:
