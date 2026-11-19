@@ -22,6 +22,7 @@ from scipy.io import wavfile
 
 from .domain import UNOBSERVED_RELEASES, note_from
 from .cancellation import stop_process
+from .worker_process import start_worker
 from .instrument_bundle import (MODEL_REVISION, MODELS, RUNTIME_FILES, SOURCE_COMMIT, VOICE_MODELS,
                                 runtime_identity, sha, verify_model, verify_source)
 
@@ -225,7 +226,7 @@ class InstrumentDetector:
     def _run(self, command, log, progress, cancelled):
         started, position, message, pending = time.monotonic(), 0, '正在载入专用采音模型', b''
         with Path(log).open('wb') as stream:
-            process = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT,
+            process = start_worker(command, cancelled=cancelled, stdout=stream, stderr=subprocess.STDOUT,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0,
                 cwd=self.resources, env=os.environ | {'PYTHONUTF8': '1', 'PYTHONIOENCODING': 'utf-8',
                     'OMP_NUM_THREADS': '2', 'MKL_NUM_THREADS': '2', 'OPENBLAS_NUM_THREADS': '2'})
