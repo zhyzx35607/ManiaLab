@@ -96,35 +96,41 @@ class Separator:
         log = work / "separation.log"
         started = time.monotonic()
         last_message = "正在分离 "+' / '.join(self.spec['voices'])
-        with log.open("w", encoding="utf-8") as stream:
-            process = subprocess.Popen(command, stdout=stream, stderr=stream,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-                env=os.environ | {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8",
-                                  "OMP_NUM_THREADS": "2", "MKL_NUM_THREADS": "2", "OPENBLAS_NUM_THREADS": "2"})
-            try:
-                position = 0
-                with log.open("r", encoding="utf-8", errors="replace") as reader:
-                    while process.poll() is None:
-                        if cancelled():
-                            raise InterruptedError("已取消声部分离")
-                        if time.monotonic() - started > 7200:
-                            raise ValueError("声部分离超过两小时，请尝试较短片段")
-                        for line in reader:
-                            try:
-                                row = json.loads(line)
-                                position = int(row.get("progress", position))
-                                if "chunk" in row:
-                                    last_message = f"声部分离 {row['chunk']}/{row['chunks']}"
-                                elif position >= 94:
-                                    last_message = "检查节拍结构与半速 / 倍速"
-                            except (ValueError, TypeError):
-                                continue
-                        progress(2 + round(position * .28), last_message+f' · 已运行 {int(time.monotonic()-started)} 秒')
-                        time.sleep(.25)
-            finally:
-                stopped = stop_process(process, cancelled, terminate_timeout=10, kill_timeout=10)
-                if stopped:
-                    wave.unlink(missing_ok=True)
+        process = None
+        try:
+            with log.open("w", encoding="utf-8") as stream:
+                process = subprocess.Popen(command, stdout=stream, stderr=stream,
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+                    env=os.environ | {"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8",
+                                      "OMP_NUM_THREADS": "2", "MKL_NUM_THREADS": "2", "OPENBLAS_NUM_THREADS": "2"})
+                try:
+                    position = 0
+                    with log.open("r", encoding="utf-8", errors="replace") as reader:
+                        while process.poll() is None:
+                            if cancelled():
+                                raise InterruptedError("已取消声部分离")
+                            if time.monotonic() - started > 7200:
+                                raise ValueError("声部分离超过两小时，请尝试较短片段")
+                            for line in reader:
+                                try:
+                                    row = json.loads(line)
+                                    position = int(row.get("progress", position))
+                                    if "chunk" in row:
+                                        last_message = f"声部分离 {row['chunk']}/{row['chunks']}"
+                                    elif position >= 94:
+                                        last_message = "检查节拍结构与半速 / 倍速"
+                                except (ValueError, TypeError):
+                                    continue
+                            progress(2 + round(position * .28), last_message+f' · 已运行 {int(time.monotonic()-started)} 秒')
+                            time.sleep(.25)
+                finally:
+                    stopped = stop_process(process, cancelled, terminate_timeout=10, kill_timeout=10)
+                    if stopped:
+                        wave.unlink(missing_ok=True)
+        except OSError:
+            if process is None:
+                wave.unlink(missing_ok=True)
+            raise
         if process.returncode or not manifest.is_file():
             raise ValueError(f"声部分离失败，诊断日志：{log}")
         report = json.loads(manifest.read_text(encoding="utf-8"))
