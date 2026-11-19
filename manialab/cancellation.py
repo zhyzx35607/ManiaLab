@@ -13,6 +13,7 @@ class CancellationContext:
         self._lock = threading.Lock()
         self._deadline = None
         self._cleanup_failures = []
+        self._process_cleanup_failed = False
         self._parent = parent
 
     def __call__(self):
@@ -49,6 +50,22 @@ class CancellationContext:
         if self._parent is not None:
             self._parent.report_cleanup_failure(message)
 
+    @property
+    def process_cleanup_failed(self):
+        with self._lock:
+            failed = self._process_cleanup_failed
+        return failed or (self._parent is not None and self._parent.process_cleanup_failed)
+
+    def _mark_process_cleanup_failed(self):
+        with self._lock:
+            self._process_cleanup_failed = True
+        if self._parent is not None:
+            self._parent._mark_process_cleanup_failed()
+
+    def report_process_cleanup_failure(self, message):
+        self._mark_process_cleanup_failed()
+        self.report_cleanup_failure(message)
+
 
 def remaining_until(deadline):
     return max(0.0, deadline - time.monotonic())
@@ -63,7 +80,9 @@ def timeout_for(cancelled, maximum):
 
 def report_process_cleanup_failure(cancelled, message):
     logging.getLogger(__name__).warning(message)
-    report = getattr(cancelled, "report_cleanup_failure", None)
+    report = getattr(cancelled, "report_process_cleanup_failure", None)
+    if report is None:
+        report = getattr(cancelled, "report_cleanup_failure", None)
     if report is not None:
         report(message)
 
