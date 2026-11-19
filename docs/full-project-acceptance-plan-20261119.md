@@ -13,7 +13,7 @@
 
 ## 当前基线
 
-- `main` 当前为 `d5d1e374e9d315c9d39662da796e14008ee193c7`。PR #184 修复导入创建项目半途失败留下孤儿目录的问题；PR run `44479294481`与合并后 main run `44480110018`均成功，Python/API为2,729 passed、89 skipped，Edge UI为38 passed，Core便携步骤按触发条件跳过。PR #183 将 Basic Pitch 模型内容身份和推理修订纳入整曲/声部activation缓存，并令ONNX session按模型身份重建；PR run `44476736699`与合并后 main run `44477712665`均成功，Python/API为2,728 passed、89 skipped，Edge UI为38 passed，便携步骤按条件跳过。PR #182 修复分离算法修订未纳入stem和下游activation缓存身份的问题；PR/main run `44471599763`、`44472118121`均成功，Python/API为2,725 passed、89 skipped，Edge UI为38 passed。PR #181 修复声部分离 worker 启动失败后的临时 WAV 泄漏；PR/main run `44468079196`、`44468606711`成功，Python/API为2,720 passed、89 skipped，Edge UI为38 passed。PR #180 修复嵌套谱面父目录音频引用；PR/main run `44465032776`、`44466336310`成功，Python/API为2,719 passed、89 skipped，Edge UI为38 passed。PR #174 main run `44449536131`完成 Core 便携包、离线/Unicode路径和关停验证。
+- `main` 当前为 `25460346bf87e847b68ae1aad00300b22d4590a3`。PR #185 修复计划 API 同步 HTTP 阻塞唯一任务 worker 与取消无效问题；合并提交为`25460346bf87e847b68ae1aad00300b22d4590a3`，PR runs `44493364596`、`44495044806`及合并后 main run `44496133010`均成功，Python/API为`2741 passed, 89 skipped`、Edge UI为`38 passed`，Core便携与模型步骤按触发条件跳过。PR #184 修复导入创建项目半途失败留下孤儿目录的问题；PR run `44479294481`与合并后 main run `44480110018`均成功，Python/API为2,729 passed、89 skipped，Edge UI为38 passed，Core便携步骤按触发条件跳过。PR #183 将 Basic Pitch 模型内容身份和推理修订纳入整曲/声部activation缓存，并令ONNX session按模型身份重建；PR run `44476736699`与合并后 main run `44477712665`均成功，Python/API为2,728 passed、89 skipped，Edge UI为38 passed，便携步骤按条件跳过。PR #182 修复分离算法修订未纳入stem和下游activation缓存身份的问题；PR/main run `44471599763`、`44472118121`均成功，Python/API为2,725 passed、89 skipped，Edge UI为38 passed。PR #181 修复声部分离 worker 启动失败后的临时 WAV 泄漏；PR/main run `44468079196`、`44468606711`成功，Python/API为2,720 passed、89 skipped，Edge UI为38 passed。PR #180 修复嵌套谱面父目录音频引用；PR/main run `44465032776`、`44466336310`成功，Python/API为2,719 passed、89 skipped，Edge UI为38 passed。PR #174 main run `44449536131`完成 Core 便携包、离线/Unicode路径和关停验证。
 - 当前公开 Pre-release 仍为 `v0.1.0-alpha.6-dev.18`；主线修复不自动包含在该包中。
 - 架构已经按服务端路由、领域逻辑、音频组件、存储与浏览器分层。先验证边界契约和用户路径，不做没有缺陷证据的大面积重写。
 - 现有记录已明确真实盲听、玩家试打和两首独立歌曲评审尚未回收；Demucs 四/六声部 checkpoint 的独立再分发授权也尚未核实。
@@ -35,7 +35,7 @@
 
 **状态：近期修复已合并并经CI验证，跨路径收口审查进行中。**
 
-覆盖 `/api/import` 的普通文件和 OSZ、冲突/预算/损坏输入、有效与无效谱面、音频引用、创建失败清理；项目状态原子保存；任务成功/失败/取消的提交和资源清理；多难度切换、编辑与重开；OSU/OSZ 中音频、图片和音效引用。#180 已修复嵌套谱面引用仍位于项目根内的父目录音频被误拒，合并版本 PR/main CI 均通过。第七十七阶段发现并修复 `Projects.create()` 半途失败遗留不可见 UUID 目录的问题，定向回归37 passed；PR #184 与 main run `44479294481`、`44480110018`均成功，main为Python/API `2729 passed, 89 skipped`、Edge `38 passed`，Core便携步骤按触发条件跳过。
+覆盖 `/api/import` 的普通文件和 OSZ、冲突/预算/损坏输入、有效与无效谱面、音频引用、创建失败清理；项目状态原子保存；任务成功/失败/取消的提交和资源清理；多难度切换、编辑与重开；OSU/OSZ 中音频、图片和音效引用。#180 已修复嵌套谱面引用仍位于项目根内的父目录音频被误拒，合并版本 PR/main CI 均通过。第七十七阶段发现并修复 `Projects.create()` 半途失败遗留不可见 UUID 目录的问题，定向回归37 passed；PR #184 与 main run `44479294481`、`44480110018`均成功，main为Python/API `2729 passed, 89 skipped`、Edge `38 passed`，Core便携步骤按触发条件跳过。第七十九阶段补强原模型候选发布后最终保存失败的回滚断言，以及声轨长度不匹配时本次上传与解码目录清理断言；目前是合成故障注入覆盖，3 passed，未发现产品逻辑缺陷，PR/main CI待补。
 
 已并入的局部修复包括 #173 的 OSZ 磁盘临时文件、#174 的 `state.tmp` 失败清理、#175 的无有效谱面多音频拒绝。下一步只补系统审计发现的真实缺口，不把所有旧测试重复改写。
 
@@ -65,11 +65,11 @@
 
 ### 阶段 3：异步任务、取消、资源与关停
 
-**状态：已有多阶段改进；第七十八阶段补上 planner 网络取消，PR #185 Windows validation 已通过，合并后 main CI 与 DNS/HTTPS 代理边界处置待完成。**
+**状态：已有多阶段改进；第七十八阶段补上 planner 网络取消，PR #185 与合并后 main Windows validation 均通过；DNS/HTTPS 代理边界仍需处置。**
 
 复核单工作线程、锁边界、任务终态保留、请求快照、协作取消、子进程终止/回收、15 秒共享关停 deadline、保存提交边界、缓存和大型频谱/导出内存使用。第七十四阶段复现分离 worker 启动失败后遗留 `separation-input.wav` 并修复；PR #181/main run `44468079196`、`44468606711`通过，Core便携构建按触发条件跳过。第七十五、七十六阶段修复的缓存身份问题分别由PR #182、#183验证。保留已知限制：deadline 是协作式等待和清理上限，不是任意 native 运算或卡死线程的硬退出 SLA。
 
-第七十八阶段发现计划 API 的同步 HTTP 调用无法及时响应任务取消，会占住唯一任务 worker。当前分支将取消上下文传至 planner，复测确认真实本机 HTTP 请求取消后2秒内结束、旧项目状态不变且 worker 可继续服务；HTTP 1xx、chunked、HTTP代理认证、HTTPS CONNECT 分支及端口边界均有定向回归。本地定向 Python/API为27 passed，计划面板 Edge为3 passed，编译、JS语法与差异检查通过。PR #185 Windows run `44493364596`成功，Python/API为`2741 passed, 89 skipped`、Edge为`38 passed`；Core便携步骤按触发条件跳过。合并后main CI待补。90秒仅是 asyncio 网络任务 deadline：Python 3.12 中系统 DNS `getaddrinfo` 在线程池运行，取消不能杀掉正在执行的 resolver；`asyncio.run()`收尾还可能等待默认执行器最多5分钟。HTTPS代理分支当前用模拟 transport 检查 CONNECT 与 TLS 升级调用，尚未验证真实 TLS-over-TLS 握手/证书链。两项残余和后续闭合条件见问题账本 ENG-10。
+第七十八阶段发现计划 API 的同步 HTTP 调用无法及时响应任务取消，会占住唯一任务 worker。当前分支将取消上下文传至 planner，复测确认真实本机 HTTP 请求取消后2秒内结束、旧项目状态不变且 worker 可继续服务；HTTP 1xx、chunked、HTTP代理认证、HTTPS CONNECT 分支及端口边界均有定向回归。本地定向 Python/API为27 passed，计划面板 Edge为3 passed，编译、JS语法与差异检查通过。PR #185 runs `44493364596`、文档复验`44495044806`与合并后 main run `44496133010`均成功，合并提交`25460346bf87e847b68ae1aad00300b22d4590a3`，Python/API为`2741 passed, 89 skipped`、Edge为`38 passed`；Core便携步骤按触发条件跳过。90秒仅是 asyncio 网络任务 deadline：Python 3.12 中系统 DNS `getaddrinfo` 在线程池运行，取消不能杀掉正在执行的 resolver；`asyncio.run()`收尾还可能等待默认执行器最多5分钟。HTTPS代理分支当前用模拟 transport 检查 CONNECT 与 TLS 升级调用，尚未验证真实 TLS-over-TLS 握手/证书链。两项残余和后续闭合条件见问题账本 ENG-10。
 
 **验证：**已有取消/故障注入、线程竞争、FFmpeg/Windows 子进程测试、资源基准及便携启动/退出报告；在合并版本上确认真实覆盖，不重复执行无关模型实验。
 

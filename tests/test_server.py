@@ -809,6 +809,57 @@ def test_original_model_cancel_during_publication_rolls_back_files_and_workspace
         app.extensions['executor'].shutdown()
 
 
+@pytest.mark.parametrize('has_previous_snapshot',[True,False])
+def test_original_model_save_failure_rolls_back_files_and_workspace(tmp_path,monkeypatch,has_previous_snapshot):
+    from manialab.chart_workspace import chart_workspace_snapshot_path
+    from manialab.upstream import MapperEngine
+
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    fake_mapper_install(tmp_path)
+    projects=app.extensions['projects']
+    imported=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=imported['id'];base=f'/api/projects/{pid}';project=projects.path(pid)
+    (project/'preview.wav').write_bytes(b'placeholder')
+    previous=projects.load(pid)
+    snapshot_path=chart_workspace_snapshot_path(project,None)
+    previous_snapshot=b'{"original":null,"sentinel":"previous workspace"}'
+    if has_previous_snapshot:
+        snapshot_path.parent.mkdir()
+        snapshot_path.write_bytes(previous_snapshot)
+
+    def model(self,audio,output,prefs,progress,cancelled,seconds,tempo):
+        output.mkdir(parents=True)
+        target=output/'generated.osu'
+        target.write_text(export_osu([Note(1000,4000,0),Note(2000,2000,1)],10,
+            ROOT/'vendor/mapperatorinator/template.osu'),encoding='utf-8')
+        return target
+
+    save=projects.save
+    def fail_published_state(state):
+        if str(state.get('original','')).startswith('Mapperatorinator-'):
+            raise OSError('simulated project state commit failure')
+        return save(state)
+
+    monkeypatch.setattr(MapperEngine,'generate',model)
+    monkeypatch.setattr(projects,'save',fail_published_state)
+    try:
+        response=client.post(base+'/engine-generate',json={'settings':{'keys':10}},headers=headers)
+        assert response.status_code==200,response.json
+        result=wait_job(client,response.json)
+
+        assert result['status']=='error',result
+        assert projects.load(pid)==previous
+        assert not list((project/'files').glob('Mapperatorinator-*.osu'))
+        assert not snapshot_path.with_suffix('.tmp').exists()
+        assert not list(snapshot_path.parent.glob('*.rollback'))
+        if has_previous_snapshot:
+            assert snapshot_path.read_bytes()==previous_snapshot
+        else:
+            assert not snapshot_path.parent.exists()
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 def test_archive_active_chart_removes_partial_snapshot_after_write_failure(tmp_path,monkeypatch):
     from manialab.chart_workspace import archive_active_chart, chart_workspace_snapshot_path
 
