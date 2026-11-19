@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 import urllib.error
+from urllib.parse import urlencode
 import urllib.request
 import wave
 import zipfile
@@ -148,6 +149,17 @@ def verify_runtime_capabilities(status, declared):
     assert bool(status["instruments"]["available"]) == declared["instruments"]
     assert not status["piano"]["default"]
     return actual
+
+
+def verify_analysis_stem_playback(request, base, state, voices):
+    """Check the fresh analysis without substituting a selected candidate's source."""
+    identity = state['analysis']['separation'].get('playback_identity')
+    assert isinstance(identity, str) and identity, 'Current analysis has no playback source identity'
+    context = dict(context='evidence', source_identity=identity, audio=state.get('audio') or '')
+    for voice in voices:
+        assert request(base + '/stem/' + voice + '?' + urlencode(context))[:4] == b'RIFF'
+        query = urlencode(dict(context, voice=voice, start_ms=900, duration_ms=500))
+        assert request(base + '/waveform?' + query)['sample_rate'] == 22050
 
 
 def verify_core_workflow(request, wait, start, stop, work, source, checks):
@@ -418,9 +430,7 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         state=request(base)
         assert state['analysis']['separation']['profile']=='six'
         assert {v['voice'] for v in state['analysis']['voices']}=={'drums','bass','vocals','other','guitar','piano'}
-        for voice in ('guitar','piano'):
-            assert request(base+'/stem/'+voice)[:4]==b'RIFF'
-            assert request(base+f'/waveform?voice={voice}&start_ms=900&duration_ms=500')['sample_rate']==22050
+        verify_analysis_stem_playback(request,base,state,('guitar','piano'))
         job=wait(request(base+'/generate',dict(mode='audio',bpm=120,offset=-22,division=4,
             audio_shift_ms=22.5,timing_confirmed=True,settings={'keys':10,'guitar_weight':0})))
         assert job['status']=='done',job

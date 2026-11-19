@@ -16,7 +16,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from manialab import __version__
 from package_assets import (
-    PROFILES, archive_stem, capabilities, stage_assets, start_guide,
+    MAPPER_INSTALLER_FILES, PROFILES, archive_stem, capabilities, stage_assets, start_guide,
     verify_core_model_files,
 )
 parser=argparse.ArgumentParser(description=__doc__)
@@ -34,13 +34,18 @@ os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
 def source_snapshot():
     files=[ROOT/'launcher.py',ROOT/'README.md',ROOT/'LICENSE',ROOT/'THIRD_PARTY_NOTICES.md',
+           ROOT/'scripts/build_windows.py',
            ROOT/'scripts/package_assets.py',ROOT/'scripts/worker_inventory.py',
            ROOT/'scripts/build_provenance.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
+           *sorted((ROOT/'vendor').rglob('*.py')),ROOT/'vendor/mapperatorinator/template.osu',
            *sorted(p for p in (ROOT/'static').rglob('*') if p.is_file()),
            ROOT/'assets/pattern-prior.json',ROOT/'assets/arrangement-profiles.json',
            ROOT/'assets/model-manifest.json',ROOT/'assets/piano-model.json',
            ROOT/'assets/guitar-model.json',ROOT/'assets/deep-models.json',ROOT/'manialab/tsumugi-source.json',
            *sorted((ROOT/'licenses').glob('HFGuitar-*'))]
+    if enabled['mapperatorinator_install']:
+        # uv.exe is copied from the selected runtime later; these are source inputs.
+        files += [ROOT/'assets'/name for name in MAPPER_INSTALLER_FILES if name != 'runtime/uv.exe']
     return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
 build_sources=source_snapshot()
 core_model_identity=verify_core_model_files(ROOT/'assets')
