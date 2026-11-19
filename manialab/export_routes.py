@@ -1,6 +1,7 @@
 import io
 import json
 from pathlib import Path
+import tempfile
 import zipfile
 
 from flask import send_file
@@ -53,19 +54,25 @@ def register_export_routes(app, projects, resources, current_audio):
         if kind != "osz":
             raise ValueError("不支持的导出格式")
         current_audio(state)
-        buffer = io.BytesIO()
-        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-            archive.writestr((folder / "ManiaLab.osu").as_posix(), content)
-            for file in base.rglob("*"):
-                if file.is_file() and file.suffix.lower() != ".osu":
-                    archive.write(file, file.relative_to(base).as_posix())
-            # A separately uploaded audio file can satisfy a nested chart by basename.
-            # Keep the chart's timing metadata while closing its audio reference in the archive.
-            audio_name = parse_osu(content)['general'].get('AudioFilename', '')
-            if audio_name:
-                referenced = safe_path(base, (folder / audio_name).as_posix())
-                if not referenced.is_file():
-                    archive.write(current_audio(state), referenced.relative_to(base).as_posix())
-        buffer.seek(0)
-        return send_file(buffer, download_name="ManiaLab.osz", as_attachment=True,
-                         mimetype="application/octet-stream")
+        buffer = tempfile.TemporaryFile(mode="w+b")
+        try:
+            with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr((folder / "ManiaLab.osu").as_posix(), content)
+                for file in base.rglob("*"):
+                    if file.is_file() and file.suffix.lower() != ".osu":
+                        archive.write(file, file.relative_to(base).as_posix())
+                # A separately uploaded audio file can satisfy a nested chart by basename.
+                # Keep the chart's timing metadata while closing its audio reference in the archive.
+                audio_name = parse_osu(content)['general'].get('AudioFilename', '')
+                if audio_name:
+                    referenced = safe_path(base, (folder / audio_name).as_posix())
+                    if not referenced.is_file():
+                        archive.write(current_audio(state), referenced.relative_to(base).as_posix())
+            buffer.seek(0)
+            response = send_file(buffer, download_name="ManiaLab.osz", as_attachment=True,
+                                 mimetype="application/octet-stream")
+            response.call_on_close(buffer.close)
+            return response
+        except BaseException:
+            buffer.close()
+            raise
