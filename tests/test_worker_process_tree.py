@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -77,6 +78,16 @@ def test_non_windows_worker_factory_preserves_popen_arguments(monkeypatch):
         cwd='synthetic-work', env={'MARKER': 'value'}, stdout=subprocess.PIPE) is sentinel
     assert calls == [((['synthetic', 'worker'],),
         dict(cwd='synthetic-work', env={'MARKER': 'value'}, stdout=subprocess.PIPE))]
+
+
+def test_worker_destructor_skips_base_poll_when_root_handle_is_already_closed(monkeypatch):
+    calls = []
+    monkeypatch.setattr(subprocess.Popen, '__del__', lambda process: calls.append(process))
+    process = object.__new__(worker_process._WindowsWorkerPopen)
+    process._worker_job = None
+    process._handle = SimpleNamespace(closed=True)
+    worker_process._WindowsWorkerPopen.__del__(process)
+    assert calls == []
 
 
 @WINDOWS

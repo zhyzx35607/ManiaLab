@@ -331,7 +331,12 @@ class _WindowsWorkerPopen(subprocess.Popen):
                 finally:
                     self._worker_job = None
         finally:
-            super().__del__()
+            # A failed suspended launch can be finalized after Popen's Handle
+            # object has already closed. Its base destructor would poll that
+            # invalid handle and emit an unraisable WinError 6.
+            handle = getattr(self, '_handle', None)
+            if handle is None or not getattr(handle, 'closed', False):
+                super().__del__()
 
 
 def start_worker(args, *, cancelled=lambda: False, **kwargs):
