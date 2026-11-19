@@ -217,7 +217,7 @@ $('analyze').onclick=guarded(()=>runJob('analyze',{settings:settings(),engine:$(
 $('another').onclick=guarded(()=>{$('seed').value=Math.floor(Math.random()*2147483647);return generate();});
 $('regenerate').onclick=guarded(()=>generate([Number($('regionStart').value)*1000,Number($('regionEnd').value)*1000]));
 $('cancel').onclick=guarded(()=>jobId?api('/api/jobs/'+jobId+'/cancel',{}):null);
-$('mode').onchange=()=>{setMode();cueClock.reset();cancelAuditionPlayback();draw();};
+$('mode').onchange=()=>{setMode();cueClock.reset();cancelAuditionPlayback();clearTimingDiagnostics();renderTimingLocations();draw();};
 $('plan').onclick=guarded(async()=>{
   if(busy)return;const draft=captureTimingDraft(['analysisEngine']);
   const status=await runJob('plan',{endpoint:$('endpoint').value,model:$('model').value,key:$('apiKey').value,instruction:$('instruction').value,settings:settings()});
