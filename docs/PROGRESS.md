@@ -5,7 +5,7 @@
 
 ## 当前状态（先读）
 
-- 2026-11-19当前整合：PR #195已通过检查并合并为`ed16855bfb0b911dab5d97874f72719d79a2d31e`，PR run `44540158809`成功（Python/API `2801 passed, 89 skipped`、浏览器`52 passed`），main run `44541152663`待核验；PR #194的main run `44539773445`已成功，ENG-15关闭。第八十八阶段portable/shutdown/collector现绑定实际manifest原始字节摘要，相关回归45 passed，准备PR；native播放、完整Windows树回收、报告身份和Core实际集成继续独立推进。3个子agent持续工作，工具硬上限主agent+3。
+- 2026-11-19当前整合：PR #195已通过检查并合并为`ed16855bfb0b911dab5d97874f72719d79a2d31e`，PR run `44540158809`与main run `44541152663`均成功（Python/API `2801 passed, 89 skipped`、浏览器`52 passed`）；PR #194 main run `44539773445`成功，ENG-15关闭。PR #196已打开，当前head `b4be5b1`，Windows run `44543912596`进行中；第八十八阶段报告身份绑定补齐ZIP内manifest原始字节核验，本地定向47 passed。ENG-20 native播放修复在Chromium/Edge各10项通过；ENG-21 Windows树回收本地定向组72 passed、独立审查保留成员快照竞态边界。上述两项尚未提交/合并。PR/main结果与当前产物必须续接时重新核验；Core实际集成、真实音乐与发布许可继续开放。当前并发受工具限制为主agent加最多3个子agent。
 
 - 2026-11-19当前续接：第八十一阶段候选声轨试听来源修复已由PR #188合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`；PR/main Windows runs `44525372079`、`44526302353`均成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按条件跳过。ENG-12已闭合；具体行为、本地验证与日志位置见文末。下一步继续阶段2的段落/LN证据在编辑、局部重写和导出间的一致性审查，以及阶段3剩余生命周期边界；不要重复模型实验。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
 - 2026-11-19历史续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。第八十阶段的手动参考 Offset/波形对齐 ties-to-even 修复随后由PR #187及main run `44508222088`验证；自动估计保留与服务端默认一致的 half-up 规则。
@@ -2316,7 +2316,7 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 
 ## 2026-11-19 第八十八阶段：发布运行报告绑定清单摘要
 
-- 合成复现确认：同一EXE字节配上不同source/static内容和新`release-manifest.json`/ZIP时，旧portable与shutdown报告原先仍可被collector接受；仅EXE SHA无法证明来源声明一致。现在三条链都读取实际manifest文件原始字节的`release_manifest_sha256`：portable唯一`release_manifest`记录、shutdown身份、collector当前manifest/EXE/ZIP核对均必须一致；旧缺字段、摘要错配、重复身份直接拒绝。
-- 新增同EXE改source/static后旧报告拒绝、仅旧portable摘要更新而shutdown仍拒绝、跨Core/standard身份缺失/重复/版本错误等回归。阶段88精确命令为`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_release_evidence_identity.py tests/test_verify_shutdown.py tests/test_release_validation.py`，最终`45 passed`（2.01秒，PYTHONUTF8=1、OMP/MKL/OPENBLAS=2）；相关compileall、`git diff --check`通过。未构建/执行EXE/模型，合成EXE/ZIP字节明确不代表实际便携运行。
-- 报告字段不从旧结果默认填充；manifest摘要来自实际校验路径的原始文件字节，不来自另一次格式化JSON。声明capabilities仍只说明profile预期，worker/启动/退出事实继续由原检查独立验证。历史dev.18及旧报告不自动补签新摘要；ENG-19仍待PR/main验证。
+- 合成复现确认：同一EXE字节配上不同source/static内容和新`release-manifest.json`/ZIP时，旧portable与shutdown报告原先仍可被collector接受；仅EXE SHA无法证明来源声明一致。portable唯一`release_manifest`记录、shutdown身份和collector均绑定实际manifest原始字节`release_manifest_sha256`，且collector另要求ZIP内manifest字节与本地已验证manifest完全相同；旧缺字段、摘要错配、重复身份和仅改ZIP内空白均拒绝。
+- 新增同EXE改source/static后旧报告拒绝、仅旧portable摘要更新而shutdown仍拒绝、跨Core/standard身份缺失/重复/版本错误及ZIP manifest字节变化等回归。阶段88定向命令为`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_release_evidence_identity.py tests/test_verify_shutdown.py tests/test_release_validation.py`，最终`47 passed`（执行时长见PR日志，本地使用PYTHONUTF8=1、OMP/MKL/OPENBLAS=2）；相关compileall、`git diff --check`通过。未构建/执行EXE/模型，合成EXE/ZIP字节明确不代表实际便携运行。PR #196 head `b4be5b1`验证进行中。
+- 报告字段不从旧结果默认填充；manifest摘要来自实际校验路径的原始文件字节，不来自另一次格式化JSON。声明capabilities仍只说明profile预期，worker/启动/退出事实继续由原检查独立验证。历史dev.18及旧报告不自动补签新摘要；ENG-19等待PR #196及main验证。
 - 后续阶段88绑定portable/shutdown到当前EXE，阶段89处理native加载/提示状态；手动CLI的JUnit报告尚无测试时源码身份，但现有CI同job唯一build_id顺序未发现自动混用。该CLI残余单列，不扩成本阶段音乐质量结论。
