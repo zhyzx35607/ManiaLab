@@ -11,7 +11,7 @@ def register_timing_routes(app, projects, requested_tempo):
         tempo = requested_tempo(request.json, state)
         attacks = chart_clock_notes([note_from(note) for note in state.get("analysis", {}).get("timing_attacks", [])],
                                     tempo["audio_shift_ms"])
-        fitted = refit_offset(attacks, tempo["bpm"], tempo["division"])
+        fitted = refit_offset(attacks, tempo["bpm"], tempo["division"]) | {"bpm": tempo["bpm"]}
         checks = analysis_timing_diagnostics(state.get("analysis", {}), tempo | fitted)
         return jsonify(fitted | checks)
 

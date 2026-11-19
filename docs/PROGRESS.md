@@ -5,10 +5,8 @@
 
 ## 当前状态（先读）
 
-- 2026-11-19当前CI阻断：PR #191已合并，但main run `44533920894`失败，Python/API `2766 passed, 89 skipped`，浏览器44 passed/1 failed；失败用例为`evidence.spec.cjs`旧证据回看，检查器仍停在“点击音符”提示，没有进入要核对的音符。现将画布选择helper从只等待hitbox存在改为重复按当前hitbox点击并等`selected===id`，保留全部来源断言；该单项Edge重复10次通过，完整evidence组复验中。补丁随PR #192新head验证，在实际通过前不关闭ENG-13或宣称main已通过。3个子agent继续独立工作，后续产品修复暂不合并。
-- 2026-11-19当前整合：第八十三阶段PR #191已合并为`0f89440ab8563fd57b1348da605fc901252e7d96`，PR run `44532957056`成功，Python/API `2766 passed, 89 skipped`、浏览器`45 passed`；main run `44533920894`待最终核验。第八十四阶段参考结构边界修复本地相关83 passed，准备PR；共享区另有Timing身份、未回收进程门禁与便携来源/验证器修复，已各自定向验证，按阶段独立提交。3个子agent继续审查/复核，不停留在首轮结果。音乐验收与非Core发布许可仍未闭环。
-- 2026-11-19当前并行阶段：第八十二阶段PR #190已合并为`2e22f1e08952d267f970a33cd4d393ce3b96f6ab`，PR/main runs `44530422421`、`44531157525`成功，Python/API `2756 passed, 89 skipped`、浏览器`44 passed`；COV-02/03关闭。第八十三阶段资源清理失败可见性修复本地定向71 passed、Edge完整组45 passed，静态检查通过，PR/main待补。另有未提交的结构参考边界修复，及固定BPM重拟合精度/未回收子进程门禁排队事项；按独立阶段提交，不能把共享工作区全部改动混算成已合并。3名子agent持续并行，主agent整合。音乐验收与非Core许可继续开放。
-- 2026-11-19并行续接：用户最新授权3–4个子agent持续并行，当前使用3个子agent分别核对段落/LN来源、候选编辑/导出、取消/资源生命周期，不再受旧的同时最多1个限制；均禁止再派子agent，神经推理约束不变。主线`8243feb`（PR #189文档补录）及main run `44527791593`已成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`。第八十二阶段新增5项跨路径合成回归，本地相关组66 passed；产品代码未改，PR/main验证待补。生命周期审查另确认cleanup异常只写日志会掩盖未清理资源的问题，作为ENG-13单独修复；不要把下一阶段的未提交产品改动算入本阶段结果。音乐质量与非Core许可门槛仍开放。
+- 2026-11-19当前整合：PR #192已合并为`f3b7707c8700dcc58e4294b154394b731f9031d6`，新head PR run `44535877376`通过（Python/API `2780 passed, 89 skipped`、浏览器`45 passed`），main run `44536768911`待最终核验；此前PR #191 main浏览器失败事实与选择等待修补保留在阶段83–84记录。第八十五阶段Timing重拟合时钟身份本地Python/API19 passed、Edge相关组20 passed，PR待创建。未回收进程门禁、便携来源/验证器与报告身份修复分阶段排队。用户已授权最多5个子agent，但工具硬上限为主agent+3子agent共4槽，实际保持3名持续工作。音乐验收、非Core实际包/许可、进程树回收与native播放状态仍有明确开放项。
+
 - 2026-11-19当前续接：第八十一阶段候选声轨试听来源修复已由PR #188合并为`0e1b7d687fbf503339c0b7175fca57ad9324d5d8`；PR/main Windows runs `44525372079`、`44526302353`均成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按条件跳过。ENG-12已闭合；具体行为、本地验证与日志位置见文末。下一步继续阶段2的段落/LN证据在编辑、局部重写和导出间的一致性审查，以及阶段3剩余生命周期边界；不要重复模型实验。真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可仍未闭环，整体音乐验收未完成。
 - 2026-11-19历史续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。第八十阶段的手动参考 Offset/波形对齐 ties-to-even 修复随后由PR #187及main run `44508222088`验证；自动估计保留与服务端默认一致的 half-up 规则。
 - PR #183 已于2026-11-19合并为`3427f179e17068f4b4581c70fa37d96583e5816e`，修复Basic Pitch整曲/声部activation缓存及ONNX session未绑定模型身份/推理修订的问题；PR run `44476736699`与合并后main run `44477712665`均通过，Python/API为2,728 passed、89 skipped，Edge UI为38 passed，Core便携步骤按条件跳过。独立只读复审通过，没有加载真实模型或读取用户音频。
@@ -2284,3 +2282,12 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 未新增正式测试文件的临时合成核验确认最终状态保存失败保留旧项目，以及两难度参考标记/结构往返独立恢复；不把这些核验冒称为完整媒体或音乐验收。PR/main Windows验证待补；本阶段不改Timing拟合算法、Offset舍入、音符或音频，不读取用户素材/模型和研究产物。
 - 下一阶段分别整合ENG-16的固定BPM精度与mode迟到响应失效、ENG-15的进程专用门禁，以及非Core验证请求/打包来源fingerprint缺口；仍由3名子agent持续推进不同检查点。
 - PR #192首轮后另补主线浏览器验证等待：`selectNote`原先只等hitbox存在并单次点击，失败日志中检查器仍为未选择提示；现按当前hitbox重试点击并等待实际选择的ID，不降低原始/未知来源断言。失败单项Edge重复10次通过，完整evidence组待汇总，新head CI仍需通过。此为验证交互同步，不能代替另已发现的native媒体加载/播放状态产品问题。
+- 完整evidence组复验10 passed（29.5秒）；新head PR run `44535877376`成功，Python/API `2780 passed, 89 skipped`、浏览器`45 passed`，Core便携与模型步骤按条件跳过。PR #192已合并为`f3b7707c8700dcc58e4294b154394b731f9031d6`；main run `44536768911`待最终核验。PR日志位于ignored `build/reference-boundary-68af4d7/pr-192-windows.log`。
+
+## 2026-11-19 第八十五阶段：Timing重拟合保留固定时钟身份
+
+- 真实API与Edge复现固定BPM123.456789返回123.45679，界面保留原输入且严格时钟比较令诊断为null。数值拟合实际使用原请求BPM，损失只在`_score`显示字段；路由现将已验证请求BPM覆盖回拟合结果后统一用于响应/诊断，不改拟合算法或Offset舍入。
+- 另一条真实API屏障复现：audio模式请求refit后切remap，迟到响应仍改已禁用Offset并显示audio诊断；audio→remap→audio往返也会误接收。mode变化现在递增Timing请求身份并清除旧诊断/定位；新audio请求仍可正常检查。
+- 新增`tests/test_timing_refit_precision.py`5例与`tests/browser/timing-refit-precision.spec.cjs`7例，覆盖精度BPM、正负提前量、负Offset ties-to-even、BPM10/1000和Offset±600000、模式切换与往返。浏览器旧响应先由真实API计算，再以明确屏障释放并等待原handler结束，未mock修复后的成功数据。
+- 主agent复跑`.venv\Scripts\python.exe -m pytest -q tests/test_timing_refit_precision.py tests/test_timing_diagnostic_clock.py`为19 passed（5.01秒）；Edge端口8978定向`timing-refit-precision.spec.cjs timing.spec.cjs task-cleanup.spec.cjs`合计20 passed（35.7秒），同时确认已合入的清理失败警告保持。相关`compileall`、两处JS语法与`git diff --check`通过。生命周期agent独立只读复审未发现阻断项。
+- 完整因果脚本/JSON/截图在ignored `build/timing-refit-precision-20261119-ln/`，不含用户资产；该阶段不读模型或真实研究音频。PR/main验证待补。native媒体快速切换归零/加载中显式暂停被旧回调恢复的问题已另列ENG-20，不由Timing mode修复代签；后续阶段单独整合。
