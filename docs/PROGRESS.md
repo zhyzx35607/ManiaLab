@@ -6,6 +6,7 @@
 ## 当前状态（先读）
 
 - 最新状态（2026-11-19）：PR #164 任务取消与进程关停已合并为`6d779209561b6b767b5f6886d75e9713bf371227`；PR Windows run `44403326416`及合并后 main run `44405337764`成功，Python/API均为2,682 passed、89 skipped，Edge UI均为36 passed；便携构建按触发条件跳过。PR #165 补录验证结果并合并为`265414e7f59d5875079b86e040ae4cfd6a457a8b`，PR run `44406379629`通过；合并后 main run `44407019369`被后续 main 工作流取消，不记作成功。PR #166 结构分析分块 STFT 已合并为`e684551abd5071d75f33febefe76e0bd7b182135`；PR runs `44410686981`和进度同步后 `44411505246`均通过，合并后 main run `44412123852`成功，Python/API为2,683 passed、89 skipped，Edge UI为36 passed，便携构建按触发条件跳过。PR #167 音频身份哈希流式化已合并为`76c3dc00b6466682f4bd3bbbacd5e50535b3a370`；PR runs `44415178836`和进度同步后`44416022976`均通过；合并后 main run `44417472152`成功，Python/API为2,686 passed、89 skipped，Edge UI为36 passed。第六十四阶段本地全量回归为2,686 passed、90 skipped，Edge UI为36 passed，compileall、JS语法和差异检查通过；PR #168 的首轮 `44418933013`、文档复验 `44420164907`和 EOCD 字节测试复验 `44420946296`均通过，最后一轮 Python/API为2,687 passed、89 skipped，Edge UI为36 passed。当前公开 Pre-release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍缺人工证据，音乐质量目标未结项。
+- PR #168 已合并为`87f168cca73d2937a879aa38178655769606b02f`；合并后 main run `44422409442`通过，Python/API为2,687 passed、89 skipped，Edge UI为36 passed。PR #169 迁移`actions/setup-node`至 Node 24 action runtime 的 Windows run `44424536788`通过：Python/API为2,687 passed、89 skipped，Edge UI为36 passed；Node 20 弃用告警已消失。进度同步与合并后 main 验证待完成。
 
 - 2026-11-19 当前续接：从 PR #157 合并提交 `19132940` 开始，公开 Release 仍为 dev.18，近889MB standard 构建仅为 Actions artifact。本阶段经 PR #158 合并为 `6200891e`；PR Windows run `44366735851`及合并后 main run `44368922837`的 Core 构建、实际 EXE、shutdown、Python/API 与 Edge UI 检查均通过。没有创建新 Release。人工钢琴盲听、同音符 6K–10K 定轨试打、两首独立歌曲听审仍为空，长期音乐质量目标保持未结项。
 - 2026-11-18 续接核验：PR #151 已合并为 `fc20c92`，Windows PR run `44320958903` 和 main run `44322594836` 均成功。第 49 阶段修复编辑后导出的段落书签，复现与验证见文末。音乐验收还需要玩家盲听、试打及独立歌曲证据。
@@ -2099,3 +2100,9 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - 全量设置 OpenMP / OpenBLAS / MKL 线程上限2运行`.venv\Scripts\python.exe -m pytest -q`为2,686 passed、90 skipped（65.91秒）；`MANIALAB_TEST_BROWSER=msedge MANIALAB_TEST_PORT=9006 npm run test:ui`为36 passed（1.4分钟）。`.venv\Scripts\python.exe -m compileall -q manialab scripts tests launcher.py`、全部`static/*.js`的`node --check`及`git diff --check`通过。
 - PR #168 首轮 Windows run `44418933013`通过，Python/API为2,687 passed、89 skipped，Edge UI为36 passed；直接改写合成 EOCD 的测试增强后，Windows run `44420946296`再次通过相同计数，便携构建按触发条件跳过。独立只读复核未发现解析或兼容性问题；实现依赖 CPython `zipfile` 私有接口，Python 主次版本升级时需重新复核。
 - 本阶段只增加 ZIP 元数据资源限制，不更改正常谱包解析/解压结果；未读取用户上传谱包或音频，未运行模型、研究或音乐质量实验。当前公开 Pre-release 仍为 dev.18；真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审仍待完成。
+
+## 2026-11-19 第六十五阶段：迁移 GitHub Actions Node 运行时
+
+- CI 将`actions/setup-node`固定到官方`v7.1.0`提交`949feb2413d6458794dcd2491c4babbbce0c15c1`，采用 Node 24 action runtime；项目安装的 Node 版本仍为22，npm cache配置不变。当前`package.json`无`packageManager`字段，workflow也未配置`registry-url`或依赖`NODE_AUTH_TOKEN`。
+- PR Windows run `44424536788`成功，Python/API为2,687 passed、89 skipped（70.17秒），Edge UI为36 passed（1.2分钟），Core EXE步骤按触发条件跳过。日志确认 action 安装 Node `v22.23.5`，未发现原有“Node.js 20 actions are deprecated”告警。
+- 仅修改CI action版本与本进度文档；不改变应用运行逻辑、研究脚本或音乐处理结果。PR进度同步与合并后 main run 待记录；当前公开 Pre-release 仍为 dev.18。真人钢琴盲听、6K–10K/LN试打与两首独立歌曲听审未完成。
