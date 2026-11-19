@@ -44,6 +44,7 @@ def test_audio_decode_cancellation_terminates_and_reaps_ffmpeg(tmp_path, monkeyp
 
         def communicate(self, timeout=None):
             self.communications += 1
+            assert timeout is not None
             if self.alive:
                 raise subprocess.TimeoutExpired('ffmpeg', timeout)
             return b'', b''
@@ -65,6 +66,77 @@ def test_audio_decode_cancellation_terminates_and_reaps_ffmpeg(tmp_path, monkeyp
     assert not processes[0].alive
     assert processes[0].communications == 2
     assert not (tmp_path / 'preview.wav').exists()
+
+
+def test_ffmpeg_cleanup_is_bounded_when_kill_does_not_stop_process(monkeypatch, caplog):
+    cancelled = iter((False, False, True))
+    processes = []
+
+    class StuckProcess:
+        returncode = None
+
+        def __init__(self, args, **kwargs):
+            self.alive = True
+            self.killed = False
+            self.timeouts = []
+            processes.append(self)
+
+        def communicate(self, timeout=None):
+            self.timeouts.append(timeout)
+            raise subprocess.TimeoutExpired('ffmpeg', timeout)
+
+        def poll(self):
+            return None if self.alive else self.returncode
+
+        def kill(self):
+            self.killed = True
+
+    monkeypatch.setattr(audio_io.subprocess, 'Popen', StuckProcess)
+    with pytest.raises(ChildProcessError, match='cleanup deadline') as error:
+        audio_io.run_hidden_cancellable([], lambda: next(cancelled), timeout=10)
+
+    assert isinstance(error.value.__cause__, InterruptedError)
+    assert processes[0].killed
+    assert processes[0].timeouts == [.2, 5]
+    assert "did not exit before its cleanup deadline" in caplog.text
+
+
+def test_ffmpeg_kill_failure_is_recorded_and_keeps_cancellation_cause(monkeypatch):
+    from manialab.cancellation import CancellationContext
+
+    context = CancellationContext()
+    calls = []
+
+    def cancelled():
+        calls.append(True)
+        return len(calls) >= 3
+
+    cancelled.deadline = None
+    cancelled.report_cleanup_failure = context.report_cleanup_failure
+
+    class UnkillableProcess:
+        returncode = None
+
+        def __init__(self, args, **kwargs):
+            pass
+
+        def poll(self):
+            return None
+
+        def communicate(self, timeout=None):
+            raise subprocess.TimeoutExpired("ffmpeg", timeout)
+
+        def kill(self):
+            raise PermissionError("synthetic access denied")
+
+    monkeypatch.setattr(audio_io.subprocess, "Popen", UnkillableProcess)
+    with pytest.raises(ChildProcessError, match="could not be killed") as error:
+        audio_io.run_hidden_cancellable([], cancelled, timeout=10)
+
+    assert isinstance(error.value.__cause__, InterruptedError)
+    assert context.cleanup_failures == (
+        "FFmpeg process could not be killed during cleanup",
+    )
 
 
 def test_audio_io_and_import_consumers_do_not_load_audio_runtime():

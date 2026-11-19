@@ -11,6 +11,7 @@ import numpy as np
 from scipy.io import wavfile
 
 from .audio_config import SR
+from .cancellation import report_process_cleanup_failure, timeout_for
 
 
 def run_hidden(args, **kwargs):
@@ -32,10 +33,21 @@ def run_hidden_cancellable(args, cancelled, *, timeout):
         if process.poll() is None:
             try:
                 process.kill()
-            except OSError:
+            except OSError as error:
                 if process.poll() is None:
-                    raise
-        process.communicate()
+                    message = "FFmpeg process could not be killed during cleanup"
+                    report_process_cleanup_failure(cancelled, message)
+                    raise ChildProcessError(message) from error
+        try:
+            process.communicate(timeout=timeout_for(cancelled, 5))
+        except subprocess.TimeoutExpired:
+            if process.poll() is None:
+                message = "FFmpeg process did not exit before its cleanup deadline"
+                report_process_cleanup_failure(
+                    cancelled,
+                    message,
+                )
+                raise ChildProcessError(message)
 
     deadline = time.monotonic() + timeout
     try:
@@ -50,8 +62,11 @@ def run_hidden_cancellable(args, cancelled, *, timeout):
                 return subprocess.CompletedProcess(args, process.returncode, stdout, stderr)
             except subprocess.TimeoutExpired:
                 continue
-    except BaseException:
-        kill_and_reap()
+    except BaseException as error:
+        try:
+            kill_and_reap()
+        except ChildProcessError as cleanup_error:
+            raise cleanup_error from error
         raise
 
 

@@ -14,12 +14,15 @@ from manialab import __version__
 from launcher import _run_server
 
 
-def test_launcher_closes_http_server_and_task_service_after_server_error():
+def test_launcher_shares_one_shutdown_deadline_across_cleanup(monkeypatch):
     calls = []
+    clock = [100.0]
+    monkeypatch.setattr(time, "monotonic", lambda: clock[0])
 
     class Dispatcher:
-        def shutdown(self):
-            calls.append("dispatcher-shutdown")
+        def shutdown(self, *, cancel_pending, timeout):
+            calls.append(("dispatcher-shutdown", cancel_pending, timeout))
+            clock[0] += 4
 
     class Server:
         task_dispatcher = Dispatcher()
@@ -30,15 +33,43 @@ def test_launcher_closes_http_server_and_task_service_after_server_error():
 
         def close(self):
             calls.append("close")
+            clock[0] += 2
 
     class TaskService:
-        def shutdown(self, *, wait):
-            calls.append(("shutdown", wait))
+        def shutdown(self, *, wait, deadline):
+            calls.append(("shutdown", wait, deadline))
+            return True
 
     with pytest.raises(RuntimeError, match="synthetic server failure"):
         _run_server(Server(), TaskService())
 
-    assert calls == ["run", "close", "dispatcher-shutdown", ("shutdown", True)]
+    assert calls == [
+        "run",
+        ("shutdown", False, 115.0),
+        "close",
+        ("dispatcher-shutdown", True, 13.0),
+        ("shutdown", True, 115.0),
+    ]
+
+
+def test_launcher_surfaces_shutdown_deadline_failure_without_hiding_server_error():
+    class Server:
+        task_dispatcher = None
+
+        def run(self):
+            raise RuntimeError("synthetic server failure")
+
+        def close(self):
+            pass
+
+    class TaskService:
+        def shutdown(self, *, wait, deadline):
+            return False if wait else True
+
+    with pytest.raises(ChildProcessError, match="shutdown deadline") as error:
+        _run_server(Server(), TaskService())
+
+    assert isinstance(error.value.__context__, RuntimeError)
 
 
 def test_launcher_survives_cp1252_output_and_unicode_data_directory(tmp_path):
