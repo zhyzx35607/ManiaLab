@@ -1,7 +1,12 @@
+import hashlib
+import io
 import json
+from types import SimpleNamespace
+import zipfile
 
 import pytest
 
+from scripts import build_provenance
 from scripts.build_provenance import sha256, verify_worker, worker_sources
 from scripts.worker_inventory import worker_inventory
 
@@ -85,3 +90,68 @@ def test_instrument_package_needs_matching_real_audio_checks(tmp_path, monkeypat
     save()
     with pytest.raises(ValueError, match='both models'):
         verify_instrument_worker(tmp_path, directory)
+
+
+def test_uv_download_checks_pinned_archive_binary_and_reported_target(tmp_path, monkeypatch):
+    executable = b'synthetic uv executable'
+    archive_bytes = io.BytesIO()
+    with zipfile.ZipFile(archive_bytes, 'w') as archive:
+        archive.writestr('uv.exe', executable)
+    archive_bytes = archive_bytes.getvalue()
+    release = {
+        'version': '1.2.3',
+        'target': 'x86_64-pc-windows-msvc',
+        'archive_name': 'uv-test.zip',
+        'archive_bytes': len(archive_bytes),
+        'archive_sha256': hashlib.sha256(archive_bytes).hexdigest(),
+        'executable_name': 'uv.exe',
+        'executable_bytes': len(executable),
+        'executable_sha256': hashlib.sha256(executable).hexdigest(),
+    }
+    monkeypatch.setattr(
+        build_provenance.subprocess,
+        'run',
+        lambda *args, **kwargs: SimpleNamespace(stdout='uv 1.2.3 (commit x86_64-pc-windows-msvc)'),
+    )
+    destination = tmp_path / 'inputs' / 'uv.exe'
+    identity = build_provenance.download_uv_binary(
+        destination,
+        release=release,
+        opener=lambda url, timeout: io.BytesIO(archive_bytes),
+    )
+
+    assert destination.read_bytes() == executable
+    assert identity['version'] == '1.2.3'
+    assert identity['archive_sha256'] == release['archive_sha256']
+    assert identity['sha256'] == release['executable_sha256']
+
+
+def test_uv_download_rejects_wrong_archive_or_executable(tmp_path):
+    executable = b'synthetic uv executable'
+    archive_bytes = io.BytesIO()
+    with zipfile.ZipFile(archive_bytes, 'w') as archive:
+        archive.writestr('uv.exe', executable)
+    archive_bytes = archive_bytes.getvalue()
+    release = {
+        'version': '1.2.3',
+        'target': 'x86_64-pc-windows-msvc',
+        'archive_name': 'uv-test.zip',
+        'archive_bytes': len(archive_bytes),
+        'archive_sha256': '0' * 64,
+        'executable_name': 'uv.exe',
+        'executable_bytes': len(executable),
+        'executable_sha256': hashlib.sha256(executable).hexdigest(),
+    }
+    with pytest.raises(ValueError, match='archive checksum'):
+        build_provenance.download_uv_binary(
+            tmp_path / 'uv.exe', release=release,
+            opener=lambda url, timeout: io.BytesIO(archive_bytes),
+        )
+
+    release['archive_sha256'] = hashlib.sha256(archive_bytes).hexdigest()
+    release['executable_sha256'] = '1' * 64
+    with pytest.raises(ValueError, match='executable checksum'):
+        build_provenance.download_uv_binary(
+            tmp_path / 'uv.exe', release=release,
+            opener=lambda url, timeout: io.BytesIO(archive_bytes),
+        )

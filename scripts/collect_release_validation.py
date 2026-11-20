@@ -16,6 +16,7 @@ from manialab import __version__
 from scripts.package_assets import (
     archive_stem, capabilities, verify_core_model_payload, verify_core_payload,
 )
+from scripts.build_provenance import uv_release_identity
 from scripts.pytest_provenance import validate_evidence
 
 
@@ -125,6 +126,13 @@ def _is_instrument_worker_identity(value):
 
 
 def _require_specialist_components(manifest, declared_capabilities):
+    uv_runtime = manifest.get("uv_runtime")
+    if declared_capabilities["mapperatorinator_install"]:
+        if uv_runtime != uv_release_identity():
+            raise SystemExit("Portable manifest has a missing or invalid uv_runtime identity.")
+    elif "uv_runtime" not in manifest or uv_runtime is not None:
+        raise SystemExit("Portable manifest must declare uv_runtime=null without the installer capability.")
+
     guitar_model = manifest.get("guitar_model")
     if declared_capabilities["guitar"]:
         if not _is_guitar_model_identity(guitar_model):
@@ -192,6 +200,18 @@ def _require_archive_file(archive, name, expected_sha256, expected_bytes=None):
         actual_sha256 = hashlib.file_digest(stream, "sha256").hexdigest()
     if actual_sha256 != expected_sha256:
         raise SystemExit(f"Release ZIP component differs from its manifest identity: {name}")
+
+
+def _require_uv_runtime_zip_payload(archive, declared_capabilities):
+    if not declared_capabilities["mapperatorinator_install"]:
+        return
+    identity = uv_release_identity()
+    _require_archive_file(
+        archive,
+        "ManiaLab/_internal/assets/runtime/uv.exe",
+        identity["sha256"],
+        identity["bytes"],
+    )
 
 
 def _require_archive_json(archive, name, expected):
@@ -519,6 +539,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
             raise SystemExit("Core model identity does not match the release manifest.")
         _require_runtime_license_zip_payloads(archive, manifest)
         _require_license_zip_payloads(archive, manifest)
+        _require_uv_runtime_zip_payload(archive, declared_capabilities)
         _require_specialist_zip_payloads(archive, manifest, declared_capabilities)
 
     suites = ET.parse(pytest_report).getroot()

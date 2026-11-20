@@ -1,8 +1,10 @@
+import io
 import json
+import os
 from pathlib import Path
 import subprocess
-import os
 import sys
+import threading
 import time
 import zipfile
 
@@ -13,6 +15,120 @@ from manialab.domain import Note,export_osu,sections,parse_osu
 from manialab.upstream import MapperEngine,fixed_timing_output,verify_fixed_timing
 
 ROOT=Path(__file__).resolve().parents[1]
+
+
+def _installable_mapper(tmp_path):
+    resources = tmp_path / 'resources'
+    assets = resources / 'assets'
+    assets.mkdir(parents=True)
+    with zipfile.ZipFile(assets / 'mapperatorinator-source.zip', 'w') as archive:
+        archive.writestr('inference.py', 'pass')
+    (assets / 'runtime').mkdir()
+    (assets / 'runtime/uv.exe').touch()
+    (assets / 'run_mapper.py').touch()
+    (assets / 'mapperatorinator-requirements.txt').touch()
+    engine = MapperEngine(tmp_path / 'data', resources)
+    engine.python.parent.mkdir(parents=True)
+    engine.python.touch()
+    return engine
+
+
+def _wait_for_job(service, job_id, timeout=5):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        job = service.get(job_id)
+        if job['status'] in ('done', 'error', 'cancelled'):
+            return job
+        time.sleep(0.01)
+    pytest.fail(f'job {job_id} did not finish: {service.get(job_id)}')
+
+
+def test_mapper_install_cancelled_before_start_preserves_ready_marker(tmp_path, monkeypatch):
+    engine = _installable_mapper(tmp_path)
+    marker = engine.root / 'ready.json'
+    previous_marker = json.dumps({'installed': True, 'source_commit': 'previous'}).encode()
+    marker.write_bytes(previous_marker)
+    calls = []
+
+    def fail_if_called(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AssertionError('cancelled install must not extract or run')
+
+    monkeypatch.setattr(zipfile.ZipFile, 'extractall', fail_if_called)
+    monkeypatch.setattr(engine, 'run', fail_if_called)
+
+    with pytest.raises(InterruptedError, match='已取消原模型安装'):
+        engine.install(lambda *args: None, lambda: True)
+
+    assert marker.read_bytes() == previous_marker
+    assert calls == []
+    assert not (engine.source / 'inference.py').exists()
+
+
+def test_mapper_install_cancelled_during_extract_does_not_start_next_step(tmp_path, monkeypatch):
+    engine = _installable_mapper(tmp_path)
+    marker = engine.root / 'ready.json'
+    temporary = marker.with_suffix('.json.tmp')
+    marker.write_text('{"installed": true}', encoding='utf-8')
+    temporary.write_text('stale temporary marker', encoding='utf-8')
+    extraction_started = threading.Event()
+    release_extraction = threading.Event()
+    cancellation = threading.Event()
+    failures = []
+    run_calls = []
+    original_extractall = zipfile.ZipFile.extractall
+
+    def blocked_extractall(archive, *args, **kwargs):
+        extraction_started.set()
+        if not release_extraction.wait(5):
+            raise TimeoutError('test did not release source extraction')
+        return original_extractall(archive, *args, **kwargs)
+
+    def fail_if_run(*args, **kwargs):
+        run_calls.append((args, kwargs))
+        raise AssertionError('cancelled install must not start the next step')
+
+    monkeypatch.setattr(zipfile.ZipFile, 'extractall', blocked_extractall)
+    monkeypatch.setattr(engine, 'run', fail_if_run)
+
+    def install():
+        try:
+            engine.install(lambda *args: None, cancellation.is_set)
+        except BaseException as error:
+            failures.append(error)
+
+    worker = threading.Thread(target=install)
+    worker.start()
+    try:
+        assert extraction_started.wait(5)
+        cancellation.set()
+    finally:
+        release_extraction.set()
+        worker.join(5)
+
+    assert not worker.is_alive()
+    assert len(failures) == 1 and isinstance(failures[0], InterruptedError)
+    assert run_calls == []
+    assert (engine.source / 'inference.py').is_file()
+    assert not marker.exists()
+    assert not temporary.exists()
+
+
+def test_mapper_run_cancelled_before_start_has_no_side_effects(tmp_path, monkeypatch):
+    engine = MapperEngine(tmp_path / 'data', tmp_path / 'resources')
+    popen_calls = []
+
+    def fail_if_started(*args, **kwargs):
+        popen_calls.append((args, kwargs))
+        raise AssertionError('cancelled task must not start a process')
+
+    monkeypatch.setattr(subprocess, 'Popen', fail_if_started)
+
+    with pytest.raises(InterruptedError, match='已取消原模型任务'):
+        engine.run(['fake-command'], 'synthetic task', lambda *args: None, lambda: True)
+
+    assert popen_calls == []
+    assert not engine.root.exists()
 
 
 @pytest.mark.parametrize('keys',range(6,11))
@@ -144,8 +260,391 @@ def test_successful_mapper_reinstall_atomically_writes_new_ready_marker(tmp_path
 
     assert observed_marker_states and not any(observed_marker_states)
     assert marker.is_file()
-    assert json.loads(marker.read_text(encoding='utf-8'))['source_commit']
+    marker_status = json.loads(marker.read_text(encoding='utf-8'))
+    assert marker_status['source_commit']
+    assert marker_status['installed'] is True
+    assert marker_status['generate_available'] is True
     assert engine.status()['installed']
+
+
+def test_mapper_install_cleans_partial_ready_write_failure(tmp_path, monkeypatch):
+    engine = _installable_mapper(tmp_path)
+    marker = engine.root / 'ready.json'
+    marker.write_text(json.dumps({'installed': True}), encoding='utf-8')
+    monkeypatch.setattr(engine, 'run', lambda *args, **kwargs: '')
+    original_write_text = Path.write_text
+
+    def partial_write(path, data, *args, **kwargs):
+        if path.name == 'ready.json.tmp':
+            original_write_text(path, data[:8], *args, **kwargs)
+            raise OSError('synthetic partial marker write failure')
+        return original_write_text(path, data, *args, **kwargs)
+
+    monkeypatch.setattr(Path, 'write_text', partial_write)
+    with pytest.raises(OSError, match='synthetic partial marker write failure'):
+        engine.install(lambda *args: None, lambda: False)
+
+    assert not marker.exists()
+    assert not marker.with_suffix('.json.tmp').exists()
+
+
+def test_mapper_install_cleans_ready_temp_when_replace_fails(tmp_path, monkeypatch):
+    engine = _installable_mapper(tmp_path)
+    marker = engine.root / 'ready.json'
+    marker.write_text(json.dumps({'installed': True}), encoding='utf-8')
+    monkeypatch.setattr(engine, 'run', lambda *args, **kwargs: '')
+
+    def fail_replace(source, destination):
+        assert Path(source).is_file()
+        assert Path(destination) == marker
+        raise PermissionError('synthetic ready replace failure')
+
+    monkeypatch.setattr('manialab.upstream.os.replace', fail_replace)
+    with pytest.raises(PermissionError, match='synthetic ready replace failure'):
+        engine.install(lambda *args: None, lambda: False)
+
+    assert not marker.exists()
+    assert not marker.with_suffix('.json.tmp').exists()
+
+
+def test_mapper_install_cancellation_after_ready_write_prevents_publication(tmp_path, monkeypatch):
+    engine = _installable_mapper(tmp_path)
+    marker = engine.root / 'ready.json'
+    marker.write_text(json.dumps({'installed': True}), encoding='utf-8')
+    monkeypatch.setattr(engine, 'run', lambda *args, **kwargs: '')
+    original_write_text = Path.write_text
+    marker_written = threading.Event()
+    release_writer = threading.Event()
+    cancellation = threading.Event()
+    failures = []
+
+    def blocked_write(path, data, *args, **kwargs):
+        result = original_write_text(path, data, *args, **kwargs)
+        if path.name == 'ready.json.tmp':
+            marker_written.set()
+            if not release_writer.wait(5):
+                raise TimeoutError('test did not release the marker writer')
+        return result
+
+    monkeypatch.setattr(Path, 'write_text', blocked_write)
+
+    def install():
+        try:
+            engine.install(lambda *args: None, cancellation.is_set)
+        except BaseException as error:
+            failures.append(error)
+
+    worker = threading.Thread(target=install)
+    worker.start()
+    try:
+        assert marker_written.wait(5)
+        cancellation.set()
+    finally:
+        release_writer.set()
+        worker.join(5)
+
+    assert not worker.is_alive()
+    assert len(failures) == 1 and isinstance(failures[0], InterruptedError)
+    assert not marker.exists()
+    assert not marker.with_suffix('.json.tmp').exists()
+
+
+def test_engine_install_cancel_after_atomic_publish_rolls_back_ready_marker(tmp_path, monkeypatch):
+    from manialab.server import create_app
+
+    published = threading.Event()
+    release_install = threading.Event()
+
+    def install_then_wait(engine, progress, cancelled, *, on_ready_invalidated=None):
+        engine.root.mkdir(parents=True, exist_ok=True)
+        engine.invalidate_ready_marker()
+        if on_ready_invalidated is not None:
+            on_ready_invalidated()
+        temporary = engine.root / 'ready.json.tmp'
+        temporary.write_text('{"installed": true}', encoding='utf-8')
+        os.replace(temporary, engine.root / 'ready.json')
+        published.set()
+        if not release_install.wait(5):
+            raise TimeoutError('test did not release the installed engine')
+
+    monkeypatch.setattr(MapperEngine, 'status', lambda self: {
+        'installed': False, 'model_downloaded': False,
+        'install_available': True, 'generate_available': False,
+    })
+    monkeypatch.setattr(MapperEngine, 'install', install_then_wait)
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    marker = tmp_path / 'mapperatorinator' / 'ready.json'
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text('{"installed": true}', encoding='utf-8')
+
+    try:
+        imported = client.post('/api/import', data={
+            'files': (io.BytesIO(b'synthetic audio'), 'song.wav'),
+        }, headers=headers)
+        assert imported.status_code == 200, imported.json
+        project_id = imported.json['id']
+        submitted = client.post(
+            f'/api/projects/{project_id}/engine-install', json={}, headers=headers
+        )
+        assert submitted.status_code == 200, submitted.json
+        job_id = submitted.json['id']
+        assert published.wait(5)
+        assert marker.is_file()
+        cancelled = client.post(f'/api/jobs/{job_id}/cancel', headers=headers)
+        assert cancelled.status_code == 200, cancelled.json
+    finally:
+        release_install.set()
+        app.extensions['executor'].shutdown(wait=True)
+
+    job = client.get(f'/api/jobs/{job_id}').json
+
+    assert job['status'] == 'cancelled', job
+    assert not marker.exists()
+    assert not marker.with_suffix('.json.tmp').exists()
+
+
+def test_engine_install_state_save_failure_rolls_back_marker_and_reuses_worker(tmp_path, monkeypatch):
+    from manialab.server import create_app
+
+    ready_status = {
+        'installed': True, 'model_downloaded': False,
+        'install_available': True, 'generate_available': True,
+    }
+    monkeypatch.setattr(MapperEngine, 'status', lambda self: ready_status.copy())
+    invalidation_observations = []
+    original_invalidate = MapperEngine.invalidate_ready_marker
+
+    def observe_invalidation(engine):
+        marker = engine.root / 'ready.json'
+        temporary = marker.with_suffix('.json.tmp')
+        invalidation_observations.append((marker.exists(), temporary.exists()))
+        original_invalidate(engine)
+
+    monkeypatch.setattr(MapperEngine, 'invalidate_ready_marker', observe_invalidation)
+
+    def install_and_leave_stale_temp(engine, progress, cancelled, *, on_ready_invalidated=None):
+        engine.root.mkdir(parents=True, exist_ok=True)
+        engine.invalidate_ready_marker()
+        if on_ready_invalidated is not None:
+            on_ready_invalidated()
+        temporary = engine.root / 'ready.json.tmp'
+        temporary.write_text('{"installed": true}', encoding='utf-8')
+        os.replace(temporary, engine.root / 'ready.json')
+        temporary.write_text('stale temporary marker', encoding='utf-8')
+
+    monkeypatch.setattr(MapperEngine, 'install', install_and_leave_stale_temp)
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    service = app.extensions['task_service']
+    projects = app.extensions['projects']
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    marker = tmp_path / 'mapperatorinator' / 'ready.json'
+    temporary = marker.with_suffix('.json.tmp')
+
+    try:
+        imported = client.post('/api/import', data={
+            'files': (io.BytesIO(b'synthetic audio'), 'song.wav'),
+        }, headers=headers)
+        assert imported.status_code == 200, imported.json
+        project_id = imported.json['id']
+        before = projects.load(project_id)
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text('{"installed": true}', encoding='utf-8')
+
+        original_save = projects.save
+        failed_saves = []
+
+        def fail_project_commit(state):
+            if state['id'] == project_id:
+                failed_saves.append(state)
+                raise OSError('synthetic project state save failure')
+            original_save(state)
+
+        monkeypatch.setattr(projects, 'save', fail_project_commit)
+        submitted = client.post(
+            f'/api/projects/{project_id}/engine-install', json={}, headers=headers
+        )
+        assert submitted.status_code == 200, submitted.json
+        result = _wait_for_job(service, submitted.json['id'])
+
+        assert result['status'] == 'error'
+        assert len(failed_saves) == 1
+        assert projects.load(project_id) == before
+        assert invalidation_observations == [(True, False), (True, True)]
+        assert not marker.exists()
+        assert not temporary.exists()
+
+        monkeypatch.setattr(projects, 'save', original_save)
+        recovered = service.submit(project_id, lambda *_: {'worker_reused': True})
+        recovery = _wait_for_job(service, recovered['id'])
+        assert recovery['status'] == 'done'
+        assert recovery['result'] == {'worker_reused': True}
+        assert service._idle.is_set()
+    finally:
+        service.shutdown(wait=True)
+
+
+def test_engine_install_cancel_cleanup_failure_is_error_not_done(tmp_path, monkeypatch):
+    from manialab.server import create_app
+
+    ready_status = {
+        'installed': True, 'model_downloaded': False,
+        'install_available': True, 'generate_available': True,
+    }
+    monkeypatch.setattr(MapperEngine, 'status', lambda self: ready_status.copy())
+    marker_invalidated = threading.Event()
+    release_install = threading.Event()
+    invalidation_calls = []
+    original_invalidate = MapperEngine.invalidate_ready_marker
+
+    def fail_cleanup_after_first_invalidation(engine):
+        invalidation_calls.append((engine.root / 'ready.json').exists())
+        if len(invalidation_calls) == 1:
+            return original_invalidate(engine)
+        raise OSError('synthetic ready marker cleanup failure')
+
+    monkeypatch.setattr(MapperEngine, 'invalidate_ready_marker', fail_cleanup_after_first_invalidation)
+
+    def install_then_wait_for_cancel(engine, progress, cancelled, *, on_ready_invalidated=None):
+        engine.invalidate_ready_marker()
+        if on_ready_invalidated is not None:
+            on_ready_invalidated()
+        marker_invalidated.set()
+        if not release_install.wait(5):
+            raise TimeoutError('test did not release the cancelled install')
+
+    monkeypatch.setattr(MapperEngine, 'install', install_then_wait_for_cancel)
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    service = app.extensions['task_service']
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    marker = tmp_path / 'mapperatorinator' / 'ready.json'
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text('{"installed": true}', encoding='utf-8')
+
+    try:
+        imported = client.post('/api/import', data={
+            'files': (io.BytesIO(b'synthetic audio'), 'song.wav'),
+        }, headers=headers)
+        assert imported.status_code == 200, imported.json
+        project_id = imported.json['id']
+        before = app.extensions['projects'].load(project_id)
+        submitted = client.post(
+            f'/api/projects/{project_id}/engine-install', json={}, headers=headers
+        )
+        assert submitted.status_code == 200, submitted.json
+        job_id = submitted.json['id']
+
+        assert marker_invalidated.wait(5)
+        assert not marker.exists()
+        cancelled = client.post(f'/api/jobs/{job_id}/cancel', headers=headers)
+        assert cancelled.status_code == 200, cancelled.json
+        release_install.set()
+        result = _wait_for_job(service, job_id)
+
+        assert result['status'] == 'error', result
+        assert result['cleanup_failed'] is True
+        assert '资源清理失败' in result['message']
+        assert result.get('result') is None
+        assert result['cancel'] is True
+        assert invalidation_calls == [True, False]
+        assert app.extensions['projects'].load(project_id) == before
+        assert not marker.exists()
+    finally:
+        release_install.set()
+        service.shutdown(wait=True)
+
+
+def test_engine_install_cancel_during_post_commit_cleanup_keeps_ready_marker(tmp_path, monkeypatch):
+    from manialab.server import create_app
+    from manialab.task_service import ProjectTasks
+
+    cleanup_started = threading.Event()
+    release_cleanup = threading.Event()
+    cleanup_commits = []
+    original_submit = ProjectTasks.submit
+
+    def submit_with_blocking_cleanup(self, project_id, operation, *, identity=None, cleanup=None):
+        if cleanup is None:
+            return original_submit(self, project_id, operation, identity=identity)
+
+        def block_after_commit(committed):
+            cleanup_commits.append(committed)
+            if committed:
+                cleanup_started.set()
+                if not release_cleanup.wait(5):
+                    raise TimeoutError('test did not release post-commit cleanup')
+            cleanup(committed)
+
+        return original_submit(self, project_id, operation, identity=identity,
+                               cleanup=block_after_commit)
+
+    monkeypatch.setattr(ProjectTasks, 'submit', submit_with_blocking_cleanup)
+    ready_status = {
+        'installed': True, 'model_downloaded': False,
+        'install_available': True, 'generate_available': True,
+    }
+    monkeypatch.setattr(MapperEngine, 'status', lambda self: ready_status.copy())
+
+    def install_and_publish(engine, progress, cancelled, *, on_ready_invalidated=None):
+        engine.root.mkdir(parents=True, exist_ok=True)
+        engine.invalidate_ready_marker()
+        if on_ready_invalidated is not None:
+            on_ready_invalidated()
+        temporary = engine.root / 'ready.json.tmp'
+        temporary.write_text('{"installed": true}', encoding='utf-8')
+        os.replace(temporary, engine.root / 'ready.json')
+
+    monkeypatch.setattr(MapperEngine, 'install', install_and_publish)
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    marker = tmp_path / 'mapperatorinator' / 'ready.json'
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text('{"installed": true}', encoding='utf-8')
+    service = app.extensions['task_service']
+
+    try:
+        imported = client.post('/api/import', data={
+            'files': (io.BytesIO(b'synthetic audio'), 'song.wav'),
+        }, headers=headers)
+        assert imported.status_code == 200, imported.json
+        project_id = imported.json['id']
+        submitted = client.post(
+            f'/api/projects/{project_id}/engine-install', json={}, headers=headers
+        )
+        assert submitted.status_code == 200, submitted.json
+        job_id = submitted.json['id']
+
+        assert cleanup_started.wait(5)
+        assert cleanup_commits == [True]
+        waiting = client.get(f'/api/jobs/{job_id}').json
+        assert waiting['status'] == 'running' and waiting['cancel'] is False
+        assert marker.is_file()
+
+        cancelled = client.post(f'/api/jobs/{job_id}/cancel', headers=headers)
+        assert cancelled.status_code == 200, cancelled.json
+        assert cancelled.json == {'ok': True}
+        assert client.get(f'/api/jobs/{job_id}').json['cancel'] is True
+        assert marker.is_file()
+    finally:
+        release_cleanup.set()
+
+        result = _wait_for_job(service, job_id)
+    assert result['status'] == 'done', result
+    assert result['result'] == ready_status
+    assert result['cancel'] is False
+    assert marker.is_file()
+    assert not marker.with_suffix('.json.tmp').exists()
+
+    recovered = service.submit(project_id, lambda *_: {'worker_reused': True})
+    recovered_result = _wait_for_job(service, recovered['id'])
+    assert recovered_result['status'] == 'done'
+    assert recovered_result['result'] == {'worker_reused': True}
+    assert service._idle.is_set()
+    app.extensions['executor'].shutdown(wait=True)
 
 
 def test_experimental_adapter_preserves_reference_meter_changes_without_notes(tmp_path,monkeypatch):

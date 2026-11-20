@@ -1,13 +1,92 @@
 """Check that packaged workers were built from the current local sources."""
 import hashlib
+import io
 import json
 from pathlib import Path
+import subprocess
+import urllib.request
+import zipfile
 from scripts.worker_inventory import verify_worker_inventory
 
 
 def sha256(path):
     with Path(path).open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+UV_RELEASE = {
+    'version': '0.12.1',
+    'target': 'x86_64-pc-windows-msvc',
+    'archive_name': 'uv-x86_64-pc-windows-msvc.zip',
+    'archive_bytes': 19073343,
+    'archive_sha256': '8fcb0cb46e1229065e344758980924e569bef5882ef45f46fada8fb24e06b74a',
+    'executable_name': 'uv.exe',
+    'executable_bytes': 48254464,
+    'executable_sha256': 'f537cc65c1791d9d1a022132302b21ecd48cdf0a605a7b345809fbe8af4e807d',
+}
+
+
+def uv_release_identity(release=UV_RELEASE):
+    """Return the reviewed upstream archive and extracted executable identity."""
+    return {
+        'version': release['version'],
+        'target': release['target'],
+        'archive_url': (
+            'https://github.com/astral-sh/uv/releases/download/'
+            f"{release['version']}/{release['archive_name']}"
+        ),
+        'archive_bytes': release['archive_bytes'],
+        'archive_sha256': release['archive_sha256'],
+        'filename': release['executable_name'],
+        'bytes': release['executable_bytes'],
+        'sha256': release['executable_sha256'],
+    }
+
+
+def verify_uv_binary(path, *, release=UV_RELEASE, check_version=True):
+    """Verify the pinned uv executable bytes and optionally its reported target."""
+    path = Path(path)
+    identity = uv_release_identity(release)
+    if not path.is_file() or path.stat().st_size != identity['bytes']:
+        raise ValueError('uv executable size differs from the pinned release identity')
+    if sha256(path) != identity['sha256']:
+        raise ValueError('uv executable checksum differs from the pinned release identity')
+    if check_version:
+        result = subprocess.run(
+            [str(path), '--version'], check=True, capture_output=True, text=True, timeout=30
+        )
+        output = result.stdout.strip()
+        if not output.startswith(f"uv {identity['version']} ") or identity['target'] not in output:
+            raise ValueError('uv executable reports an unexpected version or target')
+    return identity
+
+
+def download_uv_binary(destination, *, release=UV_RELEASE, opener=None):
+    """Fetch only the reviewed Windows release archive and extract its verified uv.exe."""
+    destination = Path(destination)
+    identity = uv_release_identity(release)
+    open_url = opener or urllib.request.urlopen
+    with open_url(identity['archive_url'], timeout=60) as response:
+        archive_bytes = response.read(identity['archive_bytes'] + 1)
+    if len(archive_bytes) != identity['archive_bytes']:
+        raise ValueError('uv release archive size differs from the pinned identity')
+    if hashlib.sha256(archive_bytes).hexdigest() != identity['archive_sha256']:
+        raise ValueError('uv release archive checksum differs from the pinned identity')
+    try:
+        with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
+            matches = [entry for entry in archive.infolist()
+                if entry.filename == release['executable_name'] and not entry.is_dir()]
+            if len(matches) != 1 or matches[0].file_size != identity['bytes']:
+                raise ValueError('uv release archive has an unexpected executable inventory')
+            executable_bytes = archive.read(matches[0])
+    except zipfile.BadZipFile as exc:
+        raise ValueError('uv release archive is not a valid ZIP') from exc
+    if hashlib.sha256(executable_bytes).hexdigest() != identity['sha256']:
+        raise ValueError('uv executable checksum differs from the pinned release identity')
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open('xb') as stream:
+        stream.write(executable_bytes)
+    return verify_uv_binary(destination, release=release)
 
 
 def worker_sources(root):

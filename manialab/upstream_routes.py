@@ -21,11 +21,20 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
     def engine_install(pid):
         if not engine.status().get("install_available"):
             raise ValueError("当前便携配置不含原模型安装器")
+        installation = {"ready_invalidated": False}
+
+        def mark_ready_invalidated():
+            installation["ready_invalidated"] = True
+
         def operation(state, progress, cancelled):
-            engine.install(progress, cancelled)
+            engine.install(progress, cancelled, on_ready_invalidated=mark_ready_invalidated)
             return engine.status()
 
-        return submit(pid, operation)
+        def cleanup(committed):
+            if installation["ready_invalidated"] and not committed:
+                engine.invalidate_ready_marker()
+
+        return submit(pid, operation, cleanup=cleanup)
 
     @app.post("/api/projects/<pid>/engine-generate")
     def engine_generate(pid):

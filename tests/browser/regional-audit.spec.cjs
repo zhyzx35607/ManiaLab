@@ -26,8 +26,15 @@ async function mutePiano(page) {
   });
 }
 
+async function setPianoWeight(page, value) {
+  await page.locator('#piano_weight').evaluate((el,value)=>{
+    el.value=String(value);el.dispatchEvent(new Event('input',{bubbles:true}));
+  },value);
+}
+
 async function generateRegional(page, action) {
   await openProject(page,action);
+  await setPianoWeight(page,1);
   await page.locator('#generate').click();
   await expect(page.locator('#message')).toContainText('结构检查通过');
   const before=await page.evaluate(()=>structuredClone(variant().notes));
@@ -130,6 +137,7 @@ test('editing a regional candidate keeps its origin and evidence without stale g
   await page.locator('#editStart').fill(String(secondStart+125));
   await page.locator('#editEnd').fill(String(secondEnd+125));
   await page.locator('#editSave').click();
+  await expect.poll(()=>page.evaluate(()=>variant()?.edits?.length)).toBe(2);
   await expect(page.locator('#variants option:checked')).toContainText('编辑自局部候选');
   const twiceEdited=await page.evaluate(()=>structuredClone(variant()));
   expect(twiceEdited.generation_origin).toEqual(edited.generation_origin);
@@ -159,6 +167,56 @@ test('editing a regional candidate keeps its origin and evidence without stale g
   await expect(page.locator('#inspector')).toContainText('原始候选起点（原音频）');
 });
 
+test('unknown candidate origins stay explicit when parent history is missing, ambiguous, cyclic, or pruned',async({page})=>{
+  const pid=await generateRegional(page,'current');
+  await page.route(`**/api/projects/${pid}`,async route=>{
+    const response=await route.fetch(),data=await response.json(),template=data.variants[data.active];
+    const edited=(created,parentCreated,origin)=>{
+      const candidate=structuredClone(template);
+      candidate.created=created;candidate.region=null;candidate.selection={};
+      candidate.edits=[{parent_created:parentCreated,op:'update'}];
+      delete candidate.generation_origin;
+      if(origin)candidate.generation_origin={kind:origin};
+      return candidate;
+    };
+    const missing=edited(900,901);
+    const ambiguous=edited(910,950);
+    const savedUnknown=edited(920,921,'unknown');
+    const fullParent=edited(950,null,'full_song_generation');fullParent.edits=[];
+    const regionalParent=edited(950,null,'regional_generation');
+    regionalParent.region=[3000,5000];regionalParent.edits=[];
+    const uniqueRegionalParent=edited(921,null,'regional_generation');
+    uniqueRegionalParent.region=[3000,5000];uniqueRegionalParent.edits=[];
+    const fullSong=edited(960,null,'full_song_generation');fullSong.edits=[];
+    const regional=edited(970,null,'regional_generation');regional.region=[3000,5000];regional.edits=[];
+    const booleanChild=edited(980,true);
+    const booleanParent=edited(true,null,'full_song_generation');booleanParent.edits=[];
+    const cycleFirst=edited(990,991);
+    const cycleSecond=edited(991,990);
+    const malformedEdits=edited(1000,null);malformedEdits.edits={};
+    data.variants=[missing,ambiguous,savedUnknown,fullParent,regionalParent,uniqueRegionalParent,fullSong,regional,
+      booleanChild,booleanParent,cycleFirst,cycleSecond,malformedEdits];
+    data.active=0;
+    await route.fulfill({response,json:data});
+  });
+  await page.reload();await page.locator('#recent').selectOption(pid);
+  const options=page.locator('#variants option');
+  await expect(options).toHaveCount(13);
+  for(const index of [0,1,2])await expect(options.nth(index)).toContainText('来源未知');
+  await expect(options.nth(3)).not.toContainText('来源未知');
+  await expect(options.nth(3)).not.toContainText('局部');
+  await expect(options.nth(4)).toContainText('局部');
+  await expect(options.nth(5)).toContainText('局部');
+  await expect(options.nth(6)).not.toContainText('来源未知');
+  await expect(options.nth(6)).not.toContainText('局部');
+  await expect(options.nth(7)).toContainText('局部');
+  await expect(options.nth(8)).toContainText('来源未知');
+  await expect(options.nth(9)).not.toContainText('来源未知');
+  await expect(options.nth(10)).toContainText('来源未知');
+  await expect(options.nth(11)).toContainText('来源未知');
+  await expect(options.nth(12)).toContainText('来源未知');
+});
+
 test('legacy regional reports derive counts from saved notes and label their uncertain scope',async({page})=>{
   const pid=await generateRegional(page,'legacy');
   await page.route(`**/api/projects/${pid}`,async route=>{
@@ -178,6 +236,8 @@ test('whole-song generation keeps the existing final omission audit',async({page
   await openProject(page,'full');await mutePiano(page);
   await page.locator('#generate').click();
   await expect(page.locator('#message')).toContainText('结构检查通过');
+  await expect(page.locator('#variants option:checked')).not.toContainText('来源未知');
+  await expect(page.locator('#variants option:checked')).not.toContainText('局部');
   expect(await page.evaluate(()=>variant().notes.map(n=>n.id))).toEqual(['region']);
   await expect(page.locator('#expressionAudit')).toContainText('当前候选的省音记录');
   await expect(page.locator('#expressionAudit')).not.toContainText('区域外锁定');

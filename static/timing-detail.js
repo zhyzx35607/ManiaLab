@@ -40,11 +40,14 @@ function drawWaveDetail(){
     c.moveTo(at,mid-d.low[i]*scale);c.lineTo(at,mid-d.high[i]*scale);
   }c.stroke();
   const relevant=n=>d.voice==='mix'||n.voice===d.voice;
-  const sourceEvents=view==='evidence'?(state.analysis?.candidates||[]):
-    Object.entries(variant()?.source_evidence||{}).map(([id,evidence])=>
-      evidence.detected?{id,...evidence.detected}:null).filter(Boolean);
-  for(const n of sourceEvents.filter(relevant))line(waveAudioTime(n.start),'#ffb978',h-54,h-34);
-  for(const n of (variant()?.notes||state.input_notes||[]).filter(relevant)){
+  const candidate=variant(),currentIds=new Set((candidate?.notes||[]).map(n=>n.id));
+  const sourceEvents=view==='evidence'?(state.analysis?.candidates||[]).map(n=>({...n,historical:false})):
+    Object.entries(candidate?.source_evidence||{}).map(([id,evidence])=>
+      evidence.detected?{id,...evidence.detected,historical:!currentIds.has(id)}:null).filter(Boolean);
+  const drawableSourceEvents=sourceEvents.filter(n=>Number.isFinite(n.start)&&relevant(n));
+  for(const n of drawableSourceEvents)line(waveAudioTime(n.start),n.historical?'#c88d70':'#ffb978',
+    h-54,h-34,n.historical);
+  for(const n of (candidate?.notes||state.input_notes||[]).filter(relevant)){
     line(waveChartTime(n.start,waveCandidateShift()),'#eef4ff',h-32,h-14);if(n.end>n.start)line(waveChartTime(n.end,waveCandidateShift()),'#78e4c4',27,h-14,true);
   }
   const cursor=Number($('waveCursor').value);line(cursor,'#ff839d',0,h-10);
@@ -52,7 +55,14 @@ function drawWaveDetail(){
   const tick=60000/Number($('bpm').value)/Number($('division').value),offset=Number($('offset').value);
   const chartCursor=waveToChartTime(cursor),delta=chartCursor-(offset+Math.round((chartCursor-offset)/tick)*tick);
   $('waveAlign').disabled=busy||$('mode').value!=='audio';
-  $('waveDetailInfo').textContent=`${d.voice} · 原始采样 ${d.sample_rate} Hz · 波形显示提前 ${d.shift} ms · 选中 ${Number(cursor.toFixed(3))} ms`+($('mode').value==='audio'?`，距最近细分线 ${delta.toFixed(2)} ms。`:'。')+'橙色：原始起音；白色：谱面起点；绿色虚线：LN 尾端。波形位置需要结合试听判断。';
+  const onsetLegend=view==='evidence'?'橙色：当前分析的原始起音；':[
+    drawableSourceEvents.some(n=>!n.historical)?'橙色：当前谱面中有已保存快照物件的原始起音；':'',
+    drawableSourceEvents.some(n=>n.historical)?'灰橙虚线：已保存快照但不在当前谱面的历史起音（如由编辑删除，可在 JSON edits 查找记录）；':'',
+    drawableSourceEvents.length?'':
+      sourceEvents.some(n=>Number.isFinite(n.start))?'当前声部没有可用的已保存原始起音快照；':
+        candidate?'此候选未保存可用的原始起音快照；':'尚未生成候选谱面；没有候选原始起音快照可显示；',
+  ].filter(Boolean).join('');
+  $('waveDetailInfo').textContent=`${d.voice} · 原始采样 ${d.sample_rate} Hz · 波形显示提前 ${d.shift} ms · 选中 ${Number(cursor.toFixed(3))} ms`+($('mode').value==='audio'?`，距最近细分线 ${delta.toFixed(2)} ms。`:'。')+onsetLegend+'白色：谱面起点；绿色虚线：LN 尾端。波形位置需要结合试听判断。';
 }
 $('waveHere').onclick=guarded(()=>loadWaveDetail());
 $('waveNote').onclick=guarded(()=>{const note=displayed.find(n=>n.id===selected);if(!note)throw Error('请先在谱面或采音预览中点击一个音符');return loadWaveDetail(waveNoteTime(note.start));});

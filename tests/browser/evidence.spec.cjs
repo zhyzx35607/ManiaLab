@@ -223,6 +223,84 @@ test('deleting a selected note creates a reversible candidate that survives reop
   await expect.poll(()=>page.evaluate(()=>variant().notes.some(note=>note.id==='unobserved'))).toBe(true);
 });
 
+test('deleted note source snapshots remain historical in JSON and waveform', async ({ page }) => {
+  await generateEvidence(page,'UI evidence edits');
+  const pid=await page.locator('#recent').inputValue();
+  const original=await page.evaluate(()=>({
+    sourceEvidence:structuredClone(variant().source_evidence.evidence0),
+    noteStart:variant().notes.find(note=>note.id==='evidence0').start/1000,
+  }));
+  await selectNote(page,'evidence0',original.noteStart);
+  await page.locator('#noteEditor').evaluate(el=>{el.open=true;});
+  await page.locator('#editDelete').click();
+  await expect.poll(()=>page.evaluate(()=>variant().edits?.at(-1)?.op)).toBe('delete');
+
+  const exported=await (await page.request.get(`/api/projects/${pid}/export/json`)).json();
+  expect(exported.variant.notes.some(note=>note.id==='evidence0')).toBe(false);
+  expect(exported.variant.source_evidence.evidence0).toEqual(original.sourceEvidence);
+  expect(exported.variant.edits.at(-1)).toMatchObject({op:'delete',before:{id:'evidence0'},after:null});
+
+  await page.locator('#voice').selectOption('other');
+  await page.locator('#waveDetailPanel').evaluate(el=>{el.open=true;});
+  const onsetTimes=await page.evaluate(()=>({
+    deleted:waveAudioTime(variant().source_evidence.evidence0.detected.start),
+    current:waveAudioTime(variant().source_evidence.evidence1.detected.start),
+  }));
+  await page.evaluate(time=>loadWaveDetail(time),(onsetTimes.deleted+onsetTimes.current)/2);
+  await expect(page.locator('#waveDetailInfo')).toContainText(
+    '当前谱面中有已保存快照物件的原始起音');
+  await expect(page.locator('#waveDetailInfo')).toContainText('不在当前谱面的历史起音');
+  const markers=await page.evaluate(()=>{
+    const canvas=document.getElementById('waveDetail'),context=canvas.getContext('2d'),records=[];
+    const move=context.moveTo;
+    context.moveTo=function(x,y){
+      if(this.strokeStyle==='#ffb978'||this.strokeStyle==='#c88d70')
+        records.push({color:this.strokeStyle,x,dash:this.getLineDash()});
+      return move.call(this,x,y);
+    };
+    try{drawWaveDetail();}finally{context.moveTo=move;}
+    const width=canvas.getBoundingClientRect().width-24;
+    return records.map(record=>({...record,time:waveDetail.start_ms+(record.x-12)/width*(waveDetail.end_ms-waveDetail.start_ms)}));
+  });
+  expect(markers.some(marker=>marker.color==='#c88d70'&&marker.dash.length>0&&
+    Math.abs(marker.time-onsetTimes.deleted)<1)).toBe(true);
+  expect(markers.some(marker=>marker.color==='#ffb978'&&marker.dash.length===0&&
+    Math.abs(marker.time-onsetTimes.deleted)<1)).toBe(false);
+  expect(markers.some(marker=>marker.color==='#ffb978'&&marker.dash.length===0&&
+    Math.abs(marker.time-onsetTimes.current)<1)).toBe(true);
+  expect(markers.some(marker=>marker.color==='#c88d70'&&marker.dash.length>0&&
+    Math.abs(marker.time-onsetTimes.current)<1)).toBe(false);
+});
+
+test('chart waveform legend only describes saved source snapshots', async ({ page }) => {
+  await generateEvidence(page,'UI evidence legend');
+  const snapshot=await page.evaluate(()=>structuredClone(variant().source_evidence.evidence0));
+  await page.locator('#voice').selectOption('other');
+  await page.evaluate(()=>{delete variant().source_evidence;});
+  await page.locator('#waveDetailPanel').evaluate(el=>{el.open=true;});
+  await page.evaluate(()=>loadWaveDetail(1000));
+  await expect(page.locator('#waveDetailInfo')).toContainText('此候选未保存可用的原始起音快照');
+  await expect(page.locator('#waveDetailInfo')).not.toContainText('橙色：');
+  await expect(page.locator('#waveDetailInfo')).not.toContainText('灰橙虚线：');
+
+  await page.evaluate(snapshot=>{
+    variant().source_evidence={evidence0:snapshot};
+    drawWaveDetail();
+  },snapshot);
+  await expect(page.locator('#waveDetailInfo')).toContainText(
+    '橙色：当前谱面中有已保存快照物件的原始起音');
+  await expect(page.locator('#waveDetailInfo')).not.toContainText('灰橙虚线：');
+
+  await page.locator('#voice').selectOption('piano');
+  await expect(page.locator('#waveDetailInfo')).toContainText('当前声部没有可用的已保存原始起音快照');
+  await expect(page.locator('#waveDetailInfo')).not.toContainText('橙色：');
+  await expect(page.locator('#waveDetailInfo')).not.toContainText('灰橙虚线：');
+
+  await page.evaluate(()=>{state.active=-1;drawWaveDetail();});
+  await expect(page.locator('#waveDetailInfo')).toContainText('尚未生成候选谱面');
+  await expect(page.locator('#waveDetailInfo')).not.toContainText('此候选未保存');
+});
+
 test('saved evidence survives changed analysis and legacy gaps remain unknown', async ({ page }) => {
   await generateEvidence(page,'UI evidence snapshots');
   const pid=await page.locator('#recent').inputValue();

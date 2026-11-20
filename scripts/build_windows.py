@@ -16,30 +16,37 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from manialab import __version__
 from package_assets import (
-    MAPPER_INSTALLER_FILES, PROFILES, archive_stem, capabilities, stage_assets, start_guide,
+    MAPPER_INSTALLER_FILES, add_profile_argument, archive_stem, capabilities, stage_assets, start_guide,
     verify_core_model_files,
 )
 from worker_inventory import worker_inventory
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--profile",choices=sorted(PROFILES),default="standard")
+add_profile_argument(parser)
 profile=parser.parse_args().profile
 enabled=capabilities(profile)
 from build_provenance import (
     sha256,
+    download_uv_binary,
     verify_worker,
     verify_instrument_worker,
     verify_guitar_model,
     verify_piano_model,
+    verify_uv_binary,
 )
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
 
-def stage_license_inputs(source, destination):
+def stage_license_inputs(source, destination, enabled=None):
     source = Path(source)
     destination = Path(destination)
+    enabled = enabled or {}
     destination.mkdir(parents=True, exist_ok=False)
     for entry in source.iterdir():
         if entry.name in {'runtime', 'runtime-inventory.json'}:
+            continue
+        if entry.name == 'deep-runtime' and not enabled.get('separation_four', False):
+            continue
+        if entry.name == 'instrument-runtime' and not enabled.get('instruments', False):
             continue
         target = destination / entry.name
         if entry.is_dir():
@@ -100,7 +107,7 @@ def source_snapshot():
            ROOT/'assets/guitar-model.json',ROOT/'assets/deep-models.json',ROOT/'manialab/tsumugi-source.json',
            *license_inputs]
     if enabled['mapperatorinator_install']:
-        # uv.exe is copied from the selected runtime later; these are source inputs.
+        # uv.exe is fetched separately from its pinned upstream release.
         files += [ROOT/'assets'/name for name in MAPPER_INSTALLER_FILES if name != 'runtime/uv.exe']
     return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
 build_sources=source_snapshot()
@@ -126,11 +133,6 @@ if enabled['separation_four']:
         with (ROOT/'assets/deep'/model['filename']).open('rb') as stream:
             if hashlib.file_digest(stream,'sha256').hexdigest()!=model['sha256']:
                 raise SystemExit('Unexpected model checksum: '+model['name'])
-uv=shutil.which('uv')
-if enabled['mapperatorinator_install']:
-    if not uv:raise SystemExit('Install uv first to bundle the optional engine installer.')
-    (ROOT/'assets/runtime').mkdir(exist_ok=True)
-    shutil.copy2(uv,ROOT/'assets/runtime/uv.exe')
 build_id=os.environ.get('MANIALAB_BUILD_ID') or datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+f'-{os.getpid()}'
 if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',build_id):
     raise SystemExit('MANIALAB_BUILD_ID must be a simple path component.')
@@ -139,8 +141,13 @@ try:
     build_root.mkdir(parents=True,exist_ok=False)
 except FileExistsError:
     raise SystemExit(f'Build output already exists; choose a new MANIALAB_BUILD_ID: {build_root}')
+uv_binary=None
+uv_identity=None
+if enabled['mapperatorinator_install']:
+    uv_binary=build_root/'inputs'/'uv.exe'
+    uv_identity=download_uv_binary(uv_binary)
 license_stage=build_root/'licenses'
-stage_license_inputs(ROOT/'licenses', license_stage)
+stage_license_inputs(ROOT/'licenses', license_stage, enabled)
 runtime_license_files, runtime_license_inventory = stage_runtime_licenses(
     license_stage,
     metadata.distributions(),
@@ -164,7 +171,9 @@ package_path=build_root/'release'
 for directory in (workpath,distpath,specpath,package_path):
     directory.mkdir()
 staged_assets=build_root/'assets'
-stage_assets(ROOT,staged_assets,profile)
+stage_assets(ROOT,staged_assets,profile,uv_path=uv_binary)
+if uv_identity and verify_uv_binary(staged_assets/'runtime/uv.exe',check_version=False)!=uv_identity:
+    raise SystemExit('Staged uv executable differs from its pinned release identity.')
 args=[sys.executable,'-m','PyInstaller','--noconfirm','--name','ManiaLab','--console',
       '--add-data',f'{ROOT / "static"};static',
       '--add-data',f'{staged_assets};assets',
@@ -192,6 +201,12 @@ if instrument_identity and verify_instrument_worker(ROOT,target/'_internal/asset
     raise SystemExit('Instrument worker changed during the build; rebuild before publishing.')
 if enabled['guitar'] and verify_guitar_model(target/'_internal')!=guitar_identity:
     raise SystemExit('Guitar model or attribution changed during the build; rebuild before publishing.')
+bundled_uv_identity=(
+    verify_uv_binary(target/'_internal/assets/runtime/uv.exe',check_version=False)
+    if enabled['mapperatorinator_install'] else None
+)
+if bundled_uv_identity!=uv_identity:
+    raise SystemExit('Bundled uv executable differs from its pinned release identity.')
 if worker_inventory(license_stage)!=license_files:
     raise SystemExit('License files changed during the build; rebuild before publishing.')
 instrument_runtime_license_files=(
@@ -199,6 +214,7 @@ instrument_runtime_license_files=(
 release_manifest=dict(version=__version__,sources=build_sources,build_profile=profile,capabilities=enabled,
     executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
     core_models=bundled_core_model_identity,
+    uv_runtime=bundled_uv_identity,
     worker_sha256=bundled_worker.get('worker_sha256') if bundled_worker else None,
     worker_sources=bundled_worker.get('worker_sources') if bundled_worker else None,
     worker_files=bundled_worker.get('worker_files') if bundled_worker else None,

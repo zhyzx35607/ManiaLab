@@ -3,7 +3,10 @@ import io
 import json
 import os
 from pathlib import Path
+import select
 import socket
+import socketserver
+import ssl
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
@@ -412,6 +415,139 @@ def test_real_http_planner_tunnels_through_https_proxy(monkeypatch):
     assert b'Proxy-Authorization:' not in tunneled_request
 
 
+def test_http_planner_uses_real_tls_over_tls_https_proxy(monkeypatch):
+    fixture_dir = Path(__file__).parent / 'fixtures' / 'https_proxy_tls'
+    ca_file = fixture_dir / 'ca.pem'
+    response = {
+        'choices': [{'message': {'content': json.dumps({
+            'preferences': {'density': 16},
+            'segments': [],
+            'explanation': 'through local TLS tunnel',
+        })}}],
+    }
+    response_bytes = json.dumps(response).encode()
+    observed = {}
+    proxy_failures = []
+
+    class OriginHandler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers['Content-Length']))
+            observed['origin_path'] = self.path
+            observed['origin_host'] = self.headers.get('Host')
+            observed['origin_authorization'] = self.headers.get('Authorization')
+            observed['origin_proxy_authorization'] = self.headers.get('Proxy-Authorization')
+            self.send_response(200)
+            self.send_header('Content-Length', str(len(response_bytes)))
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            self.wfile.write(response_bytes)
+
+        def log_message(self, *args):
+            pass
+
+    origin = ThreadingHTTPServer(('127.0.0.1', 0), OriginHandler)
+    origin_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    origin_context.load_cert_chain(
+        fixture_dir / 'origin-cert.pem', fixture_dir / 'origin-key.pem'
+    )
+    origin.socket = origin_context.wrap_socket(origin.socket, server_side=True)
+    origin_thread = threading.Thread(target=origin.serve_forever, daemon=True)
+    origin_thread.start()
+
+    class TunnelHandler(socketserver.StreamRequestHandler):
+        def handle(self):
+            try:
+                request_line = self.rfile.readline().decode('ascii').rstrip('\r\n')
+                headers = {}
+                while True:
+                    line = self.rfile.readline()
+                    if line in (b'\r\n', b'\n', b''):
+                        break
+                    name, value = line.decode('latin-1').split(':', 1)
+                    headers[name.lower()] = value.strip()
+                observed['connect_line'] = request_line
+                observed['connect_host'] = headers.get('host')
+                observed['connect_proxy_authorization'] = headers.get('proxy-authorization')
+
+                with socket.create_connection(('127.0.0.1', origin.server_port), timeout=5) as upstream:
+                    self.request.settimeout(5)
+                    upstream.settimeout(5)
+                    self.wfile.write(b'HTTP/1.1 200 Connection Established\r\n\r\n')
+                    self.wfile.flush()
+                    while True:
+                        readable, _, _ = select.select((self.request, upstream), (), (), 5)
+                        if not readable:
+                            raise TimeoutError('local HTTPS proxy tunnel stalled')
+                        for source in readable:
+                            data = source.recv(65536)
+                            if not data:
+                                return
+                            destination = upstream if source is self.request else self.request
+                            destination.sendall(data)
+            except (OSError, ssl.SSLError, TimeoutError, UnicodeError, ValueError) as error:
+                proxy_failures.append(error)
+
+    class TLSProxyServer(socketserver.ThreadingTCPServer):
+        allow_reuse_address = True
+        daemon_threads = True
+
+        def __init__(self, address, handler, context):
+            self.tls_context = context
+            super().__init__(address, handler)
+
+        def get_request(self):
+            connection, address = super().get_request()
+            try:
+                return self.tls_context.wrap_socket(connection, server_side=True), address
+            except BaseException:
+                connection.close()
+                raise
+
+    proxy_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    proxy_context.load_cert_chain(
+        fixture_dir / 'proxy-cert.pem', fixture_dir / 'proxy-key.pem'
+    )
+    proxy = TLSProxyServer(('127.0.0.1', 0), TunnelHandler, proxy_context)
+    proxy_port = proxy.server_address[1]
+    proxy_thread = threading.Thread(target=proxy.serve_forever, daemon=True)
+    proxy_thread.start()
+
+    monkeypatch.setenv('SSL_CERT_FILE', str(ca_file))
+    monkeypatch.setattr(planner_module.urllib.request, 'proxy_bypass', lambda host: False)
+    monkeypatch.setattr(
+        planner_module.urllib.request,
+        'getproxies',
+        lambda: {
+            'https': f'https://proxy%40user:secret%3Apass@127.0.0.1:{proxy_port}'
+        },
+    )
+    try:
+        result = plan(
+            f'https://api.test:{origin.server_port}/v1',
+            'test',
+            'api-key',
+            'prefer sustain',
+            [{'start_ms': 0, 'end_ms': 1000}],
+            {},
+        )
+        assert result['preferences']['density'] == 16
+        assert observed['connect_line'] == f'CONNECT api.test:{origin.server_port} HTTP/1.1'
+        assert observed['connect_host'] == f'api.test:{origin.server_port}'
+        assert observed['connect_proxy_authorization'] == 'Basic cHJveHlAdXNlcjpzZWNyZXQ6cGFzcw=='
+        assert observed['origin_path'] == '/v1/chat/completions'
+        assert observed['origin_host'] == f'api.test:{origin.server_port}'
+        assert observed['origin_authorization'] == 'Bearer api-key'
+        assert observed['origin_proxy_authorization'] is None
+        assert proxy_failures == []
+    finally:
+        proxy.shutdown()
+        proxy.server_close()
+        proxy_thread.join(timeout=2)
+        origin.shutdown()
+        origin.server_close()
+        origin_thread.join(timeout=2)
+
+
 def test_bounded_resolver_cancellation_does_not_use_default_executor(monkeypatch):
     started = threading.Event()
     release = threading.Event()
@@ -779,6 +915,109 @@ def wait_job(client, job):
             return result
         time.sleep(.02)
     raise AssertionError('job timed out')
+
+
+def test_http_cancel_waits_for_project_commit_and_preserves_done_result(tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    imported = client.post(
+        '/api/import',
+        data={'files': (io.BytesIO(b'synthetic audio'), 'song.wav')},
+        headers=headers,
+    )
+    assert imported.status_code == 200
+    project_id = imported.json['id']
+    projects = app.extensions['projects']
+    service = app.extensions['task_service']
+    save_entered, release_save = threading.Event(), threading.Event()
+    cancel_lock_contended, cancel_finished = threading.Event(), threading.Event()
+    original_save = projects.save
+    original_cancel = service.cancel
+    cancel_result = {}
+    cancel_thread = None
+    cancel_thread_id = [None]
+
+    class ObservedRLock:
+        def __init__(self, lock):
+            self.lock = lock
+
+        def acquire(self, blocking=True, timeout=-1):
+            if (blocking and timeout == -1 and
+                    threading.get_ident() == cancel_thread_id[0]):
+                if not self.lock.acquire(blocking=False):
+                    cancel_lock_contended.set()
+                    return self.lock.acquire()
+                return True
+            if timeout == -1:
+                return self.lock.acquire(blocking)
+            return self.lock.acquire(blocking, timeout)
+
+        def release(self):
+            return self.lock.release()
+
+        def __enter__(self):
+            self.acquire()
+            return self
+
+        def __exit__(self, *_):
+            self.release()
+
+    service.lock = ObservedRLock(service.lock)
+
+    def gated_save(state):
+        if state.get('transaction_marker') == 'committed':
+            save_entered.set()
+            assert release_save.wait(5)
+        return original_save(state)
+
+    def observed_cancel(job_id):
+        cancel_thread_id[0] = threading.get_ident()
+        return original_cancel(job_id)
+
+    monkeypatch.setattr(projects, 'save', gated_save)
+    monkeypatch.setattr(service, 'cancel', observed_cancel)
+
+    def operation(state, progress, cancelled):
+        state['transaction_marker'] = 'committed'
+        return {'saved': True}
+
+    try:
+        job = service.submit(project_id, operation)
+        assert save_entered.wait(5)
+
+        def request_cancel():
+            try:
+                with app.test_client() as cancel_client:
+                    response = cancel_client.post(
+                        f"/api/jobs/{job['id']}/cancel", headers=headers
+                    )
+                    cancel_result.update(status=response.status_code, body=response.json)
+            except BaseException as error:
+                cancel_result['error'] = error
+            finally:
+                cancel_finished.set()
+
+        cancel_thread = threading.Thread(target=request_cancel, daemon=True)
+        cancel_thread.start()
+        assert cancel_lock_contended.wait(5)
+
+        release_save.set()
+        cancel_thread.join(timeout=5)
+        assert not cancel_thread.is_alive()
+        assert cancel_result == {'status': 200, 'body': {'ok': True}}
+
+        result = wait_job(client, job)
+        assert result['status'] == 'done'
+        assert result['result'] == {'saved': True}
+        assert result['cancel'] is False
+        assert projects.load(project_id)['transaction_marker'] == 'committed'
+        assert service._idle.is_set()
+    finally:
+        release_save.set()
+        if cancel_thread is not None:
+            cancel_thread.join(timeout=5)
+        app.extensions['executor'].shutdown()
 
 
 def test_generation_applies_local_recommendation_expression_to_export(tmp_path):

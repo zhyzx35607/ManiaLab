@@ -25,6 +25,75 @@ def test_source_snapshot_includes_release_metadata_without_hashing_model_weights
     assert 'assets/deep/hdemucs_high_trained.pt' not in names
     assert 'docs/tsumugi-attack-recovery-protocol.md' in names
     assert 'assets/mapperatorinator-source.zip' not in names
+    assert {
+        'tests/fixtures/https_proxy_tls/ca.pem',
+        'tests/fixtures/https_proxy_tls/origin-cert.pem',
+        'tests/fixtures/https_proxy_tls/origin-key.pem',
+        'tests/fixtures/https_proxy_tls/proxy-cert.pem',
+        'tests/fixtures/https_proxy_tls/proxy-key.pem',
+    } <= names
+
+
+def test_source_snapshot_hashes_nonignored_pem_and_omits_gitignored_pem(tmp_path):
+    root = tmp_path
+    subprocess.run(['git', 'init', '--quiet', str(root)], check=True)
+    fixture_dir = root / 'tests' / 'fixtures' / 'https_proxy_tls'
+    fixture_dir.mkdir(parents=True)
+    tracked_candidate = fixture_dir / 'origin-cert.pem'
+    ignored = fixture_dir / 'ignored.pem'
+    (root / '.gitignore').write_text(
+        'tests/fixtures/https_proxy_tls/ignored.pem\n', encoding='utf-8'
+    )
+    tracked_candidate.write_bytes(b'test certificate one')
+    ignored.write_bytes(b'ignored certificate')
+
+    names = {relative for relative, _ in pytest_provenance._source_files(root)}
+    assert 'tests/fixtures/https_proxy_tls/origin-cert.pem' in names
+    assert 'tests/fixtures/https_proxy_tls/ignored.pem' not in names
+    before = pytest_provenance.source_snapshot(root)
+
+    tracked_candidate.write_bytes(b'test certificate two')
+    after = pytest_provenance.source_snapshot(root)
+
+    assert before['digest'] != after['digest']
+    assert before['files'] == after['files'] == 2
+
+
+def test_source_snapshot_excludes_synthetic_user_data_under_repository_ignores(tmp_path):
+    root = tmp_path
+    subprocess.run(['git', 'init', '--quiet', str(root)], check=True)
+    (root / '.gitignore').write_bytes((pytest_provenance.ROOT / '.gitignore').read_bytes())
+
+    ignored_paths = (
+        'test-data/user-audio.wav',
+        'test-data/reference.osu',
+        'test-data/reference.osz',
+        'test-data/model.pt',
+        'tests/artifacts/audio.wav',
+        'tests/artifacts/map.osu',
+        'tests/artifacts/package.osz',
+        'tests/artifacts/model.pth',
+        'tests/artifacts/model.th',
+        'tests/artifacts/model.ckpt',
+        'assets/deep/model.pt',
+        'assets/deep/model.pth',
+        'assets/deep/model.th',
+        'assets/deep/model.ckpt',
+        'assets/runtime/uv.exe',
+        'assets/instruments/checkpoints/model.pth',
+    )
+    for relative in ignored_paths:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b'synthetic ignored placeholder')
+
+    basic_pitch = root / 'assets' / 'basic-pitch.onnx'
+    basic_pitch.parent.mkdir(parents=True, exist_ok=True)
+    basic_pitch.write_bytes(b'synthetic pinned Basic Pitch placeholder')
+
+    names = {relative for relative, _ in pytest_provenance._source_files(root)}
+    assert names == {'.gitignore', 'assets/basic-pitch.onnx'}
+    assert names.isdisjoint(ignored_paths)
 
 
 def _pytest_subprocess(case, *extra):

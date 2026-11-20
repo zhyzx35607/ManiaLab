@@ -10,6 +10,7 @@ import pytest
 
 from manialab import __version__
 from scripts import pytest_provenance
+from scripts.build_provenance import uv_release_identity
 from scripts import collect_release_validation
 from scripts.collect_release_validation import collect as _collect
 from scripts.package_assets import CORE_FILES, capabilities, verify_core_model_files
@@ -29,6 +30,7 @@ TEST_RUNTIME_LICENSE_INVENTORY = b"[]"
 TEST_PACKAGED_RUNTIME_LICENSE = b"synthetic packaged runtime license"
 TEST_PACKAGED_RUNTIME_INVENTORY = b'[{"name":"fixture","version":"1","license":"MIT"}]'
 TEST_UV_LICENSE = b"synthetic uv license"
+TEST_UV_RUNTIME = b"synthetic uv executable"
 TEST_FFMPEG_LICENSE = b"synthetic FFmpeg license"
 TEST_FFMPEG_BUILD_INFO = b"synthetic FFmpeg build info"
 TEST_BASS_MODEL = b"synthetic bass model"
@@ -163,18 +165,24 @@ TEST_GUITAR_IDENTITY = make_guitar_model_identity()
 def collect(*args, **kwargs):
     original_guitar_validator = collect_release_validation._is_guitar_model_identity
     original_instrument_validator = collect_release_validation._is_instrument_worker_identity
+    original_uv_release_identity = collect_release_validation.uv_release_identity
     instrument_identity = make_instrument_worker_identity()
+    build_root = kwargs.get("build_root", args[0] if args else None)
+    manifest_path = Path(build_root) / "dist" / "ManiaLab" / "release-manifest.json"
+    fixture_uv_identity = json.loads(manifest_path.read_text(encoding="utf-8")).get("uv_runtime")
     collect_release_validation._is_guitar_model_identity = (
         lambda value: value == TEST_GUITAR_IDENTITY or original_guitar_validator(value)
     )
     collect_release_validation._is_instrument_worker_identity = (
         lambda value: value == instrument_identity or original_instrument_validator(value)
     )
+    collect_release_validation.uv_release_identity = lambda: fixture_uv_identity
     try:
         return _collect(*args, **kwargs)
     finally:
         collect_release_validation._is_guitar_model_identity = original_guitar_validator
         collect_release_validation._is_instrument_worker_identity = original_instrument_validator
+        collect_release_validation.uv_release_identity = original_uv_release_identity
 
 
 def write_pytest_evidence(path, junit_report):
@@ -239,6 +247,8 @@ def make_release_fixture(root, profile='standard'):
     package.mkdir(parents=True)
     executable.write_bytes(b"portable-executable")
     license_payloads = packaged_license_payloads(profile)
+    uv_identity = uv_release_identity()
+    uv_identity.update(bytes=len(TEST_UV_RUNTIME), sha256=payload_identity(TEST_UV_RUNTIME))
     manifest = {
         "version": __version__,
         "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
@@ -246,6 +256,7 @@ def make_release_fixture(root, profile='standard'):
         "build_profile": profile,
         "capabilities": capabilities(profile),
         "core_models": verify_core_model_files(ROOT / 'assets'),
+        "uv_runtime": uv_identity if profile != 'core' else None,
         "piano_model": {"sha256": "expected-model-sha", "bytes": 123} if profile != 'core' else None,
         "worker_sha256": "expected-worker-sha" if profile != 'core' else None,
         "worker_sources": {} if profile != 'core' else None,
@@ -280,6 +291,8 @@ def make_release_fixture(root, profile='standard'):
         )
         for name in CORE_FILES:
             archive.write(ROOT / 'assets' / name, 'ManiaLab/_internal/assets/' + name)
+        if profile != 'core':
+            archive.writestr('ManiaLab/_internal/assets/runtime/uv.exe', TEST_UV_RUNTIME)
         write_license_payloads(archive, license_payloads)
         if profile == 'extended':
             archive.writestr(
@@ -442,6 +455,61 @@ def test_collect_release_validation_writes_hashes_and_sanitized_summary(tmp_path
     assert report["limitations"]["musical_acceptance"] is False
     assert "song.wav" not in output.read_text(encoding="utf-8")
     assert archive.name in checksums.read_text(encoding="utf-8")
+
+
+def test_release_collector_requires_the_pinned_uv_release_identity(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path)
+    )
+
+    with pytest.raises(SystemExit, match='invalid uv_runtime identity'):
+        _collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(
+    "invalid_identity",
+    [pytest.param(None, id="missing"), pytest.param({"unexpected": "identity"}, id="non-null")],
+)
+def test_release_collector_requires_null_uv_identity_without_installer_capability(
+    tmp_path, invalid_identity
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    manifest_path = build_root / "dist" / "ManiaLab" / "release-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if invalid_identity is None:
+        manifest.pop("uv_runtime")
+    else:
+        manifest["uv_runtime"] = invalid_identity
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(
+        SystemExit, match="uv_runtime=null without the installer capability"
+    ):
+        _collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+def test_release_collector_hashes_uv_inside_the_actual_zip(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path)
+    )
+    rewrite_archive(
+        archive,
+        replacements={'ManiaLab/_internal/assets/runtime/uv.exe': b'changed uv executable'},
+    )
+
+    with pytest.raises(SystemExit, match='differs from its manifest identity'):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
 
 
 def test_collector_discovers_the_adjacent_required_pytest_sidecar(tmp_path):

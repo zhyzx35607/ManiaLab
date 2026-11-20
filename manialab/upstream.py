@@ -92,6 +92,11 @@ class MapperEngine:
                 "generate_available": generate_available,
                 "source_commit": SOURCE_COMMIT, "model_revision": MODEL_REVISION}
 
+    def invalidate_ready_marker(self):
+        ready_marker = self.root / "ready.json"
+        ready_marker.unlink(missing_ok=True)
+        ready_marker.with_suffix(".json.tmp").unlink(missing_ok=True)
+
     @staticmethod
     def _windows_descendants(root_pid):
         import ctypes
@@ -259,6 +264,8 @@ class MapperEngine:
         return True
 
     def run(self, argv, message, progress, cancelled, percent=10, cwd=None, log_path=None):
+        if cancelled():
+            raise InterruptedError("已取消原模型任务")
         self.root.mkdir(parents=True, exist_ok=True)
         log = Path(log_path) if log_path is not None else self.root / "engine.log"
         log.parent.mkdir(parents=True, exist_ok=True)
@@ -287,7 +294,9 @@ class MapperEngine:
                 raise ValueError(f"{message}失败（退出码 {process.returncode}），日志：{log}")
         return log.read_bytes()[log_start:].decode("utf-8", errors="replace")
 
-    def install(self, progress, cancelled):
+    def install(self, progress, cancelled, *, on_ready_invalidated=None):
+        if cancelled():
+            raise InterruptedError("已取消原模型安装")
         uv = self.resources / "assets/runtime/uv.exe"
         if not uv.is_file():
             found = shutil.which("uv")
@@ -298,8 +307,15 @@ class MapperEngine:
         self.source.mkdir(exist_ok=True)
         ready_marker = self.root / "ready.json"
         with zipfile.ZipFile(self.resources / "assets/mapperatorinator-source.zip") as archive:
+            if cancelled():
+                raise InterruptedError("已取消原模型安装")
             ready_marker.unlink(missing_ok=True)
+            if on_ready_invalidated is not None:
+                on_ready_invalidated()
+            ready_marker.with_suffix(".json.tmp").unlink(missing_ok=True)
             archive.extractall(self.source)  # trusted, pinned asset shipped with this program
+            if cancelled():
+                raise InterruptedError("已取消原模型安装")
         if not self.python.is_file():
             self.run([uv, "venv", str(self.python.parent.parent), "--python", "3.12"], "准备独立 Python 环境", progress, cancelled, 5)
         self.run([uv, "pip", "install", "--python", self.python, "torch==2.9.1", "torchaudio==2.9.1", "--index-url", "https://download.pytorch.org/whl/cpu"],
@@ -309,9 +325,18 @@ class MapperEngine:
         self.run([self.python, "inference.py", "--help"], "检查原模型入口", progress, cancelled, 90, self.source)
         temporary_marker = ready_marker.with_suffix(".json.tmp")
         try:
+            if cancelled():
+                raise InterruptedError("已取消原模型安装")
+            installed = self.python.is_file() and (self.resources / "assets/run_mapper.py").is_file()
             temporary_marker.write_text(
-                json.dumps(self.status() | {"source_commit": SOURCE_COMMIT}), encoding="utf-8"
+                json.dumps(self.status() | {
+                    "installed": installed,
+                    "generate_available": installed,
+                    "source_commit": SOURCE_COMMIT,
+                }), encoding="utf-8"
             )
+            if cancelled():
+                raise InterruptedError("已取消原模型安装")
             os.replace(temporary_marker, ready_marker)
         finally:
             temporary_marker.unlink(missing_ok=True)

@@ -320,6 +320,7 @@ def main():
         timing_fixture(projects, 'UI LN navigation audio')
         ln_remap_fixture(projects)
         for title in ('UI evidence review', 'UI evidence edits', 'UI evidence snapshots',
+                      'UI evidence legend',
                       'UI draft expression', 'UI draft structure', 'UI draft recommendation'):
             evidence_fixture(projects, title)
         evidence_source_identity_fixture(projects)
