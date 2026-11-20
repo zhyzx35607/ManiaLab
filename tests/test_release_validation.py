@@ -1276,6 +1276,25 @@ def test_collect_core_profile_rejects_bundled_model_with_current_identity(tmp_pa
             pytest_evidence=pytest_evidence)
 
 
+def test_collect_standard_profile_accepts_bundled_model_with_current_identity(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    manifest_identity = next(item for item in checks if item.get('check') == 'release_manifest')
+    current_identity = {
+        field: value for field, value in manifest_identity.items() if field != 'check'
+    }
+    checks.append({'check': 'bundled_model', 'sha256': 'a' * 64, **current_identity})
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    report, _, _ = collect(build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence)
+
+    assert report['build_profile'] == 'standard'
+    assert 'bundled_model' in report['verification']['portable']['checks']
+
+
 def test_collect_standard_profile_rejects_stale_optional_check_identity(tmp_path):
     build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
         tmp_path, profile='standard'

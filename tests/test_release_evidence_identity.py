@@ -326,7 +326,7 @@ def test_core_rejects_optional_piano_audio_rows(release_fixture):
         pytest.skip('Core profile only')
     _add_piano_audio_checks(release_fixture)
 
-    with pytest.raises(SystemExit, match='unsupported by Core'):
+    with pytest.raises(SystemExit, match='not applicable to the declared profile or capabilities'):
         _collect(release_fixture)
 
 
