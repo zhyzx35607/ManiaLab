@@ -74,6 +74,8 @@ def test_core_runtime_capabilities_match_manifest():
         "piano": {"available": False, "default": False},
         "guitar": {"available": False},
         "instruments": {"available": False},
+        "pattern_prior": {"available": False},
+        "engine": {"install_available": False},
     }
 
     assert verify_portable.verify_runtime_capabilities(status, capabilities("core")) \
@@ -92,10 +94,88 @@ def test_core_runtime_capabilities_reject_unexpected_model_availability():
         "piano": {"available": False, "default": False},
         "guitar": {"available": False},
         "instruments": {"available": False},
+        "pattern_prior": {"available": False},
+        "engine": {"install_available": False},
     }
 
     with pytest.raises(AssertionError, match="separation_six"):
         verify_portable.verify_runtime_capabilities(status, capabilities("core"))
+
+
+@pytest.mark.parametrize("invalid", ["false", 1])
+def test_standard_runtime_capabilities_reject_non_boolean_availability(invalid):
+    status = {
+        "separator": {
+            "available": True,
+            "profiles": {
+                "four": {"available": invalid},
+                "six": {"available": True},
+            },
+        },
+        "piano": {"available": True, "default": False},
+        "guitar": {"available": False},
+        "instruments": {"available": False},
+        "pattern_prior": {"available": True},
+        "engine": {"install_available": True},
+    }
+
+    with pytest.raises(AssertionError, match="must be a boolean"):
+        verify_portable.verify_runtime_capabilities(status, capabilities("standard"))
+
+
+def test_runtime_capabilities_reject_non_boolean_manifest_value():
+    status = {
+        "separator": {
+            "available": True,
+            "profiles": {
+                "four": {"available": True},
+                "six": {"available": True},
+            },
+        },
+        "piano": {"available": True, "default": False},
+        "guitar": {"available": False},
+        "instruments": {"available": False},
+        "pattern_prior": {"available": True},
+        "engine": {"install_available": True},
+    }
+    declared = dict(capabilities("standard"))
+    declared["separation_four"] = 1
+
+    with pytest.raises(AssertionError, match="Manifest separation_four must be a boolean"):
+        verify_portable.verify_runtime_capabilities(status, declared)
+
+
+@pytest.mark.parametrize(
+    ("component", "field", "capability"),
+    [
+        ("pattern_prior", "available", "pattern_prior"),
+        ("engine", "install_available", "mapperatorinator_install"),
+    ],
+)
+@pytest.mark.parametrize("invalid", ["false", 1])
+def test_runtime_capabilities_reject_non_boolean_auxiliary_status(
+    component, field, capability, invalid
+):
+    declared = capabilities("standard")
+    assert declared[capability] is True
+    status = {
+        "separator": {
+            "available": True,
+            "profiles": {
+                "four": {"available": True},
+                "six": {"available": True},
+            },
+        },
+        "piano": {"available": True, "default": False},
+        "guitar": {"available": False},
+        "instruments": {"available": False},
+        "pattern_prior": {"available": True},
+        "engine": {"install_available": True},
+    }
+    status[component][field] = invalid
+
+    with pytest.raises(AssertionError, match="must be a boolean"):
+        verify_portable.verify_runtime_capabilities(status, declared)
 
 
 def test_specialist_evidence_identity_binds_only_rows_from_current_run(tmp_path):

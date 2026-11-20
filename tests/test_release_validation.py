@@ -257,7 +257,7 @@ def make_release_fixture(root, profile='standard'):
         "capabilities": capabilities(profile),
         "core_models": verify_core_model_files(ROOT / 'assets'),
         "uv_runtime": uv_identity if profile != 'core' else None,
-        "piano_model": {"sha256": "expected-model-sha", "bytes": 123} if profile != 'core' else None,
+        "piano_model": {"sha256": "f" * 64, "bytes": 123} if profile != 'core' else None,
         "worker_sha256": "expected-worker-sha" if profile != 'core' else None,
         "worker_sources": {} if profile != 'core' else None,
         "worker_files": [] if profile != 'core' else None,
@@ -340,26 +340,48 @@ def make_release_fixture(root, profile='standard'):
     }
     portable_checks = [
         {"check": "release_manifest", **verification_identity},
-        {"check": "startup"},
-        {"check": "restart"},
+        {
+            "check": "startup",
+            "version": manifest["version"],
+            "separator": {
+                "available": manifest["capabilities"]["separation_four"],
+                "profiles": {
+                    "four": {"available": manifest["capabilities"]["separation_four"]},
+                    "six": {"available": manifest["capabilities"]["separation_six"]},
+                },
+            },
+            "prior": {"available": manifest["capabilities"]["pattern_prior"]},
+            "engine": {"install_available": manifest["capabilities"]["mapperatorinator_install"]},
+        },
+        {"check": "restart", "preserved": True, "keys": 10, "unicode_audio": "音频测试.wav"},
+    ]
+    portable_checks += [
+        {"check": "generate_export", "keys": keys, "notes": 5, "ln": 5, "off_grid": 0}
+        for keys in range(6, 11)
     ]
     if profile == 'core':
         portable_checks += [
-            {"check": "basic_analysis"},
-            {"check": "provided_stem_analysis_export"},
-            {"check": "bad_audio_recovery"},
+            {"check": "basic_analysis", "engine": "basic", "candidates": 5, "seconds": 1.0},
+            {"check": "provided_stem_analysis_export", "voices": ["other"], "candidates": 5,
+             "notes": 5, "ln": 5, "off_grid": 0},
+            {"check": "bad_audio_recovery", "analysis": "error", "service_alive": True},
         ]
     else:
         portable_checks += [
             {
                 "check": "piano_onnx_runtime",
-                "sha256": "expected-model-sha",
+                "sha256": "f" * 64,
                 "bytes": 123,
                 "providers": ["CPUExecutionProvider"],
+                "output_shapes": [[1, 1001, 88]] * 4 + [[1, 1001, 1]] * 3,
+                "input": "all-zero synthetic 10-second tensor; runtime smoke test only",
             },
-            {"check": "deep_analysis"},
-            {"check": "six_stem_analysis_export"},
-            {"check": "cancel_and_failure"},
+            {"check": "deep_analysis", "engine": "deep", "seconds": 1.0, "candidates": 5},
+            {"check": "six_stem_analysis_export", "seconds": 1.0,
+             "voices": ["drums", "bass", "vocals", "other", "guitar", "piano"],
+             "notes": 5, "off_grid": 0},
+            {"check": "cancel_and_failure", "cancelled": "cancelled",
+             "bad_audio": "error", "service_alive": True},
         ]
     if profile == 'extended':
         guitar_cases = (
@@ -405,6 +427,7 @@ def make_release_fixture(root, profile='standard'):
                     for allow in (False, True)
                 ],
             })
+    portable_checks = [dict(row, **verification_identity) for row in portable_checks]
     portable_report.write_text(json.dumps(portable_checks), encoding="utf-8")
     shutdown_report = reports / "shutdown.json"
     shutdown = {
@@ -546,8 +569,16 @@ def test_collect_core_validation_rejects_declared_deep_components(tmp_path):
     manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
     for report_path in (portable_report, shutdown_report):
         document = json.loads(report_path.read_text(encoding='utf-8'))
-        identity = document[0] if isinstance(document, list) else document
-        identity['release_manifest_sha256'] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+        if isinstance(document, list):
+            for row in document:
+                if isinstance(row, dict) and 'release_manifest_sha256' in row:
+                    row['release_manifest_sha256'] = hashlib.sha256(
+                        manifest_path.read_bytes()
+                    ).hexdigest()
+        else:
+            document['release_manifest_sha256'] = hashlib.sha256(
+                manifest_path.read_bytes()
+            ).hexdigest()
         report_path.write_text(json.dumps(document), encoding='utf-8')
     with zipfile.ZipFile(archive, 'w') as bundle:
         bundle.writestr('ManiaLab/ManiaLab.exe', (build_root / 'dist/ManiaLab/ManiaLab.exe').read_bytes())
@@ -1215,6 +1246,79 @@ def test_collect_profiles_without_specialist_capabilities_do_not_require_special
     assert report['build_profile'] == profile
 
 
+def test_collect_standard_profile_rejects_core_only_check_without_identity(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    checks.append({'check': 'basic_analysis', 'engine': 'basic', 'candidates': 5, 'seconds': 1.0})
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='not applicable to the declared profile'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_core_profile_rejects_bundled_model_with_current_identity(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='core'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    manifest_identity = next(item for item in checks if item.get('check') == 'release_manifest')
+    current_identity = {
+        field: value for field, value in manifest_identity.items() if field != 'check'
+    }
+    checks.append({'check': 'bundled_model', 'sha256': 'a' * 64, **current_identity})
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='not applicable to the declared profile or capabilities'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_standard_profile_accepts_bundled_model_with_current_identity(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    manifest_identity = next(item for item in checks if item.get('check') == 'release_manifest')
+    current_identity = {
+        field: value for field, value in manifest_identity.items() if field != 'check'
+    }
+    checks.append({'check': 'bundled_model', 'sha256': 'a' * 64, **current_identity})
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    report, _, _ = collect(build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence)
+
+    assert report['build_profile'] == 'standard'
+    assert 'bundled_model' in report['verification']['portable']['checks']
+
+
+def test_collect_standard_profile_rejects_stale_optional_check_identity(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    manifest_identity = next(item for item in checks if item.get('check') == 'release_manifest')
+    stale_identity = {
+        field: value for field, value in manifest_identity.items() if field != 'check'
+    }
+    stale_identity['verification_run_id'] = 'd' * 32
+    checks.append({
+        'check': 'local_recommendation',
+        'choice': 'recommendation-1',
+        'notes': 5,
+        'evidence_preserved': True,
+        **stale_identity,
+    })
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='Portable check identity differs from this run: local_recommendation'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
 @pytest.mark.parametrize(('profile', 'check_name'), [
     ('core', 'guitar_real_audio_http'),
     ('core', 'guitar_cold_cancel'),
@@ -1322,5 +1426,216 @@ def test_collect_release_validation_rejects_failed_pytest_sidecar(tmp_path):
     pytest_evidence.write_text(json.dumps(sidecar), encoding="utf-8")
 
     with pytest.raises(SystemExit, match="pytest evidence"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(
+    ('check_name', 'field', 'value'),
+    [
+        ('deep_analysis', 'candidates', 5.0),
+        ('six_stem_analysis_export', 'notes', 5.0),
+        ('piano_onnx_runtime', 'output_shapes', [[True, 1001, 88]] * 4 + [[1, 1001, 1]] * 3),
+        ('piano_onnx_runtime', 'output_shapes', [[1, 1001.0, 88]] * 4 + [[1, 1001, 1]] * 3),
+    ],
+)
+def test_collect_standard_validation_rejects_numeric_type_substitution(
+    tmp_path, check_name, field, value
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    record = next(item for item in checks if item['check'] == check_name)
+    record[field] = value
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match=f'Portable check payload is invalid: {check_name}'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def _append_optional_piano_audio_evidence(checks, release_reasons):
+    identity_fields = (
+        'build_profile', 'capabilities', 'executable_sha256',
+        'release_manifest_sha256', 'verification_run_id',
+    )
+    identity = {field: checks[0][field] for field in identity_fields}
+    candidate_count = sum(release_reasons.values())
+    checks.extend([
+        {
+            'check': 'piano_cold_inference',
+            **identity,
+            'input_sha256': 'a' * 64,
+            'model_sha256': 'f' * 64,
+            'candidates': candidate_count,
+            'seconds': 1.0,
+            'release_reasons': release_reasons,
+        },
+        {
+            'check': 'piano_manual_expression',
+            **identity,
+            'modes': {
+                'articulation': {'notes': 1, 'ln': 0},
+                'sustain': {'notes': 1, 'ln': 1},
+            },
+            'evidence_preserved': True,
+            'timing': 'manual fixture; not musical timing acceptance',
+        },
+        {
+            'check': 'piano_restart_warm_cache',
+            **identity,
+            'candidates': candidate_count,
+            'identical': True,
+            'seconds': 0.5,
+        },
+    ])
+
+
+def test_collect_standard_validation_accepts_piano_release_reasons_from_producer(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    release_reasons = {
+        'release_regression': 1,
+        'frame_decay': 1,
+        'frame_inactive': 1,
+        'reattack': 1,
+        'duration_limit': 1,
+        'input_boundary': 1,
+    }
+    _append_optional_piano_audio_evidence(checks, release_reasons)
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    report, _, _ = collect(build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence)
+
+    assert report['verification']['piano_audio']['status'] == 'passed'
+    assert report['verification']['piano_audio']['musical_acceptance'] is False
+
+
+def test_collect_standard_validation_rejects_unknown_piano_release_reason(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    _append_optional_piano_audio_evidence(checks, {'frame_decay': 1, 'invented': 1})
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='Portable check payload is invalid: piano_cold_inference'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def _invalid_capability_mapping(value, invalid_kind):
+    malformed = dict(value)
+    if invalid_kind == 'numeric':
+        return {key: int(flag) for key, flag in malformed.items()}
+    if invalid_kind == 'extra_key':
+        malformed['unexpected'] = False
+        return malformed
+    if invalid_kind == 'missing_key':
+        malformed.pop(next(iter(malformed)))
+        return malformed
+    raise AssertionError(f'Unknown invalid capability mapping kind: {invalid_kind}')
+
+
+@pytest.mark.parametrize(
+    ('source', 'profile', 'invalid_kind'),
+    [
+        ('manifest', 'standard', 'numeric'),
+        ('manifest', 'standard', 'extra_key'),
+        ('portable', 'standard', 'numeric'),
+        ('portable', 'standard', 'missing_key'),
+        ('specialist', 'extended', 'numeric'),
+        ('specialist', 'extended', 'extra_key'),
+        ('shutdown', 'standard', 'numeric'),
+        ('shutdown', 'standard', 'missing_key'),
+    ],
+)
+def test_collect_rejects_noncanonical_capability_identity_mapping(
+    tmp_path, source, profile, invalid_kind
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile=profile
+    )
+    manifest_path = build_root / 'dist' / 'ManiaLab' / 'release-manifest.json'
+
+    if source == 'manifest':
+        manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+        manifest['capabilities'] = _invalid_capability_mapping(
+            manifest['capabilities'], invalid_kind
+        )
+        manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+    elif source in {'portable', 'specialist'}:
+        checks = json.loads(portable_report.read_text(encoding='utf-8'))
+        target_check = 'release_manifest' if source == 'portable' else 'guitar_real_audio_http'
+        row = next(item for item in checks if item['check'] == target_check)
+        row['capabilities'] = _invalid_capability_mapping(row['capabilities'], invalid_kind)
+        portable_report.write_text(json.dumps(checks), encoding='utf-8')
+    else:
+        shutdown = json.loads(shutdown_report.read_text(encoding='utf-8'))
+        shutdown['capabilities'] = _invalid_capability_mapping(
+            shutdown['capabilities'], invalid_kind
+        )
+        shutdown_report.write_text(json.dumps(shutdown), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='capabilities|identity differs'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def _rewrite_fixture_manifest_identity(
+    build_root, archive_path, portable_report, shutdown_report, manifest
+):
+    manifest_bytes = json.dumps(manifest).encode('utf-8')
+    (build_root / 'dist' / 'ManiaLab' / 'release-manifest.json').write_bytes(manifest_bytes)
+    rewrite_archive(archive_path, replacements={'ManiaLab/release-manifest.json': manifest_bytes})
+    manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
+
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    for row in checks:
+        if 'capabilities' in row:
+            row['capabilities'] = manifest['capabilities']
+        if 'release_manifest_sha256' in row:
+            row['release_manifest_sha256'] = manifest_sha256
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    shutdown = json.loads(shutdown_report.read_text(encoding='utf-8'))
+    shutdown['capabilities'] = manifest['capabilities']
+    shutdown['release_manifest_sha256'] = manifest_sha256
+    shutdown_report.write_text(json.dumps(shutdown), encoding='utf-8')
+
+
+@pytest.mark.parametrize(
+    ('source', 'manifest_bytes', 'portable_bytes'),
+    [
+        ('manifest_float', 123.0, 123),
+        ('manifest_bool', True, True),
+        ('manifest_negative', -1, -1),
+        ('portable_float', 123, 123.0),
+        ('portable_bool', 1, True),
+    ],
+)
+def test_collect_rejects_noninteger_or_negative_piano_model_bytes(
+    tmp_path, source, manifest_bytes, portable_bytes
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive_path, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='standard')
+    )
+    manifest_path = build_root / 'dist' / 'ManiaLab' / 'release-manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    manifest['piano_model']['bytes'] = manifest_bytes
+    _rewrite_fixture_manifest_identity(
+        build_root, archive_path, portable_report, shutdown_report, manifest
+    )
+
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    runtime = next(item for item in checks if item['check'] == 'piano_onnx_runtime')
+    runtime['bytes'] = portable_bytes
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='Piano runtime smoke does not match'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence)

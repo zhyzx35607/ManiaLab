@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path, PurePosixPath
 import subprocess
 import sys
@@ -18,6 +19,66 @@ from scripts.package_assets import (
 )
 from scripts.build_provenance import uv_release_identity
 from scripts.pytest_provenance import validate_evidence
+
+
+PORTABLE_CHECK_NAMES = frozenset({
+    "release_manifest",
+    "core_model",
+    "bundled_model",
+    "bundled_arrangement_profiles",
+    "startup",
+    "core_capability_status",
+    "basic_analysis",
+    "generate_export",
+    "provided_stem_analysis_export",
+    "unavailable_engines",
+    "restart",
+    "bad_audio_recovery",
+    "piano_onnx_runtime",
+    "deep_analysis",
+    "local_recommendation",
+    "stale_recommendation_rejected",
+    "six_stem_analysis_export",
+    "piano_cold_inference",
+    "piano_manual_expression",
+    "piano_restart_warm_cache",
+    "guitar_real_audio_http",
+    "guitar_cold_cancel",
+    "instrument_portable_real_audio",
+    "cancel_and_failure",
+})
+PORTABLE_COMMON_CHECK_NAMES = frozenset({
+    "release_manifest",
+    "core_model",
+    "bundled_arrangement_profiles",
+    "startup",
+    "generate_export",
+    "restart",
+})
+PORTABLE_CORE_CHECK_NAMES = frozenset({
+    "core_capability_status",
+    "basic_analysis",
+    "provided_stem_analysis_export",
+    "unavailable_engines",
+    "bad_audio_recovery",
+})
+PORTABLE_NON_CORE_CHECK_NAMES = frozenset({
+    "piano_onnx_runtime",
+    "deep_analysis",
+    "local_recommendation",
+    "stale_recommendation_rejected",
+    "six_stem_analysis_export",
+    "cancel_and_failure",
+})
+PORTABLE_PIANO_AUDIO_CHECK_NAMES = frozenset({
+    "piano_cold_inference",
+    "piano_manual_expression",
+    "piano_restart_warm_cache",
+})
+PORTABLE_GUITAR_CHECK_NAMES = frozenset({
+    "guitar_real_audio_http",
+    "guitar_cold_cancel",
+})
 
 
 def sha256(path):
@@ -62,11 +123,243 @@ def _require_specialist_verification_identity(portable, expected_identity, decla
             )
         if not _is_verification_run_id(item.get("verification_run_id")):
             raise SystemExit("Portable specialist evidence has an invalid verification_run_id.")
-        if any(item.get(field) != value for field, value in expected_identity.items()):
+        if not _matches_identity(item, expected_identity):
             raise SystemExit(
                 "Portable specialist evidence identity differs from this verification run; "
                 "rerun EXE verification."
             )
+
+
+def _portable_check_rows(portable, name, *, exactly_one=True):
+    rows = [item for item in portable if isinstance(item, dict) and item.get("check") == name]
+    if not rows or exactly_one and len(rows) != 1:
+        raise SystemExit(f"Portable check payload is missing or ambiguous: {name}.")
+    return rows
+
+
+def _valid_count(value, *, minimum=0):
+    return type(value) is int and value >= minimum
+
+
+def _valid_elapsed(value):
+    return (type(value) is int and value >= 0
+            or type(value) is float and math.isfinite(value) and value >= 0)
+
+
+def _matches_capabilities(value, expected):
+    return (
+        isinstance(value, dict)
+        and isinstance(expected, dict)
+        and value.keys() == expected.keys()
+        and all(type(capability) is bool for capability in value.values())
+        and value == expected
+    )
+
+
+def _matches_identity(item, expected_identity):
+    if not isinstance(item, dict):
+        return False
+    return all(
+        _matches_capabilities(item.get(field), value)
+        if field == "capabilities" else item.get(field) == value
+        for field, value in expected_identity.items()
+    )
+
+
+def _validate_portable_check_payloads(portable, profile, manifest,
+                                      expected_identity, verification_run_id):
+    optional_piano_checks = PORTABLE_PIANO_AUDIO_CHECK_NAMES
+    specialist_checks = {
+        "guitar_real_audio_http",
+        "guitar_cold_cancel",
+        "instrument_portable_real_audio",
+    }
+    row_identity = dict(expected_identity, verification_run_id=verification_run_id)
+    for item in portable:
+        if item["check"] in specialist_checks or item["check"] == "release_manifest":
+            continue
+        if not _matches_identity(item, row_identity):
+            raise SystemExit(f"Portable check identity differs from this run: {item['check']}.")
+
+    def one(name):
+        return _portable_check_rows(portable, name)[0]
+
+    def require(condition, name):
+        if not condition:
+            raise SystemExit(f"Portable check payload is invalid: {name}.")
+
+    startup = one("startup")
+    require(startup.get("version") == manifest.get("version"), "startup")
+    separator = startup.get("separator")
+    require(isinstance(separator, dict) and isinstance(separator.get("profiles"), dict), "startup.separator")
+    profiles = separator["profiles"]
+    for profile_name, capability in (("four", "separation_four"), ("six", "separation_six")):
+        row = profiles.get(profile_name)
+        require(isinstance(row, dict) and type(row.get("available")) is bool
+                and row["available"] is manifest["capabilities"][capability],
+                f"startup.separator.{profile_name}")
+    require(type(separator.get("available")) is bool
+            and separator["available"] is manifest["capabilities"]["separation_four"],
+            "startup.separator.available")
+    require(isinstance(startup.get("prior"), dict)
+            and startup["prior"].get("available") is manifest["capabilities"]["pattern_prior"],
+            "startup.prior")
+    require(isinstance(startup.get("engine"), dict)
+            and startup["engine"].get("install_available")
+            is manifest["capabilities"]["mapperatorinator_install"], "startup.engine")
+
+    restart = one("restart")
+    unicode_audio = restart.get("unicode_audio")
+    require(restart.get("preserved") is True and type(restart.get("keys")) is int
+            and restart["keys"] == 10 and isinstance(unicode_audio, str)
+            and any(ord(character) > 127 for character in unicode_audio), "restart")
+
+    generate_rows = _portable_check_rows(portable, "generate_export", exactly_one=False)
+    by_keys = {}
+    for row in generate_rows:
+        keys = row.get("keys")
+        if type(keys) is not int or keys in by_keys:
+            raise SystemExit("Portable check payload has duplicate or invalid generate_export keys.")
+        by_keys[keys] = row
+    if set(by_keys) != set(range(6, 11)):
+        raise SystemExit("Portable check payload is missing 6K–10K generate_export evidence.")
+    for keys, row in by_keys.items():
+        require(_valid_count(row.get("notes"), minimum=1)
+                and _valid_count(row.get("ln")) and row["ln"] <= row["notes"]
+                and _valid_count(row.get("off_grid")) and row["off_grid"] == 0,
+                f"generate_export {keys}K")
+
+    if profile == "core":
+        basic = one("basic_analysis")
+        require(basic.get("engine") == "basic"
+                and _valid_count(basic.get("candidates"), minimum=1)
+                and _valid_elapsed(basic.get("seconds")), "basic_analysis")
+        provided = one("provided_stem_analysis_export")
+        require(provided.get("voices") == ["other"]
+                and _valid_count(provided.get("candidates"), minimum=1)
+                and _valid_count(provided.get("notes"), minimum=1)
+                and _valid_count(provided.get("ln"))
+                and provided["ln"] <= provided["notes"]
+                and _valid_count(provided.get("off_grid")) and provided["off_grid"] == 0,
+                "provided_stem_analysis_export")
+        bad_audio = one("bad_audio_recovery")
+        require(bad_audio.get("analysis") == "error"
+                and bad_audio.get("service_alive") is True, "bad_audio_recovery")
+        piano_audio_rows = [item for item in portable
+            if isinstance(item, dict) and item.get("check") in optional_piano_checks]
+        require(not piano_audio_rows, "piano audio checks are unsupported by Core")
+        return {
+            "status": "not_run",
+            "reason": "profile_has_no_piano_audio_capability",
+            "checks": [],
+            "musical_acceptance": False,
+        }
+
+    piano = one("piano_onnx_runtime")
+    expected_shapes = [[1, 1001, 88]] * 4 + [[1, 1001, 1]] * 3
+    output_shapes = piano.get("output_shapes")
+    providers = piano.get("providers")
+    require(isinstance(output_shapes, list)
+            and len(output_shapes) == len(expected_shapes)
+            and all(isinstance(shape, list)
+                    and len(shape) == len(expected_shape)
+                    and all(type(dimension) is int and dimension == expected_dimension
+                            for dimension, expected_dimension in zip(shape, expected_shape))
+                    for shape, expected_shape in zip(output_shapes, expected_shapes))
+            and isinstance(providers, list)
+            and all(isinstance(provider, str) for provider in providers)
+            and "CPUExecutionProvider" in providers,
+            "piano_onnx_runtime")
+    deep = one("deep_analysis")
+    require(deep.get("engine") == "deep" and _valid_count(deep.get("candidates"))
+            and deep["candidates"] == 5
+            and _valid_elapsed(deep.get("seconds")), "deep_analysis")
+    six = one("six_stem_analysis_export")
+    expected_voices = {"drums", "bass", "vocals", "other", "guitar", "piano"}
+    voices = six.get("voices")
+    require(isinstance(voices, list) and all(isinstance(voice, str) for voice in voices)
+            and set(voices) == expected_voices and len(voices) == len(expected_voices)
+            and _valid_count(six.get("notes")) and six["notes"] == 5
+            and _valid_count(six.get("off_grid")) and six["off_grid"] == 0
+            and _valid_elapsed(six.get("seconds")), "six_stem_analysis_export")
+    cancelled = one("cancel_and_failure")
+    require(cancelled.get("cancelled") == "cancelled"
+            and cancelled.get("bad_audio") == "error"
+            and cancelled.get("service_alive") is True, "cancel_and_failure")
+
+    piano_audio_rows = [item for item in portable
+        if isinstance(item, dict) and item.get("check") in optional_piano_checks]
+    if piano_audio_rows:
+        rows = {
+            name: _portable_check_rows(portable, name)[0]
+            for name in optional_piano_checks
+        }
+        cold = rows["piano_cold_inference"]
+        manual = rows["piano_manual_expression"]
+        warm = rows["piano_restart_warm_cache"]
+        piano_model = manifest.get("piano_model")
+        expected_model_sha = piano_model.get("sha256") if isinstance(piano_model, dict) else None
+        input_sha = cold.get("input_sha256")
+        candidate_count = cold.get("candidates")
+        release_reasons = cold.get("release_reasons")
+        allowed_release_reasons = {
+            "release_regression",
+            "frame_decay",
+            "frame_inactive",
+            "reattack",
+            "duration_limit",
+            "input_boundary",
+        }
+        require(_is_sha256(input_sha)
+                and _is_sha256(cold.get("model_sha256"))
+                and _is_sha256(expected_model_sha)
+                and cold.get("model_sha256") == expected_model_sha
+                and _valid_count(candidate_count, minimum=1)
+                and _valid_elapsed(cold.get("seconds"))
+                and isinstance(release_reasons, dict)
+                and bool(release_reasons)
+                and set(release_reasons).issubset(allowed_release_reasons)
+                and all(isinstance(reason, str) and reason
+                        and _valid_count(count, minimum=1)
+                        for reason, count in release_reasons.items())
+                and sum(release_reasons.values()) == candidate_count,
+                "piano_cold_inference")
+
+        modes = manual.get("modes")
+        require(isinstance(modes, dict) and set(modes) == {"articulation", "sustain"}
+                and all(isinstance(modes[mode], dict)
+                        and _valid_count(modes[mode].get("notes"), minimum=1)
+                        and _valid_count(modes[mode].get("ln"))
+                        and modes[mode]["ln"] <= modes[mode]["notes"]
+                        for mode in ("articulation", "sustain"))
+                and manual.get("evidence_preserved") is True
+                and isinstance(manual.get("timing"), str)
+                and "not musical timing acceptance" in manual["timing"],
+                "piano_manual_expression")
+        require(_valid_count(warm.get("candidates"), minimum=1)
+                and warm["candidates"] == candidate_count
+                and warm.get("identical") is True
+                and _valid_elapsed(warm.get("seconds")),
+                "piano_restart_warm_cache")
+    else:
+        return {
+            "status": "not_run",
+            "reason": "optional_audio_fixture_not_supplied",
+            "checks": [],
+            "musical_acceptance": False,
+        }
+    return {
+        "status": "passed",
+        "checks": [
+            "piano_cold_inference",
+            "piano_manual_expression",
+            "piano_restart_warm_cache",
+        ],
+        "input_sha256": input_sha,
+        "model_sha256": expected_model_sha,
+        "scope": "portable optional workflow evidence only; not musical acceptance",
+        "musical_acceptance": False,
+    }
 
 
 def _is_guitar_model_identity(value):
@@ -477,7 +770,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         declared_capabilities = capabilities(profile)
     except (TypeError, ValueError) as exc:
         raise SystemExit(f"Portable manifest has an unknown build profile: {profile!r}") from exc
-    if manifest.get("capabilities") != declared_capabilities:
+    if not _matches_capabilities(manifest.get("capabilities"), declared_capabilities):
         raise SystemExit("Portable capabilities do not match the declared build profile.")
     _require_specialist_components(manifest, declared_capabilities)
     stem = archive_stem(__version__, profile)
@@ -552,7 +845,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         raise SystemExit(f"Pytest report is not clean: {totals}")
 
     portable = json.loads(Path(portable_report).read_text(encoding="utf-8"))
-    required_checks = {"release_manifest", "startup", "restart"}
+    required_checks = {"release_manifest", "startup", "restart", "generate_export"}
     if profile == "core":
         required_checks.update({"basic_analysis", "provided_stem_analysis_export", "bad_audio_recovery"})
     else:
@@ -568,7 +861,18 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         required_checks.add("instrument_portable_real_audio")
     if not isinstance(portable, list):
         raise SystemExit("Portable verification report has an unexpected format.")
-    portable_checks = [item.get("check") for item in portable if isinstance(item, dict)]
+    if any(not isinstance(item, dict)
+           or not isinstance(item.get("check"), str)
+           or not item["check"].strip()
+           for item in portable):
+        raise SystemExit("Portable verification report has an unexpected format.")
+    if any(item["check"] not in PORTABLE_CHECK_NAMES for item in portable):
+        raise SystemExit("Portable verification report contains an unsupported check name.")
+    if any("capabilities" in item
+           and not _matches_capabilities(item.get("capabilities"), declared_capabilities)
+           for item in portable):
+        raise SystemExit("Portable verification identity capabilities do not match the declared build profile.")
+    portable_checks = [item["check"] for item in portable]
     if not required_checks.issubset(portable_checks):
         raise SystemExit("Portable verification report is missing required checks.")
     portable_identities = [item for item in portable
@@ -578,7 +882,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
     expected_identity = {field: manifest[field] for field in
         ('build_profile', 'capabilities', 'executable_sha256')}
     expected_identity['release_manifest_sha256'] = sha256(manifest_path)
-    if any(portable_identities[0].get(field) != value for field, value in expected_identity.items()):
+    if not _matches_identity(portable_identities[0], expected_identity):
         raise SystemExit('Portable verification identity differs from this build; rerun EXE verification.')
     verification_run_id = portable_identities[0].get('verification_run_id')
     if not _is_verification_run_id(verification_run_id):
@@ -586,6 +890,26 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
     expected_specialist_identity = dict(expected_identity, verification_run_id=verification_run_id)
     _require_specialist_verification_identity(
         portable, expected_specialist_identity, declared_capabilities
+    )
+    allowed_checks = set(PORTABLE_COMMON_CHECK_NAMES)
+    if declared_capabilities["pattern_prior"]:
+        allowed_checks.add("bundled_model")
+    if profile == "core":
+        allowed_checks.update(PORTABLE_CORE_CHECK_NAMES)
+    else:
+        allowed_checks.update(PORTABLE_NON_CORE_CHECK_NAMES)
+        if declared_capabilities["piano"]:
+            allowed_checks.update(PORTABLE_PIANO_AUDIO_CHECK_NAMES)
+    if declared_capabilities["guitar"]:
+        allowed_checks.update(PORTABLE_GUITAR_CHECK_NAMES)
+    if declared_capabilities["instruments"]:
+        allowed_checks.add("instrument_portable_real_audio")
+    if any(item["check"] not in allowed_checks for item in portable):
+        raise SystemExit(
+            "Portable verification report contains a check not applicable to the declared profile or capabilities."
+        )
+    piano_audio_evidence = _validate_portable_check_payloads(
+        portable, profile, manifest, expected_identity, verification_run_id
     )
     if declared_capabilities["guitar"]:
         _require_guitar_evidence(portable)
@@ -605,6 +929,8 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         )
         if (
             not isinstance(piano_model, dict)
+            or not _valid_count(piano_model.get("bytes"))
+            or not _valid_count(piano_check.get("bytes"))
             or piano_check.get("sha256") != piano_model.get("sha256")
             or piano_check.get("bytes") != piano_model.get("bytes")
             or "CPUExecutionProvider" not in piano_check.get("providers", [])
@@ -613,8 +939,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
 
     shutdown = json.loads(Path(shutdown_report).read_text(encoding="utf-8"))
     expected_shutdown_identity = dict(expected_identity, version=manifest['version'])
-    if not isinstance(shutdown, dict) or any(
-            shutdown.get(field) != value for field, value in expected_shutdown_identity.items()):
+    if not _matches_identity(shutdown, expected_shutdown_identity):
         raise SystemExit('Shutdown verification identity differs from this build; rerun shutdown verification.')
     if declared_capabilities["separation_four"]:
         if (
@@ -666,6 +991,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
                 "bytes": piano_check["bytes"],
                 "cpu_smoke_passed": True,
             } if piano_check else None,
+            "piano_audio": piano_audio_evidence,
             "core_models": manifest.get("core_models"),
             "shutdown": {
                 "passed": True,

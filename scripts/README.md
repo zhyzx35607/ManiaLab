@@ -18,6 +18,7 @@
 - `collect_release_validation.py`：核对 ZIP、测试报告和实际 EXE，并生成去除音频/逐音数据的发布验证摘要。
 - `pytest.ini` 启用的 `pytest_provenance.py` hook：pytest 输出 JUnit 时自动保存同名 `.provenance.json` sidecar，绑定当前 Git commit、选择的源码/测试输入摘要、JUnit 字节摘要与测试退出状态；release collector 会强制校验 sidecar。它是同源完整性检查，不是签名或恶意 runner 的防护。
 - `check_blind_review_scores.py`：校验钢琴盲听和定轨试打 CSV 的冻结身份与完成度，并可在不读取解盲表的情况下保存原始评分和哈希回执。
+- `check_music_issue_ledger.py`：校验逐问题的听审/试打记录与处置字段，在新的 ignored `test-data/`目录锁定原始CSV及摘要回执；它不证明真实参与、完整覆盖或音乐验收通过。用`--help`查看模板复制、枚举及格式约束。
 - `refresh_piano_blind_review.py`：从现有的盲听片段和模板刷新离线评审网页；不解码源音频、不运行模型。
 
 Windows Release CI 的正式入口为 `.github/workflows/windows.yml`；完整流程及版本状态见 [`docs/README.md`](../docs/README.md) 和 [`docs/PROGRESS.md`](../docs/PROGRESS.md)。
