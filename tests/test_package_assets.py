@@ -1,11 +1,16 @@
+import ast
+import argparse
 from pathlib import Path
 import json
+import shutil
 
 import pytest
 
 from scripts.package_assets import (
     BASE_FILES,
     CORE_FILES,
+    PUBLIC_PROFILE,
+    add_profile_argument,
     capabilities,
     stage_assets,
     start_guide,
@@ -15,6 +20,16 @@ from scripts.package_assets import (
 from scripts.worker_inventory import worker_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _stage_license_inputs_function():
+    source = ast.parse((ROOT / 'scripts/build_windows.py').read_text(encoding='utf-8'))
+    function = next(node for node in source.body
+        if isinstance(node, ast.FunctionDef) and node.name == 'stage_license_inputs')
+    namespace = {'Path': Path, 'shutil': shutil}
+    module = ast.Module(body=[function], type_ignores=[])
+    exec(compile(ast.fix_missing_locations(module), 'license-staging-only', 'exec'), namespace)
+    return namespace['stage_license_inputs']
 
 
 def assets(root):
@@ -115,6 +130,40 @@ def test_extended_profile_requires_components_before_staging(tmp_path):
 def test_unknown_profile_rejected():
     with pytest.raises(ValueError, match='profile'):
         capabilities('automatic')
+
+
+@pytest.mark.parametrize('profile', ('standard', 'extended'))
+def test_build_profile_argument_defaults_public_and_keeps_explicit_internal_profiles(profile):
+    parser = argparse.ArgumentParser()
+    add_profile_argument(parser)
+
+    assert parser.parse_args([]).profile == PUBLIC_PROFILE == 'core'
+    assert parser.parse_args(['--profile', profile]).profile == profile
+
+
+def test_license_staging_includes_only_runtime_trees_for_enabled_components(tmp_path):
+    stage_license_inputs = _stage_license_inputs_function()
+    source = tmp_path / 'licenses'
+    source.mkdir()
+    for name in ('uv-MIT.txt', 'runtime', 'deep-runtime', 'instrument-runtime'):
+        path = source / name
+        if name.endswith('.txt'):
+            path.write_text('tracked license', encoding='utf-8')
+        else:
+            path.mkdir()
+            (path / 'inventory.json').write_text('[]', encoding='utf-8')
+    (source / 'runtime-inventory.json').write_text('stale', encoding='utf-8')
+
+    for profile, included in (
+        ('core', set()),
+        ('standard', {'deep-runtime'}),
+        ('extended', {'deep-runtime', 'instrument-runtime'}),
+    ):
+        destination = tmp_path / f'staged-{profile}'
+        stage_license_inputs(source, destination, capabilities(profile))
+        staged = {path.name for path in destination.iterdir()}
+        assert staged == {'uv-MIT.txt'} | included
+        assert not (destination / 'runtime-inventory.json').exists()
 
 
 def test_worker_private_file_rejected_before_staging(tmp_path):

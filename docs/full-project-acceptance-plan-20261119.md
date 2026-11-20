@@ -1,6 +1,6 @@
 # ManiaLab 全项目验收计划
 
-更新：2026-11-19。目标不是用一次大重写替代验收，而是沿实际用户工作流补齐可复核证据，只在发现可复现的高风险问题时修改实现。
+更新：2026-11-20。目标不是用一次大重写替代验收，而是沿实际用户工作流补齐可复核证据，只在发现可复现的高风险问题时修改实现。
 
 ## 验收目标
 
@@ -13,7 +13,7 @@
 
 ## 当前基线
 
-- `main` 当前为 `06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`。PR #186 合入生命周期失败回滚和声轨导入目录清理覆盖，合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`、Edge `38 passed`，Core便携与模型步骤按触发条件跳过；阶段1跨路径审查收口，未确认产品状态破坏。PR #185 的合并后 main run `44496133010`成功（Python/API `2741 passed, 89 skipped`、Edge `38 passed`）。PR #184、#183、#182、#181、#180 的合并验证明细保留在验收账本。
+- 本轮基线为合并后的 `main` 提交 `5fb8e4b63c37d4cfd3ff34093ed266c555334823`；PR #203 合并后 main run `44720438728`成功，Python/API `3035 passed, 89 skipped`、Edge `63 passed`，Core构建、EXE、关停、collector与模型步骤按条件跳过。当前阶段95工作分支基于此提交；本地全量pytest为`3061 passed, 90 skipped`，Edge全套为`66 passed`，compileall、全部静态JS语法与差异检查通过；最终分支证据及portable PR/main检查待完成。Core仍是唯一公开支持profile；standard/extended实际包、权重再分发许可与MUS-01真人音乐验收保持开放。历史PR明细见验收账本。
 - 当前公开 Pre-release 仍为 `v0.1.0-alpha.6-dev.18`；主线修复不自动包含在该包中。
 - 架构已经按服务端路由、领域逻辑、音频组件、存储与浏览器分层。先验证边界契约和用户路径，不做没有缺陷证据的大面积重写。
 - 现有记录已明确真实盲听、玩家试打和两首独立歌曲评审尚未回收；Demucs 四/六声部 checkpoint 的独立再分发授权也尚未核实。
@@ -63,7 +63,9 @@
 
 第八十阶段的 Timing 审计确认自动推导 Offset 与手动输入 Offset 采用不同舍入策略是服务端契约的一部分：缺省推导使用 half-up，显式输入按 Python ties-to-even。粘贴参考 Offset 和波形对齐此前误用`Math.round`；现使用`chartOffset()`。PR #187及main run `44508222088`通过，main Python/API `2743 passed, 89 skipped`、浏览器`39 passed`；不构成音乐Timing质量证据。
 
-第八十一阶段闭合候选证据与真实试听来源错配：候选保存声轨集合身份，模型试听WAV按身份归档，声轨/波形/试听请求按候选或当前采音上下文核对身份与内容哈希；旧来源未知时给出重新生成提示，局部重写不混用来源。PR #188已合并，PR/main runs `44525372079`、`44526302353`成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按触发条件跳过，ENG-12关闭。阶段2其余跨模块路径仍待收口；下一步审查段落/LN证据经过编辑、局部重写和导出后的对应关系。
+第八十一阶段闭合候选证据与真实试听来源错配：候选保存声轨集合身份，模型试听WAV按身份归档，声轨/波形/试听请求按候选或当前采音上下文核对身份与内容哈希；旧来源未知时给出重新生成提示，局部重写不混用来源。PR #188已合并，PR/main runs `44525372079`、`44526302353`成功，Python/API `2751 passed, 89 skipped`、浏览器`44 passed`，Core便携与模型步骤按触发条件跳过，ENG-12关闭。
+
+第九十五阶段的本地回归补查候选来源与区域编辑/导出对应关系：候选删除后报告保留来源历史，`.osu/.osz`只包含当前候选音符；候选来源和区域报告定向pytest为`16 passed`，区域报告API为`6 passed`，上述删除/导出集成为`3 passed`，Edge evidence与regional-audit spec为`17 passed`。冻结分支的全量Python/API为`3061 passed, 90 skipped`，完整Edge UI为`66 passed`；JUnit provenance source digest本地校验通过。本地结果均是合成工程证据，不说明音乐采音或段落质量已通过。当前阶段2等待PR/main复核。
 
 **验证：**现有 Python 领域/API 测试、Edge 合成端到端工作流、冻结输入的既有结果和官方解码器。冻结对照只复用已保存输入身份及适用结论，不重新运行模型；凡没有证据的历史结果标为“需复验”，不伪称通过。
 
@@ -71,11 +73,13 @@
 
 ### 阶段 3：异步任务、取消、资源与关停
 
-**状态：已有多阶段改进；第七十八阶段补上 planner 网络取消，PR #185 与合并后 main Windows validation 均通过；DNS/HTTPS 代理边界仍需处置。**
+**状态：已有多阶段改进；第九十四阶段补上专用DNS resolver，第九十五阶段补本机真实HTTPS代理TLS-in-TLS测试；本地全量回归通过，PR/main复核待完成。**
 
 复核单工作线程、锁边界、任务终态保留、请求快照、协作取消、子进程终止/回收、15 秒共享关停 deadline、保存提交边界、缓存和大型频谱/导出内存使用。第七十四阶段复现分离 worker 启动失败后遗留 `separation-input.wav` 并修复；PR #181/main run `44468079196`、`44468606711`通过，Core便携构建按触发条件跳过。第七十五、七十六阶段修复的缓存身份问题分别由PR #182、#183验证。保留已知限制：deadline 是协作式等待和清理上限，不是任意 native 运算或卡死线程的硬退出 SLA。
 
-第七十八阶段发现计划 API 的同步 HTTP 调用无法及时响应任务取消，会占住唯一任务 worker。当前分支将取消上下文传至 planner，复测确认真实本机 HTTP 请求取消后2秒内结束、旧项目状态不变且 worker 可继续服务；HTTP 1xx、chunked、HTTP代理认证、HTTPS CONNECT 分支及端口边界均有定向回归。本地定向 Python/API为27 passed，计划面板 Edge为3 passed，编译、JS语法与差异检查通过。PR #185 runs `44493364596`、文档复验`44495044806`与合并后 main run `44496133010`均成功，合并提交`25460346bf87e847b68ae1aad00300b22d4590a3`，Python/API为`2741 passed, 89 skipped`、Edge为`38 passed`；Core便携步骤按触发条件跳过。90秒仅是 asyncio 网络任务 deadline：Python 3.12 中系统 DNS `getaddrinfo` 在线程池运行，取消不能杀掉正在执行的 resolver；`asyncio.run()`收尾还可能等待默认执行器最多5分钟。HTTPS代理分支当前用模拟 transport 检查 CONNECT 与 TLS 升级调用，尚未验证真实 TLS-over-TLS 握手/证书链。两项残余和后续闭合条件见问题账本 ENG-10。
+第七十八阶段发现计划 API 的同步 HTTP 调用不响应任务取消，会占住唯一任务worker；主线修复由PR #185与main run `44496133010`验证，HTTP 1xx、chunked、HTTP代理认证、CONNECT分支及端口边界有定向回归。第九十四阶段将系统DNS解析从`asyncio`默认执行器迁到单个有界daemon resolver：取消可释放任务worker，旧loop结果被丢弃；系统`getaddrinfo`本身不可取消，若永久挂起，resolver会一直busy直到解析返回或进程重启。第九十五阶段本机测试`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_server.py -k real_tls_over_tls`为`1 passed, 42 deselected`，通过合成证书实际建立HTTPS代理与origin两层TLS，覆盖CONNECT及代理/origin认证隔离。该结果不覆盖外部代理环境。Mapper事务`tests/test_upstream.py`为`26 passed`、生命周期定向组`5 passed`、保存提交后cancel竞态`1 passed, 43 deselected`。这些是本地定向验证；一次共享改写期间长组在ZIP检查前因evidence digest unstable/stale失败，冻结后的重跑、全量pytest、Edge全套、静态检查和PR/main验证均待完成。其余限制与关闭条件见问题账本ENG-10。
+
+第九十五阶段本地最终回归更新（2026-11-20）：全量pytest`3061 passed, 90 skipped`，Edge UI`66 passed`，compileall、静态JS语法与差异检查通过；新生成JUnit的provenance source digest本地校验通过。此前并行改写期间的evidence digest stale属于旧产物身份不匹配，不作为测试通过或产品缺陷。portable PR/main检查仍待完成。
 
 **验证：**已有取消/故障注入、线程竞争、FFmpeg/Windows 子进程测试、资源基准及便携启动/退出报告；在合并版本上确认真实覆盖，不重复执行无关模型实验。
 

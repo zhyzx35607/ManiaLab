@@ -47,6 +47,11 @@ PROFILES = {
 }
 
 
+def add_profile_argument(parser):
+    parser.add_argument('--profile', choices=sorted(PROFILES), default=PUBLIC_PROFILE)
+    return parser
+
+
 def capabilities(profile):
     if profile not in PROFILES:
         raise ValueError('Unknown portable profile: ' + profile)

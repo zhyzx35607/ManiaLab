@@ -47,17 +47,21 @@ dev.3完整测试包包含Tsumugi的贝斯和其他伴奏模型及独立CPU运�
 使用独立Python3.12.10 CPU环境，依赖版本见
 `requirements-tsumugi-research.txt`。若依赖在单独目录，开发入口支持
 `MANIALAB_INSTRUMENT_PYTHON` 和 `MANIALAB_INSTRUMENT_DEPS`。
+若目标是包含 Tsumugi 的本机 extended 测试包，还需准备完整且通过校验的吉他 FL
+模型与组件；`extended` 构建不会因只准备了 Tsumugi 而跳过吉他前置条件。
 
 ```powershell
 # 作者代码及两权重已经下载到对应目录后：
 .venv/Scripts/python.exe scripts/prepare_instrument_bundle.py --source <作者源码目录>
 .venv-audio/Scripts/python.exe scripts/build_instrument_worker.py --dependencies <依赖目录>
 .venv/Scripts/python.exe scripts/verify_instrument_worker.py --fixtures <固定真实音频对照目录> --output <新验证目录>
-.venv/Scripts/python.exe scripts/build_windows.py
+.venv/Scripts/python.exe scripts/build_windows.py --profile extended
 ```
 
 验证所用原音频仅在本地研究目录，不随软件或源码发布。验证程序会真正运行
 两个模型的两种音尾模式并与已冻结研究证据逐项比较，全部通过才写入
 `assets/instruments/verification.json` 和完成标志。主程序打包会拒绝源码、
 模型、EXE或验证证据不匹配的组件。缺少可选资产时通用构建仍可生成基础包；
-此类包会将专用入口禁用，不是包含新组件的完整dev.3测试包。
+此类包会将专用入口禁用，不是包含新组件的完整dev.3测试包。省略`--profile`时构建
+默认选择`core`，不会打入Tsumugi或其他non-Core组件；当前唯一公开支持profile仍为`core`，
+此处`extended`命令只用于具备全部前置组件的本机测试，不代表公开支持或发布资格。

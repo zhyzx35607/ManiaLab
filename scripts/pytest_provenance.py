@@ -14,7 +14,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SCHEMA = "manialab-pytest-evidence-v1"
 _TEXT_EXTENSIONS = frozenset({
-    ".cjs", ".cfg", ".css", ".html", ".ini", ".js", ".json", ".md", ".mjs",
+    ".cjs", ".cfg", ".css", ".html", ".ini", ".js", ".json", ".md", ".mjs", ".pem",
     ".osu", ".py", ".toml", ".txt", ".xml", ".yaml", ".yml",
 })
 _SOURCE_DIRS = (".github", "assets", "docs", "licenses", "manialab", "scripts", "static", "tests", "vendor")

@@ -92,7 +92,13 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
                     evidence_start=1000, evidence_end=1800).data(),
                Note(2500, 2500, 1, source='transient', voice='other', id='tap').data()],
         report={}, selection={}, region=None, source_separation=reference,
-        source_evidence={'tone': dict(detected=raw, expressed=dict(raw, end=1895))})
+        source_evidence={
+            'tone': dict(detected=raw, expressed=dict(raw, end=1895)),
+            'tap': dict(
+                detected=dict(start=2490, end=2500, voice='other', source='transient'),
+                expressed=dict(start=2490, end=2500),
+            ),
+        })
     if regional:
         parent['region'] = [0, 2000]
         parent['selection'] = dict(scope='regional_output', proposal={'selected': 1})
@@ -124,8 +130,12 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
             values=dict(start=1118, end=2376, lane=2))
         state, added = _edit(client, base, headers, changed, op='add',
             values=dict(start=3001, end=3501, lane=3))
+        deleted_evidence = deepcopy(added['source_evidence']['tap'])
         state, final = _edit(client, base, headers, added, op='delete', note_id='tap')
         assert [(note['start'], note['end']) for note in final['notes']] == [(1125, 2375), (3000, 3500)]
+        assert not any(note['id'] == 'tap' for note in final['notes'])
+        assert final['source_evidence']['tap'] == deleted_evidence
+        assert final['edits'][-1]['before']['id'] == 'tap'
         manual = next(note for note in final['notes'] if note['source'] == 'manual')
         assert manual['id'] not in final['source_evidence']
         for version in state['variants']:
@@ -134,6 +144,18 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
         assert state['variants'][0] == parent
         assert final['meter'] == parent['meter']
         _assert_exports(client, base, final, current_analysis, music)
+        evidence_export = client.get(base + '/export/json').json['variant']
+        assert evidence_export['source_evidence']['tap'] == deleted_evidence
+        assert evidence_export['edits'][-1]['before']['id'] == 'tap'
+        assert not any(note['id'] == 'tap' for note in evidence_export['notes'])
+        deleted_chart_note = (2500, 2500, 1)
+        chart = parse_osu(client.get(base + '/export/osu').get_data(as_text=True))
+        assert deleted_chart_note not in [(note.start, note.end, note.lane) for note in chart['notes']]
+        with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
+            bundled_chart = parse_osu(archive.read('ManiaLab.osu').decode())
+        assert deleted_chart_note not in [
+            (note.start, note.end, note.lane) for note in bundled_chart['notes']
+        ]
         response = client.get(base + '/stem/other?context=chart&source_identity=' + reference['identity'])
         assert response.status_code == 200 and response.data == old_stem
         restored = client.post(base + '/variant', json={'index': 0}, headers=headers)

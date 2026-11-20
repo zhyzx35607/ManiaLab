@@ -213,7 +213,17 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
         assert full_song['selection']['expression'] == manual_expression
         assert next(note for note in full_song['notes'] if note['id'] == 'anchor')['end'] == 4125
 
-        regional_expression = deepcopy(manual_expression)
+        state = client.get(base).json
+        reused_lock = next(note for note in state['analysis']['candidates']
+            if note['id'] == 'locked')
+        reused_lock.update(start=2000, end=2300)
+        app.extensions['projects'].save(state)
+
+        automatic = client.post(base + '/expression', headers=headers,
+            json=dict(action='automatic', settings=settings))
+        assert automatic.status_code == 200, automatic.json
+        regional_expression = automatic.json['expression']
+        regional_expression['sections'][0]['voices']['piano']['mode'] = 'omit'
         regional_expression['sections'][1]['voices']['vocals']['mode'] = 'onsets'
         saved_expression = client.post(base + '/expression', headers=headers,
             json={'expression': regional_expression})
@@ -225,6 +235,7 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
         assert regional['selection']['scope'] == 'regional_output'
         assert regional['selection']['structure'] == structure
         assert regional['selection']['expression'] == regional_expression
+        assert regional['selection']['proposal']['scope'] == 'full_song_proposal'
         assert regional['selection']['proposal']['expression'] == regional_expression
         assert regional['selection']['proposal']['structure'] == structure
         assert regional['selection']['actual_ln_ratio'] == round(1 / 3, 4)
@@ -234,16 +245,53 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
         anchor = next(note for note in regional['notes'] if note['id'] == 'anchor')
         assert anchor['voice'] == 'vocals'
         assert anchor['end'] == anchor['start'] == 3000
-        assert next(note for note in regional['notes'] if note['id'] == 'locked') == \
-            next(note for note in full_song['notes'] if note['id'] == 'locked')
+        locked = next(note for note in regional['notes'] if note['id'] == 'locked')
+        parent_locked = next(note for note in full_song['notes'] if note['id'] == 'locked')
+        assert locked == parent_locked and locked['end'] > locked['start']
+        assert regional['source_evidence']['locked'] == full_song['source_evidence']['locked']
+        assert regional['source_evidence']['locked']['expressed']['end'] == locked['end']
+        decisions = {item['id']: item for item in regional['selection']['decisions']}
+        assert decisions['locked']['reason'] == 'locked_existing'
+        assert decisions['locked']['chart_start'] == locked['start'] == 1000
+        proposal_decisions = {
+            item['id']: item for item in regional['selection']['proposal']['decisions']
+        }
+        assert proposal_decisions['locked']['decision'] == 'omitted'
+        assert proposal_decisions['locked']['start'] == 2000
+        assert regional['source_evidence']['locked']['detected']['start'] == 1000
         regional_notes = [note for note in regional['notes'] if 2500 <= note['start'] < 5000]
         assert {note['id'] for note in regional_notes} == {'anchor', 'support'}
         assert all(note['end'] == note['start'] for note in regional_notes)
-        support_decisions = {
-            item['id']: item for item in regional['selection']['proposal']['decisions']
-        }
+        support_decisions = proposal_decisions
         assert support_decisions['support']['reason'] == 'section_onsets'
         assert support_decisions['support']['decision'] == 'selected'
+
+        regional_before_restart = deepcopy(regional)
+        app.extensions['executor'].shutdown()
+        app = create_app(root, tmp_path)
+        client = app.test_client()
+        headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+        reopened_state = client.get(base).json
+        regional = reopened_state['variants'][reopened_state['active']]
+        assert regional == regional_before_restart
+        exported_regional = client.get(base + '/export/json')
+        assert exported_regional.status_code == 200
+        exported_variant = exported_regional.json['variant']
+        assert exported_variant == regional_before_restart
+        assert exported_variant['selection']['scope'] == 'regional_output'
+        assert exported_variant['selection']['proposal']['scope'] == 'full_song_proposal'
+        exported_decisions = {
+            item['id']: item for item in exported_variant['selection']['decisions']
+        }
+        assert exported_decisions['locked']['reason'] == 'locked_existing'
+        assert exported_decisions['locked']['chart_start'] == 1000
+        exported_proposal = {
+            item['id']: item for item in exported_variant['selection']['proposal']['decisions']
+        }
+        assert exported_proposal['locked']['decision'] == 'omitted'
+        assert exported_proposal['locked']['start'] == 2000
+        assert exported_variant['source_evidence'] == regional['source_evidence']
+        assert exported_variant['source_evidence']['locked']['detected']['start'] == 1000
 
         edited_response = client.post(base + '/edit', headers=headers, json=dict(
             op='update',

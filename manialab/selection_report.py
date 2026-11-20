@@ -35,11 +35,17 @@ def resolve_generation_origin(candidate, candidates=()):
         selection = current.get('selection')
         if isinstance(selection, dict) and selection.get('scope') == 'regional_output':
             return dict(kind='regional_generation', region=None)
+        if isinstance(saved, dict) and saved.get('kind') == 'unknown':
+            return deepcopy(saved)
         edits = current.get('edits')
-        last_edit = edits[-1] if isinstance(edits, list) and edits else None
+        if edits is None or isinstance(edits, list) and not edits:
+            return dict(kind='full_song_generation')
+        if not isinstance(edits, list):
+            return dict(kind='unknown')
+        last_edit = edits[-1]
         parent_created = last_edit.get('parent_created') if isinstance(last_edit, dict) else None
         if parent_created is None:
-            return dict(kind='full_song_generation') if not edits else dict(kind='unknown')
+            return dict(kind='unknown')
         if not _is_created_key(parent_created) or parent_created in visited:
             return dict(kind='unknown')
         visited.add(parent_created)

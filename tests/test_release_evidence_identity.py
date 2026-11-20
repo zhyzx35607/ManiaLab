@@ -42,12 +42,17 @@ def release_fixture(tmp_path, monkeypatch, request):
     declared = package_assets.capabilities(profile)
     identity = dict(build_profile=profile, capabilities=declared,
         executable_sha256=_sha(executable.read_bytes()))
+    uv_runtime_bytes = b'synthetic uv executable fixture; never executed'
+    uv_runtime_identity = dict(collector.uv_release_identity())
+    uv_runtime_identity.update(bytes=len(uv_runtime_bytes), sha256=_sha(uv_runtime_bytes))
+    monkeypatch.setattr(collector, 'uv_release_identity', lambda: uv_runtime_identity)
     runtime_license = b'synthetic packaged runtime license'
     runtime_inventory = b'[]'
     runtime_license_record = {'bytes': len(runtime_license), 'sha256': _sha(runtime_license)}
     runtime_inventory_record = {'bytes': len(runtime_inventory), 'sha256': _sha(runtime_inventory)}
     manifest = dict(identity, version=__version__,
         sources={'launcher.py': _sha((source / 'launcher.py').read_bytes())}, core_models=model,
+        uv_runtime=uv_runtime_identity if declared['mapperatorinator_install'] else None,
         worker_sha256='synthetic-worker' if profile != 'core' else None,
         worker_sources={} if profile != 'core' else None, worker_files=[] if profile != 'core' else None,
         piano_model={'sha256': 'synthetic-piano', 'bytes': 1} if profile != 'core' else None,
@@ -70,6 +75,8 @@ def release_fixture(tmp_path, monkeypatch, request):
         output.writestr('ManiaLab/_internal/assets/model-manifest.json', json.dumps({
             'basic_pitch': {key: value for key, value in model.items() if key != 'filename'}}))
         output.writestr('ManiaLab/_internal/assets/arrangement-profiles.json', '{}')
+        if declared['mapperatorinator_install']:
+            output.writestr('ManiaLab/_internal/assets/runtime/uv.exe', uv_runtime_bytes)
         for prefix in ('ManiaLab/licenses/', 'ManiaLab/_internal/licenses/'):
             output.writestr(prefix + 'runtime/fixture/LICENSE', runtime_license)
             output.writestr(prefix + 'runtime-inventory.json', runtime_inventory)
