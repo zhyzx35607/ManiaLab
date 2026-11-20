@@ -46,6 +46,24 @@ def _analyze(runtime, **kwargs):
         runtime.cache, 'review-stem', **kwargs)
 
 
+def _seed_cache(runtime):
+    _, report = _analyze(runtime)
+    marker = Path(report['evidence_cache'])
+    target = marker.parent / json.loads(marker.read_text(encoding='utf-8'))['file']
+    return marker, target, marker.read_bytes(), target.read_bytes()
+
+
+def _force_cache_recompute(monkeypatch, old_target):
+    original_sha = guitar._sha
+
+    def stale_old_cache(path):
+        if Path(path) == old_target:
+            return 'stale-cache-hash'
+        return original_sha(path)
+
+    monkeypatch.setattr(guitar, '_sha', stale_old_cache)
+
+
 @pytest.mark.parametrize('change', ['sample_rate', 'threshold', 'onnxruntime', 'numpy',
                                    'scipy', 'detector', 'checkpoint'])
 def test_cache_identity_includes_every_execution_dependency(runtime, monkeypatch, change):
@@ -155,10 +173,182 @@ def test_inference_failure_cannot_publish_a_current_cache(runtime, monkeypatch):
     assert not list(runtime.cache.glob('*/current.json'))
 
 
+@pytest.mark.parametrize('failure', ['npz_write', 'target_hash', 'marker_write', 'cancel', 'replace'])
+def test_failed_cache_publication_cleans_only_new_files_and_keeps_old_cache(
+        runtime, monkeypatch, failure):
+    marker, old_target, old_marker_bytes, old_payload_bytes = _seed_cache(runtime)
+    _force_cache_recompute(monkeypatch, old_target)
+
+    if failure == 'npz_write':
+        def partial_npz(stream, **kwargs):
+            stream.write(b'partial archive')
+            raise OSError('synthetic NPZ write failure')
+
+        monkeypatch.setattr(guitar.np, 'savez_compressed', partial_npz)
+        error = OSError
+    elif failure == 'target_hash':
+        sha = guitar._sha
+
+        def broken_new_target(path):
+            if Path(path).name.startswith('activations-') and Path(path) != old_target:
+                raise OSError('synthetic target hash failure')
+            return sha(path)
+
+        monkeypatch.setattr(guitar, '_sha', broken_new_target)
+        error = OSError
+    elif failure == 'marker_write':
+        open_path = Path.open
+
+        class PartialWriter:
+            def __init__(self, stream):
+                self.stream = stream
+
+            def __enter__(self):
+                self.stream.__enter__()
+                return self
+
+            def write(self, value):
+                self.stream.write(value[:8])
+                raise OSError('synthetic marker write failure')
+
+            def __exit__(self, *args):
+                return self.stream.__exit__(*args)
+
+        def partial_marker(path, mode='r', *args, **kwargs):
+            stream = open_path(path, mode, *args, **kwargs)
+            if path.name.startswith('current-') and mode == 'x':
+                return PartialWriter(stream)
+            return stream
+
+        monkeypatch.setattr(Path, 'open', partial_marker)
+        error = OSError
+    elif failure == 'cancel':
+        polls = [0]
+
+        def cancel_before_replace():
+            polls[0] += 1
+            return polls[0] >= 4
+
+        with pytest.raises(InterruptedError):
+            _analyze(runtime, cancelled=cancel_before_replace)
+        error = None
+    else:
+        replace = Path.replace
+
+        def failed_replace(path, destination):
+            if path.name.startswith('current-') and Path(destination) == marker:
+                raise OSError('synthetic marker replace failure')
+            return replace(path, destination)
+
+        monkeypatch.setattr(Path, 'replace', failed_replace)
+        error = OSError
+
+    if error is not None:
+        with pytest.raises(error):
+            _analyze(runtime)
+
+    assert marker.read_bytes() == old_marker_bytes
+    assert old_target.read_bytes() == old_payload_bytes
+    assert list(marker.parent.glob('activations-*.npz')) == [old_target]
+    assert not list(marker.parent.glob('current-*.tmp'))
+
+
+def test_cleanup_continues_after_unlink_failure_and_reports_it(runtime, monkeypatch):
+    marker, old_target, old_marker_bytes, old_payload_bytes = _seed_cache(runtime)
+    _force_cache_recompute(monkeypatch, old_target)
+    open_path = Path.open
+    unlink = Path.unlink
+    attempted = []
+
+    class PartialWriter:
+        def __init__(self, stream):
+            self.stream = stream
+
+        def __enter__(self):
+            self.stream.__enter__()
+            return self
+
+        def write(self, value):
+            self.stream.write(value[:8])
+            raise OSError('synthetic marker write failure')
+
+        def __exit__(self, *args):
+            return self.stream.__exit__(*args)
+
+    def partial_marker(path, mode='r', *args, **kwargs):
+        stream = open_path(path, mode, *args, **kwargs)
+        if path.name.startswith('current-') and mode == 'x':
+            return PartialWriter(stream)
+        return stream
+
+    def failing_unlink(path, *args, **kwargs):
+        if path.name.startswith(('activations-', 'current-')) and path != old_target:
+            attempted.append(path)
+            if path.name.startswith('activations-'):
+                raise PermissionError('synthetic unlink failure')
+        return unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, 'open', partial_marker)
+    monkeypatch.setattr(Path, 'unlink', failing_unlink)
+    with pytest.raises(OSError, match='synthetic marker write failure') as caught:
+        _analyze(runtime)
+
+    assert len(attempted) == 2
+    assert attempted[0].name.startswith('current-')
+    assert attempted[1].name.startswith('activations-')
+    assert any('synthetic unlink failure' in note for note in caught.value.__notes__)
+    assert marker.read_bytes() == old_marker_bytes
+    assert old_target.read_bytes() == old_payload_bytes
+    assert len(list(marker.parent.glob('activations-*.npz'))) == 2
+    assert not list(marker.parent.glob('current-*.tmp'))
+
+
+def test_uuid_collision_does_not_delete_an_existing_payload(runtime, monkeypatch):
+    marker, old_target, old_marker_bytes, old_payload_bytes = _seed_cache(runtime)
+    _force_cache_recompute(monkeypatch, old_target)
+    collision_id = old_target.stem.removeprefix('activations-')
+    monkeypatch.setattr(guitar.uuid, 'uuid4', lambda: SimpleNamespace(hex=collision_id))
+
+    with pytest.raises(FileExistsError):
+        _analyze(runtime)
+
+    assert marker.read_bytes() == old_marker_bytes
+    assert old_target.read_bytes() == old_payload_bytes
+    assert list(marker.parent.glob('activations-*.npz')) == [old_target]
+    assert not list(marker.parent.glob('current-*.tmp'))
+
+
+def test_replace_that_publishes_then_raises_keeps_new_cache(runtime, monkeypatch):
+    marker, old_target, _, _ = _seed_cache(runtime)
+    _force_cache_recompute(monkeypatch, old_target)
+    original_sha = guitar._sha
+    original_replace = Path.replace
+
+    def replace_then_raise(source, destination):
+        result = original_replace(source, destination)
+        if Path(destination) == marker:
+            raise KeyboardInterrupt('synthetic interruption after marker replace')
+        return result
+
+    monkeypatch.setattr(Path, 'replace', replace_then_raise)
+    with pytest.raises(KeyboardInterrupt, match='after marker replace'):
+        _analyze(runtime)
+
+    marker_data = json.loads(marker.read_text(encoding='utf-8'))
+    target = marker.parent / marker_data['file']
+    assert target.is_file()
+    assert marker_data['sha256'] == original_sha(target)
+
+    monkeypatch.setattr(guitar, '_sha', original_sha)
+    assert _analyze(runtime)[1]['cached']
+
+
 @pytest.mark.parametrize('cached', [False, True])
 def test_cancellation_in_final_progress_cannot_report_success(runtime, cached):
     if cached:
-        _analyze(runtime)
+        _, report = _analyze(runtime)
+        marker = Path(report['evidence_cache'])
+        before = marker.read_bytes()
     cancelled = [False]
 
     def progress(percent, stage):
@@ -168,6 +358,12 @@ def test_cancellation_in_final_progress_cannot_report_success(runtime, cached):
     with pytest.raises(InterruptedError):
         _analyze(runtime, progress=progress, cancelled=lambda: cancelled[0])
     assert len(runtime.calls) == 1
+    if cached:
+        assert marker.read_bytes() == before
+    else:
+        marker = next(runtime.cache.glob('*/current.json'))
+        assert _analyze(runtime)[1]['cached']
+        assert len(runtime.calls) == 1
 
 
 def test_zero_velocity_event_still_has_unit_weight_and_exact_raw_trace():
