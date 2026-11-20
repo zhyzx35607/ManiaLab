@@ -16,6 +16,7 @@ from manialab import __version__
 from scripts.package_assets import (
     archive_stem, capabilities, verify_core_model_payload, verify_core_payload,
 )
+from scripts.pytest_provenance import validate_evidence
 
 
 def sha256(path):
@@ -23,7 +24,7 @@ def sha256(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def collect(build_root, pytest_report, portable_report, shutdown_report):
+def collect(build_root, pytest_report, portable_report, shutdown_report, *, pytest_evidence=None):
     build_root = Path(build_root).resolve()
     package_dir = build_root / "release"
     executable = build_root / "dist" / "ManiaLab" / "ManiaLab.exe"
@@ -51,6 +52,18 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
         source = (ROOT / relative).resolve()
         if not source.is_relative_to(ROOT) or not source.is_file() or sha256(source) != expected:
             raise SystemExit(f"Source snapshot mismatch: {relative}")
+    commit = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+    ).strip()
+    if pytest_evidence is None:
+        pytest_path = Path(pytest_report)
+        pytest_evidence = pytest_path.with_name(pytest_path.name + ".provenance.json")
+    try:
+        pytest_identity = validate_evidence(
+            pytest_evidence, pytest_report, root=ROOT, expected_commit=commit
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"Pytest evidence provenance is invalid: {exc}") from exc
 
     size = archive_path.stat().st_size
     if size >= 2_000_000_000:
@@ -167,9 +180,6 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
         or shutdown.get("worker_processes_after_exit") != []
     ):
         raise SystemExit("Core shutdown check did not verify a worker-free application exit.")
-    commit = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
-    ).strip()
     report = {
         "schema": "manialab-release-validation-v1",
         "version": __version__,
@@ -189,6 +199,10 @@ def collect(build_root, pytest_report, portable_report, shutdown_report):
                 **totals,
                 "passed": True,
                 "junit_sha256": sha256(pytest_report),
+                "evidence_sha256": sha256(pytest_evidence),
+                "evidence_schema": pytest_identity["schema"],
+                "source_commit": pytest_identity["source_commit"],
+                "source_digest": pytest_identity["source_digest_before"],
             },
             "portable": {
                 "passed": True,
@@ -242,11 +256,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build-root", type=Path, required=True)
     parser.add_argument("--pytest-report", type=Path, required=True)
+    parser.add_argument("--pytest-evidence", type=Path)
     parser.add_argument("--portable-report", type=Path, required=True)
     parser.add_argument("--shutdown-report", type=Path, required=True)
     args = parser.parse_args()
     report, output, checksums = collect(
-        args.build_root, args.pytest_report, args.portable_report, args.shutdown_report
+        args.build_root, args.pytest_report, args.portable_report, args.shutdown_report,
+        pytest_evidence=args.pytest_evidence,
     )
     print(json.dumps({
         "validation": str(output),

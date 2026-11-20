@@ -33,6 +33,11 @@ def release_fixture(tmp_path, monkeypatch, request):
     # Production ZIP, checksum, report, and synthetic model-byte validation still run.
     monkeypatch.setattr(collector, 'ROOT', source)
     monkeypatch.setattr(collector.subprocess, 'check_output', lambda *args, **kwargs: 'synthetic-commit')
+    monkeypatch.setattr(collector, 'validate_evidence', lambda *args, **kwargs: {
+        'schema': 'manialab-pytest-evidence-v1',
+        'source_commit': 'synthetic-commit',
+        'source_digest_before': 'a' * 64,
+    })
     monkeypatch.setattr(package_assets, 'CORE_MODEL', model)
     declared = package_assets.capabilities(profile)
     identity = dict(build_profile=profile, capabilities=declared,
@@ -58,6 +63,8 @@ def release_fixture(tmp_path, monkeypatch, request):
         output.writestr('ManiaLab/_internal/assets/arrangement-profiles.json', '{}')
     junit = tmp_path / 'junit.xml'
     junit.write_text('<testsuite tests="1" failures="0" errors="0" skipped="0"/>', encoding='utf-8')
+    pytest_evidence = tmp_path / 'pytest-evidence.json'
+    pytest_evidence.write_text('{}', encoding='utf-8')
     portable = tmp_path / 'portable.json'
     checks = [dict(identity, check='release_manifest'), {'check': 'startup'}, {'check': 'restart'}]
     if profile == 'core':
@@ -75,11 +82,13 @@ def release_fixture(tmp_path, monkeypatch, request):
         shutdown_data.update(worker_processes_before_exit=[], worker_processes_after_exit=[])
     shutdown.write_text(json.dumps(shutdown_data), encoding='utf-8')
     return SimpleNamespace(build=build, executable=executable, manifest=manifest, identity=identity,
-        junit=junit, portable=portable, shutdown=shutdown, checks=checks, shutdown_data=shutdown_data)
+        junit=junit, pytest_evidence=pytest_evidence, portable=portable, shutdown=shutdown,
+        checks=checks, shutdown_data=shutdown_data)
 
 
 def _collect(fixture):
-    return collector.collect(fixture.build, fixture.junit, fixture.portable, fixture.shutdown)
+    return collector.collect(fixture.build, fixture.junit, fixture.portable, fixture.shutdown,
+        pytest_evidence=fixture.pytest_evidence)
 
 
 def test_matching_release_reports_are_accepted_for_the_same_fixture_bytes(release_fixture):
