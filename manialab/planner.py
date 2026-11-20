@@ -2,7 +2,9 @@
 import asyncio
 import base64
 import json
+import socket
 import ssl
+import threading
 import urllib.parse
 import urllib.request
 
@@ -49,6 +51,122 @@ def validate_plan(value, segments):
 class HTTPStatusError(Exception):
     def __init__(self, status):
         self.status = status
+
+
+class _BoundedResolver:
+    """Resolve one host at a time outside asyncio's shutdown-waited executor."""
+
+    def __init__(self, getaddrinfo=None):
+        self._getaddrinfo = getaddrinfo or socket.getaddrinfo
+        self._condition = threading.Condition()
+        self._pending = None
+        self._busy = False
+        self._thread = None
+
+    async def resolve(self, host, port):
+        loop = asyncio.get_running_loop()
+        future = loop.create_future()
+        with self._condition:
+            if self._busy:
+                raise OSError("DNS resolver is busy")
+            self._busy = True
+            self._pending = (loop, future, host, port)
+            if self._thread is None:
+                try:
+                    self._thread = threading.Thread(
+                        target=self._run,
+                        name="manialab-planner-resolver",
+                        daemon=True,
+                    )
+                    self._thread.start()
+                except BaseException:
+                    self._busy = False
+                    self._pending = None
+                    self._thread = None
+                    raise
+            self._condition.notify()
+        return await future
+
+    def _run(self):
+        while True:
+            with self._condition:
+                while self._pending is None:
+                    self._condition.wait()
+                loop, future, host, port = self._pending
+                self._pending = None
+            try:
+                result = self._getaddrinfo(
+                    host, port, socket.AF_UNSPEC, socket.SOCK_STREAM,
+                    socket.IPPROTO_TCP,
+                )
+                error = None
+            except BaseException as exc:
+                result = None
+                error = exc
+            with self._condition:
+                self._busy = False
+            try:
+                loop.call_soon_threadsafe(self._deliver, future, result, error)
+            except RuntimeError:
+                # The request's event loop may have closed after cancellation.
+                pass
+
+    @staticmethod
+    def _deliver(future, result, error):
+        if future.done():
+            return
+        if error is not None:
+            future.set_exception(error)
+        else:
+            future.set_result(result)
+
+
+_RESOLVER = None
+_RESOLVER_LOCK = threading.Lock()
+
+
+def _resolver():
+    global _RESOLVER
+    with _RESOLVER_LOCK:
+        if _RESOLVER is None:
+            _RESOLVER = _BoundedResolver()
+        return _RESOLVER
+
+
+async def _open_resolved_connection(host, port, *, ssl_context, server_hostname, limit):
+    loop = asyncio.get_running_loop()
+    lookup_host = host.encode("idna").decode("ascii")
+    addresses = await _resolver().resolve(lookup_host, port)
+    last_error = None
+    for family, socktype, proto, _, sockaddr in addresses:
+        connection = socket.socket(family, socktype, proto)
+        connection.setblocking(False)
+        try:
+            await loop.sock_connect(connection, sockaddr)
+        except asyncio.CancelledError:
+            connection.close()
+            raise
+        except OSError as exc:
+            connection.close()
+            last_error = exc
+            continue
+        except BaseException:
+            connection.close()
+            raise
+        try:
+            reader, writer = await asyncio.open_connection(
+                sock=connection,
+                ssl=ssl_context,
+                server_hostname=server_hostname,
+                limit=limit,
+            )
+        except BaseException:
+            connection.close()
+            raise
+        return reader, writer
+    if last_error is not None:
+        raise last_error
+    raise OSError("DNS resolver returned no stream addresses")
 
 
 def _host_header(host, port, scheme):
@@ -205,10 +323,10 @@ async def _post_json(url, body, headers):
         connect_port = proxy_port if proxy else port
         proxy_tls = bool(proxy and proxy.scheme == "https")
         context = ssl.create_default_context() if proxy_tls or parsed.scheme == "https" else None
-        reader, writer = await asyncio.open_connection(
+        reader, writer = await _open_resolved_connection(
             connect_host,
             connect_port,
-            ssl=context if proxy_tls or (not proxy and parsed.scheme == "https") else None,
+            ssl_context=context if proxy_tls or (not proxy and parsed.scheme == "https") else None,
             server_hostname=connect_host if proxy_tls else (host if not proxy and parsed.scheme == "https" else None),
             limit=HEADER_LIMIT_BYTES,
         )
@@ -261,6 +379,16 @@ async def _post_json(url, body, headers):
                 pass
 
 
+async def _cancel_request(request):
+    request.cancel()
+    try:
+        await request
+    except asyncio.CancelledError:
+        pass
+    except Exception:
+        pass
+
+
 async def _request_cancellable(url, body, headers, cancelled):
     request = asyncio.create_task(_post_json(url, body, headers))
     loop = asyncio.get_running_loop()
@@ -268,32 +396,23 @@ async def _request_cancellable(url, body, headers, cancelled):
     try:
         while True:
             if cancelled is not None and cancelled():
-                request.cancel()
-                try:
-                    await request
-                except asyncio.CancelledError:
-                    pass
+                await _cancel_request(request)
                 raise InterruptedError("已取消，原有谱面已保留")
             remaining = deadline - loop.time()
             if remaining <= 0:
-                request.cancel()
-                try:
-                    await request
-                except asyncio.CancelledError:
-                    pass
+                await _cancel_request(request)
+                if cancelled is not None and cancelled():
+                    raise InterruptedError("已取消，原有谱面已保留")
                 raise asyncio.TimeoutError
             done, _ = await asyncio.wait({request}, timeout=min(0.05, remaining))
             if done:
                 if cancelled is not None and cancelled():
+                    await _cancel_request(request)
                     raise InterruptedError("已取消，原有谱面已保留")
                 return request.result()
     finally:
         if not request.done():
-            request.cancel()
-            try:
-                await request
-            except asyncio.CancelledError:
-                pass
+            await _cancel_request(request)
 
 
 def plan(endpoint, model, key, instruction, segments, current, review=None, cancelled=None):
@@ -341,6 +460,8 @@ def plan(endpoint, model, key, instruction, segments, current, review=None, canc
     except InterruptedError:
         raise
     except HTTPStatusError as error:
+        if cancelled is not None and cancelled():
+            raise InterruptedError("已取消，原有谱面已保留") from None
         raise ValueError(f"API 请求失败（HTTP {error.status}）；检查地址、模型、额度和密钥") from None
     except (OSError, ssl.SSLError, asyncio.IncompleteReadError, asyncio.LimitOverrunError, asyncio.TimeoutError):
         if cancelled is not None and cancelled():

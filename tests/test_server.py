@@ -3,6 +3,7 @@ import io
 import json
 import os
 from pathlib import Path
+import socket
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
@@ -368,11 +369,14 @@ def test_real_http_planner_tunnels_through_https_proxy(monkeypatch):
     writer = Writer()
     connection = {}
 
-    async def open_connection(host, port, **kwargs):
+    async def open_resolved_connection(host, port, *, ssl_context, server_hostname, limit):
         reader = asyncio.StreamReader()
         reader.feed_data(response_bytes)
         reader.feed_eof()
-        connection.update(host=host, port=port, **kwargs)
+        connection.update(
+            host=host, port=port, ssl_context=ssl_context,
+            server_hostname=server_hostname, limit=limit,
+        )
         return reader, writer
 
     monkeypatch.setattr(planner_module.urllib.request, 'proxy_bypass', lambda host: False)
@@ -381,7 +385,7 @@ def test_real_http_planner_tunnels_through_https_proxy(monkeypatch):
         'getproxies',
         lambda: {'https': 'https://proxy%40user:secret%3Apass@proxy.example:8443'},
     )
-    monkeypatch.setattr(planner_module.asyncio, 'open_connection', open_connection)
+    monkeypatch.setattr(planner_module, '_open_resolved_connection', open_resolved_connection)
     response = plan(
         'https://api.example/v1',
         'test',
@@ -393,7 +397,10 @@ def test_real_http_planner_tunnels_through_https_proxy(monkeypatch):
     assert response['preferences']['density'] == 15
     assert connection['host'] == 'proxy.example'
     assert connection['port'] == 8443
-    assert connection['ssl'] is not None
+    assert connection['ssl_context'] is not None
+    assert connection['ssl_context'].check_hostname
+    assert connection['ssl_context'].verify_mode == planner_module.ssl.CERT_REQUIRED
+    assert connection['server_hostname'] == 'proxy.example'
     assert writer.start_tls_server_name == 'api.example'
     assert writer.closed
     connect_request, tunneled_request = writer.writes
@@ -401,7 +408,190 @@ def test_real_http_planner_tunnels_through_https_proxy(monkeypatch):
     assert b'Proxy-Authorization: Basic cHJveHlAdXNlcjpzZWNyZXQ6cGFzcw==\r\n' in connect_request
     assert tunneled_request.startswith(b'POST /v1/chat/completions HTTP/1.1\r\n')
     assert b'Authorization: Bearer api-key\r\n' in tunneled_request
+    assert b'Host: api.example\r\n' in tunneled_request
     assert b'Proxy-Authorization:' not in tunneled_request
+
+
+def test_bounded_resolver_cancellation_does_not_use_default_executor(monkeypatch):
+    started = threading.Event()
+    release = threading.Event()
+    calls = []
+
+    def getaddrinfo(host, port, family, socktype, proto):
+        calls.append((host, port, threading.current_thread()))
+        if len(calls) == 1:
+            started.set()
+            assert release.wait(5)
+        return [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, '', ('127.0.0.1', port))]
+
+    resolver = planner_module._BoundedResolver(getaddrinfo)
+
+    async def exercise():
+        loop = asyncio.get_running_loop()
+        loop_errors = []
+        loop.set_exception_handler(lambda loop, context: loop_errors.append(context))
+
+        def reject_executor(*args, **kwargs):
+            raise AssertionError('DNS resolution must not use asyncio default executor')
+
+        monkeypatch.setattr(loop, 'run_in_executor', reject_executor)
+        first = asyncio.create_task(resolver.resolve('xn--bcher-kva.example', 80))
+        for _ in range(100):
+            if started.is_set():
+                break
+            await asyncio.sleep(0.01)
+        assert started.is_set()
+        first.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await first
+
+        with pytest.raises(OSError, match='busy'):
+            await resolver.resolve('second.example', 80)
+        assert len(calls) == 1
+        assert resolver._busy
+        resolver_thread = resolver._thread
+        assert resolver_thread.name == 'manialab-planner-resolver'
+        assert calls[0][2] is resolver_thread
+
+        release.set()
+        for _ in range(100):
+            if not resolver._busy:
+                break
+            await asyncio.sleep(0.01)
+        await asyncio.sleep(0)
+        assert not loop_errors
+        addresses = await resolver.resolve('third.example', 81)
+        assert addresses[0][4] == ('127.0.0.1', 81)
+        assert resolver._thread is resolver_thread
+        assert len(calls) == 2
+        assert first.cancelled()
+
+    try:
+        asyncio.run(exercise())
+    finally:
+        release.set()
+
+
+def test_cancelled_plan_during_blocked_dns_releases_worker_and_preserves_project(tmp_path, monkeypatch):
+    resolver_started = threading.Event()
+    release_resolver = threading.Event()
+    resolution_calls = []
+    original_getaddrinfo = socket.getaddrinfo
+
+    def blocked_getaddrinfo(host, port, family, socktype, proto):
+        resolution_calls.append((host, port))
+        if len(resolution_calls) == 1:
+            resolver_started.set()
+            assert release_resolver.wait(5)
+        return original_getaddrinfo(host, port, family, socktype, proto)
+
+    resolver = planner_module._BoundedResolver(blocked_getaddrinfo)
+    monkeypatch.setattr(planner_module, '_RESOLVER', resolver)
+    monkeypatch.setattr(planner_module.urllib.request, 'proxy_bypass', lambda host: True)
+    response_payload = json.dumps({
+        'choices': [{'message': {'content': json.dumps({
+            'preferences': {'density': 12},
+            'segments': [],
+            'explanation': 'after DNS release',
+        })}}],
+    }).encode()
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers['Content-Length']))
+            self.send_response(200)
+            self.send_header('Content-Length', str(len(response_payload)))
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            self.wfile.write(response_payload)
+
+        def log_message(self, *args):
+            pass
+
+    http_server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+    http_thread = threading.Thread(target=http_server.serve_forever, daemon=True)
+    http_thread.start()
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    endpoint = f'http://localhost:{http_server.server_port}/v1'
+    request = {
+        'endpoint': endpoint,
+        'model': 'blocked-dns',
+        'instruction': 'Use deterministic fixture preferences',
+        'settings': {},
+    }
+    resolver_threads_before = sum(
+        thread.name == 'manialab-planner-resolver' for thread in threading.enumerate()
+    )
+
+    def wait_for_job(job_id, timeout=5):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            job = client.get(f'/api/jobs/{job_id}').json
+            if job['status'] in ('done', 'error', 'cancelled'):
+                return job
+            time.sleep(0.01)
+        pytest.fail(f'job {job_id} did not finish: {client.get(f"/api/jobs/{job_id}").json}')
+
+    try:
+        imported = client.post(
+            '/api/import',
+            data={'files': (io.BytesIO(b'synthetic audio'), 'song.wav')},
+            headers=headers,
+        )
+        assert imported.status_code == 200
+        project_id = imported.json['id']
+        projects = app.extensions['projects']
+        state = projects.load(project_id)
+        state['analysis'] = {'segments': [{'start_ms': 0, 'end_ms': 1000}]}
+        state['plan'] = {'sentinel': 'previous'}
+        projects.save(state)
+        previous = projects.load(project_id)
+
+        submitted = client.post(f'/api/projects/{project_id}/plan', json=request, headers=headers)
+        assert submitted.status_code == 200
+        first_job_id = submitted.json['id']
+        assert resolver_started.wait(5)
+        resolver_thread = resolver._thread
+
+        started_at = time.monotonic()
+        cancelled = client.post(f'/api/jobs/{first_job_id}/cancel', headers=headers)
+        assert cancelled.status_code == 200
+        assert wait_for_job(first_job_id)['status'] == 'cancelled'
+        assert time.monotonic() - started_at < 2
+        assert projects.load(project_id) == previous
+        assert resolver._thread is resolver_thread
+
+        busy_submission = client.post(f'/api/projects/{project_id}/plan', json=request, headers=headers)
+        assert busy_submission.status_code == 200
+        busy_job = wait_for_job(busy_submission.json['id'])
+        assert busy_job['status'] == 'error'
+        assert len(resolution_calls) == 1
+        assert resolver._thread is resolver_thread
+
+        release_resolver.set()
+        deadline = time.monotonic() + 2
+        while resolver._busy and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert not resolver._busy
+
+        resumed = client.post(f'/api/projects/{project_id}/plan', json=request, headers=headers)
+        assert resumed.status_code == 200
+        resumed_job = wait_for_job(resumed.json['id'])
+        assert resumed_job['status'] == 'done', resumed_job
+        assert projects.load(project_id)['plan']['explanation'] == 'after DNS release'
+        assert resolver._thread is resolver_thread
+        assert len(resolution_calls) == 2
+        assert sum(
+            thread.name == 'manialab-planner-resolver' for thread in threading.enumerate()
+        ) == resolver_threads_before + 1
+    finally:
+        release_resolver.set()
+        app.extensions['executor'].shutdown()
+        http_server.shutdown()
+        http_thread.join()
+        http_server.server_close()
 
 
 def test_planner_rejects_control_characters_in_endpoint():
