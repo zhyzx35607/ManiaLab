@@ -177,13 +177,34 @@ class GuitarDetector:
         if not cached:
             folder.mkdir(parents=True, exist_ok=True)
             target = folder / ('activations-' + uuid.uuid4().hex + '.npz')
-            with target.open('xb') as stream:
-                np.savez_compressed(stream, identity=signature, **heads)
             temporary = folder / ('current-' + uuid.uuid4().hex + '.tmp')
-            temporary.write_text(_signature(dict(identity=identity, file=target.name, sha256=_sha(target))), encoding='utf-8')
-            if cancelled():
-                raise InterruptedError('已取消吉他采音')
-            temporary.replace(marker)
+            created = []
+            published = False
+            try:
+                with target.open('xb') as stream:
+                    created.append(target)
+                    np.savez_compressed(stream, identity=signature, **heads)
+                marker_data = _signature(dict(identity=identity, file=target.name, sha256=_sha(target)))
+                with temporary.open('x', encoding='utf-8') as stream:
+                    created.append(temporary)
+                    stream.write(marker_data)
+                if cancelled():
+                    raise InterruptedError('已取消吉他采音')
+                temporary.replace(marker)
+                published = True
+            except BaseException as error:
+                if not published:
+                    cleanup_errors = []
+                    for path in reversed(created):
+                        try:
+                            path.unlink()
+                        except FileNotFoundError:
+                            pass
+                        except OSError as cleanup_error:
+                            cleanup_errors.append(f'{path}: {cleanup_error}')
+                    if cleanup_errors:
+                        error.add_note('吉他缓存发布失败后的清理也失败：' + '; '.join(cleanup_errors))
+                raise
         progress(100, '吉他起音与音尾依据已保存')
         if cancelled():
             raise InterruptedError('已取消吉他采音')
