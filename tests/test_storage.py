@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -53,3 +54,18 @@ def test_save_removes_temporary_file_after_replace_failure(tmp_path, monkeypatch
 
     assert state_path.read_bytes() == previous
     assert not temporary.exists()
+
+
+def test_recent_returns_only_the_most_recent_thirty_projects(tmp_path):
+    projects = Projects(tmp_path / "projects")
+    project_ids = []
+    for index in range(31):
+        project_id, _ = projects.create()
+        projects.save({"id": project_id, "title": str(index), "mode": "audio"})
+        os.utime(projects.path(project_id) / "state.json", (1000 + index, 1000 + index))
+        project_ids.append(project_id)
+
+    recent = projects.recent()
+
+    assert len(recent) == 30
+    assert [project["id"] for project in recent] == list(reversed(project_ids[1:]))

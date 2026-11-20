@@ -155,6 +155,20 @@ function renderTimingLocations(){
     button.onclick=()=>{const time=Math.min(Math.max(0,length-1),item.time);audio.pause();seek(time);$('auditionStart').value=time.toFixed(1);const panel=document.querySelector('.audition-panel');panel.open=true;$('auditionNote').textContent=`已定位 ${time.toFixed(1)} 秒；点击「试听当前拍线 A」比较音乐与拍线，或设置 B 的 Offset 做对照。`;panel.scrollIntoView({block:'center',behavior:'smooth'});};timingLocations.append(button);
   }
 }
+function hasRegionalOrigin(candidate){
+  const origin=candidate?.generation_origin?.kind;
+  if(origin==='regional_generation')return true;
+  if(origin==='full_song_generation')return false;
+  const visited=new Set([candidate?.created]);let parentCreated=candidate?.edits?.at(-1)?.parent_created;
+  while(parentCreated!=null&&!visited.has(parentCreated)){
+    visited.add(parentCreated);
+    const parent=state?.variants.find(item=>item.created===parentCreated);
+    if(!parent)return false;
+    if(parent.region!=null||parent.selection?.scope==='regional_output')return true;
+    parentCreated=parent.edits?.at(-1)?.parent_created;
+  }
+  return false;
+}
 function loadState(s){
   projectLoadRequest++;const changed=state?.id!==s.id||state?.original!==s.original;cancelAuditionPlayback();cueClock.reset();state=s;setSettings(s.settings);$('projectTitle').textContent=s.title;$('projectSub').textContent=s.mode==='remap'?`已导入 ${s.input_keys}K 原谱 · ${s.input_notes.length} 个物件`:'本地音频项目 · 先检查采音，再调整编排';
   $('mode').value=s.mode;options($('charts'),s.charts.map(c=>[c.path,c.label]));$('charts').classList.toggle('hidden',!s.charts.length);$('charts').value=s.original||'';
@@ -170,7 +184,7 @@ function loadState(s){
   renderTimingLocations();
   $('planText').textContent=s.plan?.explanation||'';
   const ref=s.reference_style;$('referenceStyleInfo').textContent=ref?`${ref.title} · ${ref.keys}K · LN ${(ref.ln_ratio*100).toFixed(1)}% · 中位长度 ${ref.ln_duration_ms['50']||0} ms · 峰值 ${ref.peak_nps} 物件/秒。${ref.warnings.join(' ')} ${ref.notice}`:'不复制原谱音符或时间，也不保证相同手感。';
-  options($('variants'),s.variants.length?s.variants.map((v,i)=>[i,`候选 ${i+1} · ${v.settings.keys}K · seed ${v.settings.seed} · ${v.notes.length} 物件${v.region?' · 局部':''}${v.edits?.length?' · 已修正 '+v.edits.length+' 次':''}`]):[['','尚未生成']]);$('variants').value=s.active;
+  options($('variants'),s.variants.length?s.variants.map((v,i)=>[i,`候选 ${i+1} · ${v.settings.keys}K · seed ${v.settings.seed} · ${v.notes.length} 物件${v.region?' · 局部':hasRegionalOrigin(v)?' · 编辑自局部候选':''}${v.edits?.length?' · 已修正 '+v.edits.length+' 次':''}`]):[['','尚未生成']]);$('variants').value=s.active;
   setPlaybackSource(changed);updateAudioStatus();
   [['exportOsu','osu'],['exportOsz','osz'],['exportJson','json']].forEach(([id,kind])=>{const a=$(id);a.classList.toggle('disabled',!v||(kind==='osz'&&!s.audio));a.title=kind==='osz'&&!s.audio?'请导入配套音频后导出谱包':'';if(v)a.href=`/api/projects/${s.id}/export/${kind}`;else a.removeAttribute('href');a.download='ManiaLab.'+kind;});
   const report=v?.report;const vals=report?[report.notes,`${(report.ln_ratio*100).toFixed(1)}%`,report.max_held,`${(report.longest_ln_ms/1000).toFixed(2)}s`]:['—','—','—','—'];document.querySelectorAll('.metrics strong').forEach((e,i)=>e.textContent=vals[i]);

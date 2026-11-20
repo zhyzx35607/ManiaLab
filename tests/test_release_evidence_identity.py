@@ -42,15 +42,24 @@ def release_fixture(tmp_path, monkeypatch, request):
     declared = package_assets.capabilities(profile)
     identity = dict(build_profile=profile, capabilities=declared,
         executable_sha256=_sha(executable.read_bytes()))
+    runtime_license = b'synthetic packaged runtime license'
+    runtime_inventory = b'[]'
+    runtime_license_record = {'bytes': len(runtime_license), 'sha256': _sha(runtime_license)}
+    runtime_inventory_record = {'bytes': len(runtime_inventory), 'sha256': _sha(runtime_inventory)}
     manifest = dict(identity, version=__version__,
         sources={'launcher.py': _sha((source / 'launcher.py').read_bytes())}, core_models=model,
         worker_sha256='synthetic-worker' if profile != 'core' else None,
         worker_sources={} if profile != 'core' else None, worker_files=[] if profile != 'core' else None,
         piano_model={'sha256': 'synthetic-piano', 'bytes': 1} if profile != 'core' else None,
-        guitar_model=None, instrument_worker=None)
+        guitar_model=None, instrument_worker=None, instrument_runtime_license_files=None,
+        runtime_license_files={'fixture/LICENSE': runtime_license_record},
+        runtime_license_inventory=runtime_inventory_record,
+        license_files={'runtime/fixture/LICENSE': runtime_license_record,
+            'runtime-inventory.json': runtime_inventory_record})
     (executable.parent / 'release-manifest.json').write_text(json.dumps(manifest), encoding='utf-8')
     identity = dict(identity, release_manifest_sha256=_sha(
         (executable.parent / 'release-manifest.json').read_bytes()))
+    portable_identity = dict(identity, verification_run_id='c' * 32)
     package = build / 'release'
     package.mkdir()
     archive = package / (package_assets.archive_stem(__version__, profile) + '.zip')
@@ -61,12 +70,15 @@ def release_fixture(tmp_path, monkeypatch, request):
         output.writestr('ManiaLab/_internal/assets/model-manifest.json', json.dumps({
             'basic_pitch': {key: value for key, value in model.items() if key != 'filename'}}))
         output.writestr('ManiaLab/_internal/assets/arrangement-profiles.json', '{}')
+        for prefix in ('ManiaLab/licenses/', 'ManiaLab/_internal/licenses/'):
+            output.writestr(prefix + 'runtime/fixture/LICENSE', runtime_license)
+            output.writestr(prefix + 'runtime-inventory.json', runtime_inventory)
     junit = tmp_path / 'junit.xml'
     junit.write_text('<testsuite tests="1" failures="0" errors="0" skipped="0"/>', encoding='utf-8')
     pytest_evidence = tmp_path / 'pytest-evidence.json'
     pytest_evidence.write_text('{}', encoding='utf-8')
     portable = tmp_path / 'portable.json'
-    checks = [dict(identity, check='release_manifest'), {'check': 'startup'}, {'check': 'restart'}]
+    checks = [dict(portable_identity, check='release_manifest'), {'check': 'startup'}, {'check': 'restart'}]
     if profile == 'core':
         checks += [{'check': name} for name in (
             'basic_analysis', 'provided_stem_analysis_export', 'bad_audio_recovery')]

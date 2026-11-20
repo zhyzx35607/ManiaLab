@@ -5,6 +5,7 @@ from pathlib import Path
 from manialab.arrange import parameters
 from manialab.domain import Note, note_from, parse_osu, export_osu
 from manialab.generation import generate_variant
+from manialab.selection_report import resolve_generation_origin
 
 
 TEMPO = dict(bpm=120, offset=0, division=4, audio_shift_ms=0)
@@ -28,6 +29,8 @@ def test_muted_locked_note_is_retained_and_not_reported_as_final_omission():
                      Note(3500,4200,id='region',source='pitch',voice='bass')])
     old=deepcopy(generate(state))
     variant=generate(state,dict(piano_weight=0),[3000,5000])
+    assert old['generation_origin']==dict(kind='full_song_generation')
+    assert variant['generation_origin']==dict(kind='regional_generation',region=[3000,5000])
     report=variant['selection']
     assert report['selected']==len(variant['notes'])==2
     assert report['scope']=='regional_output'
@@ -51,6 +54,14 @@ def test_muted_locked_note_is_retained_and_not_reported_as_final_omission():
     content=export_osu([note_from(n) for n in variant['notes']],
         10,Path(__file__).parents[1]/'vendor/mapperatorinator/template.osu',bpm=120,offset=0)
     assert [(n.start,n.end) for n in parse_osu(content)['notes']]==[(1000,1750),(3500,4250)]
+
+
+def test_legacy_edited_candidate_origin_is_backfilled_from_available_parent():
+    root=dict(created=1.0,region=[3000,5000])
+    child=dict(created=2.0,region=None,edits=[dict(parent_created=1.0)])
+    assert resolve_generation_origin(child,[root,child])==dict(
+        kind='regional_generation',region=[3000,5000])
+    assert resolve_generation_origin(child,[child])==dict(kind='unknown')
 
 
 def test_manual_and_reanalyzed_locks_have_no_fresh_raw_decision_attached():
@@ -124,3 +135,165 @@ def test_regional_report_survives_save_json_export_and_later_manual_edit(tmp_pat
         assert client.get(base).json['variants'][-2]==current
     finally:
         app.extensions['executor'].shutdown()
+
+
+def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
+    import io
+    import zipfile
+
+    from manialab.server import create_app
+    from tests.test_server import wait_job
+
+    root = Path(__file__).parents[1]
+    audio = b'synthetic regional export audio'
+    structure = dict(
+        boundaries=[0, 2500, 5000],
+        segments=[
+            dict(start_ms=0, end_ms=2500, label='verse'),
+            dict(start_ms=2500, end_ms=5000, label='chorus'),
+        ],
+    )
+    candidates = [
+        Note(1000, 1500, id='locked', source='pitch', voice='piano',
+             release_reason='frame_decay'),
+        Note(3000, 3125, id='anchor', source='pitch', voice='vocals',
+             release_reason='frame_decay'),
+        Note(3500, 3750, id='support', source='pitch', voice='vocals',
+             release_reason='frame_decay'),
+    ]
+    phrase = Note(3000, 4125, id='anchor', source='pitch', voice='vocals',
+        phrase=True, support=('support',), support_coverage=1,
+        release_reason='vocal_activity_decay')
+    analysis = dict(
+        revision=13,
+        duration=5,
+        candidates=[note.data() for note in candidates],
+        phrase_candidates=[phrase.data()],
+        timing_attacks=[],
+        structure=structure,
+        tempo=dict(bpm=120, offset=0, division=4, stable=True),
+    )
+    settings = dict(ln_ratio=1, phrase_ln=1, min_ln=100)
+    app = create_app(root, tmp_path)
+    try:
+        client = app.test_client()
+        headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+        imported = client.post('/api/import', headers=headers,
+            data={'files': (io.BytesIO(audio), 'song.wav')})
+        assert imported.status_code == 200, imported.json
+        state = imported.json
+        pid = state['id']
+        base = '/api/projects/' + pid
+        state['analysis'] = analysis
+        app.extensions['projects'].save(state)
+
+        automatic = client.post(base + '/expression', headers=headers,
+            json=dict(action='automatic', settings=settings))
+        assert automatic.status_code == 200, automatic.json
+        manual_expression = automatic.json['expression']
+        manual_expression['sections'][0]['voices']['piano']['mode'] = 'sustain'
+        manual_expression['sections'][1]['voices']['vocals']['mode'] = 'phrase'
+        saved_expression = client.post(base + '/expression', headers=headers,
+            json={'expression': manual_expression})
+        assert saved_expression.status_code == 200, saved_expression.json
+        manual_expression = saved_expression.json['expression']
+        assert manual_expression['source'] == 'manual'
+
+        def generate(payload):
+            response = client.post(base + '/generate', json=payload, headers=headers)
+            assert response.status_code == 200, response.json
+            job = wait_job(client, response.json)
+            assert job['status'] == 'done', job
+            return client.get(base).json
+
+        payload = dict(mode='audio', settings=settings, timing_confirmed=True, **TEMPO)
+        state = generate(payload)
+        assert len(state['variants']) == 1
+        full_song = state['variants'][state['active']]
+        assert full_song['selection']['expression'] == manual_expression
+        assert next(note for note in full_song['notes'] if note['id'] == 'anchor')['end'] == 4125
+
+        regional_expression = deepcopy(manual_expression)
+        regional_expression['sections'][1]['voices']['vocals']['mode'] = 'onsets'
+        saved_expression = client.post(base + '/expression', headers=headers,
+            json={'expression': regional_expression})
+        assert saved_expression.status_code == 200, saved_expression.json
+        regional_expression = saved_expression.json['expression']
+        assert regional_expression['source'] == 'manual'
+        state = generate(dict(payload, region=[2500, 5000]))
+        regional = state['variants'][state['active']]
+        assert regional['selection']['scope'] == 'regional_output'
+        assert regional['selection']['structure'] == structure
+        assert regional['selection']['expression'] == regional_expression
+        assert regional['selection']['proposal']['expression'] == regional_expression
+        assert regional['selection']['proposal']['structure'] == structure
+        assert regional['selection']['actual_ln_ratio'] == round(1 / 3, 4)
+        assert regional['source_evidence']['anchor']['expressed']['start'] == 3000
+        assert regional['source_evidence']['anchor']['expressed']['end'] == 3000
+        assert regional['source_evidence']['anchor']['expressed']['phrase'] is False
+        anchor = next(note for note in regional['notes'] if note['id'] == 'anchor')
+        assert anchor['voice'] == 'vocals'
+        assert anchor['end'] == anchor['start'] == 3000
+        assert next(note for note in regional['notes'] if note['id'] == 'locked') == \
+            next(note for note in full_song['notes'] if note['id'] == 'locked')
+        regional_notes = [note for note in regional['notes'] if 2500 <= note['start'] < 5000]
+        assert {note['id'] for note in regional_notes} == {'anchor', 'support'}
+        assert all(note['end'] == note['start'] for note in regional_notes)
+        support_decisions = {
+            item['id']: item for item in regional['selection']['proposal']['decisions']
+        }
+        assert support_decisions['support']['reason'] == 'section_onsets'
+        assert support_decisions['support']['decision'] == 'selected'
+
+        edited_response = client.post(base + '/edit', headers=headers, json=dict(
+            op='update',
+            note_id='anchor',
+            base_created=regional['created'],
+            values={'lane': 2},
+        ))
+        assert edited_response.status_code == 200, edited_response.json
+        edited_job = wait_job(client, edited_response.json)
+        assert edited_job['status'] == 'done', edited_job
+        edited_state = client.get(base).json
+        edited = edited_state['variants'][edited_state['active']]
+        edited_anchor = next(note for note in edited['notes'] if note['id'] == 'anchor')
+        assert edited_anchor['lane'] == 2
+        assert edited_anchor['start'] == edited_anchor['end'] == 3000
+        assert edited['source_evidence'] == regional['source_evidence']
+        assert edited['selection']['structure'] == structure
+        assert edited['selection']['expression'] == regional_expression
+        assert edited_state['variants'][0] != edited
+    finally:
+        app.extensions['executor'].shutdown()
+
+    reopened = create_app(root, tmp_path)
+    try:
+        client = reopened.test_client()
+        headers = {'X-ManiaLab-Token': reopened.config['TOKEN']}
+        saved = client.get(base).json
+        assert saved['variants'] == edited_state['variants']
+        assert saved['active'] == edited_state['active']
+
+        exported_json = client.get(base + '/export/json')
+        assert exported_json.status_code == 200
+        assert exported_json.json['variant'] == edited
+        assert exported_json.json['analysis']['structure'] == structure
+        assert exported_json.json['expression'] == regional_expression
+        assert exported_json.json['variant']['selection']['structure'] == structure
+        assert exported_json.json['variant']['selection']['expression'] == regional_expression
+        assert exported_json.json['variant']['source_evidence']['anchor']['expressed'] == \
+            regional['source_evidence']['anchor']['expressed']
+
+        chart = client.get(base + '/export/osu')
+        bundle = client.get(base + '/export/osz')
+        assert chart.status_code == bundle.status_code == 200
+        assert 'Bookmarks: 2500' in chart.get_data(as_text=True)
+        chart_notes = parse_osu(chart.get_data(as_text=True))['notes']
+        assert [(note.start, note.end, note.lane) for note in chart_notes] == [
+            (note['start'], note['end'], note['lane']) for note in edited['notes']
+        ]
+        with zipfile.ZipFile(io.BytesIO(bundle.data)) as archive:
+            assert archive.read('ManiaLab.osu') == chart.data
+            assert archive.read('song.wav') == audio
+    finally:
+        reopened.extensions['executor'].shutdown()

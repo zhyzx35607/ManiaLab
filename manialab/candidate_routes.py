@@ -9,7 +9,7 @@ from .editing import edit_notes
 from .generation import generate_variant
 from .ln_patterns import analyze_ln_patterns
 from .review import review_chart
-from .selection_report import generation_context
+from .selection_report import generation_context, resolve_generation_origin
 from .timing import grid_report
 
 
@@ -53,6 +53,7 @@ def register_candidate_routes(app, *, submit, parameters, requested_tempo):
             report["review"] = review_chart(notes, prefs["keys"], beat, points)
             report["ln_patterns"] = analyze_ln_patterns(notes, prefs["keys"], beat, points)
             variant = copy.deepcopy(old | {"selection": generation_context(old.get("selection", {}))})
+            variant["generation_origin"] = resolve_generation_origin(old, state["variants"])
             variant.update(
                 notes=[note.data() for note in notes],
                 report=report,

@@ -237,6 +237,60 @@ def install_fixture_planner(app):
     @app.get('/__fixture/planner-state')
     def planner_state():
         return dict(waiting=waiting.is_set())
+
+
+def include_fixture_projects_in_recent(projects):
+    fixture_ids = tuple(sorted(path.parent.name for path in projects.root.glob('*/state.json')))
+    recent = projects.recent
+
+    def recent_with_fixtures():
+        def project_entry(project_id):
+            try:
+                project_path = projects.path(project_id) / 'state.json'
+                state = projects.load(project_id)
+                modified = project_path.stat().st_mtime
+                if not isinstance(state, dict) or state.get('id') != project_id:
+                    return None
+                return modified, {
+                    'id': project_id, 'title': state['title'], 'mode': state['mode'],
+                }
+            except (OSError, TypeError, ValueError, KeyError):
+                return None
+
+        try:
+            recent_projects = recent()
+        except (OSError, TypeError, ValueError, KeyError):
+            paths = []
+            for path in projects.root.glob('*/state.json'):
+                try:
+                    paths.append((path.stat().st_mtime, path.parent.name))
+                except OSError:
+                    continue
+            recent_projects = []
+            for _, project_id in sorted(paths, reverse=True):
+                entry = project_entry(project_id)
+                if entry is not None:
+                    recent_projects.append(entry[1])
+                    if len(recent_projects) == 30:
+                        break
+
+        entries = {}
+        for project in recent_projects:
+            if isinstance(project, dict) and 'id' in project:
+                entry = project_entry(project['id'])
+                if entry is not None:
+                    entries[project['id']] = entry
+
+        for project_id in fixture_ids:
+            entry = project_entry(project_id)
+            if entry is not None:
+                entries[project_id] = entry
+
+        return [project for _, project in sorted(entries.values(), key=lambda item: item[0], reverse=True)]
+
+    projects.recent = recent_with_fixtures
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, required=True)
@@ -272,9 +326,10 @@ def main():
         legacy_region_fixture(projects)
         for action in ('clear', 'success', 'error', 'cancel', 'scope'):
             plan_fixture(projects, f'UI plan {action}')
-        for action in ('current', 'legacy', 'full'):
+        for action in ('current', 'legacy', 'full', 'edit'):
             regional_audit_fixture(projects, f'UI regional audit {action}')
         reanalyzed_regional_fixture(projects)
+        include_fixture_projects_in_recent(projects)
         try:
             serve(app, host='127.0.0.1', port=args.port, threads=4)
         finally:

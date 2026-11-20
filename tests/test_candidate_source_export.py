@@ -44,6 +44,20 @@ def _edit(client, base, headers, candidate, **changes):
     pytest.fail('Candidate edit did not finish')
 
 
+def _generate(client, base, headers, payload):
+    response = client.post(base + '/generate', json=payload, headers=headers)
+    assert response.status_code == 200, response.json
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        job = client.get('/api/jobs/' + response.json['id']).json
+        if job['status'] not in ('queued', 'running'):
+            assert job['status'] == 'done', job
+            state = client.get(base).json
+            return state, state['variants'][state['active']]
+        time.sleep(.01)
+    pytest.fail('Candidate generation did not finish')
+
+
 def _assert_exports(client, base, candidate, analysis, music):
     evidence = client.get(base + '/export/json')
     assert evidence.status_code == 200
@@ -141,3 +155,190 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
         assert response.status_code == 200 and response.data == old_stem
     finally:
         reopened.extensions['executor'].shutdown()
+
+
+def test_real_regional_generation_then_edit_export_and_reopen_keeps_source_mapping(tmp_path):
+    """Exercise a real regional child before the edit/export/reopen checks."""
+    music = _wave()
+    old_stem = _wave(800)
+    separation = dict(source='provided', audio_sha256=hashlib.sha256(music).hexdigest(),
+        set_sha256='a' * 64, voices=['other'],
+        decoded_files={'other': {'wav_sha256': hashlib.sha256(old_stem).hexdigest()}})
+    reference = dict(identity=separation_identity(separation), separation=separation)
+    parent_candidates = [
+        Note(1000, 1500, id='locked', source='pitch', voice='other',
+             release_reason='frame_decay').data(),
+        Note(1700, 2200, id='support', source='pitch', voice='other',
+             release_reason='frame_decay').data(),
+        Note(3500, 4200, id='region', source='pitch', voice='other',
+             release_reason='frame_decay').data(),
+    ]
+    analysis = dict(revision=13, duration=5, candidates=deepcopy(parent_candidates),
+        phrase_candidates=[Note(1000, 2800, id='locked', source='pitch', voice='vocals',
+            phrase=True, support=('locked', 'support'), support_coverage=1,
+            release_reason='vocal_activity_decay').data()],
+        timing_attacks=[], separation=separation)
+    settings = dict(ln_ratio=1, phrase_ln=1, min_ln=100, density=24, max_held=10)
+    app = create_app(ROOT, tmp_path)
+    try:
+        client = app.test_client()
+        headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+        imported = client.post('/api/import', headers=headers,
+            data={'files': (io.BytesIO(music), 'song.wav')})
+        assert imported.status_code == 200, imported.json
+        state = imported.json
+        pid = state['id']
+        base = '/api/projects/' + pid
+        projects = app.extensions['projects']
+        state['analysis'] = analysis
+        state['variants'] = []
+        state['active'] = -1
+        projects.save(state)
+        stem_path = projects.path(pid) / 'stems-provided' / separation['set_sha256'] / 'other.wav'
+        stem_path.parent.mkdir(parents=True)
+        stem_path.write_bytes(old_stem)
+
+        # Generate through the asynchronous API so persistence follows the app workflow.
+        state, parent = _generate(client, base, headers, dict(mode='audio', settings=settings,
+            timing_confirmed=True, bpm=120, offset=0, division=4, audio_shift_ms=0))
+        assert parent['source_separation'] == reference
+        assert parent['source_evidence']['locked']['detected']['end'] == 1500
+        assert parent['source_evidence']['locked']['expressed']['phrase'] is True
+        assert parent['source_evidence']['locked']['expressed']['support'] == ['locked', 'support']
+        assert parent['source_evidence']['locked']['expressed']['end'] > 1500
+
+        # Re-analysis moves only the regional candidate; the locked candidate and
+        # separation identity remain the same, then a real regional child is made.
+        changed_locked = Note(1000, 1900, id='locked', source='pitch', voice='other',
+            release_reason='frame_decay').data()
+        vocal_anchor = Note(3600, 3900, id='region', source='pitch', voice='vocals',
+            release_reason='frame_decay').data()
+        vocal_support = Note(4000, 4200, id='region-support', source='pitch', voice='vocals',
+            release_reason='frame_decay').data()
+        vocal_phrase = Note(3600, 4350, id='region', source='pitch', voice='vocals',
+            phrase=True, support=('region-support',), support_coverage=1,
+            release_reason='vocal_activity_decay').data()
+        state['analysis'] = dict(analysis, phrase_candidates=[vocal_phrase],
+            candidates=[changed_locked,
+                Note(1700, 2300, id='support', source='pitch', voice='other',
+                    release_reason='frame_decay').data(),
+                Note(2500, 2900, id='outside', source='pitch', voice='other',
+                    release_reason='frame_decay').data(),
+                vocal_anchor, vocal_support],
+            structure=dict(boundaries=[0, 5000], segments=[dict(start_ms=0, end_ms=5000)]))
+        projects.save(state)
+        state, child = _generate(client, base, headers, dict(mode='audio', settings=settings,
+            timing_confirmed=True, bpm=120, offset=0, division=4, audio_shift_ms=0,
+            region=[3000, 5000]))
+        assert child['selection']['scope'] == 'regional_output'
+        assert child['selection']['locked'] == 2 and child['selection']['generated'] == 1
+        decisions = {row['id']: row for row in child['selection']['decisions']}
+        assert decisions['locked']['reason'] == 'locked_existing'
+        assert decisions['region']['reason'] == 'regional_regenerated'
+        child_notes = {note['id']: note for note in child['notes']}
+        assert child_notes['region']['voice'] == 'vocals'
+        assert child_notes['locked']['end'] > child_notes['locked']['start']
+        assert child_notes['region']['end'] > child_notes['region']['start']
+        assert child['source_evidence']['region']['detected']['start'] == 3600
+        assert child['source_evidence']['region']['detected']['end'] == 3900
+        assert child['source_evidence']['region']['detected']['voice'] == 'vocals'
+        assert child['source_separation'] == reference
+        assert child['source_evidence']['locked'] == parent['source_evidence']['locked']
+        assert child['source_evidence']['support'] == parent['source_evidence']['support']
+        assert child['source_evidence']['locked']['detected']['end'] == 1500
+        assert child['selection']['scope'] == 'regional_output'
+        assert child['selection']['proposal']['scope'] == 'full_song_proposal'
+        proposal = child['selection']['proposal']
+        assert proposal['candidates'] == 5
+        assert proposal['selected'] == 4
+        proposal_decisions = {row['id']: row for row in proposal['decisions']}
+        assert proposal_decisions['region-support']['reason'] == 'represented_by_phrase'
+        assert proposal_decisions['region-support']['represented_by'] == 'region'
+        anchor_decision = proposal_decisions['region']
+        assert anchor_decision['expression_end'] == 4350
+        assert anchor_decision['decision'] == 'selected'
+        assert anchor_decision['chart_end'] > anchor_decision['chart_start']
+        expressed = child['source_evidence']['region']['expressed']
+        assert expressed['start'] == 3600
+        assert expressed['end'] == 4350
+        assert expressed['phrase'] is True
+        assert expressed['release_reason'] == 'vocal_activity_decay'
+        assert expressed['support'] == ['region-support']
+        assert expressed['support_coverage'] == 1
+        assert child['selection']['selected'] == 3
+        assert state['variants'][0] == parent
+        projects.save(state)
+        current_analysis = state['analysis']
+    finally:
+        app.extensions['executor'].shutdown()
+
+    app = create_app(ROOT, tmp_path)
+    try:
+        client = app.test_client()
+        headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+        saved = client.get(base).json
+        assert len(saved['variants']) == 2 and saved['active'] == 1
+        child = saved['variants'][1]
+        state, edited = _edit(client, base, headers, child, op='update', note_id='region',
+            values=dict(start=3701, end=4401, lane=2))
+        assert edited['source_separation'] == reference
+        assert edited['source_evidence'] == child['source_evidence']
+        edited_region = next(note for note in edited['notes'] if note['id'] == 'region')
+        assert edited_region['end'] > edited_region['start']
+        assert edited_region['lane'] == 2
+        assert edited_region['voice'] == 'vocals'
+        assert edited['source_evidence']['locked'] == child['source_evidence']['locked']
+        evidence = client.get(base + '/export/json')
+        assert evidence.status_code == 200
+        assert evidence.json['variant'] == edited
+        assert evidence.json['analysis']['revision'] == current_analysis['revision']
+        assert evidence.json['analysis']['separation'] == current_analysis['separation']
+        assert evidence.json['variant']['selection'] == edited['selection']
+        chart = client.get(base + '/export/osu')
+        assert chart.status_code == 200
+        assert parse_osu(chart.get_data(as_text=True))['general']['AudioFilename'] == 'song.wav'
+        assert [(note.start, note.end, note.lane)
+            for note in parse_osu(chart.get_data(as_text=True))['notes']] == [
+                (note['start'], note['end'], note['lane']) for note in edited['notes']]
+        with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
+            assert archive.read('ManiaLab.osu') == chart.data
+            assert archive.read('song.wav') == music
+        assert client.get(base + '/stem/other?context=chart&source_identity=' + reference['identity']).data == old_stem
+
+        assert client.post(base + '/variant', json={'index': 0}, headers=headers).status_code == 200
+        parent = client.get(base).json['variants'][0]
+        parent_json = client.get(base + '/export/json')
+        assert parent_json.status_code == 200 and parent_json.json['variant'] == parent
+        parent_chart = client.get(base + '/export/osu')
+        assert parent_chart.status_code == 200
+        assert [(note.start, note.end, note.lane)
+            for note in parse_osu(parent_chart.get_data(as_text=True))['notes']] == [
+                (note['start'], note['end'], note['lane']) for note in parent['notes']]
+        with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
+            assert archive.read('ManiaLab.osu') == parent_chart.data
+            assert archive.read('song.wav') == music
+        assert client.post(base + '/variant', json={'index': 1}, headers=headers).status_code == 200
+        reopened = client.get(base).json
+        assert reopened['variants'][1]['source_separation'] == reference
+        assert reopened['variants'][1]['selection']['scope'] == 'regional_output'
+        reopened_child = reopened['variants'][1]
+        assert reopened_child['source_evidence']['locked'] == parent['source_evidence']['locked']
+        assert reopened_child['source_evidence']['region']['detected']['voice'] == 'vocals'
+        assert next(note for note in reopened_child['notes'] if note['id'] == 'region')['voice'] == 'vocals'
+        child_json = client.get(base + '/export/json')
+        assert child_json.status_code == 200 and child_json.json['variant'] == reopened_child
+        assert child_json.json['analysis']['revision'] == current_analysis['revision']
+        assert child_json.json['analysis']['separation'] == current_analysis['separation']
+        assert child_json.json['variant']['source_evidence']['region']['expressed'] == expressed
+        child_chart = client.get(base + '/export/osu')
+        assert child_chart.status_code == 200
+        assert [(note.start, note.end, note.lane)
+            for note in parse_osu(child_chart.get_data(as_text=True))['notes']] == [
+                (note['start'], note['end'], note['lane']) for note in reopened_child['notes']]
+        with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
+            assert archive.read('ManiaLab.osu') == child_chart.data
+            assert archive.read('song.wav') == music
+        response = client.get(base + '/stem/other?context=chart&source_identity=' + reference['identity'])
+        assert response.status_code == 200 and response.data == old_stem
+    finally:
+        app.extensions['executor'].shutdown()

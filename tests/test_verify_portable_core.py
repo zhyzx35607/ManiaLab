@@ -96,3 +96,47 @@ def test_core_runtime_capabilities_reject_unexpected_model_availability():
 
     with pytest.raises(AssertionError, match="separation_six"):
         verify_portable.verify_runtime_capabilities(status, capabilities("core"))
+
+
+def test_specialist_evidence_identity_binds_only_rows_from_current_run(tmp_path):
+    executable = tmp_path / "ManiaLab.exe"
+    executable.write_bytes(b"synthetic executable bytes")
+    manifest_path = tmp_path / "release-manifest.json"
+    manifest_path.write_bytes(b'{"profile":"extended"}\n')
+    manifest = {
+        "build_profile": "extended",
+        "capabilities": {"guitar": True, "instruments": True},
+    }
+    run_id = "current-verification-run"
+    identity = verify_portable.build_verification_identity(
+        executable, manifest_path, manifest, run_id
+    )
+    expected = {
+        "build_profile": "extended",
+        "capabilities": {"guitar": True, "instruments": True},
+        "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
+        "release_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        "verification_run_id": run_id,
+    }
+    assert identity == expected
+
+    stale_rows = [
+        {"check": "guitar_real_audio_http", "verification_run_id": "old-run"},
+        {"check": "instrument_portable_real_audio", "release_manifest_sha256": "old-manifest"},
+    ]
+    stale_snapshot = [dict(row) for row in stale_rows]
+    release_identity = {"check": "release_manifest", **identity}
+    checks = stale_rows + [release_identity]
+    first_new_index = len(checks)
+    current_rows = [
+        {"check": "guitar_real_audio_http", "case": "synthetic"},
+        {"check": "guitar_cold_cancel", "partial_analysis_saved": False},
+        {"check": "instrument_portable_real_audio", "voice": "bass"},
+    ]
+    checks.extend(current_rows)
+
+    verify_portable.bind_new_specialist_evidence(checks, first_new_index, identity)
+
+    assert checks[:len(stale_rows)] == stale_snapshot
+    for row in [release_identity, *current_rows]:
+        assert {key: row[key] for key in identity} == identity

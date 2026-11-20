@@ -1,11 +1,53 @@
 """Keep generation context separate from claims about the selected notes."""
 from collections import Counter
 from copy import deepcopy
+from math import isfinite
 
 
 def generation_context(selection):
     """Return the source snapshots that still apply when the note list changes."""
     return {field: selection[field] for field in ('structure', 'expression') if field in selection}
+
+
+def _is_created_key(value):
+    return type(value) in (int, float, str) and (type(value) is not float or isfinite(value))
+
+
+def resolve_generation_origin(candidate, candidates=()):
+    """Resolve a candidate's stable source scope, including pre-marker history."""
+    by_created = {}
+    for item in candidates:
+        if not isinstance(item, dict):
+            continue
+        created = item.get('created')
+        if _is_created_key(created):
+            by_created.setdefault(created, []).append(item)
+    current = candidate
+    visited = set()
+    while isinstance(current, dict):
+        saved = current.get('generation_origin')
+        if isinstance(saved, dict) and saved.get('kind') in (
+            'regional_generation', 'full_song_generation'
+        ):
+            return deepcopy(saved)
+        if current.get('region') is not None:
+            return dict(kind='regional_generation', region=deepcopy(current['region']))
+        selection = current.get('selection')
+        if isinstance(selection, dict) and selection.get('scope') == 'regional_output':
+            return dict(kind='regional_generation', region=None)
+        edits = current.get('edits')
+        last_edit = edits[-1] if isinstance(edits, list) and edits else None
+        parent_created = last_edit.get('parent_created') if isinstance(last_edit, dict) else None
+        if parent_created is None:
+            return dict(kind='full_song_generation') if not edits else dict(kind='unknown')
+        if not _is_created_key(parent_created) or parent_created in visited:
+            return dict(kind='unknown')
+        visited.add(parent_created)
+        parents = by_created.get(parent_created, ())
+        if len(parents) != 1:
+            return dict(kind='unknown')
+        current = parents[0]
+    return dict(kind='unknown')
 
 
 def regional_selection_report(proposal, output, locked):

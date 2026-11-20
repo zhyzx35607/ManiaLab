@@ -810,6 +810,139 @@ def test_original_model_cancel_during_publication_rolls_back_files_and_workspace
 
 
 @pytest.mark.parametrize('has_previous_snapshot',[True,False])
+def test_original_model_cancel_cleanup_continues_after_chart_unlink_failure(
+        tmp_path,monkeypatch,caplog,has_previous_snapshot):
+    from manialab.chart_workspace import archive_active_chart, chart_workspace_snapshot_path
+    from manialab.upstream import MapperEngine
+
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    fake_mapper_install(tmp_path)
+    projects=app.extensions['projects']
+    imported=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=imported['id'];base=f'/api/projects/{pid}';project=projects.path(pid)
+    (project/'preview.wav').write_bytes(b'placeholder')
+    snapshot_path=chart_workspace_snapshot_path(project,None)
+    previous_snapshot=b'{"original":null,"sentinel":"previous workspace"}'
+    if has_previous_snapshot:
+        snapshot_path.parent.mkdir()
+        snapshot_path.write_bytes(previous_snapshot)
+    archived=threading.Event();release=threading.Event()
+
+    def model(self,audio,output,prefs,progress,cancelled,seconds,tempo):
+        output.mkdir(parents=True)
+        target=output/'generated.osu'
+        target.write_text(export_osu([Note(1000,4000,0),Note(2000,2000,1)],10,
+            ROOT/'vendor/mapperatorinator/template.osu'),encoding='utf-8')
+        return target
+
+    def blocked_archive(path,state):
+        archive_active_chart(path,state)
+        archived.set()
+        assert release.wait(5)
+
+    original_unlink=Path.unlink
+    denied_charts=[]
+    def deny_generated_chart_unlink(path,*args,**kwargs):
+        if path.name.startswith('Mapperatorinator-') and path.suffix=='.osu':
+            denied_charts.append(path)
+            raise PermissionError('synthetic generated chart unlink denied')
+        return original_unlink(path,*args,**kwargs)
+
+    monkeypatch.setattr(MapperEngine,'generate',model)
+    monkeypatch.setattr('manialab.upstream_routes.archive_active_chart',blocked_archive)
+    monkeypatch.setattr(Path,'unlink',deny_generated_chart_unlink)
+    try:
+        response=client.post(base+'/engine-generate',json={'settings':{'keys':10}},headers=headers)
+        assert response.status_code==200,response.json
+        job=response.json
+        assert archived.wait(5)
+        assert client.post('/api/jobs/'+job['id']+'/cancel',headers=headers).json=={'ok':True}
+        release.set()
+        result=wait_job(client,job)
+
+        assert result['status']=='error',result
+        assert result['cleanup_failed'] is True
+        assert '资源清理失败' in result['message']
+        assert 'synthetic generated chart unlink denied' in caplog.text
+        assert len(denied_charts)==1 and denied_charts[0].is_file()
+        if has_previous_snapshot:
+            assert snapshot_path.read_bytes()==previous_snapshot
+            assert not list(snapshot_path.parent.glob('*.rollback'))
+        else:
+            assert not snapshot_path.parent.exists()
+    finally:
+        release.set()
+        app.extensions['executor'].shutdown()
+
+
+def test_original_model_cancel_before_archive_ignores_missing_snapshot_directory(tmp_path,monkeypatch):
+    from manialab.chart_workspace import chart_workspace_snapshot_path
+    from manialab.upstream import MapperEngine
+
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    fake_mapper_install(tmp_path)
+    projects=app.extensions['projects']
+    imported=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=imported['id'];base=f'/api/projects/{pid}';project=projects.path(pid)
+    (project/'preview.wav').write_bytes(b'placeholder')
+    previous=projects.load(pid)
+    snapshot_path=chart_workspace_snapshot_path(project,None)
+    assert not snapshot_path.parent.exists()
+    chart_written=threading.Event();release=threading.Event()
+
+    def model(self,audio,output,prefs,progress,cancelled,seconds,tempo):
+        output.mkdir(parents=True)
+        target=output/'generated.osu'
+        target.write_text(export_osu([Note(1000,4000,0),Note(2000,2000,1)],10,
+            ROOT/'vendor/mapperatorinator/template.osu'),encoding='utf-8')
+        return target
+
+    class BlockingWriter:
+        def __init__(self,stream):
+            self.stream=stream
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self,*args):
+            return self.stream.__exit__(*args)
+
+        def write(self,value):
+            result=self.stream.write(value)
+            chart_written.set()
+            assert release.wait(5)
+            return result
+
+    original_open=Path.open
+    def block_published_chart_write(path,*args,**kwargs):
+        stream=original_open(path,*args,**kwargs)
+        if path.name.startswith('Mapperatorinator-') and path.suffix=='.osu':
+            return BlockingWriter(stream)
+        return stream
+
+    monkeypatch.setattr(MapperEngine,'generate',model)
+    monkeypatch.setattr(Path,'open',block_published_chart_write)
+    try:
+        response=client.post(base+'/engine-generate',json={'settings':{'keys':10}},headers=headers)
+        assert response.status_code==200,response.json
+        job=response.json
+        assert chart_written.wait(5)
+        assert not snapshot_path.parent.exists()
+        assert client.post('/api/jobs/'+job['id']+'/cancel',headers=headers).json=={'ok':True}
+        release.set()
+        result=wait_job(client,job)
+
+        assert result['status']=='cancelled',result
+        assert result.get('cleanup_failed') is not True
+        assert projects.load(pid)==previous
+        assert not list((project/'files').glob('Mapperatorinator-*.osu'))
+        assert not snapshot_path.parent.exists()
+    finally:
+        release.set()
+        app.extensions['executor'].shutdown()
+
+
+@pytest.mark.parametrize('has_previous_snapshot',[True,False])
 def test_original_model_save_failure_rolls_back_files_and_workspace(tmp_path,monkeypatch,has_previous_snapshot):
     from manialab.chart_workspace import chart_workspace_snapshot_path
     from manialab.upstream import MapperEngine
