@@ -569,6 +569,14 @@ def make_release_fixture(root, profile='standard'):
                 "local_port": 43127,
                 "owning_process": 5678,
             }],
+            "cleanup_status": "passed",
+            "process_exited": {
+                "executable": {"pid": 5678, "exited": True},
+                "probe": {"pid": 6789, "exited": True},
+            },
+            "listeners_after_cleanup": [],
+            "cleanup_failures": [],
+            "failure": None,
         }), encoding="utf-8")
     portable_checks = [
         {"check": "release_manifest", **verification_identity},
@@ -866,6 +874,10 @@ def test_core_release_collector_includes_bound_core_media_evidence(tmp_path, bas
     assert evidence["executable_sha256"] == report["executable_sha256"]
     assert evidence["release_manifest_sha256"] == report["release_manifest_sha256"]
     assert evidence["report_sha256"] == hashlib.sha256(core_media_report.read_bytes()).hexdigest()
+    assert evidence["cleanup_status"] == "passed"
+    assert evidence["process_exited"]["executable"] == {"pid": 5678, "exited": True}
+    assert evidence["listeners_after_cleanup"] == 0
+    assert evidence["cleanup_failures"] == []
     assert evidence["service_binding_report_sha256"] == hashlib.sha256(
         service_binding_report.read_bytes()
     ).hexdigest()
@@ -882,6 +894,28 @@ def test_core_release_collector_includes_bound_core_media_evidence(tmp_path, bas
     ("executable_pid", 0),
     ("listeners_before", []),
     ("listeners_after", []),
+    ("cleanup_status", "failed"),
+    ("process_exited", {
+        "executable": {"pid": 5678, "exited": False},
+        "probe": {"pid": 6789, "exited": True},
+    }),
+    ("process_exited", {
+        "executable": {"pid": 5678, "exited": True},
+        "probe": {"pid": 5678, "exited": True},
+    }),
+    ("process_exited", {
+        "executable": {"pid": 5678, "exited": True},
+        "probe": {"pid": 6789, "exited": False},
+    }),
+    ("process_exited", {
+        "executable": {"pid": 5678, "exited": True},
+        "probe": {"pid": True, "exited": True},
+    }),
+    ("listeners_after_cleanup", [{
+        "local_address": "127.0.0.1", "local_port": 43127, "owning_process": 5678,
+    }]),
+    ("cleanup_failures", ["Core EXE remained alive after cleanup"]),
+    ("failure", "probe failed"),
 ])
 def test_core_release_collector_rejects_invalid_service_binding_identity(
         tmp_path, field, value):
@@ -902,6 +936,26 @@ def test_core_release_collector_rejects_invalid_service_binding_identity(
 
 @pytest.mark.parametrize("field", ["listeners_before", "listeners_after"])
 def test_core_release_collector_rejects_missing_service_listener_snapshot(tmp_path, field):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    binding_path = portable_report.with_name("service-binding.json")
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    del binding[field]
+    binding_path.write_text(json.dumps(binding), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="Core media service binding"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize("field", [
+    "cleanup_status", "process_exited", "listeners_after_cleanup", "cleanup_failures",
+    "failure",
+])
+def test_core_release_collector_rejects_missing_service_cleanup_evidence(tmp_path, field):
     build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
         make_release_fixture(tmp_path, profile="core")
     )

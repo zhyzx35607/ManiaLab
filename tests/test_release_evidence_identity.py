@@ -260,6 +260,14 @@ def release_fixture(tmp_path, monkeypatch, request):
                 'owning_process': 5678}],
             'listeners_after': [{'local_address': '127.0.0.1', 'local_port': 43127,
                 'owning_process': 5678}],
+            'cleanup_status': 'passed',
+            'process_exited': {
+                'executable': {'pid': 5678, 'exited': True},
+                'probe': {'pid': 6789, 'exited': True},
+            },
+            'listeners_after_cleanup': [],
+            'cleanup_failures': [],
+            'failure': None,
         }), encoding='utf-8')
     shutdown = tmp_path / 'shutdown.json'
     shutdown_data = dict(identity, version=__version__, passed=True, worker_expected=profile != 'core',

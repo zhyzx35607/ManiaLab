@@ -136,6 +136,8 @@ jobs:
           $processStarted = $false
           $stdoutTask = $null
           $stderrTask = $null
+          $uri = $null
+          $binding = $null
           $probeProcess = $null
           $probeStarted = $false
           $probeStdoutTask = $null
@@ -213,12 +215,15 @@ jobs:
                 }
               })
               listeners_after = @()
+              cleanup_status = 'unknown'
+              process_exited = [ordered]@{
+                executable = [ordered]@{ pid = [int]$process.Id; exited = $null }
+                probe = [ordered]@{ pid = $null; exited = $null }
+              }
+              listeners_after_cleanup = $null
+              cleanup_failures = @()
+              failure = $null
             }
-            [IO.File]::WriteAllText(
-              $serviceBindingPath,
-              ($binding | ConvertTo-Json -Depth 5),
-              [System.Text.UTF8Encoding]::new($false)
-            )
             if ($listeners.Count -eq 0) {
               throw "No listening TCP socket was found for packaged Core port $($uri.Port)."
             }
@@ -245,6 +250,10 @@ jobs:
             $probeProcess.StartInfo = $probeStartInfo
             if (-not $probeProcess.Start()) { throw 'Could not start the Core media probe.' }
             $probeStarted = $true
+            $binding['process_exited']['probe'] = [ordered]@{
+              pid = [int]$probeProcess.Id
+              exited = $null
+            }
             $probeStdoutTask = $probeProcess.StandardOutput.ReadToEndAsync()
             $probeStderrTask = $probeProcess.StandardError.ReadToEndAsync()
             if (-not $probeProcess.WaitForExit(120000)) {
@@ -267,12 +276,6 @@ jobs:
                 owning_process = [int]$_.OwningProcess
               }
             })
-            $binding['status'] = if ($listenersAfter.Count -gt 0 -and $foreignListenersAfter.Count -eq 0) { 'passed' } else { 'failed' }
-            [IO.File]::WriteAllText(
-              $serviceBindingPath,
-              ($binding | ConvertTo-Json -Depth 5),
-              [System.Text.UTF8Encoding]::new($false)
-            )
             if ($listenersAfter.Count -eq 0) {
               throw "No listening TCP socket remained for packaged Core port $($uri.Port) after media verification."
             }
@@ -312,9 +315,6 @@ jobs:
                 [IO.File]::WriteAllText($probeStderrPath, $probeStderrTask.GetAwaiter().GetResult())
               }
             }
-            Add-CleanupFailure 'Core media probe process dispose' {
-              if ($null -ne $probeProcess) { $probeProcess.Dispose() }
-            }
             Add-CleanupFailure 'Core EXE process cleanup' {
               if ($processStarted) {
                 $process.Refresh()
@@ -331,6 +331,43 @@ jobs:
                 if (-not $process.HasExited) { throw 'Core EXE remained alive after cleanup.' }
               }
             }
+            if ($null -ne $binding -and $null -ne $uri) {
+              Add-CleanupFailure 'Core media cleanup process snapshot' {
+                if ($processStarted) {
+                  $process.Refresh()
+                  $binding['process_exited']['executable'] = [ordered]@{
+                    pid = [int]$process.Id
+                    exited = [bool]$process.HasExited
+                  }
+                }
+                if ($probeStarted) {
+                  $probeProcess.Refresh()
+                  $binding['process_exited']['probe'] = [ordered]@{
+                    pid = [int]$probeProcess.Id
+                    exited = [bool]$probeProcess.HasExited
+                  }
+                }
+              }
+              Add-CleanupFailure 'Core media cleanup listener snapshot' {
+                $listeningConnections = @(Get-NetTCPConnection -State Listen -ErrorAction Stop)
+                $remainingListeners = @($listeningConnections | Where-Object {
+                  [int]$_.LocalPort -eq [int]$uri.Port
+                })
+                $binding['listeners_after_cleanup'] = @($remainingListeners | ForEach-Object {
+                  [ordered]@{
+                    local_address = $_.LocalAddress
+                    local_port = [int]$_.LocalPort
+                    owning_process = [int]$_.OwningProcess
+                  }
+                })
+                if ($remainingListeners.Count -gt 0) {
+                  [void]$cleanupFailures.Add("Listening socket(s) remain on service port $($uri.Port) after cleanup.")
+                }
+              }
+            }
+            Add-CleanupFailure 'Core media probe process dispose' {
+              if ($null -ne $probeProcess) { $probeProcess.Dispose() }
+            }
             Add-CleanupFailure 'Core EXE stdout log capture' {
               if ($null -ne $stdoutTask) {
                 if (-not $stdoutTask.Wait(5000)) { throw 'Core EXE stdout did not close; launch log was not written.' }
@@ -345,6 +382,25 @@ jobs:
             }
             Add-CleanupFailure 'Core EXE process dispose' {
               if ($null -ne $process) { $process.Dispose() }
+            }
+            if ($null -ne $binding -and $null -ne $uri) {
+              $executableExited = $binding['process_exited']['executable']['exited'] -eq $true
+              $probeExited = -not $probeStarted -or $binding['process_exited']['probe']['exited'] -eq $true
+              $listenersCleared = $null -ne $binding['listeners_after_cleanup'] -and
+                @($binding['listeners_after_cleanup']).Count -eq 0
+              $cleanupPassed = $cleanupFailures.Count -eq 0 -and
+                $executableExited -and $probeExited -and $listenersCleared
+              $binding['cleanup_status'] = if ($cleanupPassed) { 'passed' } else { 'failed' }
+              $binding['cleanup_failures'] = @($cleanupFailures.ToArray())
+              $binding['failure'] = if ($null -ne $stepFailure) { $stepFailure.Exception.Message } else { $null }
+              $binding['status'] = if ($null -eq $stepFailure -and $cleanupPassed) { 'passed' } else { 'failed' }
+              Add-CleanupFailure 'Core media terminal service binding write' {
+                [IO.File]::WriteAllText(
+                  $serviceBindingPath,
+                  ($binding | ConvertTo-Json -Depth 8),
+                  [System.Text.UTF8Encoding]::new($false)
+                )
+              }
             }
           }
           if ($null -ne $stepFailure) {

@@ -298,6 +298,24 @@ def _validate_core_media_service_binding_report(
     if service_port is None:
         raise SystemExit("Core media service binding report has an invalid base_url.")
 
+    cleanup_status = report.get("cleanup_status")
+    process_exited = report.get("process_exited")
+    listeners_after_cleanup = report.get("listeners_after_cleanup")
+    cleanup_failures = report.get("cleanup_failures")
+    if cleanup_status != "passed" or not isinstance(cleanup_failures, list) \
+            or cleanup_failures or not isinstance(listeners_after_cleanup, list) \
+            or listeners_after_cleanup or not isinstance(process_exited, dict) \
+            or "failure" not in report or report["failure"] is not None:
+        raise SystemExit("Core media service binding report has incomplete cleanup evidence.")
+    executable_exit = process_exited.get("executable")
+    probe_exit = process_exited.get("probe")
+    if not isinstance(executable_exit, dict) or type(executable_exit.get("pid")) is not int \
+            or executable_exit["pid"] != executable_pid or executable_exit.get("exited") is not True \
+            or not isinstance(probe_exit, dict) or type(probe_exit.get("pid")) is not int \
+            or probe_exit["pid"] <= 0 or probe_exit["pid"] == executable_pid \
+            or probe_exit.get("exited") is not True:
+        raise SystemExit("Core media service binding report has invalid cleanup process evidence.")
+
     for listeners in (listeners_before, listeners_after):
         for listener in listeners:
             if not isinstance(listener, dict):
@@ -322,6 +340,10 @@ def _validate_core_media_service_binding_report(
         "executable_pid": executable_pid,
         "listeners_before": len(listeners_before),
         "listeners_after": len(listeners_after),
+        "cleanup_status": cleanup_status,
+        "process_exited": process_exited,
+        "listeners_after_cleanup": len(listeners_after_cleanup),
+        "cleanup_failures": cleanup_failures,
         "report_sha256": sha256_bytes(report_bytes),
     }
 
@@ -1449,6 +1471,10 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *,
         core_media_evidence["service_binding_report_sha256"] = (
             core_media_service_binding_evidence["report_sha256"]
         )
+        for field in (
+            "cleanup_status", "process_exited", "listeners_after_cleanup", "cleanup_failures",
+        ):
+            core_media_evidence[field] = core_media_service_binding_evidence[field]
     else:
         if core_media_report is not None or core_media_service_binding_report is not None:
             raise SystemExit("Core media verification report is unsupported for this profile.")
