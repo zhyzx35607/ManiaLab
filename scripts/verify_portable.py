@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import hashlib
 import io
 import json
@@ -133,22 +134,51 @@ def verify_manifest_components(manifest, declared, bundle_root, source_root=ROOT
     return worker, piano_identity
 
 
+def _required_bool(value, label):
+    assert type(value) is bool, f"{label} must be a boolean"
+    return value
+
+
 def verify_runtime_capabilities(status, declared):
     separator = status["separator"]
     profiles = separator["profiles"]
     actual = {}
     for profile, capability in (("four", "separation_four"), ("six", "separation_six")):
         assert profile in profiles, f"Portable status omitted separator profile {profile}"
-        actual[profile] = bool(profiles[profile]["available"])
-        assert actual[profile] == declared[capability], (
-            f"Manifest declares {capability}={declared[capability]}, "
+        actual[profile] = _required_bool(
+            profiles[profile]["available"], f"Runtime {profile} availability"
+        )
+        expected = _required_bool(declared[capability], f"Manifest {capability}")
+        assert actual[profile] == expected, (
+            f"Manifest declares {capability}={expected}, "
             f"but runtime reports {actual[profile]}"
         )
-    assert bool(separator["available"]) == declared["separation_four"]
-    assert bool(status["piano"]["available"]) == declared["piano"]
-    assert bool(status["guitar"]["available"]) == declared["guitar"]
-    assert bool(status["instruments"]["available"]) == declared["instruments"]
-    assert not status["piano"]["default"]
+    separator_available = _required_bool(separator["available"], "Runtime separator availability")
+    assert separator_available == _required_bool(
+        declared["separation_four"], "Manifest separation_four"
+    )
+    for component in ("piano", "guitar", "instruments"):
+        runtime_available = _required_bool(
+            status[component]["available"], f"Runtime {component} availability"
+        )
+        expected = _required_bool(declared[component], f"Manifest {component}")
+        assert runtime_available == expected, (
+            f"Manifest declares {component}={expected}, "
+            f"but runtime reports {runtime_available}"
+        )
+    for component, status_field, capability in (
+        ("pattern_prior", "available", "pattern_prior"),
+        ("engine", "install_available", "mapperatorinator_install"),
+    ):
+        runtime_available = _required_bool(
+            status[component][status_field], f"Runtime {component} availability"
+        )
+        expected = _required_bool(declared[capability], f"Manifest {capability}")
+        assert runtime_available == expected, (
+            f"Manifest declares {capability}={expected}, "
+            f"but runtime reports {runtime_available}"
+        )
+    assert _required_bool(status["piano"]["default"], "Runtime piano default") is False
     return actual
 
 
@@ -162,6 +192,15 @@ def build_verification_identity(executable, manifest_path, manifest, verificatio
     }
 
 
+def append_verification_evidence(checks, identity, row):
+    """Bind a freshly completed check, without re-signing previously collected rows."""
+    if not isinstance(row, dict) or not isinstance(row.get("check"), str):
+        raise ValueError("Verification evidence must be a named check row")
+    if any(field in row and row[field] != value for field, value in identity.items()):
+        raise ValueError("Verification evidence already belongs to another run")
+    checks.append(dict(row, **deepcopy(identity)))
+
+
 def bind_new_specialist_evidence(checks, first_new_index, identity):
     """Bind only specialist rows appended by the current check invocation."""
     if type(first_new_index) is not int or not 0 <= first_new_index <= len(checks):
@@ -173,7 +212,9 @@ def bind_new_specialist_evidence(checks, first_new_index, identity):
     }
     for item in checks[first_new_index:]:
         if isinstance(item, dict) and item.get("check") in specialist_checks:
-            item.update(identity)
+            if any(field in item and item[field] != value for field, value in identity.items()):
+                raise ValueError("Specialist evidence already belongs to another run")
+            item.update(deepcopy(identity))
 
 
 def verify_analysis_stem_playback(request, base, state, voices):
@@ -187,7 +228,7 @@ def verify_analysis_stem_playback(request, base, state, voices):
         assert request(base + '/waveform?' + query)['sample_rate'] == 22050
 
 
-def verify_core_workflow(request, wait, start, stop, work, source, checks):
+def verify_core_workflow(request, wait, start, stop, work, source, record):
     imported = request("/api/import", upload=("files", source.name, source.read_bytes()))
     base = "/api/projects/" + imported["id"]
     job = wait(request(base + "/analyze", dict(engine="basic", settings={})))
@@ -195,7 +236,7 @@ def verify_core_workflow(request, wait, start, stop, work, source, checks):
     state = request(base)
     analysis = state["analysis"]
     assert isinstance(analysis.get("candidates"), list), analysis
-    checks.append(dict(check="basic_analysis", engine=analysis["engine"],
+    record(dict(check="basic_analysis", engine=analysis["engine"],
                        candidates=len(analysis["candidates"]),
                        seconds=analysis["elapsed_seconds"]))
 
@@ -213,7 +254,7 @@ def verify_core_workflow(request, wait, start, stop, work, source, checks):
         grid = grid_report(parsed["notes"], dict(bpm=120, offset=-22, division=4))
         assert grid["off_grid"] == 0, grid
         last_notes = generated_state["variants"][generated_state["active"]]["notes"]
-        checks.append(dict(check="generate_export", keys=keys,
+        record(dict(check="generate_export", keys=keys,
                            notes=report["notes"], ln=report["ln"], off_grid=0))
 
     provided = request("/api/import", upload=("files", source.name, source.read_bytes()))
@@ -241,7 +282,7 @@ def verify_core_workflow(request, wait, start, stop, work, source, checks):
         provided_chart["notes"], dict(bpm=120, offset=-22, division=4)
     )
     assert provided_grid["off_grid"] == 0, provided_grid
-    checks.append(dict(check="provided_stem_analysis_export", voices=voice_names,
+    record(dict(check="provided_stem_analysis_export", voices=voice_names,
                        candidates=len(provided_state["analysis"]["candidates"]),
                        notes=provided_report["notes"], ln=provided_report["ln"],
                        off_grid=0))
@@ -253,7 +294,7 @@ def verify_core_workflow(request, wait, start, stop, work, source, checks):
         assert "分离组件未就绪" in job["message"], job
         unavailable[engine] = job["status"]
     assert request("/api/status")["separator"]["profiles"]["six"]["available"] is False
-    checks.append(dict(check="unavailable_engines", engines=unavailable,
+    record(dict(check="unavailable_engines", engines=unavailable,
                        reason="bundled separation assets are not included"))
 
     stop()
@@ -261,7 +302,7 @@ def verify_core_workflow(request, wait, start, stop, work, source, checks):
     restored = request(base)
     restored_notes = restored["variants"][restored["active"]]["notes"]
     assert restored_notes == last_notes
-    checks.append(dict(check="restart", preserved=True, keys=10,
+    record(dict(check="restart", preserved=True, keys=10,
                        unicode_audio=source.name))
 
     bad = request("/api/import", upload=("files", "damaged.wav", b"invalid audio"))
@@ -270,7 +311,7 @@ def verify_core_workflow(request, wait, start, stop, work, source, checks):
     assert failure["status"] == "error" and failure.get("message"), failure
     assert not request(bad_base).get("analysis")
     assert request("/api/status")["version"] == __version__
-    checks.append(dict(check="bad_audio_recovery", analysis=failure["status"],
+    record(dict(check="bad_audio_recovery", analysis=failure["status"],
                        service_alive=True))
 
 
@@ -287,6 +328,9 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
     environment.update(HTTP_PROXY='http://127.0.0.1:9',HTTPS_PROXY='http://127.0.0.1:9',NO_PROXY='127.0.0.1,localhost',PYTHONUTF8='1')
     process=None;log=None;url='';token='';checks=[];launch_number=0
     local_http=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+    def record(row):
+        append_verification_evidence(checks,verification_identity,row)
 
     def start():
         nonlocal process,log,url,token,launch_number
@@ -359,40 +403,38 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         verification_identity=build_verification_identity(
             executable,manifest_path,release_manifest,verification_run_id
         )
-        checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),
+        record(dict(check='release_manifest',source_files=len(release_manifest['sources']),
             worker_files=0 if worker is None else len(worker['worker_files']),
             **verification_identity))
-        checks.append(dict(check='core_model',**core_model_identity))
+        record(dict(check='core_model',**core_model_identity))
         prior_path=executable.parent/'_internal/assets/pattern-prior.json'
         if declared['pattern_prior']:
             expected_prior=hashlib.sha256((ROOT/'assets/pattern-prior.json').read_bytes()).hexdigest()
             bundled_prior=hashlib.sha256(prior_path.read_bytes()).hexdigest()
             assert bundled_prior==expected_prior, 'Packaged layout model differs from the source release'
-            checks.append(dict(check='bundled_model',sha256=bundled_prior))
+            record(dict(check='bundled_model',sha256=bundled_prior))
         else:
             assert not prior_path.exists(), 'Core profile must exclude the learned layout prior'
         expected_profiles=hashlib.sha256((ROOT/'assets/arrangement-profiles.json').read_bytes()).hexdigest()
         assert hashlib.sha256((executable.parent/'_internal/assets/arrangement-profiles.json').read_bytes()).hexdigest()==expected_profiles
-        checks.append(dict(check='bundled_arrangement_profiles',sha256=expected_profiles))
+        record(dict(check='bundled_arrangement_profiles',sha256=expected_profiles))
         start();status=request('/api/status')
         assert status['version']==__version__,status
         separator_status=verify_runtime_capabilities(status,declared)
-        assert bool(status['pattern_prior']['available'])==declared['pattern_prior']
-        assert bool(status['engine']['install_available'])==declared['mapperatorinator_install']
         if declared["piano"]:
-            checks.append(verify_piano_onnx_runtime(
+            record(verify_piano_onnx_runtime(
                 executable.parent/'_internal/assets/deep/piano-regression.onnx',
                 piano_identity,
             ))
-        checks.append(dict(check='startup',version=status['version'],separator=status['separator'],
+        record(dict(check='startup',version=status['version'],separator=status['separator'],
                            prior=status['pattern_prior'],engine=status['engine']))
         if is_core:
             if instruments_only or guitar_only or piano_audio is not None \
                     or instrument_fixtures is not None or guitar_probe is not None:
                 raise ValueError("Core portable verification does not accept specialist-engine fixtures")
-            checks.append(dict(check='core_capability_status',separator=separator_status,
+            record(dict(check='core_capability_status',separator=separator_status,
                                piano_available=status['piano']['available']))
-            verify_core_workflow(request,wait,start,stop,work,source,checks)
+            verify_core_workflow(request,wait,start,stop,work,source,record)
             print(json.dumps(dict(passed=True,scope='core',checks=checks),ensure_ascii=True),flush=True)
             return
         if guitar_only:
@@ -420,7 +462,7 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert len(raw)==5,(len(raw),raw)
         expected=[(1000,3000),(5000,9000),(12000,13000),(20000,23000),(26000,28000)]
         assert all(abs(n['start']-a)<=20 and abs(n['end']-b)<=20 for n,(a,b) in zip(raw,expected))
-        checks.append(dict(check='deep_analysis',seconds=state['analysis']['elapsed_seconds'],candidates=len(raw),engine=state['analysis']['engine']))
+        record(dict(check='deep_analysis',seconds=state['analysis']['elapsed_seconds'],candidates=len(raw),engine=state['analysis']['engine']))
         for keys in range(6,11):
             payload=dict(mode='audio',bpm=120,offset=-22,division=4,audio_shift_ms=22.5,timing_confirmed=True,settings={'keys':keys,'ln_ratio':.6})
             job=wait(request(base+'/generate',payload));assert job['status']=='done',job
@@ -430,7 +472,7 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             # must preserve all five; a global 55% quota used to turn two taps.
             assert report['valid'] and report['notes']==5 and report['ln']==5,report
             grid=grid_report(parsed['notes'],dict(bpm=120,offset=-22,division=4));assert grid['off_grid']==0,grid
-            checks.append(dict(check='generate_export',keys=keys,notes=5,ln=5,off_grid=0))
+            record(dict(check='generate_export',keys=keys,notes=5,ln=5,off_grid=0))
         with zipfile.ZipFile(io.BytesIO(request(base+'/export/osz'))) as archive:
             assert set(archive.namelist())=={'ManiaLab.osu',source.name},archive.namelist()
         audio=request(base+'/audition',dict(mode='chart',start_ms=0,duration_ms=12000));assert audio[:4]==b'RIFF'
@@ -447,15 +489,15 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             assert validate(parsed['notes'],10)['valid']
             assert grid_report(parsed['notes'],dict(bpm=120,offset=-22,division=4))['off_grid']==0
             assert json.dumps(request(base)['analysis'],sort_keys=True)==evidence
-            checks.append(dict(check='local_recommendation',choice=option['id'],notes=len(parsed['notes']),evidence_preserved=True))
+            record(dict(check='local_recommendation',choice=option['id'],notes=len(parsed['notes']),evidence_preserved=True))
         stale=wait(request(base+'/generate',payload|dict(bpm=240)))
         assert stale['status']=='error' and 'BPM' in stale['message'],stale
-        checks.append(dict(check='stale_recommendation_rejected',reason='BPM changed'))
+        record(dict(check='stale_recommendation_rejected',reason='BPM changed'))
         state=request(base);saved_notes=state['variants'][state['active']]['notes']
         stop();start();restored=request(base)
         assert restored['variants'][restored['active']]['notes']==saved_notes
         assert restored['plan']['choice']=='layers'
-        checks.append(dict(check='restart',preserved=True,unicode_audio=source.name))
+        record(dict(check='restart',preserved=True,keys=10,unicode_audio=source.name))
         # Both packaged separators must run with no Python or model downloads.
         assert status['separator']['profiles']['six']['available'],status['separator']
         job=wait(request(base+'/analyze',dict(engine='deep6',settings={})),timeout=360)
@@ -469,7 +511,7 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert job['status']=='done',job
         state=request(base);candidate=state['variants'][state['active']]
         assert candidate['report']['grid']['off_grid']==0 and all(n['voice']!='guitar' for n in candidate['notes'])
-        checks.append(dict(check='six_stem_analysis_export',seconds=state['analysis']['elapsed_seconds'],
+        record(dict(check='six_stem_analysis_export',seconds=state['analysis']['elapsed_seconds'],
             voices=[v['voice'] for v in state['analysis']['voices']],notes=len(candidate['notes']),off_grid=0))
         if piano_audio is not None:
             assert status['piano']['available'] and not status['piano']['default'],status['piano']
@@ -485,7 +527,7 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             assert original and all(n['voice']=='piano' for n in original)
             summary=piano_state['analysis']['voices'][0]['release_refinement']
             assert summary['engine']=='piano-onset-offset-regression' and not summary['cached'],summary
-            checks.append(dict(check='piano_cold_inference',input_sha256=hashlib.sha256(content).hexdigest(),
+            record(dict(check='piano_cold_inference',input_sha256=hashlib.sha256(content).hexdigest(),
                 model_sha256=summary['identity']['model_sha256'],candidates=len(original),
                 seconds=piano_state['analysis']['elapsed_seconds'],release_reasons=summary['release_reasons']))
             plan=piano_state['expression']
@@ -507,7 +549,7 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
                 assert grid_report(parsed['notes'],dict(bpm=120,offset=0,division=4))['off_grid']==0
                 (work/f'piano-{mode}.osu').write_bytes(exported)
                 generated[mode]=dict(notes=report['notes'],ln=report['ln'])
-            checks.append(dict(check='piano_manual_expression',modes=generated,evidence_preserved=True,
+            record(dict(check='piano_manual_expression',modes=generated,evidence_preserved=True,
                 timing='fixed synthetic grid for export verification, not musical timing acceptance'))
             saved_piano=piano_state['variants'][piano_state['active']]['notes']
             stop();start();restored=request(piano_base)
@@ -519,7 +561,7 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             warmed=request(piano_base)
             assert warmed['analysis']['voices'][0]['release_refinement']['cached']
             assert warmed['analysis']['candidates']==original
-            checks.append(dict(check='piano_restart_warm_cache',candidates=len(original),identical=True,
+            record(dict(check='piano_restart_warm_cache',candidates=len(original),identical=True,
                 seconds=warmed['analysis']['elapsed_seconds']))
         if instrument_fixtures is not None:
             from scripts.verify_portable_instruments import check_instruments
@@ -546,7 +588,7 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         failure=wait(request('/api/projects/'+bad['id']+'/analyze',dict(engine='basic',settings={})))
         assert failure['status']=='error'
         assert request('/api/status')['version']==__version__
-        checks.append(dict(check='cancel_and_failure',cancelled=cancelled['status'],bad_audio=failure['status'],service_alive=True))
+        record(dict(check='cancel_and_failure',cancelled=cancelled['status'],bad_audio=failure['status'],service_alive=True))
     finally:
         stop()
         (work/'report.json').write_text(json.dumps(checks,ensure_ascii=False,indent=2),encoding='utf-8')

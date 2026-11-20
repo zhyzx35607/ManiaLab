@@ -7,7 +7,9 @@ import time
 import wave
 import zipfile
 
+import numpy as np
 import pytest
+from scipy.io import wavfile
 
 from manialab.arrange import parameters
 from manialab.domain import Note, parse_osu
@@ -179,8 +181,13 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
         reopened.extensions['executor'].shutdown()
 
 
-def test_real_regional_generation_then_edit_export_and_reopen_keeps_source_mapping(tmp_path):
-    """Exercise a real regional child before the edit/export/reopen checks."""
+@pytest.mark.parametrize(('audio_shift_ms', 'expected_region_times'), [
+    (22.5, (3603, 4353)),
+    (-75, (3728, 4478)),
+])
+def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
+        tmp_path, audio_shift_ms, expected_region_times):
+    """Keep regional LN evidence and chart playback aligned across persistence."""
     music = _wave()
     old_stem = _wave(800)
     separation = dict(source='provided', audio_sha256=hashlib.sha256(music).hexdigest(),
@@ -201,6 +208,7 @@ def test_real_regional_generation_then_edit_export_and_reopen_keeps_source_mappi
             release_reason='vocal_activity_decay').data()],
         timing_attacks=[], separation=separation)
     settings = dict(ln_ratio=1, phrase_ln=1, min_ln=100, density=24, max_held=10)
+    clock = dict(bpm=120, offset=103, division=4, audio_shift_ms=audio_shift_ms)
     app = create_app(ROOT, tmp_path)
     try:
         client = app.test_client()
@@ -216,13 +224,14 @@ def test_real_regional_generation_then_edit_export_and_reopen_keeps_source_mappi
         state['variants'] = []
         state['active'] = -1
         projects.save(state)
+        (projects.path(pid) / 'preview.wav').write_bytes(music)
         stem_path = projects.path(pid) / 'stems-provided' / separation['set_sha256'] / 'other.wav'
         stem_path.parent.mkdir(parents=True)
         stem_path.write_bytes(old_stem)
 
         # Generate through the asynchronous API so persistence follows the app workflow.
         state, parent = _generate(client, base, headers, dict(mode='audio', settings=settings,
-            timing_confirmed=True, bpm=120, offset=0, division=4, audio_shift_ms=0))
+            timing_confirmed=True, **clock))
         assert parent['source_separation'] == reference
         assert parent['source_evidence']['locked']['detected']['end'] == 1500
         assert parent['source_evidence']['locked']['expressed']['phrase'] is True
@@ -250,8 +259,7 @@ def test_real_regional_generation_then_edit_export_and_reopen_keeps_source_mappi
             structure=dict(boundaries=[0, 5000], segments=[dict(start_ms=0, end_ms=5000)]))
         projects.save(state)
         state, child = _generate(client, base, headers, dict(mode='audio', settings=settings,
-            timing_confirmed=True, bpm=120, offset=0, division=4, audio_shift_ms=0,
-            region=[3000, 5000]))
+            timing_confirmed=True, region=[3000, 5000], **clock))
         assert child['selection']['scope'] == 'regional_output'
         assert child['selection']['locked'] == 2 and child['selection']['generated'] == 1
         decisions = {row['id']: row for row in child['selection']['decisions']}
@@ -287,6 +295,12 @@ def test_real_regional_generation_then_edit_export_and_reopen_keeps_source_mappi
         assert expressed['release_reason'] == 'vocal_activity_decay'
         assert expressed['support'] == ['region-support']
         assert expressed['support_coverage'] == 1
+        region_chart_note = child_notes['region']
+        assert (region_chart_note['start'], region_chart_note['end']) == expected_region_times
+        tick_ms = 60000 / clock['bpm'] / clock['division']
+        for value in (region_chart_note['start'], region_chart_note['end']):
+            assert abs((value - clock['offset']) / tick_ms - round(
+                (value - clock['offset']) / tick_ms)) < 1e-9
         assert child['selection']['selected'] == 3
         assert state['variants'][0] == parent
         projects.save(state)
@@ -310,6 +324,23 @@ def test_real_regional_generation_then_edit_export_and_reopen_keeps_source_mappi
         assert edited_region['lane'] == 2
         assert edited_region['voice'] == 'vocals'
         assert edited['source_evidence']['locked'] == child['source_evidence']['locked']
+        assert edited['source_evidence']['region'] == child['source_evidence']['region']
+
+        audition_start = edited_region['start'] - 500
+        audition = client.post(base + '/audition', headers=headers, json=dict(
+            mode='chart', voice='mix', audio='song.wav', start_ms=audition_start,
+            duration_ms=2000,
+        ))
+        assert audition.status_code == 200, audition.json
+        sample_rate, audition_samples = wavfile.read(io.BytesIO(audition.data))
+        assert sample_rate == 8000
+        assert int(audition.headers['X-ManiaLab-Audition-Events']) >= 2
+        for chart_time in (edited_region['start'], edited_region['end']):
+            event_sample = round((chart_time - audition_start) * sample_rate / 1000)
+            local = audition_samples[event_sample:event_sample + 8]
+            assert len(local) == 8
+            assert np.any(local != 0)
+
         evidence = client.get(base + '/export/json')
         assert evidence.status_code == 200
         assert evidence.json['variant'] == edited
@@ -346,7 +377,9 @@ def test_real_regional_generation_then_edit_export_and_reopen_keeps_source_mappi
         reopened_child = reopened['variants'][1]
         assert reopened_child['source_evidence']['locked'] == parent['source_evidence']['locked']
         assert reopened_child['source_evidence']['region']['detected']['voice'] == 'vocals'
-        assert next(note for note in reopened_child['notes'] if note['id'] == 'region')['voice'] == 'vocals'
+        reopened_region = next(note for note in reopened_child['notes'] if note['id'] == 'region')
+        assert reopened_region['voice'] == 'vocals'
+        assert (reopened_region['start'], reopened_region['end']) == expected_region_times
         child_json = client.get(base + '/export/json')
         assert child_json.status_code == 200 and child_json.json['variant'] == reopened_child
         assert child_json.json['analysis']['revision'] == current_analysis['revision']
