@@ -296,7 +296,9 @@ class MapperEngine:
             uv = Path(found)
         self.root.mkdir(parents=True, exist_ok=True)
         self.source.mkdir(exist_ok=True)
+        ready_marker = self.root / "ready.json"
         with zipfile.ZipFile(self.resources / "assets/mapperatorinator-source.zip") as archive:
+            ready_marker.unlink(missing_ok=True)
             archive.extractall(self.source)  # trusted, pinned asset shipped with this program
         if not self.python.is_file():
             self.run([uv, "venv", str(self.python.parent.parent), "--python", "3.12"], "准备独立 Python 环境", progress, cancelled, 5)
@@ -305,7 +307,14 @@ class MapperEngine:
         self.run([uv, "pip", "install", "--python", self.python, "-r", self.resources / "assets/mapperatorinator-requirements.txt"],
                  "安装原模型依赖", progress, cancelled, 55)
         self.run([self.python, "inference.py", "--help"], "检查原模型入口", progress, cancelled, 90, self.source)
-        (self.root / "ready.json").write_text(json.dumps(self.status() | {"source_commit": SOURCE_COMMIT}), encoding="utf-8")
+        temporary_marker = ready_marker.with_suffix(".json.tmp")
+        try:
+            temporary_marker.write_text(
+                json.dumps(self.status() | {"source_commit": SOURCE_COMMIT}), encoding="utf-8"
+            )
+            os.replace(temporary_marker, ready_marker)
+        finally:
+            temporary_marker.unlink(missing_ok=True)
 
     def generate(self, audio, output, settings, progress, cancelled, seconds=30, tempo=None, start_ms=0,
                  timing_reference=None, lora_path=None, difficulty=5.0, conditioning=None,

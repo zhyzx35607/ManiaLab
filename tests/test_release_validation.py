@@ -1,6 +1,8 @@
+import ast
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import zipfile
 
@@ -11,6 +13,7 @@ from scripts import pytest_provenance
 from scripts import collect_release_validation
 from scripts.collect_release_validation import collect as _collect
 from scripts.package_assets import CORE_FILES, capabilities, verify_core_model_files
+from scripts.worker_inventory import worker_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
 TEST_GUITAR_MODEL = b"synthetic guitar model"
@@ -25,8 +28,91 @@ TEST_RUNTIME_LICENSE = b"synthetic runtime dependency license"
 TEST_RUNTIME_LICENSE_INVENTORY = b"[]"
 TEST_PACKAGED_RUNTIME_LICENSE = b"synthetic packaged runtime license"
 TEST_PACKAGED_RUNTIME_INVENTORY = b'[{"name":"fixture","version":"1","license":"MIT"}]'
+TEST_UV_LICENSE = b"synthetic uv license"
+TEST_FFMPEG_LICENSE = b"synthetic FFmpeg license"
+TEST_FFMPEG_BUILD_INFO = b"synthetic FFmpeg build info"
 TEST_BASS_MODEL = b"synthetic bass model"
 TEST_OTHER_MODEL = b"synthetic other model"
+
+
+def _license_staging_helpers():
+    source = ast.parse((ROOT / 'scripts/build_windows.py').read_text(encoding='utf-8'))
+    functions = [node for node in source.body if isinstance(node, ast.FunctionDef)
+        and node.name in {'stage_license_inputs', 'stage_runtime_licenses'}]
+    namespace = dict(
+        Path=Path,
+        shutil=shutil,
+        json=json,
+        hashlib=hashlib,
+        worker_inventory=worker_inventory,
+    )
+    module = ast.Module(body=functions, type_ignores=[])
+    exec(compile(ast.fix_missing_locations(module), 'license-staging-only', 'exec'), namespace)
+    return namespace['stage_license_inputs'], namespace['stage_runtime_licenses']
+
+
+def test_build_stages_only_current_environment_runtime_licenses(tmp_path):
+    stage_license_inputs, stage_runtime_licenses = _license_staging_helpers()
+    source = tmp_path / 'source-licenses'
+    (source / 'runtime' / 'old-package').mkdir(parents=True)
+    (source / 'runtime' / 'old-package' / 'LICENSE').write_bytes(b'stale ignored license')
+    (source / 'runtime-inventory.json').write_text('[{"name":"old-package"}]', encoding='utf-8')
+    (source / 'uv-MIT.txt').write_bytes(TEST_UV_LICENSE)
+    environment = tmp_path / 'environment'
+    license_entry = Path('fixture-2.0.dist-info/LICENSE')
+    license_source = environment / license_entry
+    license_source.parent.mkdir(parents=True)
+    license_source.write_bytes(b'current environment license')
+
+    class Distribution:
+        metadata = {'Name': 'fixture', 'License-Expression': 'MIT'}
+        version = '2.0'
+        files = (license_entry,)
+
+        @staticmethod
+        def locate_file(entry):
+            return environment / entry
+
+    stage = tmp_path / 'build' / 'licenses'
+    stage_license_inputs(source, stage)
+    assert not (stage / 'runtime').exists()
+    assert not (stage / 'runtime-inventory.json').exists()
+    assert (stage / 'uv-MIT.txt').read_bytes() == TEST_UV_LICENSE
+
+    files, inventory = stage_runtime_licenses(stage, [Distribution()])
+    assert files == {
+        'fixture/fixture-2.0.dist-info/LICENSE': payload_record(b'current environment license'),
+    }
+    assert json.loads((stage / 'runtime-inventory.json').read_text(encoding='utf-8')) == [{
+        'name': 'fixture', 'version': '2.0', 'license': 'MIT',
+    }]
+    inventory_bytes = (stage / 'runtime-inventory.json').read_bytes()
+    assert inventory == payload_record(inventory_bytes)
+    assert (source / 'runtime' / 'old-package' / 'LICENSE').read_bytes() == b'stale ignored license'
+
+
+def test_build_source_snapshot_does_not_read_old_runtime_inventory(tmp_path, monkeypatch):
+    source = ast.parse((ROOT / 'scripts/build_windows.py').read_text(encoding='utf-8'))
+    function = next(node for node in source.body
+        if isinstance(node, ast.FunctionDef) and node.name == 'source_snapshot')
+    namespace = dict(ROOT=tmp_path, hashlib=hashlib, enabled=capabilities('core'))
+    module = ast.Module(body=[function], type_ignores=[])
+    exec(compile(ast.fix_missing_locations(module), 'source-snapshot-only', 'exec'), namespace)
+    licenses = tmp_path / 'licenses'
+    licenses.mkdir()
+    (licenses / 'runtime-inventory.json').write_bytes(b'stale ignored inventory')
+    (licenses / 'uv-MIT.txt').write_bytes(TEST_UV_LICENSE)
+
+    def synthetic_source_bytes(path):
+        if path == licenses / 'runtime-inventory.json':
+            pytest.fail('The build source snapshot read the old ignored inventory')
+        return TEST_UV_LICENSE
+
+    # All other declared source files use synthetic bytes; no builder import or EXE runs.
+    monkeypatch.setattr(Path, 'read_bytes', synthetic_source_bytes)
+    snapshot = namespace['source_snapshot']()
+    assert 'licenses/runtime-inventory.json' not in snapshot
+    assert snapshot['licenses/uv-MIT.txt'] == hashlib.sha256(TEST_UV_LICENSE).hexdigest()
 
 
 def payload_identity(value):
@@ -37,10 +123,29 @@ def payload_record(value):
     return {"bytes": len(value), "sha256": payload_identity(value)}
 
 
-def write_runtime_license_payloads(archive):
+def packaged_license_payloads(profile):
+    files = {
+        'runtime/fixture/LICENSE': TEST_PACKAGED_RUNTIME_LICENSE,
+        'runtime-inventory.json': TEST_PACKAGED_RUNTIME_INVENTORY,
+        'uv-MIT.txt': TEST_UV_LICENSE,
+        'FFmpeg-GPLv3.txt': TEST_FFMPEG_LICENSE,
+        'FFmpeg-build-info.txt': TEST_FFMPEG_BUILD_INFO,
+    }
+    if profile == 'extended':
+        files.update({
+            'HFGuitar-Model-Card.md': TEST_GUITAR_LICENSE,
+            'HFGuitar-Source-Setup.py.txt': TEST_GUITAR_SOURCE_NOTICE,
+            'HFGuitar-NOTICE.txt': TEST_GUITAR_NOTICE,
+            'instrument-runtime/inventory.json': TEST_RUNTIME_LICENSE_INVENTORY,
+            'instrument-runtime/torch/LICENSE': TEST_RUNTIME_LICENSE,
+        })
+    return files
+
+
+def write_license_payloads(archive, files):
     for prefix in ('ManiaLab/licenses/', 'ManiaLab/_internal/licenses/'):
-        archive.writestr(prefix + 'runtime/fixture/LICENSE', TEST_PACKAGED_RUNTIME_LICENSE)
-        archive.writestr(prefix + 'runtime-inventory.json', TEST_PACKAGED_RUNTIME_INVENTORY)
+        for name, content in files.items():
+            archive.writestr(prefix + name, content)
 
 
 def make_guitar_model_identity():
@@ -133,6 +238,7 @@ def make_release_fixture(root, profile='standard'):
     executable.parent.mkdir(parents=True)
     package.mkdir(parents=True)
     executable.write_bytes(b"portable-executable")
+    license_payloads = packaged_license_payloads(profile)
     manifest = {
         "version": __version__,
         "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
@@ -157,6 +263,9 @@ def make_release_fixture(root, profile='standard'):
             "fixture/LICENSE": payload_record(TEST_PACKAGED_RUNTIME_LICENSE),
         },
         "runtime_license_inventory": payload_record(TEST_PACKAGED_RUNTIME_INVENTORY),
+        "license_files": {
+            name: payload_record(content) for name, content in license_payloads.items()
+        },
     }
     (executable.parent / "release-manifest.json").write_text(
         json.dumps(manifest), encoding="utf-8"
@@ -171,7 +280,7 @@ def make_release_fixture(root, profile='standard'):
         )
         for name in CORE_FILES:
             archive.write(ROOT / 'assets' / name, 'ManiaLab/_internal/assets/' + name)
-        write_runtime_license_payloads(archive)
+        write_license_payloads(archive, license_payloads)
         if profile == 'extended':
             archive.writestr(
                 'ManiaLab/_internal/assets/guitar-model.json',
@@ -180,13 +289,6 @@ def make_release_fixture(root, profile='standard'):
             archive.writestr(
                 'ManiaLab/_internal/assets/deep/guitar-fl.onnx', TEST_GUITAR_MODEL
             )
-            for field, content in (
-                ('license_file', TEST_GUITAR_LICENSE),
-                ('source_license_declaration_file', TEST_GUITAR_SOURCE_NOTICE),
-                ('notice_file', TEST_GUITAR_NOTICE),
-            ):
-                archive.writestr('ManiaLab/' + manifest['guitar_model'][field], content)
-
             instrument_root = 'ManiaLab/_internal/assets/instruments/'
             identity = manifest['instrument_worker']
             archive.writestr(instrument_root + 'manifest.json', json.dumps(identity))
@@ -203,10 +305,6 @@ def make_release_fixture(root, profile='standard'):
                 instrument_root + 'ManiaLabInstrument/ManiaLabInstrument.exe',
                 TEST_INSTRUMENT_WORKER,
             )
-            archive.writestr('ManiaLab/licenses/instrument-runtime/inventory.json',
-                             TEST_RUNTIME_LICENSE_INVENTORY)
-            archive.writestr('ManiaLab/licenses/instrument-runtime/torch/LICENSE',
-                             TEST_RUNTIME_LICENSE)
     reports = root / "reports"
     reports.mkdir()
     pytest_report = reports / "junit.xml"
@@ -388,7 +486,7 @@ def test_collect_core_validation_rejects_declared_deep_components(tmp_path):
         bundle.writestr('ManiaLab/release-manifest.json', json.dumps(manifest))
         for name in CORE_FILES:
             bundle.write(ROOT / 'assets' / name, 'ManiaLab/_internal/assets/' + name)
-        write_runtime_license_payloads(bundle)
+        write_license_payloads(bundle, packaged_license_payloads('core'))
 
     with pytest.raises(SystemExit, match='Core manifest declares'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
@@ -411,7 +509,7 @@ def test_collect_core_validation_rejects_changed_basic_pitch_bytes(tmp_path):
                 bundle.writestr('ManiaLab/_internal/assets/' + name, b'changed model')
             else:
                 bundle.write(asset, 'ManiaLab/_internal/assets/' + name)
-        write_runtime_license_payloads(bundle)
+        write_license_payloads(bundle, packaged_license_payloads('core'))
 
     with pytest.raises(SystemExit, match='Basic Pitch model checksum'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
@@ -469,6 +567,58 @@ def test_collect_core_validation_checks_runtime_license_inventory_file(
         message = 'differs from its manifest identity'
 
     with pytest.raises(SystemExit, match=message):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(('prefix', 'name', 'change'), (
+    ('ManiaLab/licenses/', 'uv-MIT.txt', 'changed'),
+    ('ManiaLab/licenses/', 'FFmpeg-GPLv3.txt', 'missing'),
+    ('ManiaLab/_internal/licenses/', 'FFmpeg-build-info.txt', 'changed'),
+    ('ManiaLab/_internal/licenses/', 'unlisted-license.txt', 'extra'),
+))
+def test_collect_core_validation_checks_complete_license_tree(tmp_path, prefix, name, change):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='core')
+    )
+    license_path = prefix + name
+    if change == 'missing':
+        rewrite_archive(archive, omit=(license_path,))
+        message = 'inventory differs'
+    elif change == 'changed':
+        rewrite_archive(archive, replacements={license_path: b'changed license payload'})
+        message = 'differs from its manifest identity'
+    else:
+        rewrite_archive(archive, additions={license_path: b'unlisted license payload'})
+        message = 'inventory differs'
+
+    with pytest.raises(SystemExit, match=message):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(('profile', 'field', 'name', 'prefix'), (
+    ('core', 'license_files', 'uv-MIT.txt', 'ManiaLab/licenses/'),
+    ('core', 'runtime_license_files', 'fixture/LICENSE', 'ManiaLab/licenses/runtime/'),
+    ('extended', 'instrument_runtime_license_files', 'inventory.json',
+        'ManiaLab/licenses/instrument-runtime/'),
+))
+def test_collect_rejects_null_manifest_license_identities(tmp_path, profile, field, name, prefix):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile=profile)
+    )
+    manifest_path = build_root / 'dist' / 'ManiaLab' / 'release-manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    manifest[field][name] = None
+    manifest_bytes = json.dumps(manifest).encode('utf-8')
+    manifest_path.write_bytes(manifest_bytes)
+    rewrite_archive(archive, replacements={'ManiaLab/release-manifest.json': manifest_bytes})
+
+    with pytest.raises(SystemExit, match=f'invalid component identity under {prefix}'):
         collect(
             build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence,

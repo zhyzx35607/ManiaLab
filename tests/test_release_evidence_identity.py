@@ -44,16 +44,18 @@ def release_fixture(tmp_path, monkeypatch, request):
         executable_sha256=_sha(executable.read_bytes()))
     runtime_license = b'synthetic packaged runtime license'
     runtime_inventory = b'[]'
+    runtime_license_record = {'bytes': len(runtime_license), 'sha256': _sha(runtime_license)}
+    runtime_inventory_record = {'bytes': len(runtime_inventory), 'sha256': _sha(runtime_inventory)}
     manifest = dict(identity, version=__version__,
         sources={'launcher.py': _sha((source / 'launcher.py').read_bytes())}, core_models=model,
         worker_sha256='synthetic-worker' if profile != 'core' else None,
         worker_sources={} if profile != 'core' else None, worker_files=[] if profile != 'core' else None,
         piano_model={'sha256': 'synthetic-piano', 'bytes': 1} if profile != 'core' else None,
         guitar_model=None, instrument_worker=None, instrument_runtime_license_files=None,
-        runtime_license_files={'fixture/LICENSE': {
-            'bytes': len(runtime_license), 'sha256': _sha(runtime_license)}},
-        runtime_license_inventory={
-            'bytes': len(runtime_inventory), 'sha256': _sha(runtime_inventory)})
+        runtime_license_files={'fixture/LICENSE': runtime_license_record},
+        runtime_license_inventory=runtime_inventory_record,
+        license_files={'runtime/fixture/LICENSE': runtime_license_record,
+            'runtime-inventory.json': runtime_inventory_record})
     (executable.parent / 'release-manifest.json').write_text(json.dumps(manifest), encoding='utf-8')
     identity = dict(identity, release_manifest_sha256=_sha(
         (executable.parent / 'release-manifest.json').read_bytes()))

@@ -163,6 +163,9 @@ def _require_specialist_components(manifest, declared_capabilities):
         or not _is_sha256(runtime_license_inventory.get("sha256"))
     ):
         raise SystemExit("Portable manifest has no valid runtime license inventory identity.")
+    license_files = manifest.get("license_files")
+    if not isinstance(license_files, dict) or not license_files:
+        raise SystemExit("Portable manifest has no complete license file inventory.")
 
 
 def _is_safe_archive_relative_path(name):
@@ -210,7 +213,11 @@ def _require_archive_inventory(archive, prefix, expected, *, require_bytes=False
         if not _is_safe_archive_relative_path(name) or name.casefold() in folded:
             raise SystemExit(f"Release manifest has an unsafe component path under {prefix}")
         folded.add(name.casefold())
-        if record is not None and (
+        if record is None:
+            if require_bytes:
+                raise SystemExit(f"Release manifest has an invalid component identity under {prefix}")
+            continue
+        if (
             not isinstance(record, dict)
             or (
                 "bytes" in record
@@ -303,6 +310,12 @@ def _require_runtime_license_zip_payloads(archive, manifest):
             inventory["sha256"],
             expected_bytes=inventory["bytes"],
         )
+
+
+def _require_license_zip_payloads(archive, manifest):
+    files = manifest["license_files"]
+    for prefix in ("ManiaLab/licenses/", "ManiaLab/_internal/licenses/"):
+        _require_archive_inventory(archive, prefix, files, require_bytes=True)
 
 
 _WINDOWS_INVALID_PATH_CHARS = frozenset('<>:"|?*\\')
@@ -505,6 +518,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         if manifest.get("core_models") != core_models:
             raise SystemExit("Core model identity does not match the release manifest.")
         _require_runtime_license_zip_payloads(archive, manifest)
+        _require_license_zip_payloads(archive, manifest)
         _require_specialist_zip_payloads(archive, manifest, declared_capabilities)
 
     suites = ET.parse(pytest_report).getroot()

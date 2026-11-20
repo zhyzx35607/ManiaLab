@@ -33,7 +33,62 @@ from build_provenance import (
 )
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
+
+def stage_license_inputs(source, destination):
+    source = Path(source)
+    destination = Path(destination)
+    destination.mkdir(parents=True, exist_ok=False)
+    for entry in source.iterdir():
+        if entry.name in {'runtime', 'runtime-inventory.json'}:
+            continue
+        target = destination / entry.name
+        if entry.is_dir():
+            shutil.copytree(entry, target)
+        elif entry.is_file():
+            shutil.copy2(entry, target)
+
+
+def stage_runtime_licenses(license_root, distributions, python_license_source=None):
+    license_root = Path(license_root)
+    runtime_directory = license_root / 'runtime'
+    runtime_directory.mkdir()
+    inventory = []
+    for dist in distributions:
+        name = dist.metadata['Name']
+        inventory.append({
+            'name': name,
+            'version': dist.version,
+            'license': dist.metadata.get('License-Expression') or dist.metadata.get('License')
+                or 'See license files',
+        })
+        for entry in dist.files or []:
+            if any(part.lower().startswith(('license', 'copying', 'notice', 'authors'))
+                   for part in Path(str(entry)).parts):
+                source = Path(dist.locate_file(entry))
+                if source.is_file():
+                    target = runtime_directory / name / str(entry).replace('../', 'parent/').replace('..\\', 'parent/')
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, target)
+
+    inventory_path = license_root / 'runtime-inventory.json'
+    inventory_path.write_text(json.dumps(inventory, ensure_ascii=False, indent=2), encoding='utf-8')
+    if python_license_source is not None and Path(python_license_source).is_file():
+        shutil.copy2(python_license_source, runtime_directory / 'Python-LICENSE.txt')
+
+    runtime_files = worker_inventory(runtime_directory)
+    inventory_bytes = inventory_path.read_bytes()
+    runtime_inventory = {
+        'bytes': len(inventory_bytes),
+        'sha256': hashlib.sha256(inventory_bytes).hexdigest(),
+    }
+    return runtime_files, runtime_inventory
+
+
 def source_snapshot():
+    license_directory=ROOT/'licenses'
+    license_inputs=(sorted(path for path in license_directory.iterdir()
+        if path.name != 'runtime-inventory.json' and path.is_file())
+        if license_directory.is_dir() else [])
     files=[ROOT/'launcher.py',ROOT/'README.md',ROOT/'LICENSE',ROOT/'THIRD_PARTY_NOTICES.md',
            ROOT/'scripts/build_windows.py',
            ROOT/'scripts/package_assets.py',ROOT/'scripts/worker_inventory.py',
@@ -43,7 +98,7 @@ def source_snapshot():
            ROOT/'assets/pattern-prior.json',ROOT/'assets/arrangement-profiles.json',
            ROOT/'assets/model-manifest.json',ROOT/'assets/piano-model.json',
            ROOT/'assets/guitar-model.json',ROOT/'assets/deep-models.json',ROOT/'manialab/tsumugi-source.json',
-           *sorted((ROOT/'licenses').glob('HFGuitar-*'))]
+           *license_inputs]
     if enabled['mapperatorinator_install']:
         # uv.exe is copied from the selected runtime later; these are source inputs.
         files += [ROOT/'assets'/name for name in MAPPER_INSTALLER_FILES if name != 'runtime/uv.exe']
@@ -76,35 +131,6 @@ if enabled['mapperatorinator_install']:
     if not uv:raise SystemExit('Install uv first to bundle the optional engine installer.')
     (ROOT/'assets/runtime').mkdir(exist_ok=True)
     shutil.copy2(uv,ROOT/'assets/runtime/uv.exe')
-lic=ROOT/'licenses/runtime';lic.mkdir(parents=True,exist_ok=True)
-inventory=[]
-for dist in metadata.distributions():
-    name=dist.metadata['Name'];version=dist.version
-    inventory.append({'name':name,'version':version,'license':dist.metadata.get('License-Expression') or dist.metadata.get('License') or 'See license files'})
-    for entry in dist.files or []:
-        if any(part.lower().startswith(('license','copying','notice','authors')) for part in Path(str(entry)).parts):
-            source=Path(dist.locate_file(entry))
-            if source.is_file():
-                target=lic/name/str(entry).replace('../','parent/').replace('..\\','parent/')
-                target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
-(ROOT/'licenses/runtime-inventory.json').write_text(json.dumps(inventory,ensure_ascii=False,indent=2),encoding='utf-8')
-for name in ['LICENSE.txt','LICENSE']:
-    source=Path(sys.base_prefix)/name
-    if source.exists():shutil.copy2(source,lic/'Python-LICENSE.txt');break
-runtime_license_files=worker_inventory(ROOT/'licenses/runtime')
-runtime_license_inventory_path=ROOT/'licenses/runtime-inventory.json'
-runtime_license_inventory=dict(
-    bytes=runtime_license_inventory_path.stat().st_size,
-    sha256=hashlib.sha256(runtime_license_inventory_path.read_bytes()).hexdigest())
-if enabled['mapperatorinator_install']:
-    for suffix in ['MIT','APACHE']:
-        target=ROOT/f'licenses/uv-{suffix}.txt'
-        if not target.exists():target.write_bytes(urllib.request.urlopen(f'https://raw.githubusercontent.com/astral-sh/uv/0.12.1/LICENSE-{suffix}').read())
-gpl=ROOT/'licenses/FFmpeg-GPLv3.txt'
-if not gpl.exists():gpl.write_bytes(urllib.request.urlopen('https://raw.githubusercontent.com/FFmpeg/FFmpeg/master/COPYING.GPLv3').read())
-import imageio_ffmpeg
-info=subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(),'-version'],capture_output=True,text=True,check=True).stdout
-(ROOT/'licenses/FFmpeg-build-info.txt').write_text(info+'\nBinary provider: imageio-ffmpeg 0.8.1\nBuild distributor and source/build references: https://www.gyan.dev/ffmpeg/builds/\nFFmpeg source: https://ffmpeg.org/releases/\nBuild scripts: https://github.com/GyanD/codexffmpeg\n',encoding='utf-8')
 build_id=os.environ.get('MANIALAB_BUILD_ID') or datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+f'-{os.getpid()}'
 if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',build_id):
     raise SystemExit('MANIALAB_BUILD_ID must be a simple path component.')
@@ -113,6 +139,24 @@ try:
     build_root.mkdir(parents=True,exist_ok=False)
 except FileExistsError:
     raise SystemExit(f'Build output already exists; choose a new MANIALAB_BUILD_ID: {build_root}')
+license_stage=build_root/'licenses'
+stage_license_inputs(ROOT/'licenses', license_stage)
+runtime_license_files, runtime_license_inventory = stage_runtime_licenses(
+    license_stage,
+    metadata.distributions(),
+    next((Path(sys.base_prefix) / name for name in ['LICENSE.txt', 'LICENSE']
+          if (Path(sys.base_prefix) / name).is_file()), None),
+)
+if enabled['mapperatorinator_install']:
+    for suffix in ['MIT','APACHE']:
+        target=license_stage/f'uv-{suffix}.txt'
+        if not target.exists():target.write_bytes(urllib.request.urlopen(f'https://raw.githubusercontent.com/astral-sh/uv/0.12.1/LICENSE-{suffix}').read())
+gpl=license_stage/'FFmpeg-GPLv3.txt'
+if not gpl.exists():gpl.write_bytes(urllib.request.urlopen('https://raw.githubusercontent.com/FFmpeg/FFmpeg/master/COPYING.GPLv3').read())
+import imageio_ffmpeg
+info=subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(),'-version'],capture_output=True,text=True,check=True).stdout
+(license_stage/'FFmpeg-build-info.txt').write_text(info+'\nBinary provider: imageio-ffmpeg 0.8.1\nBuild distributor and source/build references: https://www.gyan.dev/ffmpeg/builds/\nFFmpeg source: https://ffmpeg.org/releases/\nBuild scripts: https://github.com/GyanD/codexffmpeg\n',encoding='utf-8')
+license_files=worker_inventory(license_stage)
 workpath=build_root/'work'
 distpath=build_root/'dist'
 specpath=build_root/'spec'
@@ -124,7 +168,7 @@ stage_assets(ROOT,staged_assets,profile)
 args=[sys.executable,'-m','PyInstaller','--noconfirm','--name','ManiaLab','--console',
       '--add-data',f'{ROOT / "static"};static',
       '--add-data',f'{staged_assets};assets',
-      '--add-data',f'{ROOT / "licenses"};licenses',
+      '--add-data',f'{license_stage};licenses',
       '--add-data',f'{ROOT / "manialab/tsumugi-source.json"};manialab',
       '--add-data',f'{ROOT / "vendor/mapperatorinator/template.osu"};vendor/mapperatorinator',
       '--copy-metadata','numpy','--copy-metadata','scipy','--copy-metadata','onnxruntime',
@@ -148,6 +192,8 @@ if instrument_identity and verify_instrument_worker(ROOT,target/'_internal/asset
     raise SystemExit('Instrument worker changed during the build; rebuild before publishing.')
 if enabled['guitar'] and verify_guitar_model(target/'_internal')!=guitar_identity:
     raise SystemExit('Guitar model or attribution changed during the build; rebuild before publishing.')
+if worker_inventory(license_stage)!=license_files:
+    raise SystemExit('License files changed during the build; rebuild before publishing.')
 instrument_runtime_license_files=(
     worker_inventory(ROOT/'licenses/instrument-runtime') if enabled['instruments'] else None)
 release_manifest=dict(version=__version__,sources=build_sources,build_profile=profile,capabilities=enabled,
@@ -159,11 +205,12 @@ release_manifest=dict(version=__version__,sources=build_sources,build_profile=pr
     piano_model=piano_identity,guitar_model=guitar_identity,instrument_worker=instrument_identity,
     instrument_runtime_license_files=instrument_runtime_license_files,
     runtime_license_files=runtime_license_files,
-    runtime_license_inventory=runtime_license_inventory)
+    runtime_license_inventory=runtime_license_inventory,
+    license_files=license_files)
 (target/'release-manifest.json').write_text(json.dumps(release_manifest,indent=2),encoding='utf-8')
 for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
     shutil.copy2(ROOT/name,target/name)
-shutil.copytree(ROOT/'licenses',target/'licenses',dirs_exist_ok=True)
+shutil.copytree(license_stage,target/'licenses',dirs_exist_ok=True)
 shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
 (target/'开始使用.txt').write_text(start_guide(__version__,enabled),encoding='utf-8-sig')
 name=archive_stem(__version__,profile)

@@ -1,8 +1,10 @@
+import json
 from pathlib import Path
 import subprocess
 import os
 import sys
 import time
+import zipfile
 
 import pytest
 
@@ -84,6 +86,66 @@ def test_mapper_capabilities_follow_packaged_installer_assets(tmp_path, monkeypa
     (engine.root / 'ready.json').parent.mkdir(parents=True, exist_ok=True)
     (engine.root / 'ready.json').touch()
     assert engine.status()['installed'] and engine.status()['generate_available']
+
+
+@pytest.mark.parametrize('failure', [InterruptedError, ValueError])
+def test_failed_mapper_reinstall_invalidates_old_ready_marker(tmp_path, monkeypatch, failure):
+    resources = tmp_path / 'resources'
+    assets = resources / 'assets'
+    assets.mkdir(parents=True)
+    with zipfile.ZipFile(assets / 'mapperatorinator-source.zip', 'w') as archive:
+        archive.writestr('inference.py', 'pass')
+    (assets / 'runtime').mkdir()
+    (assets / 'runtime/uv.exe').touch()
+    (assets / 'run_mapper.py').touch()
+
+    engine = MapperEngine(tmp_path / 'data', resources)
+    engine.python.parent.mkdir(parents=True)
+    engine.python.touch()
+    marker = engine.root / 'ready.json'
+    marker.write_text(json.dumps({'installed': True}), encoding='utf-8')
+    assert engine.status()['installed']
+
+    def fail_during_install(*args, **kwargs):
+        assert not marker.exists()
+        raise failure('synthetic install failure')
+
+    monkeypatch.setattr(engine, 'run', fail_during_install)
+    with pytest.raises(failure, match='synthetic install failure'):
+        engine.install(lambda *args: None, lambda: False)
+
+    assert not marker.exists()
+    assert not engine.status()['installed']
+
+
+def test_successful_mapper_reinstall_atomically_writes_new_ready_marker(tmp_path, monkeypatch):
+    resources = tmp_path / 'resources'
+    assets = resources / 'assets'
+    assets.mkdir(parents=True)
+    with zipfile.ZipFile(assets / 'mapperatorinator-source.zip', 'w') as archive:
+        archive.writestr('inference.py', 'pass')
+    (assets / 'runtime').mkdir()
+    (assets / 'runtime/uv.exe').touch()
+    (assets / 'run_mapper.py').touch()
+
+    engine = MapperEngine(tmp_path / 'data', resources)
+    engine.python.parent.mkdir(parents=True)
+    engine.python.touch()
+    marker = engine.root / 'ready.json'
+    marker.write_text(json.dumps({'installed': True}), encoding='utf-8')
+    observed_marker_states = []
+
+    def succeed_during_install(*args, **kwargs):
+        observed_marker_states.append(marker.exists())
+        return ''
+
+    monkeypatch.setattr(engine, 'run', succeed_during_install)
+    engine.install(lambda *args: None, lambda: False)
+
+    assert observed_marker_states and not any(observed_marker_states)
+    assert marker.is_file()
+    assert json.loads(marker.read_text(encoding='utf-8'))['source_commit']
+    assert engine.status()['installed']
 
 
 def test_experimental_adapter_preserves_reference_meter_changes_without_notes(tmp_path,monkeypatch):
