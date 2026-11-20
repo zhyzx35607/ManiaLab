@@ -124,3 +124,135 @@ def test_regional_report_survives_save_json_export_and_later_manual_edit(tmp_pat
         assert client.get(base).json['variants'][-2]==current
     finally:
         app.extensions['executor'].shutdown()
+
+
+def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
+    import io
+    import zipfile
+
+    from manialab.server import create_app
+    from tests.test_server import wait_job
+
+    root = Path(__file__).parents[1]
+    audio = b'synthetic regional export audio'
+    structure = dict(
+        boundaries=[0, 2500, 5000],
+        segments=[
+            dict(start_ms=0, end_ms=2500, label='verse'),
+            dict(start_ms=2500, end_ms=5000, label='chorus'),
+        ],
+    )
+    candidates = [
+        Note(1000, 1500, id='locked', source='pitch', voice='piano',
+             release_reason='frame_decay'),
+        Note(3000, 3125, id='anchor', source='pitch', voice='vocals',
+             release_reason='frame_decay'),
+        Note(3500, 3750, id='support', source='pitch', voice='vocals',
+             release_reason='frame_decay'),
+    ]
+    phrase = Note(3000, 4125, id='anchor', source='pitch', voice='vocals',
+        phrase=True, support=('support',), support_coverage=1,
+        release_reason='vocal_activity_decay')
+    analysis = dict(
+        revision=13,
+        duration=5,
+        candidates=[note.data() for note in candidates],
+        phrase_candidates=[phrase.data()],
+        timing_attacks=[],
+        structure=structure,
+        tempo=dict(bpm=120, offset=0, division=4, stable=True),
+    )
+    settings = dict(ln_ratio=1, phrase_ln=1, min_ln=100)
+    app = create_app(root, tmp_path)
+    try:
+        client = app.test_client()
+        headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+        imported = client.post('/api/import', headers=headers,
+            data={'files': (io.BytesIO(audio), 'song.wav')})
+        assert imported.status_code == 200, imported.json
+        state = imported.json
+        pid = state['id']
+        base = '/api/projects/' + pid
+        state['analysis'] = analysis
+        app.extensions['projects'].save(state)
+
+        def generate(payload):
+            response = client.post(base + '/generate', json=payload, headers=headers)
+            assert response.status_code == 200, response.json
+            job = wait_job(client, response.json)
+            assert job['status'] == 'done', job
+            return client.get(base).json
+
+        payload = dict(mode='audio', settings=settings, timing_confirmed=True, **TEMPO)
+        state = generate(payload)
+        assert len(state['variants']) == 1
+        state = generate(dict(payload, region=[2500, 5000]))
+        regional = state['variants'][state['active']]
+        assert regional['selection']['scope'] == 'regional_output'
+        assert regional['selection']['structure'] == structure
+        assert regional['source_evidence']['anchor']['expressed'] == dict(
+            start=3000,
+            end=4125,
+            phrase=True,
+            release_reason='vocal_activity_decay',
+            support=['support'],
+            support_coverage=1,
+        )
+        anchor = next(note for note in regional['notes'] if note['id'] == 'anchor')
+        assert anchor['voice'] == 'vocals'
+        assert anchor['end'] == 4125
+        support_decisions = {
+            item['id']: item for item in regional['selection']['proposal']['decisions']
+        }
+        assert support_decisions['support']['reason'] == 'represented_by_phrase'
+        assert support_decisions['support']['represented_by'] == 'anchor'
+
+        edited_response = client.post(base + '/edit', headers=headers, json=dict(
+            op='update',
+            note_id='anchor',
+            base_created=regional['created'],
+            values={'lane': 2},
+        ))
+        assert edited_response.status_code == 200, edited_response.json
+        edited_job = wait_job(client, edited_response.json)
+        assert edited_job['status'] == 'done', edited_job
+        edited_state = client.get(base).json
+        edited = edited_state['variants'][edited_state['active']]
+        edited_anchor = next(note for note in edited['notes'] if note['id'] == 'anchor')
+        assert edited_anchor['lane'] == 2
+        assert edited_anchor['start'] == 3000 and edited_anchor['end'] == 4125
+        assert edited['source_evidence'] == regional['source_evidence']
+        assert edited['selection']['structure'] == structure
+        assert edited_state['variants'][0] != edited
+    finally:
+        app.extensions['executor'].shutdown()
+
+    reopened = create_app(root, tmp_path)
+    try:
+        client = reopened.test_client()
+        headers = {'X-ManiaLab-Token': reopened.config['TOKEN']}
+        saved = client.get(base).json
+        assert saved['variants'] == edited_state['variants']
+        assert saved['active'] == edited_state['active']
+
+        exported_json = client.get(base + '/export/json')
+        assert exported_json.status_code == 200
+        assert exported_json.json['variant'] == edited
+        assert exported_json.json['analysis']['structure'] == structure
+        assert exported_json.json['variant']['selection']['structure'] == structure
+        assert exported_json.json['variant']['source_evidence']['anchor']['expressed'] == \
+            regional['source_evidence']['anchor']['expressed']
+
+        chart = client.get(base + '/export/osu')
+        bundle = client.get(base + '/export/osz')
+        assert chart.status_code == bundle.status_code == 200
+        assert 'Bookmarks: 2500' in chart.get_data(as_text=True)
+        chart_notes = parse_osu(chart.get_data(as_text=True))['notes']
+        assert [(note.start, note.end, note.lane) for note in chart_notes] == [
+            (note['start'], note['end'], note['lane']) for note in edited['notes']
+        ]
+        with zipfile.ZipFile(io.BytesIO(bundle.data)) as archive:
+            assert archive.read('ManiaLab.osu') == chart.data
+            assert archive.read('song.wav') == audio
+    finally:
+        reopened.extensions['executor'].shutdown()

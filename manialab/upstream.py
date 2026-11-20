@@ -120,17 +120,30 @@ class MapperEngine:
         kernel.Process32NextW.argtypes = [wintypes.HANDLE, ctypes.POINTER(ProcessEntry)]
         kernel.Process32NextW.restype = wintypes.BOOL
         kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        def enumeration_error(action):
+            error_code = ctypes.get_last_error()
+            return OSError(error_code, f"{action} failed (Windows error {error_code})")
+
+        ctypes.set_last_error(0)
         snapshot = kernel.CreateToolhelp32Snapshot(0x00000002, 0)
         if snapshot == ctypes.c_void_p(-1).value:
-            return []
+            raise enumeration_error("CreateToolhelp32Snapshot")
         children = defaultdict(list)
         try:
             entry = ProcessEntry()
             entry.dwSize = ctypes.sizeof(entry)
+            ctypes.set_last_error(0)
             has_entry = kernel.Process32FirstW(snapshot, ctypes.byref(entry))
+            if not has_entry:
+                raise enumeration_error("Process32FirstW")
             while has_entry:
                 children[entry.th32ParentProcessID].append(entry.th32ProcessID)
+                ctypes.set_last_error(0)
                 has_entry = kernel.Process32NextW(snapshot, ctypes.byref(entry))
+                if not has_entry:
+                    error_code = ctypes.get_last_error()
+                    if error_code != 18:  # ERROR_NO_MORE_FILES
+                        raise OSError(error_code, f"Process32NextW failed (Windows error {error_code})")
         finally:
             kernel.CloseHandle(snapshot)
 
@@ -151,7 +164,13 @@ class MapperEngine:
     @staticmethod
     def stop_process(process, cancelled=None):
         windows = os.name == "nt"
-        descendants = MapperEngine._windows_descendants(process.pid) if windows else []
+        descendants = []
+        failures = []
+        if windows:
+            try:
+                descendants = MapperEngine._windows_descendants(process.pid)
+            except Exception as error:
+                failures.append(f"Could not enumerate Mapperatorinator child processes before cleanup: {error}")
         if not windows and process.poll() is not None:
             return True
         # The Windows venv launcher and uv create children. Killing only the
@@ -166,7 +185,6 @@ class MapperEngine:
                     pass
 
         root_signal_error = None
-        failures = []
         if process.poll() is None:
             try:
                 (process.kill if windows else process.terminate)()
@@ -175,33 +193,39 @@ class MapperEngine:
                     root_signal_error = error
 
         if windows:
-            descendants.extend(MapperEngine._windows_descendants(process.pid))
-            from ctypes import wintypes
-            kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-            kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-            kernel.OpenProcess.restype = wintypes.HANDLE
-            kernel.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
-            kernel.TerminateProcess.restype = wintypes.BOOL
-            kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-            kernel.CloseHandle.argtypes = [wintypes.HANDLE]
-            child_handles = []
-            for pid in dict.fromkeys(descendants):
-                handle = kernel.OpenProcess(0x00100001, False, pid)
-                if not handle:
-                    error_code = ctypes.get_last_error()
-                    if error_code != 87:
-                        failures.append(f"Could not open child process {pid} (Windows error {error_code})")
-                    continue
-                terminated = bool(kernel.TerminateProcess(handle, 1))
-                child_handles.append((pid, handle, terminated))
+            try:
+                descendants.extend(MapperEngine._windows_descendants(process.pid))
+            except Exception as error:
+                failures.append(f"Could not enumerate Mapperatorinator child processes after cleanup: {error}")
+            try:
+                from ctypes import wintypes
+                kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+                kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+                kernel.OpenProcess.restype = wintypes.HANDLE
+                kernel.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+                kernel.TerminateProcess.restype = wintypes.BOOL
+                kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+                kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+                child_handles = []
+                for pid in dict.fromkeys(descendants):
+                    handle = kernel.OpenProcess(0x00100001, False, pid)
+                    if not handle:
+                        error_code = ctypes.get_last_error()
+                        if error_code != 87:
+                            failures.append(f"Could not open child process {pid} (Windows error {error_code})")
+                        continue
+                    terminated = bool(kernel.TerminateProcess(handle, 1))
+                    child_handles.append((pid, handle, terminated))
 
-            for pid, handle, terminated in child_handles:
-                wait_ms = round(timeout_for(cancelled, 5) * 1000)
-                state = kernel.WaitForSingleObject(handle, wait_ms)
-                if state != 0:
-                    detail = "termination was rejected" if not terminated else "did not exit"
-                    failures.append(f"Child process {pid} {detail} before the cleanup deadline")
-                kernel.CloseHandle(handle)
+                for pid, handle, terminated in child_handles:
+                    wait_ms = round(timeout_for(cancelled, 5) * 1000)
+                    state = kernel.WaitForSingleObject(handle, wait_ms)
+                    if state != 0:
+                        detail = "termination was rejected" if not terminated else "did not exit"
+                        failures.append(f"Child process {pid} {detail} before the cleanup deadline")
+                    kernel.CloseHandle(handle)
+            except Exception as error:
+                failures.append(f"Could not terminate Mapperatorinator child processes: {error}")
 
         root_stopped = process.poll() is not None
         try:

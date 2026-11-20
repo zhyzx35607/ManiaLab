@@ -16,6 +16,7 @@ import time
 import urllib.error
 from urllib.parse import urlencode
 import urllib.request
+import uuid
 import wave
 import zipfile
 
@@ -151,6 +152,30 @@ def verify_runtime_capabilities(status, declared):
     return actual
 
 
+def build_verification_identity(executable, manifest_path, manifest, verification_run_id):
+    return {
+        "build_profile": manifest["build_profile"],
+        "capabilities": manifest["capabilities"],
+        "executable_sha256": sha256(executable),
+        "release_manifest_sha256": sha256(manifest_path),
+        "verification_run_id": verification_run_id,
+    }
+
+
+def bind_new_specialist_evidence(checks, first_new_index, identity):
+    """Bind only specialist rows appended by the current check invocation."""
+    if type(first_new_index) is not int or not 0 <= first_new_index <= len(checks):
+        raise ValueError("Specialist evidence start index is invalid")
+    specialist_checks = {
+        "guitar_real_audio_http",
+        "guitar_cold_cancel",
+        "instrument_portable_real_audio",
+    }
+    for item in checks[first_new_index:]:
+        if isinstance(item, dict) and item.get("check") in specialist_checks:
+            item.update(identity)
+
+
 def verify_analysis_stem_playback(request, base, state, voices):
     """Check the fresh analysis without substituting a selected candidate's source."""
     identity = state['analysis']['separation'].get('playback_identity')
@@ -252,6 +277,7 @@ def verify_core_workflow(request, wait, start, stop, work, source, checks):
 def run(executable, work, piano_audio=None, instrument_fixtures=None, instruments_only=False,
         guitar_probe=None, guitar_only=False):
     executable, work = executable.resolve(), work.resolve()
+    verification_run_id = uuid.uuid4().hex
     work.mkdir(parents=True,exist_ok=True)
     data=work/'独立项目';data.mkdir(exist_ok=True)
     source=work/'音频测试.wav';synthetic(source)
@@ -312,7 +338,8 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         raise TimeoutError('Packaged job exceeded timeout')
 
     try:
-        release_manifest=json.loads((executable.parent/'release-manifest.json').read_text(encoding='utf-8'))
+        manifest_path=executable.parent/'release-manifest.json'
+        release_manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
         assert release_manifest['version']==__version__
         assert release_manifest['executable_sha256']==hashlib.sha256(executable.read_bytes()).hexdigest()
         for name,digest in release_manifest['sources'].items():
@@ -329,11 +356,12 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             'Basic Pitch identity does not match the release manifest'
         )
         is_core=release_manifest['build_profile']=='core'
+        verification_identity=build_verification_identity(
+            executable,manifest_path,release_manifest,verification_run_id
+        )
         checks.append(dict(check='release_manifest',source_files=len(release_manifest['sources']),
             worker_files=0 if worker is None else len(worker['worker_files']),
-            build_profile=release_manifest['build_profile'],
-            capabilities=declared, executable_sha256=release_manifest['executable_sha256'],
-            release_manifest_sha256=sha256(executable.parent/'release-manifest.json')))
+            **verification_identity))
         checks.append(dict(check='core_model',**core_model_identity))
         prior_path=executable.parent/'_internal/assets/pattern-prior.json'
         if declared['pattern_prior']:
@@ -371,14 +399,18 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             if guitar_probe is None:
                 raise ValueError('--guitar-only requires --guitar-probe')
             from scripts.verify_portable_guitar import check_guitar
+            first_specialist_check=len(checks)
             check_guitar(request,wait,start,stop,work,guitar_probe,checks)
+            bind_new_specialist_evidence(checks,first_specialist_check,verification_identity)
             print(json.dumps(dict(passed=True,scope='guitar_only',checks=checks),ensure_ascii=True),flush=True)
             return
         if instruments_only:
             if instrument_fixtures is None:
                 raise ValueError('--instruments-only requires --instrument-fixtures')
             from scripts.verify_portable_instruments import check_instruments
+            first_specialist_check=len(checks)
             check_instruments(request,wait,start,stop,work,instrument_fixtures,checks)
+            bind_new_specialist_evidence(checks,first_specialist_check,verification_identity)
             print(json.dumps(dict(passed=True,scope='instruments_only',checks=checks),ensure_ascii=True),flush=True)
             return
         state=request('/api/import',upload=('files',source.name,source.read_bytes()));pid=state['id'];base='/api/projects/'+pid
@@ -491,10 +523,14 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
                 seconds=warmed['analysis']['elapsed_seconds']))
         if instrument_fixtures is not None:
             from scripts.verify_portable_instruments import check_instruments
+            first_specialist_check=len(checks)
             check_instruments(request,wait,start,stop,work,instrument_fixtures,checks)
+            bind_new_specialist_evidence(checks,first_specialist_check,verification_identity)
         if guitar_probe is not None:
             from scripts.verify_portable_guitar import check_guitar
+            first_specialist_check=len(checks)
             check_guitar(request,wait,start,stop,work,guitar_probe,checks)
+            bind_new_specialist_evidence(checks,first_specialist_check,verification_identity)
         # Cancel a fresh separation, then confirm the same server remains usable.
         second=request('/api/import',upload=('files','取消测试.wav',source.read_bytes()+b'\x00\x00'))
         second_base='/api/projects/'+second['id'];job=request(second_base+'/analyze',dict(engine='deep',settings={}))

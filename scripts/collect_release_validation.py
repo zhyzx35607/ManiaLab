@@ -24,6 +24,189 @@ def sha256(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def _is_sha256(value):
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def _is_verification_run_id(value):
+    return (
+        isinstance(value, str)
+        and len(value) == 32
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def _require_specialist_verification_identity(portable, expected_identity, declared_capabilities):
+    specialist_checks = {
+        "guitar_real_audio_http",
+        "guitar_cold_cancel",
+        "instrument_portable_real_audio",
+    }
+    required_checks = set()
+    if declared_capabilities["guitar"]:
+        required_checks.update({"guitar_real_audio_http", "guitar_cold_cancel"})
+    if declared_capabilities["instruments"]:
+        required_checks.add("instrument_portable_real_audio")
+
+    for item in portable:
+        if not isinstance(item, dict) or item.get("check") not in specialist_checks:
+            continue
+        if item["check"] not in required_checks:
+            raise SystemExit(
+                "Portable specialist evidence is present without the declared profile capability."
+            )
+        if not _is_verification_run_id(item.get("verification_run_id")):
+            raise SystemExit("Portable specialist evidence has an invalid verification_run_id.")
+        if any(item.get(field) != value for field, value in expected_identity.items()):
+            raise SystemExit(
+                "Portable specialist evidence identity differs from this verification run; "
+                "rerun EXE verification."
+            )
+
+
+def _is_guitar_model_identity(value):
+    if not isinstance(value, dict):
+        return False
+    try:
+        expected = json.loads((ROOT / "assets/guitar-model.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return value == expected
+
+
+def _is_instrument_worker_identity(value):
+    if not isinstance(value, dict):
+        return False
+    from manialab.instrument_bundle import (
+        MODELS, MODEL_REVISION, SOURCE_COMMIT, runtime_identity, source_manifest,
+    )
+
+    models = value.get("models")
+    worker_files = value.get("worker_files")
+    verified_models = value.get("verified_models")
+    voices = value.get("voices")
+    return (
+        value.get("source_commit") == SOURCE_COMMIT
+        and value.get("model_revision") == MODEL_REVISION
+        and value.get("license") == "MIT"
+        and _is_sha256(value.get("license_sha256"))
+        and value.get("source_files") == source_manifest()["source_files"]
+        and models == MODELS
+        and isinstance(voices, list)
+        and len(voices) == 2
+        and all(isinstance(voice, str) for voice in voices)
+        and set(voices) == {"bass", "other"}
+        and value.get("prepared_only") is False
+        and value.get("portable_runtime_verified") is True
+        and value.get("worker_sources") == runtime_identity(ROOT)
+        and _is_sha256(value.get("worker_sha256"))
+        and isinstance(worker_files, dict)
+        and bool(worker_files)
+        and all(
+            isinstance(name, str)
+            and name
+            and isinstance(record, dict)
+            and type(record.get("bytes")) is int
+            and record["bytes"] >= 0
+            and _is_sha256(record.get("sha256"))
+            for name, record in worker_files.items()
+        )
+        and worker_files.get("ManiaLabInstrument.exe", {}).get("sha256") == value["worker_sha256"]
+        and isinstance(verified_models, list)
+        and len(verified_models) == len(MODELS)
+        and all(isinstance(model, str) for model in verified_models)
+        and set(verified_models) == set(MODELS)
+        and _is_sha256(value.get("verification_sha256"))
+    )
+
+
+def _require_specialist_components(manifest, declared_capabilities):
+    guitar_model = manifest.get("guitar_model")
+    if declared_capabilities["guitar"]:
+        if not _is_guitar_model_identity(guitar_model):
+            raise SystemExit("Portable manifest has a missing or invalid guitar_model identity.")
+    elif "guitar_model" not in manifest or guitar_model is not None:
+        raise SystemExit("Portable manifest must declare guitar_model=null without guitar capability.")
+
+    instrument_worker = manifest.get("instrument_worker")
+    if declared_capabilities["instruments"]:
+        if not _is_instrument_worker_identity(instrument_worker):
+            raise SystemExit("Portable manifest has a missing or invalid instrument_worker identity.")
+    elif "instrument_worker" not in manifest or instrument_worker is not None:
+        raise SystemExit(
+            "Portable manifest must declare instrument_worker=null without instruments capability."
+        )
+
+
+def _require_mode_results(check, expected_modes, required_flags):
+    modes = check.get("modes")
+    if not isinstance(modes, list):
+        return False
+    flags = [mode.get("allow_predicted_releases") for mode in modes if isinstance(mode, dict)]
+    return (
+        len(flags) == len(modes) == len(expected_modes)
+        and all(type(flag) is bool for flag in flags)
+        and set(flags) == expected_modes
+        and all(
+            mode.get(name) is True
+            for mode in modes
+            for name in required_flags
+        )
+    )
+
+
+def _require_guitar_evidence(portable):
+    expected = {
+        "guitar-00_BN1-129-Eb_comp": {False, True},
+        "sakura-nova-guitar": {False},
+        "youdiantian-htdemucs6-guitar": {False},
+    }
+    checks = [item for item in portable if isinstance(item, dict)
+        and item.get("check") == "guitar_real_audio_http"]
+    if any(not isinstance(item.get("case"), str) for item in checks):
+        raise SystemExit("Portable verification has an invalid guitar real-audio case selector.")
+    by_case = {item.get("case"): item for item in checks}
+    if len(checks) != len(expected) or set(by_case) != set(expected):
+        raise SystemExit("Portable verification is missing required guitar real-audio cases.")
+    for case, modes in expected.items():
+        result = by_case[case]
+        if not _is_sha256(result.get("fixture_pcm_sha256")) or not _require_mode_results(
+            result, modes, ("source_pcm_equal", "raw_trace_equal", "cache_reused_after_restart")
+        ):
+            raise SystemExit(f"Guitar real-audio evidence is incomplete for case {case}.")
+
+    cancels = [item for item in portable if isinstance(item, dict)
+        and item.get("check") == "guitar_cold_cancel"]
+    if len(cancels) != 1 or cancels[0].get("partial_analysis_saved") is not False \
+            or cancels[0].get("service_alive") is not True:
+        raise SystemExit("Portable verification is missing the guitar cold-cancel check.")
+
+
+def _require_instrument_evidence(portable):
+    expected = {"bass": "bass_v2", "other": "other_v1_5"}
+    checks = [item for item in portable if isinstance(item, dict)
+        and item.get("check") == "instrument_portable_real_audio"]
+    if any(not isinstance(item.get("voice"), str) for item in checks):
+        raise SystemExit("Portable verification has an invalid instrument real-audio voice selector.")
+    by_voice = {item.get("voice"): item for item in checks}
+    if len(checks) != len(expected) or set(by_voice) != set(expected):
+        raise SystemExit("Portable verification is missing required instrument real-audio voices.")
+    for voice, model in expected.items():
+        result = by_voice[voice]
+        if (
+            result.get("model") != model
+            or not _is_sha256(result.get("fixture_sha256"))
+            or not _require_mode_results(
+                result, {False, True}, ("cache_reused_after_restart", "source_preserved")
+            )
+        ):
+            raise SystemExit(f"Instrument real-audio evidence is incomplete for voice {voice}.")
+
+
 def collect(build_root, pytest_report, portable_report, shutdown_report, *, pytest_evidence=None):
     build_root = Path(build_root).resolve()
     package_dir = build_root / "release"
@@ -39,6 +222,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         raise SystemExit(f"Portable manifest has an unknown build profile: {profile!r}") from exc
     if manifest.get("capabilities") != declared_capabilities:
         raise SystemExit("Portable capabilities do not match the declared build profile.")
+    _require_specialist_components(manifest, declared_capabilities)
     stem = archive_stem(__version__, profile)
     archive_path = package_dir / f"{stem}.zip"
     output = package_dir / f"{stem}-validation.json"
@@ -125,6 +309,10 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
             "six_stem_analysis_export",
             "cancel_and_failure",
         })
+    if declared_capabilities["guitar"]:
+        required_checks.update({"guitar_real_audio_http", "guitar_cold_cancel"})
+    if declared_capabilities["instruments"]:
+        required_checks.add("instrument_portable_real_audio")
     if not isinstance(portable, list):
         raise SystemExit("Portable verification report has an unexpected format.")
     portable_checks = [item.get("check") for item in portable if isinstance(item, dict)]
@@ -139,6 +327,17 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
     expected_identity['release_manifest_sha256'] = sha256(manifest_path)
     if any(portable_identities[0].get(field) != value for field, value in expected_identity.items()):
         raise SystemExit('Portable verification identity differs from this build; rerun EXE verification.')
+    verification_run_id = portable_identities[0].get('verification_run_id')
+    if not _is_verification_run_id(verification_run_id):
+        raise SystemExit('Portable verification identity has an invalid verification_run_id.')
+    expected_specialist_identity = dict(expected_identity, verification_run_id=verification_run_id)
+    _require_specialist_verification_identity(
+        portable, expected_specialist_identity, declared_capabilities
+    )
+    if declared_capabilities["guitar"]:
+        _require_guitar_evidence(portable)
+    if declared_capabilities["instruments"]:
+        _require_instrument_evidence(portable)
     piano_model = manifest.get("piano_model")
     if profile == "core":
         if any(manifest.get(key) is not None for key in (

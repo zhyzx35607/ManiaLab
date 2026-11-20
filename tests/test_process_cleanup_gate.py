@@ -183,6 +183,52 @@ def test_mapper_descendant_failure_blocks_tasks_after_root_has_exited(task_store
     assert service.shutdown() is False
 
 
+@pytest.mark.skipif(os.name != 'nt', reason='Windows descendant cleanup')
+def test_mapper_enumeration_failure_blocks_tasks_after_root_has_exited(task_store, monkeypatch):
+    from manialab import upstream
+
+    _, service, pid = task_store
+    child_calls = []
+
+    class ApiCall:
+        def __init__(self, callback):
+            self.callback = callback
+
+        def __call__(self, *args):
+            return self.callback(*args)
+
+    class Kernel:
+        OpenProcess = ApiCall(lambda *args: 42)
+        TerminateProcess = ApiCall(lambda *args: child_calls.append(args) or True)
+        WaitForSingleObject = ApiCall(lambda *args: 0)
+        CloseHandle = ApiCall(lambda *args: True)
+
+    class FinishedParent:
+        pid = 123
+
+        def poll(self):
+            return 0
+
+    enumeration_calls = []
+
+    def enumerate_descendants(root_pid):
+        enumeration_calls.append(root_pid)
+        if len(enumeration_calls) == 1:
+            raise OSError('synthetic process snapshot failure')
+        return [456]
+
+    monkeypatch.setattr(upstream.ctypes, 'WinDLL', lambda *args, **kwargs: Kernel())
+    monkeypatch.setattr(upstream.MapperEngine, '_windows_descendants', enumerate_descendants)
+    job = service.submit(pid, lambda state, progress, cancelled:
+        upstream.MapperEngine.stop_process(FinishedParent(), cancelled))
+    assert _finished(service, job['id'])['status'] == 'error'
+    assert enumeration_calls == [123, 123]
+    assert child_calls == [(42, 1)]
+    assert service._shutdown_cancellation.process_cleanup_failed
+    _assert_next_task_blocked(service, pid)
+    assert service.shutdown() is False
+
+
 def test_process_gate_rejects_stem_upload_before_allocating_resources(tmp_path):
     app = create_app(ROOT, tmp_path / 'data')
     client = app.test_client()

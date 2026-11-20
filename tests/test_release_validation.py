@@ -34,6 +34,30 @@ def write_pytest_evidence(path, junit_report):
     path.write_text(json.dumps(evidence), encoding="utf-8")
     return path, evidence
 
+
+def make_instrument_worker_identity():
+    from manialab.instrument_bundle import (
+        MODELS, MODEL_REVISION, SOURCE_COMMIT, runtime_identity, source_manifest,
+    )
+
+    return {
+        "source_commit": SOURCE_COMMIT,
+        "model_revision": MODEL_REVISION,
+        "source_files": source_manifest()["source_files"],
+        "models": MODELS,
+        "license": "MIT",
+        "license_sha256": "f" * 64,
+        "voices": ["bass", "other"],
+        "prepared_only": False,
+        "portable_runtime_verified": True,
+        "worker_sources": runtime_identity(ROOT),
+        "worker_sha256": "2" * 64,
+        "worker_files": {"ManiaLabInstrument.exe": {"bytes": 1, "sha256": "2" * 64}},
+        "verified_models": ["bass_v2", "other_v1_5"],
+        "verification_sha256": "4" * 64,
+    }
+
+
 def make_release_fixture(root, profile='standard'):
     build_root = root / "build"
     executable = build_root / "dist" / "ManiaLab" / "ManiaLab.exe"
@@ -52,8 +76,9 @@ def make_release_fixture(root, profile='standard'):
         "worker_sha256": "expected-worker-sha" if profile != 'core' else None,
         "worker_sources": {} if profile != 'core' else None,
         "worker_files": [] if profile != 'core' else None,
-        "guitar_model": None,
-        "instrument_worker": None,
+        "guitar_model": json.loads((ROOT / 'assets/guitar-model.json').read_text(encoding='utf-8'))
+            if profile == 'extended' else None,
+        "instrument_worker": make_instrument_worker_identity() if profile == 'extended' else None,
     }
     (executable.parent / "release-manifest.json").write_text(
         json.dumps(manifest), encoding="utf-8"
@@ -80,12 +105,16 @@ def make_release_fixture(root, profile='standard'):
         reports / (pytest_report.name + ".provenance.json"), pytest_report
     )
     portable_report = reports / "portable.json"
+    verification_identity = {
+        "build_profile": profile,
+        "capabilities": manifest["capabilities"],
+        "executable_sha256": manifest["executable_sha256"],
+        "release_manifest_sha256": hashlib.sha256(
+            (executable.parent / "release-manifest.json").read_bytes()).hexdigest(),
+        "verification_run_id": "c" * 32,
+    }
     portable_checks = [
-        {"check": "release_manifest", "build_profile": profile,
-         "capabilities": manifest["capabilities"],
-         "executable_sha256": manifest["executable_sha256"],
-         "release_manifest_sha256": hashlib.sha256(
-             (executable.parent / "release-manifest.json").read_bytes()).hexdigest()},
+        {"check": "release_manifest", **verification_identity},
         {"check": "startup"},
         {"check": "restart"},
     ]
@@ -107,6 +136,50 @@ def make_release_fixture(root, profile='standard'):
             {"check": "six_stem_analysis_export"},
             {"check": "cancel_and_failure"},
         ]
+    if profile == 'extended':
+        guitar_cases = (
+            ('guitar-00_BN1-129-Eb_comp', (False, True)),
+            ('sakura-nova-guitar', (False,)),
+            ('youdiantian-htdemucs6-guitar', (False,)),
+        )
+        for case, modes in guitar_cases:
+            portable_checks.append({
+                "check": "guitar_real_audio_http",
+                **verification_identity,
+                "case": case,
+                "fixture_pcm_sha256": "a" * 64,
+                "modes": [
+                    {
+                        "allow_predicted_releases": allow,
+                        "source_pcm_equal": True,
+                        "raw_trace_equal": True,
+                        "cache_reused_after_restart": True,
+                    }
+                    for allow in modes
+                ],
+            })
+        portable_checks.append({
+            "check": "guitar_cold_cancel",
+            **verification_identity,
+            "partial_analysis_saved": False,
+            "service_alive": True,
+        })
+        for voice, model in (("bass", "bass_v2"), ("other", "other_v1_5")):
+            portable_checks.append({
+                "check": "instrument_portable_real_audio",
+                **verification_identity,
+                "voice": voice,
+                "model": model,
+                "fixture_sha256": "b" * 64,
+                "modes": [
+                    {
+                        "allow_predicted_releases": allow,
+                        "cache_reused_after_restart": True,
+                        "source_preserved": True,
+                    }
+                    for allow in (False, True)
+                ],
+            })
     portable_report.write_text(json.dumps(portable_checks), encoding="utf-8")
     shutdown_report = reports / "shutdown.json"
     shutdown = {
@@ -213,6 +286,373 @@ def test_collect_core_validation_rejects_changed_basic_pitch_bytes(tmp_path):
                 bundle.write(asset, 'ManiaLab/_internal/assets/' + name)
 
     with pytest.raises(SystemExit, match='Basic Pitch model checksum'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_extended_validation_requires_specialist_runtime_evidence(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    report, _, _ = collect(
+        build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence,
+    )
+    assert report['build_profile'] == 'extended'
+    assert report['capabilities']['guitar'] is True
+    assert report['capabilities']['instruments'] is True
+    manifest = json.loads((build_root / 'dist' / 'ManiaLab' / 'release-manifest.json').read_text(
+        encoding='utf-8'
+    ))
+    assert manifest['guitar_model']['filename'] == 'guitar-fl.onnx'
+    assert manifest['instrument_worker']['portable_runtime_verified'] is True
+
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    checks = [item for item in checks if item.get('case') != 'sakura-nova-guitar']
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+    with pytest.raises(SystemExit, match='guitar real-audio cases'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+SPECIALIST_REPORT_ROWS = (
+    ('guitar_real_audio_http', 'case', 'sakura-nova-guitar'),
+    ('guitar_cold_cancel', None, None),
+    ('instrument_portable_real_audio', 'voice', 'other'),
+)
+VERIFICATION_IDENTITY_FIELDS = (
+    'build_profile', 'capabilities', 'executable_sha256',
+    'release_manifest_sha256', 'verification_run_id',
+)
+
+
+def _portable_row(checks, check_name, selector_field, selector_value):
+    return next(item for item in checks if item.get('check') == check_name
+        and (selector_field is None or item.get(selector_field) == selector_value))
+
+
+@pytest.mark.parametrize(('check_name', 'selector_field', 'selector_value'), SPECIALIST_REPORT_ROWS)
+@pytest.mark.parametrize('field', VERIFICATION_IDENTITY_FIELDS)
+def test_collect_extended_validation_rejects_missing_specialist_identity_fields(
+    tmp_path, check_name, selector_field, selector_value, field
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    record = _portable_row(checks, check_name, selector_field, selector_value)
+    del record[field]
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='identity|verification_run_id'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(('check_name', 'selector_field', 'selector_value'), SPECIALIST_REPORT_ROWS)
+@pytest.mark.parametrize('field', VERIFICATION_IDENTITY_FIELDS)
+def test_collect_extended_validation_rejects_mismatched_specialist_identity_fields(
+    tmp_path, check_name, selector_field, selector_value, field
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    record = _portable_row(checks, check_name, selector_field, selector_value)
+    mismatches = {
+        'build_profile': 'standard',
+        'capabilities': capabilities('standard'),
+        'executable_sha256': 'a' * 64,
+        'release_manifest_sha256': 'b' * 64,
+        'verification_run_id': 'd' * 32,
+    }
+    record[field] = mismatches[field]
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='identity|verification_run_id'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_extended_validation_rejects_current_manifest_with_stale_specialist_row(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    current_manifest = _portable_row(checks, 'release_manifest', None, None)
+    stale_row = _portable_row(checks, 'guitar_real_audio_http', 'case', 'sakura-nova-guitar')
+    assert current_manifest['verification_run_id'] == 'c' * 32
+    stale_row['verification_run_id'] = 'd' * 32
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='specialist evidence identity differs'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize('run_id', ('invalid-run-id', 'C' * 32))
+def test_collect_extended_validation_rejects_invalid_manifest_verification_run_id(tmp_path, run_id):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    manifest_row = _portable_row(checks, 'release_manifest', None, None)
+    manifest_row['verification_run_id'] = run_id
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='invalid verification_run_id'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_extended_validation_rejects_missing_instrument_voice(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    checks = [item for item in checks if item.get('voice') != 'other']
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='instrument real-audio voices'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(
+    ('field', 'identity', 'message'),
+    [
+        ('guitar_model', None, 'guitar_model identity'),
+        ('guitar_model', {}, 'guitar_model identity'),
+        ('guitar_model', {'filename': 'guitar-fl.onnx', 'sha256': 'invalid'}, 'guitar_model identity'),
+        ('instrument_worker', None, 'instrument_worker identity'),
+        ('instrument_worker', {}, 'instrument_worker identity'),
+        ('instrument_worker', {'worker_sha256': 'invalid'}, 'instrument_worker identity'),
+    ],
+)
+def test_collect_extended_validation_rejects_missing_or_invalid_specialist_identity(
+    tmp_path, field, identity, message
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    manifest_path = build_root / 'dist' / 'ManiaLab' / 'release-manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    manifest[field] = identity
+    manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match=message):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize('field', ('guitar_model', 'instrument_worker'))
+def test_collect_extended_validation_rejects_absent_specialist_identity_field(tmp_path, field):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    manifest_path = build_root / 'dist' / 'ManiaLab' / 'release-manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    del manifest[field]
+    manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='identity'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize('field', ('guitar_model', 'instrument_worker'))
+def test_collect_profile_without_specialist_capability_rejects_component_identity(tmp_path, field):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    manifest_path = build_root / 'dist' / 'ManiaLab' / 'release-manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    manifest[field] = json.loads((ROOT / 'assets/guitar-model.json').read_text(encoding='utf-8')) \
+        if field == 'guitar_model' else make_instrument_worker_identity()
+    manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='without .* capability'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(
+    ('check_name', 'identity_field', 'identity_value', 'message'),
+    [
+        ('guitar_real_audio_http', 'case', 'guitar-00_BN1-129-Eb_comp', 'guitar real-audio cases'),
+        ('instrument_portable_real_audio', 'voice', 'bass', 'instrument real-audio voices'),
+    ],
+)
+def test_collect_extended_validation_rejects_duplicate_specialist_records(
+    tmp_path, check_name, identity_field, identity_value, message
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    record = next(item for item in checks if item.get('check') == check_name
+        and item.get(identity_field) == identity_value)
+    checks.append(record.copy())
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match=message):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(
+    ('check_name', 'selector_field', 'selector_value', 'invalid_selector', 'message'),
+    [
+        ('guitar_real_audio_http', 'case', 'sakura-nova-guitar', [], 'invalid guitar real-audio case'),
+        ('guitar_real_audio_http', 'case', 'sakura-nova-guitar', {}, 'invalid guitar real-audio case'),
+        ('instrument_portable_real_audio', 'voice', 'bass', [], 'invalid instrument real-audio voice'),
+        ('instrument_portable_real_audio', 'voice', 'bass', {}, 'invalid instrument real-audio voice'),
+    ],
+)
+def test_collect_extended_validation_rejects_unhashable_specialist_selectors(
+    tmp_path, check_name, selector_field, selector_value, invalid_selector, message
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    record = next(item for item in checks if item.get('check') == check_name
+        and item.get(selector_field) == selector_value)
+    record[selector_field] = invalid_selector
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match=message):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize('mode_flags', ([False], [False, False], [False, 'true']))
+def test_collect_extended_validation_rejects_incomplete_or_invalid_modes(tmp_path, mode_flags):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    record = next(item for item in checks if item.get('check') == 'instrument_portable_real_audio'
+        and item.get('voice') == 'bass')
+    template = record['modes'][0]
+    record['modes'] = [dict(template, allow_predicted_releases=flag) for flag in mode_flags]
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='Instrument real-audio evidence is incomplete for voice bass'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(
+    ('check_name', 'identity_field', 'identity_value', 'flag', 'message'),
+    [
+        ('guitar_real_audio_http', 'case', 'guitar-00_BN1-129-Eb_comp', 'source_pcm_equal',
+            'Guitar real-audio evidence is incomplete'),
+        ('guitar_real_audio_http', 'case', 'guitar-00_BN1-129-Eb_comp', 'raw_trace_equal',
+            'Guitar real-audio evidence is incomplete'),
+        ('guitar_real_audio_http', 'case', 'guitar-00_BN1-129-Eb_comp', 'cache_reused_after_restart',
+            'Guitar real-audio evidence is incomplete'),
+        ('instrument_portable_real_audio', 'voice', 'bass', 'cache_reused_after_restart',
+            'Instrument real-audio evidence is incomplete'),
+        ('instrument_portable_real_audio', 'voice', 'bass', 'source_preserved',
+            'Instrument real-audio evidence is incomplete'),
+    ],
+)
+def test_collect_extended_validation_rejects_failed_specialist_flags(
+    tmp_path, check_name, identity_field, identity_value, flag, message
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    record = next(item for item in checks if item.get('check') == check_name
+        and item.get(identity_field) == identity_value)
+    record['modes'][0][flag] = False
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match=message):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(('field', 'value'), [
+    ('partial_analysis_saved', True),
+    ('service_alive', False),
+])
+def test_collect_extended_validation_rejects_failed_guitar_cancel_check(tmp_path, field, value):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    cancel = next(item for item in checks if item.get('check') == 'guitar_cold_cancel')
+    cancel[field] = value
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='guitar cold-cancel check'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(
+    ('check_name', 'identity_field', 'identity_value', 'hash_field'),
+    [
+        ('guitar_real_audio_http', 'case', 'guitar-00_BN1-129-Eb_comp', 'fixture_pcm_sha256'),
+        ('instrument_portable_real_audio', 'voice', 'bass', 'fixture_sha256'),
+    ],
+)
+def test_collect_extended_validation_rejects_invalid_fixture_sha256(
+    tmp_path, check_name, identity_field, identity_value, hash_field
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='extended'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    record = next(item for item in checks if item.get('check') == check_name
+        and item.get(identity_field) == identity_value)
+    record[hash_field] = 'not-a-sha256'
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='evidence is incomplete'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize('profile', ('core', 'standard'))
+def test_collect_profiles_without_specialist_capabilities_do_not_require_specialist_evidence(
+    tmp_path, profile
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile=profile
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    assert not any(item.get('check') in {
+        'guitar_real_audio_http', 'guitar_cold_cancel', 'instrument_portable_real_audio'
+    } for item in checks)
+
+    report, _, _ = collect(build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence)
+    assert report['build_profile'] == profile
+
+
+@pytest.mark.parametrize(('profile', 'check_name'), [
+    ('core', 'guitar_real_audio_http'),
+    ('core', 'guitar_cold_cancel'),
+    ('core', 'instrument_portable_real_audio'),
+    ('standard', 'guitar_real_audio_http'),
+    ('standard', 'guitar_cold_cancel'),
+    ('standard', 'instrument_portable_real_audio'),
+])
+def test_collect_profiles_without_specialist_capabilities_reject_specialist_rows(
+        tmp_path, profile, check_name
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile=profile
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    checks.append({'check': check_name})
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='without the declared profile capability'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence)
 

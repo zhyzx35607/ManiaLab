@@ -1,11 +1,12 @@
 # 续接进度
 
-更新：2026-11-19，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
+更新：2026-11-20，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
 ## 当前状态（先读）
 
-- 2026-11-19当前整合：PR #196/#197/#198均已合并至main，合并提交分别为`256ecf8`、`75179ae`、`bee69ca`；对应PR/main Windows runs `44544668731/44546117834`、`44547867366/44549577592`、`44549463878/44552057267`均成功。PR #198 main回归为Python/API `2857 passed, 89 skipped`、Edge `62 passed`；Core步骤按触发条件跳过，已另按冻结main执行一次本机Core证据链。Core run `core-evidence-20261119-bee69cad232a-20261119T232220475-32408`的全量pytest为`2856 passed, 90 skipped`、Edge `62 passed`；Core build、portable EXE、Basic Pitch合成分析、6K–10K导出、Unicode重启/坏音频恢复、worker-free shutdown及collector都通过。原PowerShell 5.1 runner在末尾把portable根数组保留为嵌套数组，错误报EXE身份不匹配；复核确认实际EXE、manifest、portable、shutdown摘要一致后，用同一报告/产物修正数组解包并完成所有最终断言，没有重建或重跑EXE。完整记录见第九十一阶段。真实音乐质量、非Core profile与权重许可仍开放；并发仍受工具上限主agent+3个子代理约束。
+- 2026-11-20当前整合：PR #196/#197/#198均已合并至main，合并提交分别为`256ecf8`、`75179ae`、`bee69ca`；对应PR/main Windows runs `44544668731/44546117834`、`44547867366/44549577592`、`44549463878/44552057267`均成功。PR #198 main回归为Python/API `2857 passed, 89 skipped`、Edge `62 passed`；Core步骤按触发条件跳过，已另按冻结main执行一次本机Core证据链。Core run `core-evidence-20261119-bee69cad232a-20261119T232220475-32408`的全量pytest为`2856 passed, 90 skipped`、Edge `62 passed`；Core build、portable EXE、Basic Pitch合成分析、6K–10K导出、Unicode重启/坏音频恢复、worker-free shutdown及collector都通过。原PowerShell 5.1 runner在末尾把portable根数组保留为嵌套数组，错误报EXE身份不匹配；复核确认实际EXE、manifest、portable、shutdown摘要一致后，用同一报告/产物修正数组解包并完成所有最终断言，没有重建或重跑EXE。PR #199已合并为`e4415e3`且main run `44588267476`成功；COV-04随PR #200合并为`25fb40a`，PR Windows run `44588614212`与main Windows run `44646025472`均成功，本地COV-04定向组`54 passed`。阶段92增加真实regional generation来源回环、保存失败回滚与重试，以及发布专项证据身份绑定；完整聚焦组`122 passed`，另通过`compileall`和`git diff --check`。这些是合成工程验证，不代表真人音乐验收、non-Core构建或权重许可完成；阶段92 PR/main检查待运行。完整Core记录见第九十一阶段。
+- extended collector按capability强制吉他与Tsumugi专项证据，并将报告行绑定到本次EXE、manifest和`verification_run_id`；没有该profile capability时会拒绝夹带专项检查行。负例门禁不表示extended已构建或运行。Windows workflow仍固定验证`core`，没有准备hosted specialist fixtures或向完整`verify_portable.py`传入`--guitar-probe`和`--instrument-fixtures`；ENG-05保持开放。
 
 - 2026-11-19历史续接记录：第八十一阶段候选声轨试听来源修复由PR #188合并为0e1b7d687fbf503339c0b7175fca57ad9324d5d8；PR/main Windows runs 44525372079、44526302353均成功，Python/API 2751 passed, 89 skipped、浏览器44 passed。ENG-12已闭合；阶段88–91的后续工程验证见本文件末尾。整体音乐验收仍未完成：真人钢琴盲听、6–10K/LN试打、两首独立歌曲听审及非Core发布profile/权重许可保持开放。
 - 2026-11-19历史续接：PR #186 已合并为`06e1d1d34df9e920742bd5f0a33c6bfa97b94cce`；合并后 main run `44500510492`成功，Python/API `2743 passed, 89 skipped`，Edge `38 passed`，Core便携与模型步骤按触发条件跳过。第七十九阶段生命周期跨路径审查未发现产品状态破坏；两处失败路径补测已进入 main，阶段1工程审查收口。第八十阶段的手动参考 Offset/波形对齐 ties-to-even 修复随后由PR #187及main run `44508222088`验证；自动估计保留与服务端默认一致的 half-up 规则。
@@ -2306,12 +2307,21 @@ MuScriptor审计v1–v3假设问题与修订回执保留，最终v4通过；4个
 - PR #194已合并为`aba2d44b80219c1737247239859e528b02fcf7d1`；PR run `44538891542`成功：Python/API `2792 passed, 89 skipped`、浏览器`52 passed`，Core便携与模型步骤按条件跳过。main run `44539773445`待核验；日志在ignored `build/process-gate-05e6d18/pr-194-windows.log`。
 - PR #194合并后main run `44539773445`成功，同为Python/API `2792 passed, 89 skipped`、浏览器`52 passed`；ENG-15关闭，日志在ignored `build/process-gate-05e6d18/main-194-windows.log`。
 
+## 2026-11-20 第九十二阶段：局部生成事务与发布证据身份链
+
+- 阶段2只读审查未发现已复现的生产错配；发现真实regional generation、连续编辑、JSON/OSU/OSZ及重开后来源身份验证目前分散在测试中。现有跨路径测试曾手工给父候选添加region字段，没有走真实regional生成入口。
+- 在`tests/test_candidate_source_export.py`新增合成API集成：通过真实异步`POST /generate`生成父候选和regional child，核对`source_evidence`、selection决策及分离身份；随后编辑区域音符，验证JSON/OSU/OSZ导出、切回父候选和regional child，以及重开后的输出与来源身份。
+- `tests/test_task_lifecycle_flow.py`新增regional child最终状态保存失败故障注入：任务返回error且不泄露result，原父候选和来源快照不变、worker恢复空闲；恢复保存后重试成功并提交child。
+- `scripts/verify_portable.py`为每次运行生成`verification_run_id`，仅绑定本次调用新增的吉他/乐器专项行；`scripts/collect_release_validation.py`按profile capability校验组件身份、专项检查完整性及其与本次EXE/manifest/run ID的一致性，拒绝旧运行行拼接。
+- 复审发现core/standard报告可夹带未绑定的extended专项检查行并进入通过摘要；collector现拒绝profile capability之外的吉他、取消及乐器专项行，六种core/standard组合均有负例测试。
+- 本轮聚焦命令`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_candidate_source_export.py tests/test_task_lifecycle_flow.py tests/test_release_validation.py tests/test_verify_portable_core.py tests/test_process_cleanup_gate.py tests/test_upstream.py tests/test_regional_selection_report.py -k 'not real_model'`为`122 passed`（73.17秒）；`.venv\Scripts\python.exe -m compileall -q manialab scripts`及`git diff --check`通过。所有音频均为合成输入，未运行模型、EXE或研究脚本，也未读取用户素材。PR/main尚未验证；本阶段是覆盖与发布门禁增强，不是音乐质量结论。
+
 ## 2026-11-19 第八十七阶段：便携验证请求与构建来源闭包
 
 - 真实合成API复现`verify_portable.py`非Core六声部检查仍使用缺少source_identity的声轨/波形请求，guitar/piano四条均400；Core不走此循环。现提取小helper，按当前采音`context=evidence`及身份请求，即使选中候选A、当前分析B，也核对B的实际声轨字节与波形峰值；身份缺失时在发送请求前拒绝。
 - 受控源树复现实际打包/运行依赖的vendored `event.py`、`template.osu`变化不进入旧指纹。source_snapshot现在覆盖vendor Python包闭包、模板、构建recipe，以及启用原模型安装器时的源码ZIP/requirements；排除后复制的uv二进制，Core不增加未包含组件要求。该修复只约束以后新构建，不为历史dev.18包补签源闭包。
 - 新增`tests/test_portable_capability_audit.py`9项；已运行`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_portable_capability_audit.py tests/test_verify_portable_core.py tests/test_build_provenance.py`为15 passed（2.04秒，PYTHONUTF8=1、OMP/MKL/OPENBLAS=2）。相关`compileall`、`git diff --check`通过，主agent只读复核未发现阻断项。测试只执行提取的纯source_snapshot函数与真实Flask合成API，不启动builder入口。
-- 本阶段没有构建、下载、运行EXE/模型或读取用户素材。真实nonCore包的离线/Unicode/专用模型/关停仍未验证，extended专用fixture也未由公共collector强制覆盖；ENG-05/06保持开放。PR/main待验证，Core真实集成在后续修复合齐后统一执行。
+- 本阶段没有构建、下载、运行EXE/模型或读取用户素材。真实nonCore包的离线/Unicode/专用模型/关停仍未验证；当时collector也尚未强制extended专用fixture覆盖。后续阶段92补上对应源码门禁，ENG-05/06仍开放，历史dev.18包不因此补验。
 - PR #195已合并为`ed16855bfb0b911dab5d97874f72719d79a2d31e`；PR run `44540158809`成功，Python/API `2801 passed, 89 skipped`、浏览器`52 passed`，Core便携与模型步骤按条件跳过。main run `44541152663`待核验；日志在ignored `build/portable-source-d7ddc19/pr-195-windows.log`。
 
 ## 2026-11-19 第八十八阶段：发布运行报告绑定清单摘要

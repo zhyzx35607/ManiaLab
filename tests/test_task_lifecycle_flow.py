@@ -1,4 +1,5 @@
 """Cross-route task failures use synthetic WAVs and deterministic barriers."""
+from copy import deepcopy
 import io
 from pathlib import Path
 import threading
@@ -7,8 +8,11 @@ import numpy as np
 import pytest
 from scipy.io import wavfile
 
+from manialab.arrange import parameters
 from manialab.chart_workspace import audio_work
+from manialab.domain import Note
 from manialab.server import create_app
+from manialab.stems import separation_identity
 from tests.test_server import wait_job
 
 
@@ -131,3 +135,88 @@ def test_queued_stem_import_cancel_does_not_decode_and_keeps_old_set(stem_projec
     monkeypatch.setattr(service.executor, 'submit', submit)
     monkeypatch.setattr(services, 'prepare_provided_stems', prepare)
     assert wait_job(client, upload(4410))['status'] == 'done'
+
+
+def test_regional_generation_save_failure_preserves_parent_and_releases_worker(
+        stem_project, monkeypatch):
+    app, client, headers, pid, *_ = stem_project
+    projects = app.extensions['projects']
+    service = app.extensions['task_service']
+    state = projects.load(pid)
+    separation = state['provided_stems']
+    reference = dict(identity=separation_identity(separation), separation=separation)
+    old_evidence = {
+        'locked': {
+            'detected': dict(start=500, end=750, voice='piano', pitch=60,
+                source='pitch', strength=1.0, release_reason='frame_decay'),
+            'expressed': dict(start=500, end=750, phrase=False,
+                release_reason='frame_decay', support=[], support_coverage=0.0),
+        },
+    }
+    settings = parameters(dict(ln_ratio=0, phrase_ln=0))
+    parent = dict(mode='audio', timing_revision=3, created=1.0, settings=settings,
+        bpm=120, offset=0, division=4, audio_shift_ms=0, meter=4,
+        notes=[Note(500, 750, 0, source='pitch', id='locked', voice='piano',
+            release_reason='frame_decay').data()],
+        report={}, selection={}, region=None, source_separation=reference,
+        source_evidence=old_evidence)
+    region = [1000, 2000]
+    state['analysis'] = dict(revision=3, duration=2,
+        candidates=[
+            Note(500, 875, id='locked', source='pitch', voice='piano',
+                release_reason='frame_decay').data(),
+            Note(1250, 1500, id='regional', source='pitch', voice='piano',
+                release_reason='frame_decay').data(),
+        ], phrase_candidates=[], separation=separation)
+    state['variants'] = [parent]
+    state['active'] = 0
+    projects.save(state)
+    before = projects.load(pid)
+    base = f'/api/projects/{pid}'
+    payload = dict(mode='audio', settings=settings, timing_confirmed=True,
+        bpm=120, offset=0, division=4, audio_shift_ms=0, region=region)
+    save = projects.save
+    failed_children = []
+
+    def fail_regional_commit(candidate_state):
+        variants = candidate_state.get('variants', [])
+        if (len(variants) == 2 and candidate_state.get('active') == 1
+                and variants[1].get('region') == region):
+            failed_children.append(deepcopy(variants[1]))
+            raise OSError('synthetic regional candidate commit failure')
+        return save(candidate_state)
+
+    monkeypatch.setattr(projects, 'save', fail_regional_commit)
+    response = client.post(base + '/generate', json=payload, headers=headers)
+    assert response.status_code == 200, response.json
+    failed = wait_job(client, response.json)
+
+    assert failed['status'] == 'error'
+    assert 'result' not in failed
+    assert len(failed_children) == 1
+    attempted = failed_children[0]
+    assert attempted['region'] == region
+    assert attempted['source_separation'] == reference
+    assert attempted['source_evidence']['locked'] == old_evidence['locked']
+    assert attempted['source_evidence']['regional']['detected']['start'] == 1250
+    after_failure = projects.load(pid)
+    assert after_failure == before
+    assert after_failure['variants'] == before['variants']
+    assert after_failure['active'] == before['active'] == 0
+    assert after_failure['variants'][0]['source_evidence'] == old_evidence
+    assert after_failure['variants'][0]['source_separation'] == reference
+    assert service._idle.is_set()
+
+    monkeypatch.setattr(projects, 'save', save)
+    recovered = wait_job(client, client.post(base + '/generate', json=payload,
+        headers=headers).json)
+    assert recovered['status'] == 'done'
+    committed = projects.load(pid)
+    assert committed['variants'][0] == before['variants'][0]
+    child = committed['variants'][committed['active']]
+    assert committed['active'] == 1 and len(committed['variants']) == 2
+    assert child['region'] == region
+    assert child['source_separation'] == reference
+    assert child['source_evidence']['locked'] == old_evidence['locked']
+    assert child['source_evidence']['regional']['detected']['start'] == 1250
+    assert service._idle.is_set()
