@@ -318,6 +318,31 @@ def test_uuid_collision_does_not_delete_an_existing_payload(runtime, monkeypatch
     assert not list(marker.parent.glob('current-*.tmp'))
 
 
+def test_replace_that_publishes_then_raises_keeps_new_cache(runtime, monkeypatch):
+    marker, old_target, _, _ = _seed_cache(runtime)
+    _force_cache_recompute(monkeypatch, old_target)
+    original_sha = guitar._sha
+    original_replace = Path.replace
+
+    def replace_then_raise(source, destination):
+        result = original_replace(source, destination)
+        if Path(destination) == marker:
+            raise KeyboardInterrupt('synthetic interruption after marker replace')
+        return result
+
+    monkeypatch.setattr(Path, 'replace', replace_then_raise)
+    with pytest.raises(KeyboardInterrupt, match='after marker replace'):
+        _analyze(runtime)
+
+    marker_data = json.loads(marker.read_text(encoding='utf-8'))
+    target = marker.parent / marker_data['file']
+    assert target.is_file()
+    assert marker_data['sha256'] == original_sha(target)
+
+    monkeypatch.setattr(guitar, '_sha', original_sha)
+    assert _analyze(runtime)[1]['cached']
+
+
 @pytest.mark.parametrize('cached', [False, True])
 def test_cancellation_in_final_progress_cannot_report_success(runtime, cached):
     if cached:

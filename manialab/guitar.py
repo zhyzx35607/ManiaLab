@@ -179,6 +179,8 @@ class GuitarDetector:
             target = folder / ('activations-' + uuid.uuid4().hex + '.npz')
             temporary = folder / ('current-' + uuid.uuid4().hex + '.tmp')
             created = []
+            marker_data = None
+            replace_started = False
             published = False
             try:
                 with target.open('xb') as stream:
@@ -190,9 +192,15 @@ class GuitarDetector:
                     stream.write(marker_data)
                 if cancelled():
                     raise InterruptedError('已取消吉他采音')
+                replace_started = True
                 temporary.replace(marker)
                 published = True
             except BaseException as error:
+                if not published and replace_started:
+                    try:
+                        published = marker.read_bytes() == marker_data.encode('utf-8')
+                    except OSError:
+                        published = not temporary.exists()
                 if not published:
                     cleanup_errors = []
                     for path in reversed(created):
