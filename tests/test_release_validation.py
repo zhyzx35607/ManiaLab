@@ -1246,6 +1246,60 @@ def test_collect_profiles_without_specialist_capabilities_do_not_require_special
     assert report['build_profile'] == profile
 
 
+def test_collect_standard_profile_rejects_core_only_check_without_identity(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    checks.append({'check': 'basic_analysis', 'engine': 'basic', 'candidates': 5, 'seconds': 1.0})
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='not applicable to the declared profile'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_core_profile_rejects_bundled_model_with_current_identity(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='core'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    manifest_identity = next(item for item in checks if item.get('check') == 'release_manifest')
+    current_identity = {
+        field: value for field, value in manifest_identity.items() if field != 'check'
+    }
+    checks.append({'check': 'bundled_model', 'sha256': 'a' * 64, **current_identity})
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='not applicable to the declared profile or capabilities'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
+def test_collect_standard_profile_rejects_stale_optional_check_identity(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = make_release_fixture(
+        tmp_path, profile='standard'
+    )
+    checks = json.loads(portable_report.read_text(encoding='utf-8'))
+    manifest_identity = next(item for item in checks if item.get('check') == 'release_manifest')
+    stale_identity = {
+        field: value for field, value in manifest_identity.items() if field != 'check'
+    }
+    stale_identity['verification_run_id'] = 'd' * 32
+    checks.append({
+        'check': 'local_recommendation',
+        'choice': 'recommendation-1',
+        'notes': 5,
+        'evidence_preserved': True,
+        **stale_identity,
+    })
+    portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='Portable check identity differs from this run: local_recommendation'):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence)
+
+
 @pytest.mark.parametrize(('profile', 'check_name'), [
     ('core', 'guitar_real_audio_http'),
     ('core', 'guitar_cold_cancel'),

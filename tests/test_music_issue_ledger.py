@@ -104,6 +104,11 @@ def test_valid_rows_summarize_and_lock_exact_bytes_without_review_content(tmp_pa
     receipt = json.loads(receipt_text)
     assert receipt["scores_sha256"] == hashlib.sha256(scores).hexdigest()
     assert receipt["evidence_scope"].startswith("CSV structure, declared fields")
+    assert "Hashes are user-declared" in receipt["evidence_scope"]
+    assert "source audio, charts, and exports are not read or compared" in receipt["evidence_scope"]
+    assert "accepted is a per-issue disposition" in receipt["evidence_scope"]
+    assert "not overall MUS-01 human music acceptance" in receipt["evidence_scope"]
+    assert "passed" not in receipt and "musical_acceptance" not in receipt
     assert "not proof of listening" in receipt["evidence_scope"]
     assert "full coverage" in receipt["evidence_scope"]
     assert "Synthetic fixture observation" not in receipt_text
@@ -250,6 +255,9 @@ def test_cli_locks_synthetic_csv_and_prints_integrity_scope(tmp_path, monkeypatc
     assert result == 0
     assert output["issue_count"] == 1
     assert output["scores_sha256"] == hashlib.sha256(scores.read_bytes()).hexdigest()
+    assert "Hashes are user-declared" in output["evidence_scope"]
+    assert "accepted is a per-issue disposition" in output["evidence_scope"]
+    assert "passed" not in output and "musical_acceptance" not in output
     assert "not proof of listening" in output["evidence_scope"]
     assert json.loads((destination / "receipt.json").read_text(encoding="utf-8"))["issue_count"] == 1
 
@@ -352,6 +360,8 @@ def test_cli_help_lists_allowed_values_and_safe_fill_workflow(capsys):
         "decision: no_issue, follow_up, open, fixed_and_retested, accepted",
         "reviewed_at_utc is required",
         "Both must match anon- followed by 8-64 lowercase letters",
+        "Hashes are user-declared; this tool does not read or compare source audio, charts,",
+        "`accepted` resolves one issue only and does not mean overall human",
         "not proof that listening or playtesting happened",
         "that review coverage is complete",
     ):

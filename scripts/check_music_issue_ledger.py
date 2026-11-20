@@ -5,8 +5,10 @@ milliseconds; export_sha256 should identify the exact exported .osu difficulty.
 Use semicolon-separated checked_tracks from the accepted values enforced below.
 When there is no reference chart, leave reference_sha256 blank and explain why in
 identity_note. Fixed issues require a fix reference and a clear UTC retest; accepted
-issues require a reason and anonymous decision-session ID. The receipt attests only
-to CSV structure, declared metadata, and exact bytes; it does not prove listening,
+issues require a reason and anonymous decision-session ID. Hashes are user-declared;
+this tool does not read source assets to verify them. `accepted` is a per-issue
+disposition, not overall MUS-01 human music acceptance. The receipt attests only to
+CSV structure, declared metadata, and exact bytes; it does not prove listening,
 playtesting, reviewer identity, blind status, full coverage, or correctness.
 """
 from __future__ import annotations
@@ -126,6 +128,9 @@ Required values and formats:
   Hash fields are lowercase SHA-256; time_ms is absolute song milliseconds.
 
 The lock receipt records CSV structure, declared metadata, and exact bytes only.
+Hashes are user-declared; this tool does not read or compare source audio, charts,
+or exports. `accepted` resolves one issue only and does not mean overall human
+music acceptance has passed.
 It is not proof that listening or playtesting happened, that reviewers were
 anonymous or blind, that review coverage is complete, or that the assessment is correct.
 """
@@ -345,7 +350,13 @@ def validate_ledger(
         "category_counts": {key: category_counts[key] for key in sorted(category_counts)},
         "assessment_counts": {key: assessment_counts[key] for key in sorted(assessment_counts)},
         "decision_counts": {key: decision_counts[key] for key in sorted(decision_counts)},
-        "evidence_scope": "CSV structure, declared fields, and exact byte snapshot only; not proof of listening, playtesting, reviewer identity, blind status, full coverage, or correctness.",
+        "evidence_scope": (
+            "CSV structure, declared fields, and exact byte snapshot only. Hashes are "
+            "user-declared; source audio, charts, and exports are not read or compared. "
+            "accepted is a per-issue disposition, not overall MUS-01 human music "
+            "acceptance. This is not proof of listening, playtesting, reviewer identity, "
+            "blind status, full coverage, or correctness."
+        ),
     }
 
 

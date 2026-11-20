@@ -47,6 +47,38 @@ PORTABLE_CHECK_NAMES = frozenset({
     "instrument_portable_real_audio",
     "cancel_and_failure",
 })
+PORTABLE_COMMON_CHECK_NAMES = frozenset({
+    "release_manifest",
+    "core_model",
+    "bundled_arrangement_profiles",
+    "startup",
+    "generate_export",
+    "restart",
+})
+PORTABLE_CORE_CHECK_NAMES = frozenset({
+    "core_capability_status",
+    "basic_analysis",
+    "provided_stem_analysis_export",
+    "unavailable_engines",
+    "bad_audio_recovery",
+})
+PORTABLE_NON_CORE_CHECK_NAMES = frozenset({
+    "piano_onnx_runtime",
+    "deep_analysis",
+    "local_recommendation",
+    "stale_recommendation_rejected",
+    "six_stem_analysis_export",
+    "cancel_and_failure",
+})
+PORTABLE_PIANO_AUDIO_CHECK_NAMES = frozenset({
+    "piano_cold_inference",
+    "piano_manual_expression",
+    "piano_restart_warm_cache",
+})
+PORTABLE_GUITAR_CHECK_NAMES = frozenset({
+    "guitar_real_audio_http",
+    "guitar_cold_cancel",
+})
 
 
 def sha256(path):
@@ -134,22 +166,16 @@ def _matches_identity(item, expected_identity):
     )
 
 
-def _validate_portable_check_payloads(portable, required_checks, profile, manifest,
+def _validate_portable_check_payloads(portable, profile, manifest,
                                       expected_identity, verification_run_id):
+    optional_piano_checks = PORTABLE_PIANO_AUDIO_CHECK_NAMES
     specialist_checks = {
         "guitar_real_audio_http",
         "guitar_cold_cancel",
         "instrument_portable_real_audio",
     }
-    optional_piano_checks = {
-        "piano_cold_inference",
-        "piano_manual_expression",
-        "piano_restart_warm_cache",
-    }
     row_identity = dict(expected_identity, verification_run_id=verification_run_id)
     for item in portable:
-        if not isinstance(item, dict) or item.get("check") not in required_checks | optional_piano_checks:
-            continue
         if item["check"] in specialist_checks or item["check"] == "release_manifest":
             continue
         if not _matches_identity(item, row_identity):
@@ -865,8 +891,25 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
     _require_specialist_verification_identity(
         portable, expected_specialist_identity, declared_capabilities
     )
+    allowed_checks = set(PORTABLE_COMMON_CHECK_NAMES)
+    if declared_capabilities["pattern_prior"]:
+        allowed_checks.add("bundled_model")
+    if profile == "core":
+        allowed_checks.update(PORTABLE_CORE_CHECK_NAMES)
+    else:
+        allowed_checks.update(PORTABLE_NON_CORE_CHECK_NAMES)
+        if declared_capabilities["piano"]:
+            allowed_checks.update(PORTABLE_PIANO_AUDIO_CHECK_NAMES)
+    if declared_capabilities["guitar"]:
+        allowed_checks.update(PORTABLE_GUITAR_CHECK_NAMES)
+    if declared_capabilities["instruments"]:
+        allowed_checks.add("instrument_portable_real_audio")
+    if any(item["check"] not in allowed_checks for item in portable):
+        raise SystemExit(
+            "Portable verification report contains a check not applicable to the declared profile or capabilities."
+        )
     piano_audio_evidence = _validate_portable_check_payloads(
-        portable, required_checks, profile, manifest, expected_identity, verification_run_id
+        portable, profile, manifest, expected_identity, verification_run_id
     )
     if declared_capabilities["guitar"]:
         _require_guitar_evidence(portable)
