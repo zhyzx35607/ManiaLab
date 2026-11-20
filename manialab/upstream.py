@@ -1,16 +1,18 @@
 """Optional, isolated Mapperatorinator v32 CPU backend. Baseline needs no setup."""
 from __future__ import annotations
 
-import ctypes
 import json
 import os
 from pathlib import Path
 import shutil
-import subprocess
 import time
 import zipfile
 
-from .cancellation import report_process_cleanup_failure, timeout_for
+from .cancellation import (
+    report_process_cleanup_failure,
+    stop_process as stop_owned_process,
+)
+from .worker_process import start_worker
 
 SOURCE_COMMIT = "5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa"
 MODEL_REVISION = "74f22583400d259bf424819e11027c17933efe54"
@@ -98,170 +100,12 @@ class MapperEngine:
         ready_marker.with_suffix(".json.tmp").unlink(missing_ok=True)
 
     @staticmethod
-    def _windows_descendants(root_pid):
-        import ctypes
-        from collections import defaultdict
-        from ctypes import wintypes
-
-        class ProcessEntry(ctypes.Structure):
-            _fields_ = [
-                ("dwSize", wintypes.DWORD),
-                ("cntUsage", wintypes.DWORD),
-                ("th32ProcessID", wintypes.DWORD),
-                ("th32DefaultHeapID", ctypes.c_size_t),
-                ("th32ModuleID", wintypes.DWORD),
-                ("cntThreads", wintypes.DWORD),
-                ("th32ParentProcessID", wintypes.DWORD),
-                ("pcPriClassBase", wintypes.LONG),
-                ("dwFlags", wintypes.DWORD),
-                ("szExeFile", wintypes.WCHAR * 260),
-            ]
-
-        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-        kernel.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
-        kernel.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
-        kernel.Process32FirstW.argtypes = [wintypes.HANDLE, ctypes.POINTER(ProcessEntry)]
-        kernel.Process32FirstW.restype = wintypes.BOOL
-        kernel.Process32NextW.argtypes = [wintypes.HANDLE, ctypes.POINTER(ProcessEntry)]
-        kernel.Process32NextW.restype = wintypes.BOOL
-        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
-        def enumeration_error(action):
-            error_code = ctypes.get_last_error()
-            return OSError(error_code, f"{action} failed (Windows error {error_code})")
-
-        ctypes.set_last_error(0)
-        snapshot = kernel.CreateToolhelp32Snapshot(0x00000002, 0)
-        if snapshot == ctypes.c_void_p(-1).value:
-            raise enumeration_error("CreateToolhelp32Snapshot")
-        children = defaultdict(list)
-        try:
-            entry = ProcessEntry()
-            entry.dwSize = ctypes.sizeof(entry)
-            ctypes.set_last_error(0)
-            has_entry = kernel.Process32FirstW(snapshot, ctypes.byref(entry))
-            if not has_entry:
-                raise enumeration_error("Process32FirstW")
-            while has_entry:
-                children[entry.th32ParentProcessID].append(entry.th32ProcessID)
-                ctypes.set_last_error(0)
-                has_entry = kernel.Process32NextW(snapshot, ctypes.byref(entry))
-                if not has_entry:
-                    error_code = ctypes.get_last_error()
-                    if error_code != 18:  # ERROR_NO_MORE_FILES
-                        raise OSError(error_code, f"Process32NextW failed (Windows error {error_code})")
-        finally:
-            kernel.CloseHandle(snapshot)
-
-        result = []
-        visited = {root_pid}
-
-        def visit(parent):
-            for child in children.get(parent, ()):
-                if child in visited:
-                    continue
-                visited.add(child)
-                visit(child)
-                result.append(child)
-
-        visit(root_pid)
-        return result
-
-    @staticmethod
     def stop_process(process, cancelled=None):
-        windows = os.name == "nt"
-        descendants = []
-        failures = []
-        if windows:
-            try:
-                descendants = MapperEngine._windows_descendants(process.pid)
-            except Exception as error:
-                failures.append(f"Could not enumerate Mapperatorinator child processes before cleanup: {error}")
-        if not windows and process.poll() is not None:
-            return True
-        # The Windows venv launcher and uv create children. Killing only the
-        # launcher leaves model inference running after a timeout/cancellation.
-        if windows and process.poll() is None:
-            taskkill_timeout = timeout_for(cancelled, 30)
-            if taskkill_timeout > 0:
-                try:
-                    subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True,
-                                   creationflags=subprocess.CREATE_NO_WINDOW, timeout=taskkill_timeout)
-                except (OSError, subprocess.TimeoutExpired):
-                    pass
-
-        root_signal_error = None
-        if process.poll() is None:
-            try:
-                (process.kill if windows else process.terminate)()
-            except OSError as error:
-                if process.poll() is None:
-                    root_signal_error = error
-
-        if windows:
-            try:
-                descendants.extend(MapperEngine._windows_descendants(process.pid))
-            except Exception as error:
-                failures.append(f"Could not enumerate Mapperatorinator child processes after cleanup: {error}")
-            try:
-                from ctypes import wintypes
-                kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-                kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-                kernel.OpenProcess.restype = wintypes.HANDLE
-                kernel.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
-                kernel.TerminateProcess.restype = wintypes.BOOL
-                kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-                kernel.CloseHandle.argtypes = [wintypes.HANDLE]
-                child_handles = []
-                for pid in dict.fromkeys(descendants):
-                    handle = kernel.OpenProcess(0x00100001, False, pid)
-                    if not handle:
-                        error_code = ctypes.get_last_error()
-                        if error_code != 87:
-                            failures.append(f"Could not open child process {pid} (Windows error {error_code})")
-                        continue
-                    terminated = bool(kernel.TerminateProcess(handle, 1))
-                    child_handles.append((pid, handle, terminated))
-
-                for pid, handle, terminated in child_handles:
-                    wait_ms = round(timeout_for(cancelled, 5) * 1000)
-                    state = kernel.WaitForSingleObject(handle, wait_ms)
-                    if state != 0:
-                        detail = "termination was rejected" if not terminated else "did not exit"
-                        failures.append(f"Child process {pid} {detail} before the cleanup deadline")
-                    kernel.CloseHandle(handle)
-            except Exception as error:
-                failures.append(f"Could not terminate Mapperatorinator child processes: {error}")
-
-        root_stopped = process.poll() is not None
-        try:
-            if not root_stopped:
-                process.wait(timeout=timeout_for(cancelled, 15))
-                root_stopped = process.poll() is not None
-        except subprocess.TimeoutExpired:
-            if process.poll() is None:
-                try:
-                    process.kill()
-                except OSError as error:
-                    root_signal_error = root_signal_error or error
-                try:
-                    process.wait(timeout=timeout_for(cancelled, 15))
-                except subprocess.TimeoutExpired:
-                    pass
-            root_stopped = process.poll() is not None
-
-        if not root_stopped:
-            detail = "Mapperatorinator process did not exit before its cleanup deadline"
-            if root_signal_error is not None:
-                detail += " after a failed termination request"
-            failures.append(detail)
-        for message in failures:
+        if os.name == "nt" and not callable(getattr(process, "_manialab_stop_tree", None)):
+            message = "Mapperatorinator Windows process was not started in an owned job"
             report_process_cleanup_failure(cancelled, message)
-        if failures:
-            error = ChildProcessError("; ".join(failures))
-            if root_signal_error is not None and not root_stopped:
-                raise error from root_signal_error
-            raise error
-        return True
+            raise ChildProcessError(message)
+        return stop_owned_process(process, cancelled, terminate_timeout=15, kill_timeout=15)
 
     def run(self, argv, message, progress, cancelled, percent=10, cwd=None, log_path=None):
         if cancelled():
@@ -275,21 +119,25 @@ class MapperEngine:
         with log.open("a", encoding="utf-8") as out:
             out.write("\n" + message + "\n");out.flush()
             log_start = log.stat().st_size
-            process = subprocess.Popen([str(x) for x in argv], cwd=cwd, env=env, stdout=out, stderr=out,
-                                       creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+            process = start_worker([str(x) for x in argv], cancelled=cancelled, cwd=cwd, env=env,
+                                   stdout=out, stderr=out, creationflags=0)
             started = time.monotonic()
+            cleanup_attempted = False
             try:
                 while process.poll() is None:
                     if cancelled():
+                        cleanup_attempted = True
                         self.stop_process(process, cancelled)
                         raise InterruptedError("已取消原模型任务")
                     if time.monotonic() - started > 3600:
+                        cleanup_attempted = True
                         self.stop_process(process, cancelled)
                         raise ValueError("原模型步骤超过一小时，已停止；请查看 engine.log")
                     progress(percent, f"{message} · 已运行 {int(time.monotonic()-started)} 秒")
                     time.sleep(.6)
             finally:
-                self.stop_process(process, cancelled)
+                if not cleanup_attempted:
+                    self.stop_process(process, cancelled)
             if process.returncode:
                 raise ValueError(f"{message}失败（退出码 {process.returncode}），日志：{log}")
         return log.read_bytes()[log_start:].decode("utf-8", errors="replace")

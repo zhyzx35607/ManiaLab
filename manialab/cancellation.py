@@ -45,10 +45,11 @@ class CancellationContext:
         return failures
 
     def report_cleanup_failure(self, message):
-        with self._lock:
-            self._cleanup_failures.append(message)
         if self._parent is not None:
             self._parent.report_cleanup_failure(message)
+            return
+        with self._lock:
+            self._cleanup_failures.append(message)
 
     @property
     def process_cleanup_failed(self):
@@ -87,45 +88,107 @@ def report_process_cleanup_failure(cancelled, message):
         report(message)
 
 
+def poll_process_for_cleanup(process, cancelled, *, report=True):
+    try:
+        return process.poll()
+    except OSError as error:
+        message = "Child process state could not be checked during cleanup"
+        if report:
+            report_process_cleanup_failure(cancelled, message)
+        raise ChildProcessError(message) from error
+
+
+def wait_process_for_cleanup(process, cancelled, *, timeout, report=True):
+    try:
+        return process.wait(timeout=timeout)
+    except OSError as error:
+        message = "Child process could not be reaped during cleanup"
+        if report:
+            report_process_cleanup_failure(cancelled, message)
+        raise ChildProcessError(message) from error
+
+
 def stop_process(process, cancelled, *, terminate_timeout, kill_timeout):
     owned_tree = getattr(process, '_manialab_stop_tree', None)
     if owned_tree is not None:
         return owned_tree(cancelled, terminate_timeout + kill_timeout)
-    if process.poll() is not None:
+
+    query_error = None
+
+    def poll():
+        nonlocal query_error
+        try:
+            return poll_process_for_cleanup(process, cancelled, report=False)
+        except ChildProcessError as error:
+            if query_error is None:
+                query_error = error
+            else:
+                query_error.add_note(f"Additional process state query failure: {error.__cause__!r}")
+            return None
+
+    def wait(timeout):
+        nonlocal query_error
+        try:
+            wait_process_for_cleanup(process, cancelled, timeout=timeout, report=False)
+            return True
+        except subprocess.TimeoutExpired:
+            return False
+        except ChildProcessError as error:
+            if query_error is None:
+                query_error = error
+            else:
+                query_error.add_note(f"Additional process wait failure: {error.__cause__!r}")
+            return False
+
+    def finish(stopped):
+        if stopped:
+            return True
+        deadline_message = "Child process did not exit before its cleanup deadline"
+        if query_error is not None:
+            query_error.add_note(deadline_message)
+            if signal_errors:
+                query_error.add_note(
+                    "; ".join(message for message, _ in signal_errors)
+                )
+            report_process_cleanup_failure(cancelled, str(query_error))
+            raise query_error
+        if signal_errors:
+            message, error = signal_errors[0]
+            report_process_cleanup_failure(cancelled, message)
+            failure = ChildProcessError(message)
+            raise failure from error
+        report_process_cleanup_failure(cancelled, deadline_message)
+        raise ChildProcessError(deadline_message)
+
+    if poll() is not None:
         return True
+
+    signal_errors = []
     try:
         process.terminate()
     except OSError as error:
-        if process.poll() is not None:
-            return True
         message = "Child process could not be terminated during cleanup"
-        report_process_cleanup_failure(cancelled, message)
-        raise ChildProcessError(message) from error
-    try:
-        process.wait(timeout=timeout_for(cancelled, terminate_timeout))
-        return True
-    except subprocess.TimeoutExpired:
-        if process.poll() is not None:
-            return True
+        if poll() is None:
+            if query_error is None:
+                report_process_cleanup_failure(cancelled, message)
+                raise ChildProcessError(message) from error
+            signal_errors.append((message, error))
+    if wait(timeout_for(cancelled, terminate_timeout)):
+        return finish(True)
+    if poll() is not None:
+        return finish(True)
+
     try:
         process.kill()
     except OSError as error:
-        if process.poll() is not None:
-            return True
         message = "Child process could not be killed during cleanup"
-        report_process_cleanup_failure(cancelled, message)
-        raise ChildProcessError(message) from error
-    try:
-        process.wait(timeout=timeout_for(cancelled, kill_timeout))
-        return True
-    except subprocess.TimeoutExpired:
-        stopped = process.poll() is not None
-        if not stopped:
-            report_process_cleanup_failure(
-                cancelled,
-                "Child process did not exit before its cleanup deadline",
-            )
-            raise ChildProcessError(
-                "Child process did not exit before its cleanup deadline"
-            )
-        return stopped
+        if poll() is None:
+            if query_error is None:
+                report_process_cleanup_failure(cancelled, message)
+                raise ChildProcessError(message) from error
+            signal_errors.append((message, error))
+    stopped = wait(timeout_for(cancelled, kill_timeout))
+    if not stopped:
+        stopped = poll() is not None
+
+    return finish(stopped)

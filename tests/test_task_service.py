@@ -252,6 +252,43 @@ def test_shutdown_does_not_wait_past_deadline_for_task_lock(task_store):
     assert not holder.is_alive()
 
 
+def test_shutdown_lock_deadline_reports_active_job_as_cancelled(task_store):
+    projects, service = task_store
+    project_id = create_project(projects)
+    started, release_operation = threading.Event(), threading.Event()
+    locked, release_lock = threading.Event(), threading.Event()
+
+    def operation(state, progress, cancelled):
+        started.set()
+        assert release_operation.wait(5)
+
+    job = service.submit(project_id, operation)
+    assert started.wait(5)
+
+    def hold_task_lock():
+        with service.lock:
+            locked.set()
+            release_lock.wait(5)
+
+    holder = threading.Thread(target=hold_task_lock)
+    holder.start()
+    assert locked.wait(5)
+    try:
+        assert service.shutdown(wait=True, deadline=time.monotonic() + 0.05) is False
+    finally:
+        release_lock.set()
+        holder.join(timeout=5)
+
+    try:
+        assert not holder.is_alive()
+        assert service.get(job["id"])["status"] == "running"
+        assert service.get(job["id"])["cancel"] is True
+    finally:
+        release_operation.set()
+
+    assert wait_for_job(service, job["id"])["status"] == "cancelled"
+
+
 def test_shutdown_during_project_load_skips_operation(task_store, monkeypatch):
     projects, service = task_store
     project_id = create_project(projects)
@@ -283,12 +320,14 @@ def test_shutdown_reports_child_cleanup_failure(task_store):
     projects, service = task_store
     project_id = create_project(projects)
     started = threading.Event()
+    child_failures = []
 
     def operation(state, progress, cancelled):
         started.set()
         while not cancelled():
             time.sleep(0.001)
         cancelled.report_cleanup_failure("synthetic child did not stop")
+        child_failures.extend(cancelled.cleanup_failures)
         raise ChildProcessError("synthetic child did not stop")
 
     job = service.submit(project_id, operation)
@@ -296,6 +335,7 @@ def test_shutdown_reports_child_cleanup_failure(task_store):
 
     assert service.shutdown(wait=True, deadline=time.monotonic() + 2) is False
     assert service.get(job["id"])["status"] == "error"
+    assert child_failures == ["synthetic child did not stop"]
     assert service._shutdown_cancellation.cleanup_failures == (
         "synthetic child did not stop",
     )
@@ -321,6 +361,91 @@ def test_completed_task_clears_shutdown_request_during_commit(task_store, monkey
     result = wait_for_job(service, job["id"])
     assert result["status"] == "done"
     assert result["cancel"] is False
+
+
+def test_shutdown_deadline_during_project_commit_preserves_done_result(task_store, monkeypatch):
+    projects, service = task_store
+    project_id = create_project(projects)
+    saving, release = threading.Event(), threading.Event()
+    original_save = projects.save
+
+    def delayed_save(state):
+        saving.set()
+        assert release.wait(5)
+        return original_save(state)
+
+    monkeypatch.setattr(projects, "save", delayed_save)
+
+    def operation(state, progress, cancelled):
+        state["value"] = "committed"
+        return {"committed": True}
+
+    job = service.submit(project_id, operation)
+    assert saving.wait(5)
+    deadline = time.monotonic() + 0.05
+
+    try:
+        started = time.monotonic()
+        assert service.shutdown(wait=True, deadline=deadline) is False
+        assert time.monotonic() - started < 0.5
+        with pytest.raises(ValueError, match="任务服务已关闭"):
+            service.submit(project_id, lambda *args: None)
+    finally:
+        release.set()
+
+    result = wait_for_job(service, job["id"])
+    assert result["status"] == "done"
+    assert result["result"] == {"committed": True}
+    assert result["cancel"] is False
+    assert projects.load(project_id)["value"] == "committed"
+
+
+@pytest.mark.parametrize("cleanup_fails", [False, True], ids=["cleanup-ok", "cleanup-error"])
+def test_shutdown_deadline_during_post_commit_cleanup_preserves_done_result(
+        task_store, cleanup_fails):
+    projects, service = task_store
+    project_id = create_project(projects)
+    cleanup_started, release_cleanup = threading.Event(), threading.Event()
+    cleanup_calls = []
+
+    def operation(state, progress, cancelled):
+        state["value"] = "committed"
+        return {"committed": True}
+
+    def cleanup(committed):
+        cleanup_calls.append(committed)
+        cleanup_started.set()
+        assert release_cleanup.wait(5)
+        if cleanup_fails:
+            raise OSError("synthetic post-commit cleanup failure")
+
+    job = service.submit(project_id, operation, cleanup=cleanup)
+    assert cleanup_started.wait(5)
+    deadline = time.monotonic() + 0.05
+
+    try:
+        started = time.monotonic()
+        assert service.shutdown(wait=True, deadline=deadline) is False
+        assert time.monotonic() - started < 0.5
+        assert service.get(job["id"])["status"] == "running"
+        with pytest.raises(ValueError, match="任务服务已关闭"):
+            service.submit(project_id, lambda *args: None)
+    finally:
+        release_cleanup.set()
+
+    result = wait_for_job(service, job["id"])
+    assert result["status"] == "done"
+    assert result["result"] == {"committed": True}
+    assert result["cancel"] is False
+    assert cleanup_calls == [True]
+    assert projects.load(project_id)["value"] == "committed"
+    assert service._idle.is_set()
+    assert result.get("cleanup_failed", False) is cleanup_fails
+    if cleanup_fails:
+        assert "资源清理失败" in result["message"]
+        assert service._shutdown_cancellation.cleanup_failures
+    else:
+        assert not service._shutdown_cancellation.cleanup_failures
 
 
 def test_completed_job_history_is_bounded_without_pruning_active_job(task_store):

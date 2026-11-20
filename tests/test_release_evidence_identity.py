@@ -26,12 +26,23 @@ def release_fixture(tmp_path, monkeypatch, request):
     executable = build / 'dist/ManiaLab/ManiaLab.exe'
     executable.parent.mkdir(parents=True)
     executable.write_bytes(b'synthetic executable fixture; never executed')
+    documentation = {
+        'README.md': b'# Synthetic ManiaLab README\n',
+        'LICENSE': b'Synthetic project license\n',
+        'THIRD_PARTY_NOTICES.md': b'Synthetic notices\n',
+        'docs/PROGRESS.md': b'# Synthetic progress\n',
+    }
+    for relative, content in documentation.items():
+        source_path = source / relative
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_bytes(content)
     model_bytes = b'synthetic model fixture; never loaded'
     model = dict(filename='basic-pitch.onnx', version='synthetic', url='synthetic-fixture',
         sha256=_sha(model_bytes))
     # Redirect only source/git identity and pinned model metadata to controlled fixtures.
     # Production ZIP, checksum, report, and synthetic model-byte validation still run.
     monkeypatch.setattr(collector, 'ROOT', source)
+    monkeypatch.setattr(collector, 'SOURCE_ROOT', source)
     monkeypatch.setattr(collector.subprocess, 'check_output', lambda *args, **kwargs: 'synthetic-commit')
     monkeypatch.setattr(collector, 'validate_evidence', lambda *args, **kwargs: {
         'schema': 'manialab-pytest-evidence-v1',
@@ -50,17 +61,107 @@ def release_fixture(tmp_path, monkeypatch, request):
     runtime_inventory = b'[]'
     runtime_license_record = {'bytes': len(runtime_license), 'sha256': _sha(runtime_license)}
     runtime_inventory_record = {'bytes': len(runtime_inventory), 'sha256': _sha(runtime_inventory)}
-    manifest = dict(identity, version=__version__,
-        sources={'launcher.py': _sha((source / 'launcher.py').read_bytes())}, core_models=model,
+    sources = {'launcher.py': _sha((source / 'launcher.py').read_bytes())}
+    sources.update({relative: _sha(content) for relative, content in documentation.items()})
+    asset_payloads = {
+        'basic-pitch.onnx': model_bytes,
+        'arrangement-profiles.json': b'{"fixture":"arrangement-profiles"}',
+        'model-manifest.json': json.dumps({'basic_pitch': {
+            key: value for key, value in model.items() if key != 'filename'}}).encode(),
+    }
+
+    def add_source_asset(relative, content):
+        source_path = source / 'assets' / relative
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_bytes(content)
+        sources['assets/' + relative] = _sha(content)
+        asset_payloads[relative] = content
+
+    add_source_asset('arrangement-profiles.json', asset_payloads['arrangement-profiles.json'])
+    add_source_asset('model-manifest.json', asset_payloads['model-manifest.json'])
+    piano_model = None
+    worker_sources = None
+    worker_files = None
+    worker_sha256 = None
+    if profile != 'core':
+        piano_bytes = b'synthetic piano model fixture; never loaded'
+        worker_bytes = b'synthetic separation worker fixture; never executed'
+        deep_model_bytes = {
+            'hdemucs_high_trained.pt': b'synthetic hybrid model fixture',
+            'beat-this-final0.ckpt': b'synthetic beat model fixture',
+            'htdemucs_6s.th': b'synthetic six-source model fixture',
+        }
+        piano_model = {
+            'filename': 'piano-regression.onnx', 'sha256': _sha(piano_bytes),
+            'bytes': len(piano_bytes),
+        }
+        worker_sha256 = _sha(worker_bytes)
+        worker_sources = {'scripts/separate_audio.py': 'e' * 64}
+        worker_files = {'ManiaLabAudio.exe': {
+            'sha256': worker_sha256, 'bytes': len(worker_bytes),
+        }}
+        deep_models = [
+            {'filename': name, 'sha256': _sha(content), 'bytes': len(content)}
+            for name, content in deep_model_bytes.items()
+        ]
+        metadata = {
+            'pattern-prior.json': b'{"fixture":true}',
+            'deep-models.json': json.dumps({'schema': 1, 'models': deep_models}).encode(),
+            'piano-model.json': json.dumps(piano_model).encode(),
+            'guitar-model.json': b'{"fixture":"guitar metadata"}',
+            'download_mapper.py': b'# synthetic mapper installer fixture',
+            'run_mapper.py': b'# synthetic mapper runner fixture',
+            'mapper_sketch_context.py': b'# synthetic mapper context fixture',
+            'mania_event_constraints.py': b'# synthetic mapper constraints fixture',
+            'mapperatorinator-requirements.txt': b'# synthetic requirements fixture',
+            'mapperatorinator-source.zip': b'synthetic mapper source archive fixture',
+        }
+        for relative, content in metadata.items():
+            add_source_asset(relative, content)
+        asset_payloads.update({
+            'runtime/uv.exe': uv_runtime_bytes,
+            'deep/piano-regression.onnx': piano_bytes,
+            'deep/manifest.json': json.dumps({
+                'worker_sha256': worker_sha256,
+                'worker_sources': worker_sources,
+                'worker_files': worker_files,
+            }).encode(),
+            'deep/ManiaLabAudio/ManiaLabAudio.exe': worker_bytes,
+        })
+        asset_payloads.update({
+            'deep/' + name: content for name, content in deep_model_bytes.items()
+        })
+    monkeypatch.setattr(collector, 'source_snapshot_paths', lambda root, enabled: tuple(
+        Path(root) / relative for relative in sources
+    ))
+    manifest = dict(identity, version=__version__, sources=sources, core_models=model,
         uv_runtime=uv_runtime_identity if declared['mapperatorinator_install'] else None,
-        worker_sha256='synthetic-worker' if profile != 'core' else None,
-        worker_sources={} if profile != 'core' else None, worker_files=[] if profile != 'core' else None,
-        piano_model={'sha256': 'f' * 64, 'bytes': 1} if profile != 'core' else None,
+        worker_sha256=worker_sha256, worker_sources=worker_sources, worker_files=worker_files,
+        piano_model=piano_model,
         guitar_model=None, instrument_worker=None, instrument_runtime_license_files=None,
         runtime_license_files={'fixture/LICENSE': runtime_license_record},
         runtime_license_inventory=runtime_inventory_record,
         license_files={'runtime/fixture/LICENSE': runtime_license_record,
             'runtime-inventory.json': runtime_inventory_record})
+    archive_files = {
+        'ManiaLab/ManiaLab.exe': executable.read_bytes(),
+        **{'ManiaLab/' + relative: content for relative, content in documentation.items()},
+        **{'ManiaLab/_internal/assets/' + relative: content
+           for relative, content in asset_payloads.items()},
+    }
+    for prefix in ('ManiaLab/licenses/', 'ManiaLab/_internal/licenses/'):
+        archive_files[prefix + 'runtime/fixture/LICENSE'] = runtime_license
+        archive_files[prefix + 'runtime-inventory.json'] = runtime_inventory
+    archive_directories = {'ManiaLab/'}
+    for name in archive_files:
+        parent = Path(name).parent
+        while parent.parts:
+            archive_directories.add(parent.as_posix().rstrip('/') + '/')
+            parent = parent.parent
+    manifest['archive_payload'] = {
+        'files': {name: _sha(content) for name, content in sorted(archive_files.items())},
+        'directories': sorted(archive_directories),
+    }
     (executable.parent / 'release-manifest.json').write_text(json.dumps(manifest), encoding='utf-8')
     identity = dict(identity, release_manifest_sha256=_sha(
         (executable.parent / 'release-manifest.json').read_bytes()))
@@ -68,18 +169,12 @@ def release_fixture(tmp_path, monkeypatch, request):
     package = build / 'release'
     package.mkdir()
     archive = package / (package_assets.archive_stem(__version__, profile) + '.zip')
+    archive_files['ManiaLab/release-manifest.json'] = json.dumps(manifest).encode()
     with zipfile.ZipFile(archive, 'w') as output:
-        output.write(executable, 'ManiaLab/ManiaLab.exe')
-        output.writestr('ManiaLab/release-manifest.json', json.dumps(manifest))
-        output.writestr('ManiaLab/_internal/assets/basic-pitch.onnx', model_bytes)
-        output.writestr('ManiaLab/_internal/assets/model-manifest.json', json.dumps({
-            'basic_pitch': {key: value for key, value in model.items() if key != 'filename'}}))
-        output.writestr('ManiaLab/_internal/assets/arrangement-profiles.json', '{}')
-        if declared['mapperatorinator_install']:
-            output.writestr('ManiaLab/_internal/assets/runtime/uv.exe', uv_runtime_bytes)
-        for prefix in ('ManiaLab/licenses/', 'ManiaLab/_internal/licenses/'):
-            output.writestr(prefix + 'runtime/fixture/LICENSE', runtime_license)
-            output.writestr(prefix + 'runtime-inventory.json', runtime_inventory)
+        for directory in manifest['archive_payload']['directories']:
+            output.writestr(directory, b'')
+        for name, content in archive_files.items():
+            output.writestr(name, content)
     junit = tmp_path / 'junit.xml'
     junit.write_text('<testsuite tests="1" failures="0" errors="0" skipped="0"/>', encoding='utf-8')
     pytest_evidence = tmp_path / 'pytest-evidence.json'
@@ -107,7 +202,8 @@ def release_fixture(tmp_path, monkeypatch, request):
             dict(check='bad_audio_recovery', analysis='error', service_alive=True),
         ]
     else:
-        checks += [dict(check='piano_onnx_runtime', sha256='f' * 64, bytes=1,
+        checks += [dict(check='piano_onnx_runtime', sha256=piano_model['sha256'],
+            bytes=piano_model['bytes'],
             providers=['CPUExecutionProvider'], output_shapes=[[1, 1001, 88]] * 4 + [[1, 1001, 1]] * 3,
             input='all-zero synthetic 10-second tensor; runtime smoke test only')]
         checks += [
@@ -118,6 +214,53 @@ def release_fixture(tmp_path, monkeypatch, request):
         ]
     checks = [dict(row, **portable_identity) for row in checks]
     portable.write_text(json.dumps(checks), encoding='utf-8')
+    core_media = tmp_path / 'core-media.json'
+    service_binding = tmp_path / 'service-binding.json'
+    if profile == 'core':
+        core_media.write_text(json.dumps({
+            'schema': 1,
+            'check': 'core_media_session',
+            'status': 'passed',
+            'run_id': 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+            'base_url': 'http://127.0.0.1:43127',
+            'scope': collector.CORE_MEDIA_SCOPE,
+            'cleanup_failures': [],
+            **portable_identity,
+            'steps': [
+                {'name': 'synthetic_projects', 'status': 'passed', 'projects': [
+                    {'id': 'project-a', 'bytes': 264644},
+                    {'id': 'project-b', 'bytes': 264644},
+                ]},
+                {'name': 'audio_range', 'status': 'passed', 'http_status': 206,
+                 'content_range': 'bytes 0-63/264644', 'bytes': 64},
+                {'name': 'seek', 'status': 'passed', 'target_seconds': 1.25,
+                 'actual_seconds': 1.25, 'duration_seconds': 6.0},
+                {'name': 'play_pause', 'status': 'passed', 'started_at_seconds': 1.25,
+                 'paused_at_seconds': 1.5, 'after_pause_seconds': 1.5},
+                {'name': 'rapid_source_switch', 'status': 'passed',
+                 'requested_projects': ['project-b', 'project-a'],
+                 'requested_project_ids': ['project-b', 'project-a'],
+                 'final_project': 'project-a', 'held_audio_requests': 2,
+                 'pre_switch_audio_project_ids': [], 'unexpected_audio_project_ids': [],
+                 'saved_seconds': 1.5, 'return_start_seconds': 0.1,
+                 'final_seconds': 0.35},
+                {'name': 'browser_health', 'status': 'passed', 'page_errors': 0,
+                 'version': __version__},
+            ],
+        }), encoding='utf-8')
+        service_binding.write_text(json.dumps({
+            'schema': 1,
+            'check': 'core_media_service_process_binding',
+            'status': 'passed',
+            'verification_run_id': portable_identity['verification_run_id'],
+            'base_url': 'http://127.0.0.1:43127',
+            'executable_sha256': identity['executable_sha256'],
+            'executable_pid': 5678,
+            'listeners_before': [{'local_address': '127.0.0.1', 'local_port': 43127,
+                'owning_process': 5678}],
+            'listeners_after': [{'local_address': '127.0.0.1', 'local_port': 43127,
+                'owning_process': 5678}],
+        }), encoding='utf-8')
     shutdown = tmp_path / 'shutdown.json'
     shutdown_data = dict(identity, version=__version__, passed=True, worker_expected=profile != 'core',
         application_exited=True, worker_stopped_on_parent_exit=profile != 'core')
@@ -126,12 +269,16 @@ def release_fixture(tmp_path, monkeypatch, request):
     shutdown.write_text(json.dumps(shutdown_data), encoding='utf-8')
     return SimpleNamespace(build=build, executable=executable, manifest=manifest, identity=identity,
         junit=junit, pytest_evidence=pytest_evidence, portable=portable, shutdown=shutdown,
-        checks=checks, shutdown_data=shutdown_data)
+        core_media=core_media, service_binding=service_binding, archive=archive,
+        archive_files=archive_files, checks=checks, shutdown_data=shutdown_data)
 
 
 def _collect(fixture):
     return collector.collect(fixture.build, fixture.junit, fixture.portable, fixture.shutdown,
-        pytest_evidence=fixture.pytest_evidence)
+        pytest_evidence=fixture.pytest_evidence,
+        core_media_report=fixture.core_media if fixture.manifest['build_profile'] == 'core' else None,
+        core_media_service_binding_report=(
+            fixture.service_binding if fixture.manifest['build_profile'] == 'core' else None))
 
 
 def test_new_evidence_binding_keeps_stale_rows_and_snapshots_the_current_identity():
@@ -228,9 +375,12 @@ PIANO_AUDIO_CHECKS = (
 
 def _add_piano_audio_checks(fixture, names=PIANO_AUDIO_CHECKS):
     checks = json.loads(fixture.portable.read_text(encoding='utf-8'))
+    piano_model = fixture.manifest.get('piano_model')
     rows = {
         'piano_cold_inference': dict(
-            input_sha256='a' * 64, model_sha256='f' * 64, candidates=5,
+            input_sha256='a' * 64,
+            model_sha256=piano_model['sha256'] if piano_model else 'f' * 64,
+            candidates=5,
             seconds=1.25, release_reasons={'frame_decay': 5},
         ),
         'piano_manual_expression': dict(
@@ -260,7 +410,7 @@ def test_complete_optional_piano_audio_evidence_is_classified_without_music_acce
     assert piano_audio['status'] == 'passed'
     assert piano_audio['checks'] == list(PIANO_AUDIO_CHECKS)
     assert piano_audio['input_sha256'] == 'a' * 64
-    assert piano_audio['model_sha256'] == 'f' * 64
+    assert piano_audio['model_sha256'] == release_fixture.manifest['piano_model']['sha256']
     assert piano_audio['musical_acceptance'] is False
     assert report['limitations']['musical_acceptance'] is False
 
@@ -574,6 +724,18 @@ def test_same_executable_with_changed_source_manifest_rejects_old_reports(releas
         files = {name: package.read(name) for name in package.namelist()}
     files['ManiaLab/release-manifest.json'] = manifest_path.read_bytes()
     files['ManiaLab/_internal/static/app.js'] = source.read_bytes()
+    files['ManiaLab/_internal/static/'] = b''
+    fixture.manifest['archive_payload']['files']['ManiaLab/_internal/static/app.js'] = (
+        _sha(source.read_bytes())
+    )
+    fixture.manifest['archive_payload']['files'] = dict(sorted(
+        fixture.manifest['archive_payload']['files'].items()
+    ))
+    fixture.manifest['archive_payload']['directories'] = sorted(
+        set(fixture.manifest['archive_payload']['directories']) | {'ManiaLab/_internal/static/'}
+    )
+    manifest_path.write_text(json.dumps(fixture.manifest, indent=2), encoding='utf-8')
+    files['ManiaLab/release-manifest.json'] = manifest_path.read_bytes()
     with zipfile.ZipFile(archive, 'w') as package:
         for name, content in files.items():
             package.writestr(name, content)
@@ -581,10 +743,14 @@ def test_same_executable_with_changed_source_manifest_rejects_old_reports(releas
     with pytest.raises(SystemExit, match='Portable verification identity'):
         _collect(fixture)
 
-    # Updating only the portable report must still reject the old shutdown evidence.
+    # Refresh portable and Core media evidence; shutdown must remain stale.
     for row in fixture.checks:
         row['release_manifest_sha256'] = _sha(manifest_path.read_bytes())
     fixture.portable.write_text(json.dumps(fixture.checks), encoding='utf-8')
+    if fixture.manifest['build_profile'] == 'core':
+        core_media = json.loads(fixture.core_media.read_text(encoding='utf-8'))
+        core_media['release_manifest_sha256'] = _sha(manifest_path.read_bytes())
+        fixture.core_media.write_text(json.dumps(core_media), encoding='utf-8')
     with pytest.raises(SystemExit, match='Shutdown verification identity'):
         _collect(fixture)
 

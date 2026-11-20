@@ -7,6 +7,9 @@ import select
 import socket
 import socketserver
 import ssl
+import subprocess
+import sys
+import textwrap
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
@@ -606,6 +609,84 @@ def test_bounded_resolver_cancellation_does_not_use_default_executor(monkeypatch
         asyncio.run(exercise())
     finally:
         release.set()
+
+
+def test_permanent_resolver_subprocess_cancels_and_exits_with_daemon_thread():
+    code = textwrap.dedent("""
+        import asyncio
+        import json
+        import threading
+        import time
+
+        from manialab.planner import _BoundedResolver
+
+        started = threading.Event()
+        never_release = threading.Event()
+
+        def blocked_resolve(*args):
+            started.set()
+            never_release.wait()
+
+        resolver = _BoundedResolver(blocked_resolve)
+
+        async def exercise():
+            first = asyncio.create_task(resolver.resolve('synthetic.invalid', 80))
+            deadline = time.monotonic() + 2
+            while not started.is_set() and time.monotonic() < deadline:
+                await asyncio.sleep(0.01)
+            assert started.is_set(), 'synthetic resolver did not start'
+
+            cancel_started = time.monotonic()
+            first.cancel()
+            try:
+                await first
+            except asyncio.CancelledError:
+                pass
+            else:
+                raise AssertionError('resolve request did not cancel')
+            cancel_seconds = time.monotonic() - cancel_started
+            assert cancel_seconds < 1, cancel_seconds
+
+            busy_started = time.monotonic()
+            try:
+                await resolver.resolve('second.synthetic.invalid', 80)
+            except OSError as error:
+                assert str(error) == 'DNS resolver is busy', str(error)
+            else:
+                raise AssertionError('second resolve did not fail busy')
+            busy_seconds = time.monotonic() - busy_started
+            assert busy_seconds < 1, busy_seconds
+            assert resolver._busy
+            assert resolver._thread.is_alive()
+            assert resolver._thread.daemon
+
+            print(json.dumps({
+                'cancelled': first.cancelled(),
+                'cancel_seconds': cancel_seconds,
+                'busy_seconds': busy_seconds,
+                'resolver_busy': resolver._busy,
+                'resolver_thread_alive': resolver._thread.is_alive(),
+                'resolver_thread_daemon': resolver._thread.daemon,
+            }))
+
+        asyncio.run(exercise())
+    """)
+    completed = subprocess.run(
+        [sys.executable, '-c', code],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=5,
+        check=True,
+    )
+
+    result = json.loads(completed.stdout)
+    assert result['cancelled'] is True
+    assert result['cancel_seconds'] < 1
+    assert result['busy_seconds'] < 1
+    assert result['resolver_busy'] is True
+    assert result['resolver_thread_alive'] is True
+    assert result['resolver_thread_daemon'] is True
 
 
 def test_cancelled_plan_during_blocked_dns_releases_worker_and_preserves_project(tmp_path, monkeypatch):

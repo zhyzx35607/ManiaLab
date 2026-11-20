@@ -3,21 +3,28 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import json
 import math
 from pathlib import Path, PurePosixPath
+import re
+import stat
+import struct
 import subprocess
 import sys
+from urllib.parse import urlsplit
 import xml.etree.ElementTree as ET
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = ROOT
 sys.path.insert(0, str(ROOT))
 from manialab import __version__
 from scripts.package_assets import (
+    CORE_FILES, DEEP_FILES, MAPPER_INSTALLER_FILES, MODEL_METADATA_FILES,
     archive_stem, capabilities, verify_core_model_payload, verify_core_payload,
 )
-from scripts.build_provenance import uv_release_identity
+from scripts.build_provenance import source_snapshot_paths, uv_release_identity
 from scripts.pytest_provenance import validate_evidence
 
 
@@ -79,6 +86,7 @@ PORTABLE_GUITAR_CHECK_NAMES = frozenset({
     "guitar_real_audio_http",
     "guitar_cold_cancel",
 })
+CORE_MEDIA_SCOPE = "packaged Core EXE synthetic native-media smoke; not musical acceptance"
 
 
 def sha256(path):
@@ -94,12 +102,228 @@ def _is_sha256(value):
     )
 
 
+def _require_source_snapshot_keys(sources, source_root, enabled):
+    if not isinstance(sources, dict):
+        raise SystemExit("Portable manifest has no source snapshot.")
+
+    source_root = Path(source_root).resolve()
+    expected_paths = source_snapshot_paths(source_root, enabled)
+    expected_keys = tuple(path.relative_to(source_root).as_posix() for path in expected_paths)
+    if len(expected_keys) != len(set(expected_keys)):
+        raise SystemExit("Build source snapshot contains duplicate canonical paths.")
+    if any(not _is_safe_archive_relative_path(key) for key in sources):
+        raise SystemExit("Portable manifest has a non-canonical source snapshot path.")
+    if set(sources) != set(expected_keys):
+        raise SystemExit("Portable manifest source snapshot key inventory differs from build inputs.")
+    if any(not _is_sha256(sources[key]) for key in expected_keys):
+        raise SystemExit("Portable manifest has an invalid source snapshot identity.")
+    return source_root, expected_keys
+
+
 def _is_verification_run_id(value):
     return (
         isinstance(value, str)
         and len(value) == 32
         and all(character in "0123456789abcdef" for character in value)
     )
+
+
+def _validate_core_media_report(report_path, expected_identity, verification_run_id):
+    try:
+        report_bytes = Path(report_path).read_bytes()
+        report = json.loads(report_bytes)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"Core media verification report is missing or invalid: {exc}") from exc
+
+    expected_scope = CORE_MEDIA_SCOPE
+    if not isinstance(report, dict) or type(report.get("schema")) is not int \
+            or report["schema"] != 1 \
+            or report.get("check") != "core_media_session" \
+            or report.get("status") != "passed" or report.get("scope") != expected_scope:
+        raise SystemExit("Core media verification report is incomplete or has an invalid scope.")
+    cleanup_failures = report.get("cleanup_failures", [])
+    if not isinstance(cleanup_failures, list) or cleanup_failures:
+        raise SystemExit("Core media verification report has cleanup failures or invalid cleanup_failures.")
+    if report.get("build_profile") != "core" or not _matches_identity(report, expected_identity) \
+            or report.get("verification_run_id") != verification_run_id:
+        raise SystemExit("Core media verification identity differs from this build/run.")
+    if not isinstance(report.get("run_id"), str) or not re.fullmatch(
+            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+            report["run_id"]):
+        raise SystemExit("Core media verification report has an invalid run_id.")
+
+    raw_base_url = report.get("base_url")
+    if not isinstance(raw_base_url, str):
+        raise SystemExit("Core media verification report has an invalid base_url.")
+    try:
+        base_url = urlsplit(raw_base_url)
+        port = base_url.port
+    except (TypeError, ValueError):
+        raise SystemExit("Core media verification report has an invalid base_url.") from None
+    if base_url.scheme != "http" or base_url.hostname not in ("127.0.0.1", "localhost", "::1") \
+            or port is None or not 1 <= port <= 65535 or base_url.path not in ("", "/") \
+            or base_url.query or base_url.fragment or base_url.username or base_url.password:
+        raise SystemExit("Core media verification report has an invalid base_url.")
+
+    expected_steps = [
+        "synthetic_projects", "audio_range", "seek", "play_pause",
+        "rapid_source_switch", "browser_health",
+    ]
+    steps = report.get("steps")
+    if not isinstance(steps, list) or len(steps) != len(expected_steps) \
+            or any(not isinstance(step, dict) or step.get("name") != name
+                   or step.get("status") != "passed"
+                   for step, name in zip(steps, expected_steps)):
+        raise SystemExit("Core media verification report is missing passed smoke steps.")
+
+    projects = steps[0].get("projects")
+    if not isinstance(projects, list) or len(projects) != 2 \
+            or any(not isinstance(project, dict) or not isinstance(project.get("id"), str)
+                   or not project["id"] for project in projects) \
+            or projects[0]["id"] == projects[1]["id"] \
+            or any(type(project.get("bytes")) is not int or project["bytes"] <= 63
+                   for project in projects) \
+            or projects[0]["bytes"] != projects[1]["bytes"]:
+        raise SystemExit("Core media verification report has invalid synthetic projects.")
+    project_bytes = projects[0].get("bytes")
+    content_range = steps[1].get("content_range")
+    range_match = re.fullmatch(r"bytes 0-63/([0-9]+)", content_range) \
+        if isinstance(content_range, str) else None
+    range_total_matches_project = (
+        type(project_bytes) is int
+        and project_bytes > 63
+        and range_match is not None
+        and range_match.group(1) == str(project_bytes)
+    )
+    if steps[1].get("http_status") != 206 or steps[1].get("bytes") != 64 \
+            or not range_total_matches_project:
+        raise SystemExit("Core media verification report has invalid audio Range evidence.")
+
+    def finite_number(value):
+        return type(value) is int or (type(value) is float and math.isfinite(value))
+
+    seek = steps[2]
+    target = seek.get("target_seconds")
+    actual = seek.get("actual_seconds")
+    duration = seek.get("duration_seconds")
+    if not finite_number(target) or target != 1.25 \
+            or not finite_number(actual) or abs(actual - target) >= 0.1 \
+            or not finite_number(duration) or not 5.9 <= duration <= 6.1 \
+            or actual < 0 or actual >= duration:
+        raise SystemExit("Core media verification report has invalid seek evidence.")
+
+    playback = steps[3]
+    started = playback.get("started_at_seconds")
+    paused = playback.get("paused_at_seconds")
+    after_pause = playback.get("after_pause_seconds")
+    if not finite_number(started) or abs(started - actual) > 1e-6 \
+            or not finite_number(paused) or paused < 0 or paused >= duration \
+            or paused - started <= 0.15 \
+            or not finite_number(after_pause) or after_pause < 0 or after_pause >= duration \
+            or abs(after_pause - paused) > 0.04:
+        raise SystemExit("Core media verification report has invalid play/pause evidence.")
+
+    browser_health = steps[5]
+    if type(browser_health.get("page_errors")) is not int \
+            or browser_health["page_errors"] != 0 \
+            or browser_health.get("version") != __version__:
+        raise SystemExit("Core media verification report has invalid browser health evidence.")
+
+    rapid = steps[4]
+    project_ids = [project["id"] for project in projects]
+    expected_order = [project_ids[1], project_ids[0]]
+    pre_switch_ids = rapid.get("pre_switch_audio_project_ids")
+    held_count = rapid.get("held_audio_requests")
+    if rapid.get("requested_projects") != expected_order \
+            or rapid.get("requested_project_ids") != expected_order \
+            or rapid.get("final_project") != project_ids[0] \
+            or not isinstance(pre_switch_ids, list) \
+            or any(project_id != project_ids[0] for project_id in pre_switch_ids) \
+            or rapid.get("unexpected_audio_project_ids") != [] \
+            or type(held_count) is not int or held_count < 2:
+        raise SystemExit("Core media verification report has invalid rapid-switch evidence.")
+    saved_time = rapid.get("saved_seconds")
+    return_start = rapid.get("return_start_seconds")
+    final_time = rapid.get("final_seconds")
+    if not finite_number(saved_time) or saved_time <= 1.3 or saved_time >= duration \
+            or not finite_number(return_start) or not 0 <= return_start <= 0.35 \
+            or return_start >= duration \
+            or not finite_number(final_time) or final_time >= duration \
+            or final_time - return_start <= 0.15:
+        raise SystemExit("Core media verification report has invalid rapid-switch playback evidence.")
+
+    return {
+        "passed": True,
+        "scope": expected_scope,
+        "run_id": report["run_id"],
+        "verification_run_id": verification_run_id,
+        "build_profile": "core",
+        "executable_sha256": expected_identity["executable_sha256"],
+        "release_manifest_sha256": expected_identity["release_manifest_sha256"],
+        "report_sha256": sha256_bytes(report_bytes),
+    }, raw_base_url
+
+
+def _validate_core_media_service_binding_report(
+        report_path, expected_identity, verification_run_id, expected_base_url):
+    try:
+        report_bytes = Path(report_path).read_bytes()
+        report = json.loads(report_bytes)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SystemExit(
+            f"Core media service binding report is missing or invalid: {exc}"
+        ) from exc
+
+    if not isinstance(report, dict) or type(report.get("schema")) is not int \
+            or report["schema"] != 1 \
+            or report.get("check") != "core_media_service_process_binding" \
+            or report.get("status") != "passed":
+        raise SystemExit("Core media service binding report is incomplete or failed.")
+    if report.get("verification_run_id") != verification_run_id \
+            or report.get("base_url") != expected_base_url \
+            or report.get("executable_sha256") != expected_identity["executable_sha256"]:
+        raise SystemExit("Core media service binding identity differs from this build/run.")
+
+    executable_pid = report.get("executable_pid")
+    listeners_before = report.get("listeners_before")
+    listeners_after = report.get("listeners_after")
+    if type(executable_pid) is not int or executable_pid <= 0 \
+            or not isinstance(listeners_before, list) or not listeners_before \
+            or not isinstance(listeners_after, list) or not listeners_after:
+        raise SystemExit("Core media service binding report has invalid process evidence.")
+    try:
+        service_port = urlsplit(expected_base_url).port
+    except (TypeError, ValueError):
+        service_port = None
+    if service_port is None:
+        raise SystemExit("Core media service binding report has an invalid base_url.")
+
+    for listeners in (listeners_before, listeners_after):
+        for listener in listeners:
+            if not isinstance(listener, dict):
+                raise SystemExit("Core media service binding report has invalid listener evidence.")
+            local_address = listener.get("local_address")
+            local_port = listener.get("local_port")
+            owning_process = listener.get("owning_process")
+            try:
+                address = ipaddress.ip_address(local_address) if isinstance(local_address, str) else None
+            except ValueError:
+                address = None
+            if address is None or not (address.is_loopback or address.is_unspecified) \
+                    or type(local_port) is not int or local_port != service_port \
+                    or type(owning_process) is not int or owning_process != executable_pid:
+                raise SystemExit("Core media service binding report has invalid listener ownership.")
+
+    return {
+        "passed": True,
+        "verification_run_id": verification_run_id,
+        "base_url": expected_base_url,
+        "executable_sha256": expected_identity["executable_sha256"],
+        "executable_pid": executable_pid,
+        "listeners_before": len(listeners_before),
+        "listeners_after": len(listeners_after),
+        "report_sha256": sha256_bytes(report_bytes),
+    }
 
 
 def _require_specialist_verification_identity(portable, expected_identity, declared_capabilities):
@@ -495,6 +719,23 @@ def _require_archive_file(archive, name, expected_sha256, expected_bytes=None):
         raise SystemExit(f"Release ZIP component differs from its manifest identity: {name}")
 
 
+def _require_source_snapshot_file(archive, manifest, relative):
+    source_path = "assets/" + relative
+    sources = manifest.get("sources")
+    expected_sha256 = sources.get(source_path) if isinstance(sources, dict) else None
+    if not _is_sha256(expected_sha256):
+        raise SystemExit(f"Portable manifest has no source identity for bundled asset: {source_path}")
+    source = (SOURCE_ROOT / source_path).resolve()
+    if not source.is_relative_to(SOURCE_ROOT.resolve()) or not source.is_file():
+        raise SystemExit(f"Portable manifest has no source identity for bundled asset: {source_path}")
+    _require_archive_file(
+        archive,
+        "ManiaLab/_internal/assets/" + relative,
+        expected_sha256,
+        expected_bytes=source.stat().st_size,
+    )
+
+
 def _require_uv_runtime_zip_payload(archive, declared_capabilities):
     if not declared_capabilities["mapperatorinator_install"]:
         return
@@ -559,6 +800,103 @@ def _require_archive_inventory(archive, prefix, expected, *, require_bytes=False
 
 
 def _require_specialist_zip_payloads(archive, manifest, declared_capabilities):
+    if declared_capabilities["pattern_prior"]:
+        _require_source_snapshot_file(archive, manifest, "pattern-prior.json")
+
+    if declared_capabilities["piano"]:
+        identity = manifest.get("piano_model")
+        if (
+            not isinstance(identity, dict)
+            or identity.get("filename") != "piano-regression.onnx"
+            or not _valid_count(identity.get("bytes"))
+            or not _is_sha256(identity.get("sha256"))
+        ):
+            raise SystemExit("Portable manifest has a missing or invalid piano model identity.")
+        _require_archive_file(
+            archive,
+            "ManiaLab/_internal/assets/deep/piano-regression.onnx",
+            identity["sha256"],
+            expected_bytes=identity["bytes"],
+        )
+        _require_archive_json(
+            archive, "ManiaLab/_internal/assets/piano-model.json", identity
+        )
+
+    if declared_capabilities["separation_four"]:
+        _require_archive_inventory(
+            archive,
+            "ManiaLab/_internal/assets/deep/ManiaLabAudio/",
+            manifest.get("worker_files"),
+            require_bytes=True,
+        )
+        worker_executable = manifest.get("worker_files", {}).get("ManiaLabAudio.exe")
+        if (
+            not isinstance(worker_executable, dict)
+            or worker_executable.get("sha256") != manifest.get("worker_sha256")
+        ):
+            raise SystemExit("Portable manifest has an invalid separation worker identity.")
+        try:
+            worker_manifest = json.loads(
+                archive.read("ManiaLab/_internal/assets/deep/manifest.json")
+            )
+            deep_models_bytes = archive.read("ManiaLab/_internal/assets/deep-models.json")
+            deep_models = json.loads(deep_models_bytes)
+        except KeyError as exc:
+            raise SystemExit(f"Release ZIP is missing required component: {exc.args[0]}") from exc
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise SystemExit("Release ZIP has invalid separation model metadata.") from exc
+        if not isinstance(worker_manifest, dict):
+            raise SystemExit("Release ZIP has invalid separation worker metadata.")
+        if any(
+            worker_manifest.get(field) != manifest.get(field)
+            for field in ("worker_sha256", "worker_sources", "worker_files")
+        ):
+            raise SystemExit("Release ZIP separation worker manifest differs from its release manifest.")
+        _require_source_snapshot_file(archive, manifest, "deep-models.json")
+        expected_models = {
+            "hdemucs_high_trained.pt",
+            "beat-this-final0.ckpt",
+            "htdemucs_6s.th",
+        }
+        models = deep_models.get("models") if isinstance(deep_models, dict) else None
+        if (
+            not isinstance(models, list)
+            or len(models) != len(expected_models)
+            or any(
+                not isinstance(row, dict) or not isinstance(row.get("filename"), str)
+                for row in models
+            )
+            or {row["filename"] for row in models} != expected_models
+        ):
+            raise SystemExit("Release ZIP has an invalid separation model inventory.")
+        for model in models:
+            filename = model.get("filename")
+            if (
+                not _is_sha256(model.get("sha256"))
+                or not _valid_count(model.get("bytes"))
+                or not isinstance(filename, str)
+            ):
+                raise SystemExit("Release ZIP has an invalid separation model identity.")
+            _require_archive_file(
+                archive,
+                "ManiaLab/_internal/assets/deep/" + filename,
+                model["sha256"],
+                expected_bytes=model["bytes"],
+            )
+
+    names = [info.filename.casefold() for info in archive.infolist()]
+    if not declared_capabilities["guitar"] and any(
+        name == "maniaLab/_internal/assets/deep/guitar-fl.onnx".casefold()
+        for name in names
+    ):
+        raise SystemExit("Release ZIP contains a guitar model without guitar capability.")
+    instrument_prefix = "maniaLab/_internal/assets/instruments/".casefold()
+    if not declared_capabilities["instruments"] and any(
+        name == instrument_prefix[:-1] or name.startswith(instrument_prefix)
+        for name in names
+    ):
+        raise SystemExit("Release ZIP contains instrument assets without instruments capability.")
+
     if declared_capabilities["guitar"]:
         identity = manifest["guitar_model"]
         assets_prefix = "ManiaLab/_internal/assets/"
@@ -631,6 +969,76 @@ def _require_license_zip_payloads(archive, manifest):
         _require_archive_inventory(archive, prefix, files, require_bytes=True)
 
 
+def _require_staged_asset_inventory(archive, manifest, declared_capabilities):
+    prefix = "ManiaLab/_internal/assets/"
+    expected = set(CORE_FILES)
+    source_backed = set(CORE_FILES) - {"basic-pitch.onnx"}
+
+    if declared_capabilities["pattern_prior"]:
+        expected.update(MODEL_METADATA_FILES)
+        source_backed.update(MODEL_METADATA_FILES)
+
+    if declared_capabilities["mapperatorinator_install"]:
+        expected.update(MAPPER_INSTALLER_FILES)
+        source_backed.update(
+            name for name in MAPPER_INSTALLER_FILES if name != "runtime/uv.exe"
+        )
+
+    if declared_capabilities["separation_four"]:
+        expected.update(DEEP_FILES)
+        worker_files = manifest.get("worker_files")
+        if not isinstance(worker_files, dict):
+            raise SystemExit("Portable manifest has no separation worker file inventory.")
+        expected.update("deep/ManiaLabAudio/" + name for name in worker_files)
+
+    if declared_capabilities["guitar"]:
+        expected.add("deep/guitar-fl.onnx")
+
+    if declared_capabilities["instruments"]:
+        identity = manifest["instrument_worker"]
+        expected.update({
+            "instruments/manifest.json",
+            "instruments/verification.json",
+            "instruments/LICENSE-tsumugi",
+        })
+        expected.update(
+            f"instruments/checkpoints/best_model_{name}.pth"
+            for name in identity["models"]
+        )
+        expected.update(
+            "instruments/source/" + name for name in identity["source_files"]
+        )
+        expected.update(
+            "instruments/ManiaLabInstrument/" + name
+            for name in identity["worker_files"]
+        )
+
+    for relative in source_backed:
+        _require_source_snapshot_file(archive, manifest, relative)
+
+    actual_files = {
+        info.filename[len(prefix):]
+        for info in archive.infolist()
+        if info.filename.startswith(prefix) and not info.is_dir()
+    }
+    if actual_files != expected:
+        raise SystemExit("Release ZIP asset inventory differs from the staged profile.")
+
+    allowed_directories = {""}
+    for relative in expected:
+        parts = PurePosixPath(relative).parts[:-1]
+        allowed_directories.update(
+            "/".join(parts[:index]) for index in range(1, len(parts) + 1)
+        )
+    actual_directories = {
+        info.filename[len(prefix):-1]
+        for info in archive.infolist()
+        if info.filename.startswith(prefix) and info.is_dir()
+    }
+    if not actual_directories.issubset(allowed_directories):
+        raise SystemExit("Release ZIP contains an undeclared staged asset directory.")
+
+
 _WINDOWS_INVALID_PATH_CHARS = frozenset('<>:"|?*\\')
 _WINDOWS_RESERVED_DEVICE_NAMES = frozenset(
     {"con", "prn", "aux", "nul", "conin$", "conout$"}
@@ -690,6 +1098,111 @@ def _require_archive_path_tree(infos):
                     "Release ZIP has case-insensitive path collisions or file/directory conflicts."
                 )
             nodes[key] = (spelling, kind)
+
+
+def _is_safe_archive_directory_path(name):
+    if not isinstance(name, str) or not name.endswith("/"):
+        return False
+    relative = name[:-1]
+    path = PurePosixPath(relative)
+    return (
+        bool(relative)
+        and not path.is_absolute()
+        and path.as_posix() == relative
+        and ".." not in path.parts
+        and "\\" not in relative
+        and ":" not in relative
+        and path.parts[0] == "ManiaLab"
+        and all(_is_safe_windows_archive_component(part) for part in path.parts)
+    )
+
+
+def _require_archive_payload_inventory(archive, manifest):
+    payload = manifest.get("archive_payload")
+    if not isinstance(payload, dict) or set(payload) != {"files", "directories"}:
+        raise SystemExit("Portable manifest has no valid archive_payload inventory.")
+    files = payload.get("files")
+    directories = payload.get("directories")
+    manifest_path = "ManiaLab/release-manifest.json"
+    if not isinstance(files, dict) or not files or manifest_path in files \
+            or not isinstance(directories, list) or not directories:
+        raise SystemExit("Portable manifest has an incomplete archive_payload inventory.")
+    if any(
+        not _is_safe_archive_relative_path(name)
+        or not name.startswith("ManiaLab/")
+        or not _is_sha256(digest)
+        for name, digest in files.items()
+    ):
+        raise SystemExit("Portable manifest has an unsafe archive_payload file identity.")
+    if any(not _is_safe_archive_directory_path(name) for name in directories) \
+            or directories != sorted(directories) \
+            or len(directories) != len(set(directories)) \
+            or "ManiaLab/" not in directories:
+        raise SystemExit("Portable manifest has an unsafe archive_payload directory inventory.")
+
+    directory_set = set(directories)
+    for name in (*files, *directories):
+        path = PurePosixPath(name[:-1] if name.endswith("/") else name)
+        parent = path.parent
+        while parent.parts:
+            if parent.as_posix() + "/" not in directory_set:
+                raise SystemExit("Portable archive_payload inventory has an incomplete directory tree.")
+            parent = parent.parent
+
+    actual_files = {info.filename for info in archive.infolist() if not info.is_dir()}
+    actual_directories = {info.filename for info in archive.infolist() if info.is_dir()}
+    if actual_files != set(files) | {manifest_path}:
+        raise SystemExit("Release ZIP file inventory differs from its archive_payload manifest.")
+    if actual_directories != directory_set:
+        raise SystemExit("Release ZIP directory inventory differs from its archive_payload manifest.")
+
+    for info in archive.infolist():
+        if info.is_dir():
+            if info.file_size != 0 or info.compress_size != 0 or info.CRC != 0 \
+                    or info.flag_bits & 0x08:
+                raise SystemExit("Release ZIP contains a directory entry with payload data.")
+            stream = archive.fp
+            if stream is None:
+                raise SystemExit("Release ZIP has no readable local directory header.")
+            position = stream.tell()
+            try:
+                stream.seek(info.header_offset)
+                local_header = stream.read(30)
+            finally:
+                stream.seek(position)
+            if len(local_header) != 30:
+                raise SystemExit("Release ZIP has a truncated local directory header.")
+            (
+                signature, _, flags, compression, _, _, crc, compressed_size,
+                file_size, _, _,
+            ) = struct.unpack("<IHHHHHIIIHH", local_header)
+            if signature != 0x04034B50 or flags != info.flag_bits \
+                    or compression != info.compress_type or crc != info.CRC \
+                    or compressed_size != info.compress_size or file_size != info.file_size:
+                raise SystemExit("Release ZIP local directory header differs from its central entry.")
+        if info.create_system == 3:
+            file_type = stat.S_IFMT(info.external_attr >> 16)
+            expected_type = stat.S_IFDIR if info.is_dir() else stat.S_IFREG
+            if file_type not in (0, expected_type):
+                raise SystemExit("Release ZIP contains a non-regular archive entry.")
+    for name, expected_sha256 in files.items():
+        _require_archive_file(archive, name, expected_sha256)
+
+
+def _require_archive_source_documents(archive, manifest):
+    sources = manifest.get("sources")
+    if not isinstance(sources, dict):
+        raise SystemExit("Portable manifest has no source snapshot for bundled documents.")
+    copied_sources = {"README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"}
+    copied_sources.update(name for name in sources if name.startswith("docs/"))
+    if not {"README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"}.issubset(sources) \
+            or not any(name.startswith("docs/") for name in copied_sources):
+        raise SystemExit("Portable manifest source snapshot omits bundled documents.")
+    for source_path in copied_sources:
+        expected_sha256 = sources.get(source_path)
+        if not _is_sha256(expected_sha256):
+            raise SystemExit(f"Portable manifest has no source identity for document: {source_path}")
+        _require_archive_file(archive, "ManiaLab/" + source_path, expected_sha256)
 
 
 def _require_mode_results(check, expected_modes, required_flags):
@@ -757,19 +1270,26 @@ def _require_instrument_evidence(portable):
             raise SystemExit(f"Instrument real-audio evidence is incomplete for voice {voice}.")
 
 
-def collect(build_root, pytest_report, portable_report, shutdown_report, *, pytest_evidence=None):
+def collect(build_root, pytest_report, portable_report, shutdown_report, *,
+            pytest_evidence=None, core_media_report=None,
+            core_media_service_binding_report=None):
     build_root = Path(build_root).resolve()
     package_dir = build_root / "release"
     executable = build_root / "dist" / "ManiaLab" / "ManiaLab.exe"
     manifest_path = executable.parent / "release-manifest.json"
     if not all(path.is_file() for path in (executable, manifest_path)):
         raise SystemExit("Portable executable or manifest is missing.")
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_bytes = manifest_path.read_bytes()
+    manifest = json.loads(manifest_bytes)
+    manifest_sha256 = sha256_bytes(manifest_bytes)
     profile = manifest.get("build_profile")
     try:
         declared_capabilities = capabilities(profile)
     except (TypeError, ValueError) as exc:
         raise SystemExit(f"Portable manifest has an unknown build profile: {profile!r}") from exc
+    source_root, source_keys = _require_source_snapshot_keys(
+        manifest.get("sources"), SOURCE_ROOT, declared_capabilities
+    )
     if not _matches_capabilities(manifest.get("capabilities"), declared_capabilities):
         raise SystemExit("Portable capabilities do not match the declared build profile.")
     _require_specialist_components(manifest, declared_capabilities)
@@ -782,9 +1302,10 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
     executable_sha = sha256(executable)
     if manifest.get("version") != __version__ or manifest.get("executable_sha256") != executable_sha:
         raise SystemExit("Portable executable identity does not match the release manifest.")
-    for relative, expected in manifest["sources"].items():
-        source = (ROOT / relative).resolve()
-        if not source.is_relative_to(ROOT) or not source.is_file() or sha256(source) != expected:
+    for relative in source_keys:
+        expected = manifest["sources"][relative]
+        source = (source_root / PurePosixPath(relative)).resolve()
+        if not source.is_relative_to(source_root) or not source.is_file() or sha256(source) != expected:
             raise SystemExit(f"Source snapshot mismatch: {relative}")
     commit = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
@@ -794,7 +1315,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         pytest_evidence = pytest_path.with_name(pytest_path.name + ".provenance.json")
     try:
         pytest_identity = validate_evidence(
-            pytest_evidence, pytest_report, root=ROOT, expected_commit=commit
+            pytest_evidence, pytest_report, root=SOURCE_ROOT, expected_commit=commit
         )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         raise SystemExit(f"Pytest evidence provenance is invalid: {exc}") from exc
@@ -811,7 +1332,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         if sha256_bytes(archive.read("ManiaLab/ManiaLab.exe")) != executable_sha:
             raise SystemExit("Release ZIP executable does not match the verified build.")
         archive_manifest = archive.read("ManiaLab/release-manifest.json")
-        if sha256_bytes(archive_manifest) != sha256(manifest_path):
+        if sha256_bytes(archive_manifest) != manifest_sha256:
             raise SystemExit("Release ZIP manifest bytes do not match the verified build.")
         if json.loads(archive_manifest) != manifest:
             raise SystemExit("Release ZIP manifest does not match the verified build.")
@@ -834,6 +1355,9 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         _require_license_zip_payloads(archive, manifest)
         _require_uv_runtime_zip_payload(archive, declared_capabilities)
         _require_specialist_zip_payloads(archive, manifest, declared_capabilities)
+        _require_staged_asset_inventory(archive, manifest, declared_capabilities)
+        _require_archive_payload_inventory(archive, manifest)
+        _require_archive_source_documents(archive, manifest)
 
     suites = ET.parse(pytest_report).getroot()
     suite_nodes = [suites] if suites.tag == "testsuite" else list(suites.findall("testsuite"))
@@ -881,7 +1405,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         raise SystemExit('Portable verification must contain exactly one release_manifest identity check.')
     expected_identity = {field: manifest[field] for field in
         ('build_profile', 'capabilities', 'executable_sha256')}
-    expected_identity['release_manifest_sha256'] = sha256(manifest_path)
+    expected_identity['release_manifest_sha256'] = manifest_sha256
     if not _matches_identity(portable_identities[0], expected_identity):
         raise SystemExit('Portable verification identity differs from this build; rerun EXE verification.')
     verification_run_id = portable_identities[0].get('verification_run_id')
@@ -908,6 +1432,27 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
         raise SystemExit(
             "Portable verification report contains a check not applicable to the declared profile or capabilities."
         )
+    if profile == "core":
+        if core_media_report is None:
+            raise SystemExit("Core portable verification is missing the Core media report.")
+        core_media_evidence, core_media_base_url = _validate_core_media_report(
+            core_media_report, expected_identity, verification_run_id
+        )
+        if core_media_service_binding_report is None:
+            raise SystemExit("Core portable verification is missing the Core media service binding report.")
+        core_media_service_binding_evidence = _validate_core_media_service_binding_report(
+            core_media_service_binding_report,
+            expected_identity,
+            verification_run_id,
+            core_media_base_url,
+        )
+        core_media_evidence["service_binding_report_sha256"] = (
+            core_media_service_binding_evidence["report_sha256"]
+        )
+    else:
+        if core_media_report is not None or core_media_service_binding_report is not None:
+            raise SystemExit("Core media verification report is unsupported for this profile.")
+        core_media_evidence = None
     piano_audio_evidence = _validate_portable_check_payloads(
         portable, profile, manifest, expected_identity, verification_run_id
     )
@@ -969,7 +1514,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
             "sha256": sha256(archive_path),
         },
         "executable_sha256": executable_sha,
-        "release_manifest_sha256": sha256(manifest_path),
+        "release_manifest_sha256": manifest_sha256,
         "source_files": len(manifest["sources"]),
         "verification": {
             "pytest": {
@@ -986,6 +1531,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
                 "checks": portable_checks,
                 "report_sha256": sha256(portable_report),
             },
+            "core_media": core_media_evidence,
             "piano_model": {
                 "sha256": piano_check["sha256"],
                 "bytes": piano_check["bytes"],
@@ -1036,11 +1582,14 @@ def main():
     parser.add_argument("--pytest-report", type=Path, required=True)
     parser.add_argument("--pytest-evidence", type=Path)
     parser.add_argument("--portable-report", type=Path, required=True)
+    parser.add_argument("--core-media-report", type=Path)
+    parser.add_argument("--core-media-service-binding-report", type=Path)
     parser.add_argument("--shutdown-report", type=Path, required=True)
     args = parser.parse_args()
     report, output, checksums = collect(
         args.build_root, args.pytest_report, args.portable_report, args.shutdown_report,
-        pytest_evidence=args.pytest_evidence,
+        pytest_evidence=args.pytest_evidence, core_media_report=args.core_media_report,
+        core_media_service_binding_report=args.core_media_service_binding_report,
     )
     print(json.dumps({
         "validation": str(output),

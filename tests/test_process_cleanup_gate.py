@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
 
 import pytest
@@ -111,6 +112,122 @@ def test_successful_process_reaping_keeps_next_task_available(task_store):
     assert service.shutdown() is True
 
 
+@pytest.mark.parametrize('failing_query', ['poll', 'wait'])
+def test_transient_process_query_failure_recovers_without_blocking_next_task(
+        task_store, failing_query):
+    _, service, pid = task_store
+
+    class TransientQueryFailure:
+        def __init__(self):
+            self.alive = True
+            self.poll_calls = 0
+            self.wait_calls = 0
+            self.kill_calls = 0
+
+        def poll(self):
+            self.poll_calls += 1
+            if failing_query == 'poll' and self.poll_calls == 1:
+                raise OSError('synthetic one-time process status query failure')
+            return None if self.alive else -15
+
+        def terminate(self):
+            self.alive = False
+
+        def wait(self, timeout):
+            self.wait_calls += 1
+            if failing_query == 'wait' and self.wait_calls == 1:
+                raise OSError('synthetic one-time process wait failure')
+            return -15
+
+        def kill(self):
+            self.kill_calls += 1
+            self.alive = False
+
+    process = TransientQueryFailure()
+    job = service.submit(pid, lambda state, progress, cancelled:
+        {'reaped': stop_process(process, cancelled, terminate_timeout=.01, kill_timeout=.01)})
+    result = _finished(service, job['id'])
+
+    assert result['status'] == 'done'
+    assert result['result'] == {'reaped': True}
+    assert not service._shutdown_cancellation.process_cleanup_failed
+    assert not service._shutdown_cancellation.cleanup_failures
+    next_job = service.submit(pid, lambda *args: {'worker_reused': True})
+    assert _finished(service, next_job['id'])['status'] == 'done'
+    assert service.shutdown() is True
+
+
+@pytest.mark.parametrize('failing_query', ['poll', 'wait'])
+def test_process_query_failure_during_cleanup_blocks_next_task(task_store, failing_query):
+    _, service, pid = task_store
+
+    class QueryFailure:
+        def __init__(self):
+            self.kill_calls = 0
+
+        def poll(self):
+            if failing_query == 'poll':
+                raise OSError('synthetic process status query failure')
+            return None
+
+        def terminate(self):
+            pass
+
+        def wait(self, timeout):
+            raise OSError('synthetic process wait failure')
+
+        def kill(self):
+            self.kill_calls += 1
+
+    process = QueryFailure()
+    job = service.submit(pid, lambda state, progress, cancelled:
+        stop_process(process, cancelled, terminate_timeout=.01, kill_timeout=.01))
+    assert _finished(service, job['id'])['status'] == 'error'
+    assert service._shutdown_cancellation.process_cleanup_failed
+    assert service._shutdown_cancellation.cleanup_failures
+    assert process.kill_calls == 1
+    _assert_next_task_blocked(service, pid)
+    assert service.shutdown() is False
+
+
+@pytest.mark.parametrize('failing_query', ['poll', 'wait'])
+def test_mapper_process_query_failure_during_cleanup_blocks_next_task(
+        task_store, monkeypatch, failing_query):
+    from manialab.upstream import MapperEngine
+    from types import SimpleNamespace
+
+    _, service, pid = task_store
+    monkeypatch.setattr('manialab.upstream.os', SimpleNamespace(name='posix'))
+
+    class QueryFailure:
+        def __init__(self):
+            self.kill_calls = 0
+
+        def poll(self):
+            if failing_query == 'poll':
+                raise OSError('synthetic mapper process status query failure')
+            return None
+
+        def terminate(self):
+            pass
+
+        def kill(self):
+            self.kill_calls += 1
+
+        def wait(self, timeout):
+            raise OSError('synthetic mapper process wait failure')
+
+    process = QueryFailure()
+    job = service.submit(pid, lambda state, progress, cancelled:
+        MapperEngine.stop_process(process, cancelled))
+    assert _finished(service, job['id'])['status'] == 'error'
+    assert service._shutdown_cancellation.process_cleanup_failed
+    assert service._shutdown_cancellation.cleanup_failures
+    assert process.kill_calls >= 1
+    _assert_next_task_blocked(service, pid)
+    assert service.shutdown() is False
+
+
 def test_file_cleanup_failure_does_not_trigger_process_gate(task_store):
     _, service, pid = task_store
 
@@ -148,24 +265,11 @@ def test_process_failure_reporter_keeps_legacy_callable_diagnostics():
     assert failures == ['synthetic child still alive']
 
 
-@pytest.mark.skipif(os.name != 'nt', reason='Windows descendant cleanup')
-def test_mapper_descendant_failure_blocks_tasks_after_root_has_exited(task_store, monkeypatch):
+@pytest.mark.skipif(os.name != 'nt', reason='Windows Job Object cleanup')
+def test_mapper_rejects_unowned_windows_process_after_root_exits(task_store):
     from manialab import upstream
 
     _, service, pid = task_store
-
-    class ApiCall:
-        def __init__(self, callback):
-            self.callback = callback
-
-        def __call__(self, *args):
-            return self.callback(*args)
-
-    class Kernel:
-        OpenProcess = ApiCall(lambda *args: 42)
-        TerminateProcess = ApiCall(lambda *args: True)
-        WaitForSingleObject = ApiCall(lambda *args: 258)
-        CloseHandle = ApiCall(lambda *args: True)
 
     class FinishedParent:
         pid = 123
@@ -173,8 +277,6 @@ def test_mapper_descendant_failure_blocks_tasks_after_root_has_exited(task_store
         def poll(self):
             return 0
 
-    monkeypatch.setattr(upstream.ctypes, 'WinDLL', lambda *args, **kwargs: Kernel())
-    monkeypatch.setattr(upstream.MapperEngine, '_windows_descendants', lambda pid: [456])
     job = service.submit(pid, lambda state, progress, cancelled:
         upstream.MapperEngine.stop_process(FinishedParent(), cancelled))
     assert _finished(service, job['id'])['status'] == 'error'
@@ -183,47 +285,24 @@ def test_mapper_descendant_failure_blocks_tasks_after_root_has_exited(task_store
     assert service.shutdown() is False
 
 
-@pytest.mark.skipif(os.name != 'nt', reason='Windows descendant cleanup')
-def test_mapper_enumeration_failure_blocks_tasks_after_root_has_exited(task_store, monkeypatch):
+@pytest.mark.skipif(os.name != 'nt', reason='Windows Job Object cleanup')
+def test_mapper_owned_job_cleanup_failure_blocks_later_tasks(task_store):
     from manialab import upstream
+    from manialab.cancellation import report_process_cleanup_failure
 
     _, service, pid = task_store
-    child_calls = []
+    cleanup_calls = []
 
-    class ApiCall:
-        def __init__(self, callback):
-            self.callback = callback
+    class OwnedJobProcess:
+        def _manialab_stop_tree(self, cancelled, maximum):
+            cleanup_calls.append(maximum)
+            report_process_cleanup_failure(cancelled, 'synthetic owned worker job still has active processes')
+            raise ChildProcessError('Owned worker process tree cleanup could not be verified')
 
-        def __call__(self, *args):
-            return self.callback(*args)
-
-    class Kernel:
-        OpenProcess = ApiCall(lambda *args: 42)
-        TerminateProcess = ApiCall(lambda *args: child_calls.append(args) or True)
-        WaitForSingleObject = ApiCall(lambda *args: 0)
-        CloseHandle = ApiCall(lambda *args: True)
-
-    class FinishedParent:
-        pid = 123
-
-        def poll(self):
-            return 0
-
-    enumeration_calls = []
-
-    def enumerate_descendants(root_pid):
-        enumeration_calls.append(root_pid)
-        if len(enumeration_calls) == 1:
-            raise OSError('synthetic process snapshot failure')
-        return [456]
-
-    monkeypatch.setattr(upstream.ctypes, 'WinDLL', lambda *args, **kwargs: Kernel())
-    monkeypatch.setattr(upstream.MapperEngine, '_windows_descendants', enumerate_descendants)
     job = service.submit(pid, lambda state, progress, cancelled:
-        upstream.MapperEngine.stop_process(FinishedParent(), cancelled))
+        upstream.MapperEngine.stop_process(OwnedJobProcess(), cancelled))
     assert _finished(service, job['id'])['status'] == 'error'
-    assert enumeration_calls == [123, 123]
-    assert child_calls == [(42, 1)]
+    assert cleanup_calls == [30]
     assert service._shutdown_cancellation.process_cleanup_failed
     _assert_next_task_blocked(service, pid)
     assert service.shutdown() is False
@@ -251,3 +330,77 @@ def test_process_gate_rejects_stem_upload_before_allocating_resources(tmp_path):
         assert client.get(f'/api/projects/{pid}').status_code == 200
     finally:
         service.shutdown()
+
+
+def test_cancel_api_process_cleanup_failure_blocks_later_stem_upload(
+        tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path / 'data')
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    service = app.extensions['task_service']
+    projects = app.extensions['projects']
+    started, release = threading.Event(), threading.Event()
+    process = subprocess.Popen(
+        [getattr(sys, '_base_executable', sys.executable), '-c', 'import time; time.sleep(60)'],
+        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+    try:
+        def denied():
+            raise PermissionError('synthetic child termination denied')
+
+        monkeypatch.setattr(process, 'terminate', denied)
+
+        def fail_to_reap(mix, sources, work, progress, cancelled):
+            started.set()
+            assert release.wait(5)
+            stop_process(process, cancelled, terminate_timeout=.01, kill_timeout=.01)
+
+        monkeypatch.setattr(app.extensions['analysis_services'], 'prepare_provided_stems', fail_to_reap)
+
+        imported = client.post('/api/import', headers=headers,
+            data={'files': (io.BytesIO(b'synthetic audio placeholder'), 'mix.wav')})
+        assert imported.status_code == 200
+        pid = imported.json['id']
+        project_path = projects.path(pid)
+        original_state = projects.load(pid)
+        original_files = {
+            path.relative_to(project_path): path.read_bytes()
+            for path in project_path.rglob('*') if path.is_file()
+        }
+
+        submitted = client.post(f'/api/projects/{pid}/provided-stems', headers=headers,
+            data={'piano': (io.BytesIO(b'synthetic stem placeholder'), 'piano.wav')})
+        assert submitted.status_code == 200, submitted.json
+        job_id = submitted.json['id']
+        assert started.wait(5)
+        cancelled = client.post(f'/api/jobs/{job_id}/cancel', headers=headers)
+        assert cancelled.status_code == 200 and cancelled.json == {'ok': True}
+        assert client.get(f'/api/jobs/{job_id}').json['cancel'] is True
+        release.set()
+
+        job = _finished(service, job_id)
+        assert job['status'] == 'error'
+        assert job['cancel'] is True
+        assert process.poll() is None
+        assert service._shutdown_cancellation.process_cleanup_failed
+        assert projects.load(pid) == original_state
+        assert {
+            path.relative_to(project_path): path.read_bytes()
+            for path in project_path.rglob('*') if path.is_file()
+        } == original_files
+
+        after_cleanup = set(project_path.rglob('*'))
+        blocked = client.post(f'/api/projects/{pid}/provided-stems', headers=headers,
+            data={'piano': (io.BytesIO(b'second synthetic stem'), 'piano.wav')})
+        assert blocked.status_code == 400
+        assert '确认' in blocked.json['error'] and '重启' in blocked.json['error']
+        assert set(project_path.rglob('*')) == after_cleanup
+        assert not service.has_active() and service._idle.is_set()
+    finally:
+        release.set()
+        try:
+            if process.poll() is None:
+                process.kill()
+            process.wait(timeout=5)
+        finally:
+            service.shutdown()

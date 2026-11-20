@@ -3,15 +3,132 @@ import hashlib
 import io
 import json
 from pathlib import Path
+from pathlib import PurePosixPath
 import subprocess
 import urllib.request
 import zipfile
 from scripts.worker_inventory import verify_worker_inventory
 
 
+def _source_tree_files(root, relative_directory):
+    root = Path(root).resolve()
+    directory = root / relative_directory
+    if directory.is_symlink() or directory.is_junction():
+        raise ValueError(f'Source tree must not contain links: {relative_directory}')
+    if not directory.exists():
+        return []
+    if not directory.is_dir():
+        raise ValueError(f'Source tree is not a directory: {relative_directory}')
+
+    files = []
+    pending = [directory]
+    while pending:
+        current = pending.pop()
+        if not current.resolve().is_relative_to(root):
+            raise ValueError(f'Source tree escapes build root: {relative_directory}')
+        for path in sorted(current.iterdir()):
+            if path.is_symlink() or path.is_junction():
+                raise ValueError(f'Source tree must not contain links: {path}')
+            if not path.resolve().is_relative_to(root):
+                raise ValueError(f'Source tree escapes build root: {path}')
+            if path.is_dir():
+                pending.append(path)
+            elif path.is_file():
+                files.append(path)
+            else:
+                raise ValueError(f'Source tree contains a non-file: {path}')
+    return sorted(files)
+
+
+def source_snapshot_paths(root, enabled):
+    """Return the canonical source inputs hashed into a portable build manifest."""
+    from scripts.package_assets import MAPPER_INSTALLER_FILES
+
+    root = Path(root).resolve()
+    license_directory = root / 'licenses'
+    license_inputs = (
+        sorted(path for path in license_directory.iterdir()
+               if path.name != 'runtime-inventory.json' and path.is_file())
+        if license_directory.is_dir() else []
+    )
+    documentation_inputs = _source_tree_files(root, 'docs')
+    files = [
+        root / 'launcher.py', root / 'README.md', root / 'LICENSE',
+        root / 'THIRD_PARTY_NOTICES.md',
+        root / 'scripts/build_windows.py', root / 'scripts/package_assets.py',
+        root / 'scripts/worker_inventory.py', root / 'scripts/build_provenance.py',
+        *sorted((root / 'manialab').glob('*.py')),
+        *sorted((root / 'assets').glob('*.py')),
+        *sorted((root / 'vendor').rglob('*.py')),
+        root / 'vendor/mapperatorinator/template.osu',
+        *sorted(path for path in (root / 'static').rglob('*') if path.is_file()),
+        *documentation_inputs,
+        root / 'assets/pattern-prior.json', root / 'assets/arrangement-profiles.json',
+        root / 'assets/model-manifest.json', root / 'assets/piano-model.json',
+        root / 'assets/guitar-model.json', root / 'assets/deep-models.json',
+        root / 'manialab/tsumugi-source.json', *license_inputs,
+    ]
+    if enabled['mapperatorinator_install']:
+        files.extend(
+            root / 'assets' / name
+            for name in MAPPER_INSTALLER_FILES
+            if name != 'runtime/uv.exe'
+        )
+    unique_files = []
+    seen_keys = set()
+    for path in files:
+        key = path.relative_to(root).as_posix()
+        if key not in seen_keys:
+            unique_files.append(path)
+            seen_keys.add(key)
+    return tuple(unique_files)
+
+
 def sha256(path):
     with Path(path).open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def archive_payload_inventory(directory):
+    """Inventory the final portable directory before its self-referencing manifest exists."""
+    directory = Path(directory)
+    if directory.is_symlink() or directory.is_junction() or not directory.is_dir():
+        raise ValueError('Portable package directory must be a real directory')
+    root = directory.resolve()
+    files = {}
+    directories = {'ManiaLab/'}
+    pending = [directory]
+    while pending:
+        current = pending.pop()
+        if not current.resolve().is_relative_to(root):
+            raise ValueError(f'Portable package path escapes its root: {current}')
+        for path in sorted(current.iterdir()):
+            if path.is_symlink() or path.is_junction():
+                raise ValueError(f'Portable package must not contain links: {path}')
+            resolved = path.resolve()
+            if not resolved.is_relative_to(root):
+                raise ValueError(f'Portable package path escapes its root: {path}')
+            relative = path.relative_to(directory).as_posix()
+            posix = PurePosixPath(relative)
+            if (not relative or posix.is_absolute() or posix.as_posix() != relative
+                    or '..' in posix.parts or '\\' in relative or ':' in relative):
+                raise ValueError(f'Portable package has a non-canonical path: {path}')
+            archive_path = 'ManiaLab/' + relative
+            if path.is_dir():
+                directories.add(archive_path + '/')
+                pending.append(path)
+            elif path.is_file():
+                if relative != 'release-manifest.json':
+                    files[archive_path] = sha256(resolved)
+            else:
+                raise ValueError(f'Portable package contains a non-file: {path}')
+    folded_paths = [name.casefold() for name in (*files, *directories)]
+    if len(folded_paths) != len(set(folded_paths)):
+        raise ValueError('Portable package has case-insensitive path collisions')
+    return {
+        'files': dict(sorted(files.items())),
+        'directories': sorted(directories),
+    }
 
 
 UV_RELEASE = {

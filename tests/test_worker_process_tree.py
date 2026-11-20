@@ -90,6 +90,43 @@ def test_worker_destructor_skips_base_poll_when_root_handle_is_already_closed(mo
     assert calls == []
 
 
+def _worker_without_job(poll):
+    process = object.__new__(worker_process._WindowsWorkerPopen)
+    process._worker_job = None
+    process._tree_cleanup_failed = False
+    process._child_created = False
+    process.poll = poll
+    return process
+
+
+def test_repeated_cleanup_without_job_latches_poll_failure_once():
+    context = CancellationContext()
+
+    def fail_poll():
+        raise OSError('synthetic closed worker process handle')
+
+    process = _worker_without_job(fail_poll)
+    with pytest.raises(ChildProcessError, match='state could not be checked'):
+        stop_process(process, context, terminate_timeout=.01, kill_timeout=.01)
+    assert process._tree_cleanup_failed
+    assert context.process_cleanup_failed
+    assert len(context.cleanup_failures) == 1
+
+    with pytest.raises(ChildProcessError, match='remains unverified'):
+        stop_process(process, context, terminate_timeout=.01, kill_timeout=.01)
+    assert len(context.cleanup_failures) == 1
+
+
+def test_repeated_cleanup_without_job_keeps_successful_exit_available():
+    context = CancellationContext()
+    process = _worker_without_job(lambda: 0)
+
+    assert stop_process(process, context, terminate_timeout=.01, kill_timeout=.01)
+    assert stop_process(process, context, terminate_timeout=.01, kill_timeout=.01)
+    assert not context.process_cleanup_failed
+    assert not context.cleanup_failures
+
+
 @WINDOWS
 @pytest.mark.parametrize('kind', ['direct', 'venv', 'root-exited'])
 def test_owned_tree_reaps_payload_even_when_venv_or_root_exits(tmp_path, kind):
@@ -320,42 +357,286 @@ def test_member_handle_close_failure_does_not_skip_other_handles_or_hide_gate():
     assert context.process_cleanup_failed
 
 
-@WINDOWS
-def test_startup_cleanup_that_cannot_be_verified_sets_process_gate(tmp_path, monkeypatch):
-    kernel = _kernel()
-    handles = []
-    execute = worker_process._WindowsWorkerPopen._execute_child
+def test_closehandle_false_is_reported_by_windows_api(monkeypatch):
+    class Kernel:
+        def CloseHandle(self, handle):
+            return False
 
-    def capture(self, *args, **kwargs):
-        execute(self, *args, **kwargs)
-        duplicate = wintypes.HANDLE()
-        current = kernel.GetCurrentProcess()
-        assert kernel.DuplicateHandle(current, int(self._handle), current,
-            ctypes.byref(duplicate), 0, False, 2)
-        handles.append(duplicate)
+    monkeypatch.setattr(worker_process.ctypes, 'get_last_error', lambda: 5, raising=False)
+    monkeypatch.setattr(
+        worker_process.ctypes,
+        'WinError',
+        lambda code: OSError(code, 'synthetic CloseHandle failure'),
+        raising=False,
+    )
+    api = object.__new__(worker_process._WindowsAPI)
+    api.kernel = Kernel()
 
-    monkeypatch.setattr(worker_process._WindowsWorkerPopen, '_execute_child', capture)
-    monkeypatch.setattr(worker_process._WindowsAPI, 'initial_thread',
-        lambda *args: (_ for _ in ()).throw(PermissionError('synthetic initial thread denied')))
-    monkeypatch.setattr(worker_process._WindowsAPI, 'wait', lambda *args: False)
-    marker = tmp_path / 'must-not-run'
+    with pytest.raises(OSError, match='CloseHandle failure'):
+        api.close(123)
+
+
+def test_new_job_configuration_error_is_preserved_when_handle_close_fails():
+    configuration_error = PermissionError('synthetic job configuration failure')
+    closed = []
+
+    class Kernel:
+        def CreateJobObjectW(self, *args):
+            return 123
+
+        def SetInformationJobObject(self, *args):
+            raise configuration_error
+
+        def CloseHandle(self, handle):
+            closed.append(handle)
+            raise OSError('synthetic unconfigured job close failure')
+
+    api = object.__new__(worker_process._WindowsAPI)
+    api.kernel = Kernel()
+
+    with pytest.raises(PermissionError, match='configuration failure') as raised:
+        api.new_job()
+    assert raised.value is configuration_error
+    assert any('unconfigured job close failure' in note for note in raised.value.__notes__)
+    assert closed == [123]
+
+
+@pytest.mark.parametrize('primary', ['enumeration', 'identity'])
+def test_initial_thread_preserves_primary_error_and_aggregates_all_handle_close_failures(primary):
+    closed = []
+
+    class Kernel:
+        def CreateToolhelp32Snapshot(self, *args):
+            return 101
+
+        def Thread32First(self, snapshot, pointer):
+            entry = ctypes.cast(pointer, ctypes.POINTER(worker_process._ThreadEntry)).contents
+            entry.owner_pid, entry.thread_id = 42, 201
+            return True
+
+        def Thread32Next(self, *args):
+            if primary == 'enumeration':
+                raise PermissionError('synthetic thread enumeration failure')
+            return False
+
+        def OpenThread(self, *args):
+            return 201
+
+        def GetProcessIdOfThread(self, *args):
+            return 99 if primary == 'identity' else 42
+
+        def CloseHandle(self, handle):
+            closed.append(handle)
+            raise OSError(f'synthetic close failure for {handle}')
+
+    api = object.__new__(worker_process._WindowsAPI)
+    api.kernel = Kernel()
+
+    expected = ('thread enumeration failure' if primary == 'enumeration'
+        else 'thread identity changed')
+    expected_error = PermissionError if primary == 'enumeration' else ChildProcessError
+    with pytest.raises(expected_error, match=expected) as raised:
+        api.initial_thread(999, 42)
+    assert closed == [101, 201]
+    assert any('thread snapshot' in note and 'close failure for 101' in note
+        for note in raised.value.__notes__)
+    assert any('worker thread' in note and 'close failure for 201' in note
+        for note in raised.value.__notes__)
+
+
+def test_launch_resume_error_is_preserved_when_thread_handle_close_fails():
+    resume_error = RuntimeError('synthetic ResumeThread failure')
+    calls = []
+
+    class API:
+        def assign(self, job, root):
+            calls.append(('assign', job, root))
+
+        def initial_thread(self, root, pid):
+            return 201
+
+        def resume(self, thread):
+            raise resume_error
+
+        def close(self, handle):
+            calls.append(('close', handle))
+            raise OSError('synthetic suspended thread close failure')
+
+    job = object.__new__(worker_process._WindowsJob)
+    job.api, job.handle = API(), 101
+    job.root, job.assigned = None, False
+
+    with pytest.raises(RuntimeError, match='ResumeThread failure') as raised:
+        job.launch(SimpleNamespace(_handle=123, pid=42))
+    assert raised.value is resume_error
+    assert any('suspended thread close failure' in note for note in raised.value.__notes__)
+    assert calls == [('assign', 101, 123), ('close', 201)]
+
+
+def test_tree_cleanup_error_is_preserved_when_member_close_also_fails():
     context = CancellationContext()
-    try:
-        with pytest.raises(ChildProcessError, match='worker process tree'):
-            worker_process.start_worker([getattr(sys, '_base_executable', sys.executable), '-c',
-                'from pathlib import Path; import sys; Path(sys.argv[1]).write_text("ran")', str(marker)],
-                cancelled=context, stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        assert not marker.exists() and context.process_cleanup_failed
-        assert len(handles) == 1 and kernel.WaitForSingleObject(handles[0], 5000) == 0
-    finally:
-        for handle in handles:
-            try:
-                if kernel.WaitForSingleObject(handle, 0) != 0:
-                    assert kernel.TerminateProcess(handle, 1), ctypes.get_last_error()
-                    assert kernel.WaitForSingleObject(handle, 5000) == 0
-            finally:
-                kernel.CloseHandle(handle)
+    closed = []
+
+    class API:
+        def members(self, job):
+            return [3, 4]
+
+        def terminate_job(self, job):
+            raise OSError('synthetic primary tree termination failure')
+
+        def active_count(self, job):
+            return 0
+
+        def close(self, handle):
+            closed.append(handle)
+            if handle == 3:
+                raise OSError('synthetic secondary member close failure')
+
+    job = object.__new__(worker_process._WindowsJob)
+    job.api, job.handle, job.root, job.assigned = API(), 1, None, True
+    job.cancelled = context
+
+    with pytest.raises(ChildProcessError, match='worker process tree') as raised:
+        job.stop(context, 1)
+    assert isinstance(raised.value.__cause__, OSError)
+    assert 'primary tree termination failure' in str(raised.value.__cause__)
+    assert any('secondary member close failure' in note for note in raised.value.__notes__)
+    assert closed == [3, 4]
+    assert context.process_cleanup_failed
+    assert len(context.cleanup_failures) == 2
+
+
+def test_worker_stop_error_is_preserved_when_job_close_also_fails():
+    context = CancellationContext()
+    primary = RuntimeError('synthetic worker tree stop failure')
+
+    class Job:
+        def stop(self, cancelled, maximum):
+            raise primary
+
+        def close(self):
+            raise OSError('synthetic job close failure')
+
+    process = object.__new__(worker_process._WindowsWorkerPopen)
+    process._worker_job = Job()
+    process._tree_cleanup_failed = False
+
+    with pytest.raises(RuntimeError, match='tree stop failure') as raised:
+        process._manialab_stop_tree(context, 1)
+    assert raised.value is primary
+    assert any('job close failure' in note for note in raised.value.__notes__)
+    assert process._tree_cleanup_failed
+    assert context.process_cleanup_failed
+
+
+def test_worker_startup_error_is_preserved_when_stop_and_close_fail(monkeypatch):
+    context = CancellationContext()
+    startup = RuntimeError('synthetic worker startup failure')
+    calls = []
+    created = []
+    jobs = []
+
+    class Handle:
+        closed = True
+
+        def __int__(self):
+            return 123
+
+    class Job:
+        def __init__(self, cancelled):
+            jobs.append(self)
+
+        def stop(self, cancelled, maximum):
+            calls.append('stop')
+            raise OSError('synthetic startup tree stop failure')
+
+        def close(self):
+            calls.append('close')
+            if calls.count('close') == 1:
+                raise OSError('synthetic startup job close failure')
+
+    def fail_start(self, *args, **kwargs):
+        created.append(self)
+        self._child_created = True
+        self._handle = Handle()
+        raise startup
+
+    monkeypatch.setattr(worker_process.subprocess, 'CREATE_NO_WINDOW', 0, raising=False)
+    monkeypatch.setattr(worker_process.subprocess.Popen, '__init__', fail_start)
+    monkeypatch.setattr(worker_process, '_WindowsJob', Job)
+
+    with pytest.raises(RuntimeError, match='startup failure') as raised:
+        worker_process._WindowsWorkerPopen(['worker'], cancelled=context)
+    assert raised.value is startup
+    assert calls == ['stop', 'close']
+    assert any('startup tree stop failure' in note for note in raised.value.__notes__)
+    assert any('startup job close failure' in note for note in raised.value.__notes__)
+    assert context.process_cleanup_failed
+    assert created[0]._worker_job is jobs[0]
+    created[0].__del__()
+    assert calls == ['stop', 'close', 'close']
+    assert created[0]._worker_job is None
+
+
+@WINDOWS
+def test_startup_cleanup_that_cannot_be_verified_sets_process_gate(monkeypatch):
+    context = CancellationContext()
+    startup = PermissionError('synthetic initial thread denied')
+    created = []
+
+    class API:
+        def new_job(self):
+            return 456
+
+        def assign(self, job, root):
+            assert (job, root) == (456, 123)
+
+        def initial_thread(self, root, pid):
+            assert (root, pid) == (123, 42)
+            raise startup
+
+        def members(self, job):
+            return []
+
+        def terminate_job(self, job):
+            assert job == 456
+
+        def wait(self, handle, seconds):
+            assert handle == 123
+            assert seconds > 0
+            return False
+
+        def active_count(self, job):
+            return 0
+
+        def close(self, handle):
+            assert handle == 456
+
+    class Handle:
+        closed = True
+
+        def __int__(self):
+            return 123
+
+    def fake_popen_init(self, *args, **kwargs):
+        self._child_created = True
+        self._handle = Handle()
+        self.pid = 42
+        self.stdin = self.stdout = self.stderr = None
+        created.append(self)
+
+    monkeypatch.setattr(subprocess.Popen, '__init__', fake_popen_init)
+    monkeypatch.setattr(worker_process, '_WindowsAPI', API)
+
+    with pytest.raises(PermissionError, match='initial thread denied') as raised:
+        worker_process.start_worker(['synthetic-worker'], cancelled=context)
+
+    assert raised.value is startup
+    assert any('cleanup also failed' in note and 'did not signal' in note
+        for note in raised.value.__notes__)
+    assert len(created) == 1
+    assert context.process_cleanup_failed
+    assert context.cleanup_failures == ('Owned worker process tree cleanup could not be verified',)
 
 
 @WINDOWS

@@ -1,19 +1,24 @@
 import ast
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
+import struct
 import zipfile
 
 import pytest
 
 from manialab import __version__
 from scripts import pytest_provenance
-from scripts.build_provenance import uv_release_identity
+from scripts.build_provenance import (
+    archive_payload_inventory, source_snapshot_paths, uv_release_identity,
+)
 from scripts import collect_release_validation
 from scripts.collect_release_validation import collect as _collect
-from scripts.package_assets import CORE_FILES, capabilities, verify_core_model_files
+from scripts.package_assets import (
+    CORE_FILES, DEEP_FILES, MAPPER_INSTALLER_FILES, MODEL_METADATA_FILES, capabilities,
+)
 from scripts.worker_inventory import worker_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,10 +26,17 @@ TEST_GUITAR_MODEL = b"synthetic guitar model"
 TEST_GUITAR_LICENSE = b"synthetic guitar license"
 TEST_GUITAR_SOURCE_NOTICE = b"synthetic guitar source notice"
 TEST_GUITAR_NOTICE = b"synthetic guitar notice"
+TEST_BASIC_PITCH_MODEL = b"synthetic basic pitch model"
+TEST_ARRANGEMENT_PROFILES = b'{"fixture":"arrangement-profiles"}'
 TEST_INSTRUMENT_WORKER = b"synthetic instrument worker"
 TEST_INSTRUMENT_LICENSE = b"synthetic instrument license"
 TEST_INSTRUMENT_VERIFICATION = b"synthetic instrument verification"
 TEST_INSTRUMENT_SOURCE = b"synthetic instrument source"
+TEST_SEPARATION_WORKER = b"synthetic separation worker"
+TEST_PIANO_MODEL = b"synthetic piano model"
+TEST_HYBRID_MODEL = b"synthetic hybrid separation model"
+TEST_BEAT_MODEL = b"synthetic beat model"
+TEST_SIX_SOURCE_MODEL = b"synthetic six-source separation model"
 TEST_RUNTIME_LICENSE = b"synthetic runtime dependency license"
 TEST_RUNTIME_LICENSE_INVENTORY = b"[]"
 TEST_PACKAGED_RUNTIME_LICENSE = b"synthetic packaged runtime license"
@@ -35,6 +47,12 @@ TEST_FFMPEG_LICENSE = b"synthetic FFmpeg license"
 TEST_FFMPEG_BUILD_INFO = b"synthetic FFmpeg build info"
 TEST_BASS_MODEL = b"synthetic bass model"
 TEST_OTHER_MODEL = b"synthetic other model"
+TEST_MAPPER_INSTALLER_FILES = {
+    name: ("synthetic mapper installer: " + name).encode()
+    for name in MAPPER_INSTALLER_FILES
+    if name != "runtime/uv.exe"
+}
+SOURCE_SNAPSHOT_FIXTURES = {}
 
 
 def _license_staging_helpers():
@@ -93,11 +111,23 @@ def test_build_stages_only_current_environment_runtime_licenses(tmp_path):
     assert (source / 'runtime' / 'old-package' / 'LICENSE').read_bytes() == b'stale ignored license'
 
 
-def test_build_source_snapshot_does_not_read_old_runtime_inventory(tmp_path, monkeypatch):
+def test_build_source_snapshot_does_not_read_old_runtime_inventory(tmp_path):
     source = ast.parse((ROOT / 'scripts/build_windows.py').read_text(encoding='utf-8'))
     function = next(node for node in source.body
         if isinstance(node, ast.FunctionDef) and node.name == 'source_snapshot')
-    namespace = dict(ROOT=tmp_path, hashlib=hashlib, enabled=capabilities('core'))
+    def synthetic_sha256(path):
+        if path == licenses / 'runtime-inventory.json':
+            pytest.fail('The build source snapshot read the old ignored inventory')
+        if path == licenses / 'uv-MIT.txt':
+            return hashlib.sha256(TEST_UV_LICENSE).hexdigest()
+        return 'a' * 64
+
+    namespace = dict(
+        ROOT=tmp_path,
+        enabled=capabilities('core'),
+        source_snapshot_paths=source_snapshot_paths,
+        sha256=synthetic_sha256,
+    )
     module = ast.Module(body=[function], type_ignores=[])
     exec(compile(ast.fix_missing_locations(module), 'source-snapshot-only', 'exec'), namespace)
     licenses = tmp_path / 'licenses'
@@ -105,13 +135,6 @@ def test_build_source_snapshot_does_not_read_old_runtime_inventory(tmp_path, mon
     (licenses / 'runtime-inventory.json').write_bytes(b'stale ignored inventory')
     (licenses / 'uv-MIT.txt').write_bytes(TEST_UV_LICENSE)
 
-    def synthetic_source_bytes(path):
-        if path == licenses / 'runtime-inventory.json':
-            pytest.fail('The build source snapshot read the old ignored inventory')
-        return TEST_UV_LICENSE
-
-    # All other declared source files use synthetic bytes; no builder import or EXE runs.
-    monkeypatch.setattr(Path, 'read_bytes', synthetic_source_bytes)
     snapshot = namespace['source_snapshot']()
     assert 'licenses/runtime-inventory.json' not in snapshot
     assert snapshot['licenses/uv-MIT.txt'] == hashlib.sha256(TEST_UV_LICENSE).hexdigest()
@@ -123,6 +146,33 @@ def payload_identity(value):
 
 def payload_record(value):
     return {"bytes": len(value), "sha256": payload_identity(value)}
+
+
+TEST_CORE_MODEL_IDENTITY = {
+    "filename": "basic-pitch.onnx",
+    "version": "synthetic",
+    "url": "https://example.invalid/basic-pitch.onnx",
+    "sha256": payload_identity(TEST_BASIC_PITCH_MODEL),
+}
+TEST_CORE_MODEL_PROVENANCE = {
+    key: value for key, value in TEST_CORE_MODEL_IDENTITY.items() if key != "filename"
+}
+TEST_CORE_ASSET_PAYLOADS = {
+    "basic-pitch.onnx": TEST_BASIC_PITCH_MODEL,
+    "arrangement-profiles.json": TEST_ARRANGEMENT_PROFILES,
+    "model-manifest.json": json.dumps(
+        {"basic_pitch": TEST_CORE_MODEL_PROVENANCE}
+    ).encode(),
+}
+
+
+def write_core_asset_payloads(archive, *, replacements=None):
+    replacements = replacements or {}
+    for name in CORE_FILES:
+        archive.writestr(
+            'ManiaLab/_internal/assets/' + name,
+            replacements.get(name, TEST_CORE_ASSET_PAYLOADS[name]),
+        )
 
 
 def packaged_license_payloads(profile):
@@ -150,6 +200,19 @@ def write_license_payloads(archive, files):
             archive.writestr(prefix + name, content)
 
 
+def write_fixture_release_archive(archive_path, build_root, manifest):
+    target = build_root / "dist" / "ManiaLab"
+    manifest_path = target / "release-manifest.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    payload = manifest["archive_payload"]
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        for name in payload["directories"]:
+            archive.writestr(name, b"")
+        archive.write(manifest_path, "ManiaLab/release-manifest.json")
+        for name in payload["files"]:
+            archive.write(target.joinpath(*PurePosixPath(name).parts[1:]), name)
+
+
 def make_guitar_model_identity():
     identity = json.loads((ROOT / 'assets/guitar-model.json').read_text(encoding='utf-8'))
     identity['sha256'] = payload_identity(TEST_GUITAR_MODEL)
@@ -163,26 +226,63 @@ TEST_GUITAR_IDENTITY = make_guitar_model_identity()
 
 
 def collect(*args, **kwargs):
+    preserve_uv_release_identity = kwargs.pop("_preserve_uv_release_identity", False)
     original_guitar_validator = collect_release_validation._is_guitar_model_identity
     original_instrument_validator = collect_release_validation._is_instrument_worker_identity
+    original_core_model_validator = collect_release_validation.verify_core_model_payload
     original_uv_release_identity = collect_release_validation.uv_release_identity
+    original_source_root = collect_release_validation.SOURCE_ROOT
+    original_source_snapshot_paths = collect_release_validation.source_snapshot_paths
+    original_validate_evidence = collect_release_validation.validate_evidence
     instrument_identity = make_instrument_worker_identity()
     build_root = kwargs.get("build_root", args[0] if args else None)
     manifest_path = Path(build_root) / "dist" / "ManiaLab" / "release-manifest.json"
-    fixture_uv_identity = json.loads(manifest_path.read_text(encoding="utf-8")).get("uv_runtime")
+    fixture_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if fixture_manifest["build_profile"] == "core":
+        portable_report = kwargs.get("portable_report", args[2] if len(args) > 2 else None)
+        kwargs.setdefault("core_media_report", Path(portable_report).with_name("core-media.json"))
+        kwargs.setdefault(
+            "core_media_service_binding_report",
+            Path(portable_report).with_name("service-binding.json"),
+        )
+    fixture_uv_identity = fixture_manifest.get("uv_runtime")
+    fixture_core_identity = fixture_manifest["core_models"]
+    collect_release_validation.SOURCE_ROOT = Path(build_root).parent / "source"
+    fixture_source_keys = SOURCE_SNAPSHOT_FIXTURES[Path(build_root).resolve()]
+    collect_release_validation.source_snapshot_paths = lambda root, enabled: tuple(
+        Path(root) / key for key in fixture_source_keys
+    )
+    collect_release_validation.validate_evidence = (
+        lambda evidence, report, **options: original_validate_evidence(
+            evidence, report, **(options | {"root": ROOT})
+        )
+    )
     collect_release_validation._is_guitar_model_identity = (
         lambda value: value == TEST_GUITAR_IDENTITY or original_guitar_validator(value)
     )
     collect_release_validation._is_instrument_worker_identity = (
         lambda value: value == instrument_identity or original_instrument_validator(value)
     )
-    collect_release_validation.uv_release_identity = lambda: fixture_uv_identity
+    def verify_synthetic_core_model(model_manifest, stream):
+        if model_manifest != {"basic_pitch": TEST_CORE_MODEL_PROVENANCE}:
+            raise ValueError("Basic Pitch provenance does not match the synthetic fixture")
+        if hashlib.file_digest(stream, "sha256").hexdigest() != TEST_CORE_MODEL_IDENTITY["sha256"]:
+            raise ValueError("Basic Pitch model checksum differs from the synthetic fixture")
+        return fixture_core_identity
+
+    collect_release_validation.verify_core_model_payload = verify_synthetic_core_model
+    if not preserve_uv_release_identity:
+        collect_release_validation.uv_release_identity = lambda: fixture_uv_identity
     try:
         return _collect(*args, **kwargs)
     finally:
         collect_release_validation._is_guitar_model_identity = original_guitar_validator
         collect_release_validation._is_instrument_worker_identity = original_instrument_validator
+        collect_release_validation.verify_core_model_payload = original_core_model_validator
         collect_release_validation.uv_release_identity = original_uv_release_identity
+        collect_release_validation.SOURCE_ROOT = original_source_root
+        collect_release_validation.source_snapshot_paths = original_source_snapshot_paths
+        collect_release_validation.validate_evidence = original_validate_evidence
 
 
 def write_pytest_evidence(path, junit_report):
@@ -249,20 +349,135 @@ def make_release_fixture(root, profile='standard'):
     license_payloads = packaged_license_payloads(profile)
     uv_identity = uv_release_identity()
     uv_identity.update(bytes=len(TEST_UV_RUNTIME), sha256=payload_identity(TEST_UV_RUNTIME))
+    sources = {}
+    asset_payloads = dict(TEST_CORE_ASSET_PAYLOADS)
+    source_root = root / "source"
+
+    def add_source(relative, content):
+        target = source_root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+        sources[relative] = payload_identity(content)
+        return content
+
+    def add_source_asset(relative, content):
+        asset_payloads[relative] = content
+        add_source("assets/" + relative, content)
+        return content
+
+    add_source_asset("arrangement-profiles.json", TEST_ARRANGEMENT_PROFILES)
+    add_source_asset(
+        "model-manifest.json",
+        json.dumps({"basic_pitch": TEST_CORE_MODEL_PROVENANCE}).encode(),
+    )
+    piano_model_identity = None
+    worker_sources = None
+    worker_files = None
+    worker_sha256 = None
+    instrument_identity = None
+    if profile != 'core':
+        piano_model_identity = {
+            "filename": "piano-regression.onnx",
+            "sha256": payload_identity(TEST_PIANO_MODEL),
+            "bytes": len(TEST_PIANO_MODEL),
+            "fixture": "synthetic",
+        }
+        worker_sources = {"scripts/separate_audio.py": "e" * 64}
+        worker_sha256 = payload_identity(TEST_SEPARATION_WORKER)
+        worker_files = {"ManiaLabAudio.exe": payload_record(TEST_SEPARATION_WORKER)}
+        deep_models = [
+            {
+                "name": name,
+                "filename": filename,
+                "sha256": payload_identity(content),
+                "bytes": len(content),
+                "purpose": "synthetic test payload",
+            }
+            for name, filename, content in (
+                ("Hybrid Demucs MUSDB+", "hdemucs_high_trained.pt", TEST_HYBRID_MODEL),
+                ("Beat This! final0", "beat-this-final0.ckpt", TEST_BEAT_MODEL),
+                ("HTDemucs six-source", "htdemucs_6s.th", TEST_SIX_SOURCE_MODEL),
+            )
+        ]
+        metadata_payloads = {
+            "pattern-prior.json": b'{"fixture":true}',
+            "deep-models.json": json.dumps({"schema": 1, "models": deep_models}).encode(),
+            "piano-model.json": json.dumps(piano_model_identity).encode(),
+            "guitar-model.json": json.dumps(TEST_GUITAR_IDENTITY).encode(),
+        }
+        for relative, content in metadata_payloads.items():
+            add_source_asset(relative, content)
+        for relative, content in TEST_MAPPER_INSTALLER_FILES.items():
+            add_source_asset(relative, content)
+        asset_payloads.update({
+            "runtime/uv.exe": TEST_UV_RUNTIME,
+            "deep/piano-regression.onnx": TEST_PIANO_MODEL,
+            "deep/manifest.json": json.dumps({
+                "worker_sha256": worker_sha256,
+                "worker_sources": worker_sources,
+                "worker_files": worker_files,
+            }).encode(),
+            "deep/ManiaLabAudio/ManiaLabAudio.exe": TEST_SEPARATION_WORKER,
+            "deep/hdemucs_high_trained.pt": TEST_HYBRID_MODEL,
+            "deep/beat-this-final0.ckpt": TEST_BEAT_MODEL,
+            "deep/htdemucs_6s.th": TEST_SIX_SOURCE_MODEL,
+        })
+        if profile == 'extended':
+            instrument_identity = make_instrument_worker_identity()
+            asset_payloads.update({
+                "deep/guitar-fl.onnx": TEST_GUITAR_MODEL,
+                "instruments/manifest.json": json.dumps(instrument_identity).encode(),
+                "instruments/verification.json": TEST_INSTRUMENT_VERIFICATION,
+                "instruments/LICENSE-tsumugi": TEST_INSTRUMENT_LICENSE,
+                "instruments/checkpoints/best_model_bass_v2.pth": TEST_BASS_MODEL,
+                "instruments/checkpoints/best_model_other_v1_5.pth": TEST_OTHER_MODEL,
+                "instruments/source/fixture.py": TEST_INSTRUMENT_SOURCE,
+                "instruments/ManiaLabInstrument/ManiaLabInstrument.exe": TEST_INSTRUMENT_WORKER,
+            })
+
+    target = executable.parent
+    bundled_documents = {
+        "README.md": b"Synthetic ManiaLab readme\n",
+        "LICENSE": b"Synthetic project license\n",
+        "THIRD_PARTY_NOTICES.md": b"Synthetic third-party notices\n",
+        "docs/quick-start.md": b"Synthetic quick start\n",
+    }
+    for relative, content in bundled_documents.items():
+        add_source(relative, content)
+        destination = target / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(content)
+    (target / "README.md").write_bytes(bundled_documents["README.md"])
+    (target / "LICENSE").write_bytes(bundled_documents["LICENSE"])
+    (target / "THIRD_PARTY_NOTICES.md").write_bytes(
+        bundled_documents["THIRD_PARTY_NOTICES.md"]
+    )
+    for relative, content in asset_payloads.items():
+        destination = target / "_internal" / "assets" / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(content)
+    for relative, content in license_payloads.items():
+        for prefix in ("licenses", "_internal/licenses"):
+            destination = target / prefix / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(content)
+    (target / "开始使用.txt").write_bytes(b"Synthetic package guide\n")
+    archive_payload = archive_payload_inventory(target)
+
     manifest = {
         "version": __version__,
         "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
-        "sources": {},
+        "sources": sources,
         "build_profile": profile,
         "capabilities": capabilities(profile),
-        "core_models": verify_core_model_files(ROOT / 'assets'),
+        "core_models": TEST_CORE_MODEL_IDENTITY,
         "uv_runtime": uv_identity if profile != 'core' else None,
-        "piano_model": {"sha256": "f" * 64, "bytes": 123} if profile != 'core' else None,
-        "worker_sha256": "expected-worker-sha" if profile != 'core' else None,
-        "worker_sources": {} if profile != 'core' else None,
-        "worker_files": [] if profile != 'core' else None,
+        "piano_model": piano_model_identity,
+        "worker_sha256": worker_sha256,
+        "worker_sources": worker_sources,
+        "worker_files": worker_files,
         "guitar_model": TEST_GUITAR_IDENTITY if profile == 'extended' else None,
-        "instrument_worker": make_instrument_worker_identity() if profile == 'extended' else None,
+        "instrument_worker": instrument_identity,
         "instrument_runtime_license_files": (
             {
                 "inventory.json": payload_record(TEST_RUNTIME_LICENSE_INVENTORY),
@@ -277,47 +492,12 @@ def make_release_fixture(root, profile='standard'):
         "license_files": {
             name: payload_record(content) for name, content in license_payloads.items()
         },
+        "archive_payload": archive_payload,
     }
-    (executable.parent / "release-manifest.json").write_text(
-        json.dumps(manifest), encoding="utf-8"
-    )
+    SOURCE_SNAPSHOT_FIXTURES[build_root.resolve()] = tuple(sources)
     from scripts.package_assets import archive_stem
     archive_path = package / f"{archive_stem(__version__, profile)}.zip"
-    with zipfile.ZipFile(archive_path, "w") as archive:
-        archive.write(executable, "ManiaLab/ManiaLab.exe")
-        archive.writestr(
-            "ManiaLab/release-manifest.json",
-            json.dumps(manifest),
-        )
-        for name in CORE_FILES:
-            archive.write(ROOT / 'assets' / name, 'ManiaLab/_internal/assets/' + name)
-        if profile != 'core':
-            archive.writestr('ManiaLab/_internal/assets/runtime/uv.exe', TEST_UV_RUNTIME)
-        write_license_payloads(archive, license_payloads)
-        if profile == 'extended':
-            archive.writestr(
-                'ManiaLab/_internal/assets/guitar-model.json',
-                json.dumps(manifest['guitar_model']),
-            )
-            archive.writestr(
-                'ManiaLab/_internal/assets/deep/guitar-fl.onnx', TEST_GUITAR_MODEL
-            )
-            instrument_root = 'ManiaLab/_internal/assets/instruments/'
-            identity = manifest['instrument_worker']
-            archive.writestr(instrument_root + 'manifest.json', json.dumps(identity))
-            archive.writestr(instrument_root + 'verification.json', TEST_INSTRUMENT_VERIFICATION)
-            archive.writestr(instrument_root + 'LICENSE-tsumugi', TEST_INSTRUMENT_LICENSE)
-            archive.writestr(
-                instrument_root + 'checkpoints/best_model_bass_v2.pth', TEST_BASS_MODEL
-            )
-            archive.writestr(
-                instrument_root + 'checkpoints/best_model_other_v1_5.pth', TEST_OTHER_MODEL
-            )
-            archive.writestr(instrument_root + 'source/fixture.py', TEST_INSTRUMENT_SOURCE)
-            archive.writestr(
-                instrument_root + 'ManiaLabInstrument/ManiaLabInstrument.exe',
-                TEST_INSTRUMENT_WORKER,
-            )
+    write_fixture_release_archive(archive_path, build_root, manifest)
     reports = root / "reports"
     reports.mkdir()
     pytest_report = reports / "junit.xml"
@@ -338,6 +518,58 @@ def make_release_fixture(root, profile='standard'):
             (executable.parent / "release-manifest.json").read_bytes()).hexdigest(),
         "verification_run_id": "c" * 32,
     }
+    core_media_report = reports / "core-media.json"
+    service_binding_report = reports / "service-binding.json"
+    if profile == "core":
+        core_media_report.write_text(json.dumps({
+            "schema": 1,
+            "check": "core_media_session",
+            "status": "passed",
+            "run_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+            "base_url": "http://127.0.0.1:43127",
+            "scope": collect_release_validation.CORE_MEDIA_SCOPE,
+            **verification_identity,
+            "steps": [
+                {"name": "synthetic_projects", "status": "passed", "projects": [
+                    {"id": "project-a", "bytes": 264644},
+                    {"id": "project-b", "bytes": 264644},
+                ]},
+                {"name": "audio_range", "status": "passed", "http_status": 206,
+                 "content_range": "bytes 0-63/264644", "bytes": 64},
+                {"name": "seek", "status": "passed", "target_seconds": 1.25,
+                 "actual_seconds": 1.25, "duration_seconds": 6.0},
+                {"name": "play_pause", "status": "passed", "started_at_seconds": 1.25,
+                 "paused_at_seconds": 1.5, "after_pause_seconds": 1.5},
+                {"name": "rapid_source_switch", "status": "passed",
+                 "requested_projects": ["project-b", "project-a"],
+                 "requested_project_ids": ["project-b", "project-a"],
+                 "final_project": "project-a", "held_audio_requests": 2,
+                 "pre_switch_audio_project_ids": [], "unexpected_audio_project_ids": [],
+                 "saved_seconds": 1.5, "return_start_seconds": 0.1,
+                 "final_seconds": 0.35},
+                {"name": "browser_health", "status": "passed", "page_errors": 0,
+                 "version": __version__},
+            ],
+        }), encoding="utf-8")
+        service_binding_report.write_text(json.dumps({
+            "schema": 1,
+            "check": "core_media_service_process_binding",
+            "status": "passed",
+            "verification_run_id": verification_identity["verification_run_id"],
+            "base_url": "http://127.0.0.1:43127",
+            "executable_sha256": manifest["executable_sha256"],
+            "executable_pid": 5678,
+            "listeners_before": [{
+                "local_address": "127.0.0.1",
+                "local_port": 43127,
+                "owning_process": 5678,
+            }],
+            "listeners_after": [{
+                "local_address": "127.0.0.1",
+                "local_port": 43127,
+                "owning_process": 5678,
+            }],
+        }), encoding="utf-8")
     portable_checks = [
         {"check": "release_manifest", **verification_identity},
         {
@@ -370,8 +602,8 @@ def make_release_fixture(root, profile='standard'):
         portable_checks += [
             {
                 "check": "piano_onnx_runtime",
-                "sha256": "f" * 64,
-                "bytes": 123,
+                "sha256": piano_model_identity["sha256"],
+                "bytes": piano_model_identity["bytes"],
                 "providers": ["CPUExecutionProvider"],
                 "output_shapes": [[1, 1001, 88]] * 4 + [[1, 1001, 1]] * 3,
                 "input": "all-zero synthetic 10-second tensor; runtime smoke test only",
@@ -459,7 +691,11 @@ def rewrite_archive(archive_path, *, omit=(), replacements=None, additions=None)
     entries.update(additions or {})
     with zipfile.ZipFile(archive_path, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
         for name, content in entries.items():
-            archive.writestr(name, content)
+            info = zipfile.ZipInfo(name)
+            info.compress_type = (
+                zipfile.ZIP_STORED if name.endswith('/') else zipfile.ZIP_DEFLATED
+            )
+            archive.writestr(info, content)
 
 
 def test_collect_release_validation_writes_hashes_and_sanitized_summary(tmp_path):
@@ -474,10 +710,424 @@ def test_collect_release_validation_writes_hashes_and_sanitized_summary(tmp_path
     assert report["verification"]["pytest"]["tests"] == 3
     assert report["verification"]["pytest"]["skipped"] == 1
     assert report["verification"]["shutdown"]["passed"] is True
+    assert report["verification"]["core_media"] is None
     assert report["verification"]["piano_model"]["cpu_smoke_passed"] is True
     assert report["limitations"]["musical_acceptance"] is False
     assert "song.wav" not in output.read_text(encoding="utf-8")
     assert archive.name in checksums.read_text(encoding="utf-8")
+
+
+def test_collect_rejects_extra_source_key_before_hashing_its_in_root_file(tmp_path, monkeypatch):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path)
+    )
+    source_root = build_root.parent / "source"
+    sentinel = source_root / "sentinel.txt"
+    sentinel.write_bytes(b"synthetic extra source")
+    manifest_path = build_root / "dist" / "ManiaLab" / "release-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["sources"]["sentinel.txt"] = payload_identity(sentinel.read_bytes())
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    original_sha256 = collect_release_validation.sha256
+    hashed_paths = []
+
+    def track_hash(path):
+        path = Path(path)
+        hashed_paths.append(path)
+        if path == sentinel:
+            pytest.fail("The collector hashed an unlisted source path")
+        return original_sha256(path)
+
+    monkeypatch.setattr(collect_release_validation, "sha256", track_hash)
+    with pytest.raises(SystemExit, match="source snapshot key inventory"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+    assert sentinel not in hashed_paths
+
+
+@pytest.mark.parametrize("mutation", ("missing", "noncanonical", "invalid_digest"))
+def test_collect_rejects_invalid_source_snapshot_keys_before_source_hashing(
+    tmp_path, monkeypatch, mutation
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path)
+    )
+    manifest_path = build_root / "dist" / "ManiaLab" / "release-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    source_names = tuple(manifest["sources"])
+    first_name = source_names[0]
+    if mutation == "missing":
+        del manifest["sources"][first_name]
+        expected_error = "source snapshot key inventory"
+    elif mutation == "noncanonical":
+        manifest["sources"]["source/../alias.py"] = "a" * 64
+        expected_error = "non-canonical source snapshot path"
+    else:
+        manifest["sources"][first_name] = "invalid"
+        expected_error = "invalid source snapshot identity"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    original_sha256 = collect_release_validation.sha256
+    hashed_source_paths = []
+
+    def track_source_hash(path):
+        path = Path(path)
+        if path.is_relative_to(build_root.parent / "source"):
+            hashed_source_paths.append(path)
+        return original_sha256(path)
+
+    monkeypatch.setattr(collect_release_validation, "sha256", track_source_hash)
+    with pytest.raises(SystemExit, match=expected_error):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+    assert hashed_source_paths == []
+
+
+def test_collect_hashes_the_bytes_used_to_parse_manifest_and_core_media_report(
+    tmp_path, monkeypatch
+):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    manifest_path = build_root / "dist" / "ManiaLab" / "release-manifest.json"
+    core_media_path = portable_report.with_name("core-media.json")
+    original_read_bytes = Path.read_bytes
+    captured = {}
+
+    def track_bytes(path):
+        content = original_read_bytes(path)
+        if path in (manifest_path, core_media_path):
+            captured[path] = captured.get(path, 0) + 1
+            captured[(path, "bytes")] = content
+        return content
+
+    monkeypatch.setattr(Path, "read_bytes", track_bytes)
+    report, _, _ = collect(
+        build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence,
+    )
+
+    assert captured[manifest_path] == 1
+    assert captured[core_media_path] == 1
+    assert report["release_manifest_sha256"] == payload_identity(captured[(manifest_path, "bytes")])
+    assert report["verification"]["core_media"]["report_sha256"] == payload_identity(
+        captured[(core_media_path, "bytes")]
+    )
+
+
+def test_core_release_collector_requires_core_media_report(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+
+    with pytest.raises(SystemExit, match="missing the Core media report"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence, core_media_report=None)
+
+
+def test_core_release_collector_requires_core_media_service_binding_report(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+
+    with pytest.raises(SystemExit, match="missing the Core media service binding report"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence, core_media_service_binding_report=None,
+        )
+
+
+@pytest.mark.parametrize("base_url", ["http://127.0.0.1:43127", "http://127.0.0.1:43127/"])
+def test_core_release_collector_includes_bound_core_media_evidence(tmp_path, base_url):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    core_media_report = portable_report.with_name("core-media.json")
+    core_media = json.loads(core_media_report.read_text(encoding="utf-8"))
+    core_media["base_url"] = base_url
+    core_media["cleanup_failures"] = []
+    core_media_report.write_text(json.dumps(core_media), encoding="utf-8")
+    service_binding_report = portable_report.with_name("service-binding.json")
+    service_binding = json.loads(service_binding_report.read_text(encoding="utf-8"))
+    service_binding["base_url"] = base_url
+    service_binding_report.write_text(json.dumps(service_binding), encoding="utf-8")
+
+    report, _, _ = collect(build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence, core_media_report=core_media_report)
+
+    evidence = report["verification"]["core_media"]
+    assert evidence["passed"] is True
+    assert evidence["verification_run_id"] == "c" * 32
+    assert evidence["executable_sha256"] == report["executable_sha256"]
+    assert evidence["release_manifest_sha256"] == report["release_manifest_sha256"]
+    assert evidence["report_sha256"] == hashlib.sha256(core_media_report.read_bytes()).hexdigest()
+    assert evidence["service_binding_report_sha256"] == hashlib.sha256(
+        service_binding_report.read_bytes()
+    ).hexdigest()
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("schema", True),
+    ("check", "other_check"),
+    ("status", "failed"),
+    ("verification_run_id", "d" * 32),
+    ("base_url", "http://127.0.0.1:43128"),
+    ("executable_sha256", "e" * 64),
+    ("executable_pid", True),
+    ("executable_pid", 0),
+    ("listeners_before", []),
+    ("listeners_after", []),
+])
+def test_core_release_collector_rejects_invalid_service_binding_identity(
+        tmp_path, field, value):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    binding_path = portable_report.with_name("service-binding.json")
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    binding[field] = value
+    binding_path.write_text(json.dumps(binding), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="Core media service binding"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize("field", ["listeners_before", "listeners_after"])
+def test_core_release_collector_rejects_missing_service_listener_snapshot(tmp_path, field):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    binding_path = portable_report.with_name("service-binding.json")
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    del binding[field]
+    binding_path.write_text(json.dumps(binding), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="Core media service binding"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("local_address", "192.0.2.1"),
+    ("local_address", "not-an-ip"),
+    ("local_port", True),
+    ("local_port", 43128),
+    ("owning_process", True),
+    ("owning_process", 5679),
+])
+def test_core_release_collector_rejects_unbound_service_listener(
+        tmp_path, field, value):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    binding_path = portable_report.with_name("service-binding.json")
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    binding["listeners_before"][0][field] = value
+    binding_path.write_text(json.dumps(binding), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="Core media service binding"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize("snapshot", ["listeners_before", "listeners_after"])
+def test_core_release_collector_rejects_malformed_service_listener_snapshot(tmp_path, snapshot):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    binding_path = portable_report.with_name("service-binding.json")
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    binding[snapshot] = [None]
+    binding_path.write_text(json.dumps(binding), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="Core media service binding"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize("cleanup_failures", [
+    ["Browser close failed: synthetic close failure"],
+    None,
+    "malformed cleanup diagnostics",
+    {},
+])
+def test_core_release_collector_rejects_cleanup_failures(tmp_path, cleanup_failures):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    core_media_report = portable_report.with_name("core-media.json")
+    core_media = json.loads(core_media_report.read_text(encoding="utf-8"))
+    core_media["cleanup_failures"] = cleanup_failures
+    core_media_report.write_text(json.dumps(core_media), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="cleanup failures"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence, core_media_report=core_media_report,
+        )
+
+
+@pytest.mark.parametrize(("duration", "accepted"), [
+    pytest.param(5.8, False, id="below-minimum"),
+    pytest.param(5.9, True, id="minimum-boundary"),
+    pytest.param(6.1, True, id="maximum-boundary"),
+])
+def test_core_release_collector_enforces_inclusive_media_duration_bounds(
+        tmp_path, duration, accepted):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    core_media_report = portable_report.with_name("core-media.json")
+    core_media = json.loads(core_media_report.read_text(encoding="utf-8"))
+    seek = next(item for item in core_media["steps"] if item["name"] == "seek")
+    seek["duration_seconds"] = duration
+    core_media_report.write_text(json.dumps(core_media), encoding="utf-8")
+
+    if accepted:
+        report, _, _ = collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence, core_media_report=core_media_report,
+        )
+        assert report["verification"]["core_media"]["passed"] is True
+    else:
+        with pytest.raises(SystemExit, match="invalid seek evidence"):
+            collect(
+                build_root, pytest_report, portable_report, shutdown_report,
+                pytest_evidence=pytest_evidence, core_media_report=core_media_report,
+            )
+
+
+@pytest.mark.parametrize("field,value", [
+    ("schema", True),
+    ("executable_sha256", "e" * 64),
+    ("release_manifest_sha256", "f" * 64),
+    ("verification_run_id", "d" * 32),
+    ("status", "failed"),
+    ("scope", "synthetic fixture; not musical acceptance"),
+    ("base_url", "http://127.0.0.1:43127/api/status"),
+])
+def test_core_release_collector_rejects_stale_or_incomplete_media_report(tmp_path, field, value):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    core_media_report = portable_report.with_name("core-media.json")
+    core_media = json.loads(core_media_report.read_text(encoding="utf-8"))
+    core_media[field] = value
+    core_media_report.write_text(json.dumps(core_media), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="Core media verification"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence, core_media_report=core_media_report)
+
+
+@pytest.mark.parametrize("step_name,field,value", [
+    ("audio_range", "content_range", "bytes 1-64/264644"),
+    ("audio_range", "content_range", "bytes 0-62/264644"),
+    ("audio_range", "content_range", "bytes 0-63/*"),
+    ("audio_range", "content_range", "bytes 0-63/63"),
+    ("audio_range", "content_range", "bytes 0-63/264645"),
+    ("audio_range", "content_range", "bytes 0-63/264644 trailing"),
+    ("seek", "target_seconds", 1.5),
+    ("seek", "actual_seconds", True),
+    ("seek", "actual_seconds", 1.36),
+    ("seek", "duration_seconds", float("inf")),
+    ("seek", "duration_seconds", 1_000_000.0),
+    ("play_pause", "started_at_seconds", False),
+    ("play_pause", "paused_at_seconds", 1.3),
+    ("play_pause", "after_pause_seconds", 1.55),
+    ("rapid_source_switch", "saved_seconds", True),
+    ("rapid_source_switch", "saved_seconds", 1.3),
+    ("rapid_source_switch", "return_start_seconds", True),
+    ("rapid_source_switch", "return_start_seconds", -0.01),
+    ("rapid_source_switch", "return_start_seconds", 0.36),
+    ("rapid_source_switch", "final_seconds", True),
+    ("rapid_source_switch", "final_seconds", float("nan")),
+    ("rapid_source_switch", "final_seconds", 0.15),
+    ("rapid_source_switch", "final_seconds", 6.0),
+    ("rapid_source_switch", "final_seconds", 6.0),
+    ("browser_health", "page_errors", True),
+    ("browser_health", "page_errors", 1),
+    ("browser_health", "version", "0.0.0"),
+])
+def test_core_release_collector_rejects_invalid_media_step_payloads(
+        tmp_path, step_name, field, value):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    core_media_report = portable_report.with_name("core-media.json")
+    core_media = json.loads(core_media_report.read_text(encoding="utf-8"))
+    step = next(item for item in core_media["steps"] if item["name"] == step_name)
+    step[field] = value
+    core_media_report.write_text(json.dumps(core_media), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="Core media verification"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence, core_media_report=core_media_report)
+
+
+@pytest.mark.parametrize("step_name,field", [
+    ("audio_range", "content_range"),
+    ("seek", "actual_seconds"),
+    ("play_pause", "after_pause_seconds"),
+    ("rapid_source_switch", "saved_seconds"),
+    ("rapid_source_switch", "return_start_seconds"),
+    ("rapid_source_switch", "final_seconds"),
+    ("browser_health", "version"),
+])
+def test_core_release_collector_rejects_missing_media_step_fields(tmp_path, step_name, field):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    core_media_report = portable_report.with_name("core-media.json")
+    core_media = json.loads(core_media_report.read_text(encoding="utf-8"))
+    step = next(item for item in core_media["steps"] if item["name"] == step_name)
+    del step[field]
+    core_media_report.write_text(json.dumps(core_media), encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="Core media verification"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence, core_media_report=core_media_report)
+
+
+def test_non_core_release_collector_rejects_a_core_media_report(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="standard")
+    )
+    core_media_report = portable_report.with_name("core-media.json")
+    core_media_report.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="unsupported for this profile"):
+        collect(build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence, core_media_report=core_media_report)
+
+
+def test_non_core_release_collector_rejects_a_core_media_service_binding_report(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, _, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="standard")
+    )
+    binding_path = portable_report.with_name("service-binding.json")
+    binding_path.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="unsupported for this profile"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+            core_media_service_binding_report=binding_path,
+        )
 
 
 def test_release_collector_requires_the_pinned_uv_release_identity(tmp_path):
@@ -486,9 +1136,10 @@ def test_release_collector_requires_the_pinned_uv_release_identity(tmp_path):
     )
 
     with pytest.raises(SystemExit, match='invalid uv_runtime identity'):
-        _collect(
+        collect(
             build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence,
+            _preserve_uv_release_identity=True,
         )
 
 
@@ -513,9 +1164,10 @@ def test_release_collector_requires_null_uv_identity_without_installer_capabilit
     with pytest.raises(
         SystemExit, match="uv_runtime=null without the installer capability"
     ):
-        _collect(
+        collect(
             build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence,
+            _preserve_uv_release_identity=True,
         )
 
 
@@ -567,7 +1219,9 @@ def test_collect_core_validation_rejects_declared_deep_components(tmp_path):
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     manifest['worker_sha256'] = 'unexpected-worker'
     manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
-    for report_path in (portable_report, shutdown_report):
+    core_media_report = portable_report.with_name("core-media.json")
+    binding_path = portable_report.with_name("service-binding.json")
+    for report_path in (portable_report, shutdown_report, core_media_report, binding_path):
         document = json.loads(report_path.read_text(encoding='utf-8'))
         if isinstance(document, list):
             for row in document:
@@ -580,12 +1234,10 @@ def test_collect_core_validation_rejects_declared_deep_components(tmp_path):
                 manifest_path.read_bytes()
             ).hexdigest()
         report_path.write_text(json.dumps(document), encoding='utf-8')
-    with zipfile.ZipFile(archive, 'w') as bundle:
-        bundle.writestr('ManiaLab/ManiaLab.exe', (build_root / 'dist/ManiaLab/ManiaLab.exe').read_bytes())
-        bundle.writestr('ManiaLab/release-manifest.json', json.dumps(manifest))
-        for name in CORE_FILES:
-            bundle.write(ROOT / 'assets' / name, 'ManiaLab/_internal/assets/' + name)
-        write_license_payloads(bundle, packaged_license_payloads('core'))
+    manifest["archive_payload"] = archive_payload_inventory(
+        build_root / "dist" / "ManiaLab"
+    )
+    write_fixture_release_archive(archive, build_root, manifest)
 
     with pytest.raises(SystemExit, match='Core manifest declares'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
@@ -599,20 +1251,227 @@ def test_collect_core_validation_rejects_changed_basic_pitch_bytes(tmp_path):
     manifest = json.loads(
         (build_root / 'dist' / 'ManiaLab' / 'release-manifest.json').read_text(encoding='utf-8')
     )
-    with zipfile.ZipFile(archive, 'w') as bundle:
-        bundle.write(build_root / 'dist/ManiaLab/ManiaLab.exe', 'ManiaLab/ManiaLab.exe')
-        bundle.writestr('ManiaLab/release-manifest.json', json.dumps(manifest))
-        for name in CORE_FILES:
-            asset = ROOT / 'assets' / name
-            if name == 'basic-pitch.onnx':
-                bundle.writestr('ManiaLab/_internal/assets/' + name, b'changed model')
-            else:
-                bundle.write(asset, 'ManiaLab/_internal/assets/' + name)
-        write_license_payloads(bundle, packaged_license_payloads('core'))
+    model_path = build_root / "dist" / "ManiaLab" / "_internal" / "assets" / "basic-pitch.onnx"
+    model_path.write_bytes(b"changed model")
+    manifest["archive_payload"] = archive_payload_inventory(
+        build_root / "dist" / "ManiaLab"
+    )
+    write_fixture_release_archive(archive, build_root, manifest)
 
     with pytest.raises(SystemExit, match='Basic Pitch model checksum'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence)
+
+
+def test_collect_core_validation_rejects_changed_arrangement_profiles_bytes(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='core')
+    )
+    rewrite_archive(archive, replacements={
+        'ManiaLab/_internal/assets/arrangement-profiles.json': b'changed arrangement profiles',
+    })
+
+    with pytest.raises(SystemExit, match='differs from its manifest identity'):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize("name", ["ManiaLab/unmanifested.exe", "ManiaLab/docs/extra.md"])
+def test_collect_rejects_unmanifested_archive_files(tmp_path, name):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    rewrite_archive(archive, additions={name: b"unlisted payload"})
+
+    with pytest.raises(SystemExit, match="file inventory differs from its archive_payload"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize("name", ["ManiaLab/README.md", "ManiaLab/docs/quick-start.md"])
+def test_collect_rejects_bundled_document_bytes_that_differ_from_source_snapshot(
+        tmp_path, name):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    rewrite_archive(archive, replacements={name: b"changed bundled document"})
+
+    with pytest.raises(SystemExit, match="differs from its manifest identity"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize("relative", ["README.md", "docs/quick-start.md"])
+def test_collect_rejects_source_document_mismatch_even_when_payload_digest_is_updated(
+        tmp_path, relative):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    target = build_root / "dist" / "ManiaLab"
+    manifest_path = target / "release-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    (target / relative).write_bytes(b"changed but self-consistent package document")
+    manifest["archive_payload"] = archive_payload_inventory(target)
+    write_fixture_release_archive(archive, build_root, manifest)
+
+    with pytest.raises(SystemExit, match="differs from its manifest identity"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize("name", ["ManiaLab/docs/quick-start.md", "ManiaLab/docs/"])
+def test_collector_rejects_missing_archive_payload_entries(tmp_path, name):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile="core")
+    )
+    rewrite_archive(archive, omit=(name,))
+
+    with pytest.raises(SystemExit, match="inventory differs from its archive_payload"):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+def test_archive_payload_inventory_rejects_a_changed_declared_file_digest(tmp_path):
+    build_root, _, _, _, archive_path, _ = make_release_fixture(tmp_path, profile="core")
+    manifest = json.loads(
+        (build_root / "dist" / "ManiaLab" / "release-manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    manifest["archive_payload"]["files"]["ManiaLab/README.md"] = "0" * 64
+
+    with zipfile.ZipFile(archive_path) as archive:
+        with pytest.raises(SystemExit, match="differs from its manifest identity"):
+            collect_release_validation._require_archive_payload_inventory(archive, manifest)
+
+
+def test_archive_payload_inventory_rejects_unsafe_manifest_paths(tmp_path):
+    build_root, _, _, _, archive_path, _ = make_release_fixture(tmp_path, profile="core")
+    manifest = json.loads(
+        (build_root / "dist" / "ManiaLab" / "release-manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    manifest["archive_payload"]["files"]["ManiaLab/../outside.bin"] = "0" * 64
+
+    with zipfile.ZipFile(archive_path) as archive:
+        with pytest.raises(SystemExit, match="unsafe archive_payload file"):
+            collect_release_validation._require_archive_payload_inventory(archive, manifest)
+
+
+def test_archive_payload_inventory_rejects_data_in_directory_entries(tmp_path):
+    build_root, _, _, _, archive_path, _ = make_release_fixture(tmp_path, profile="core")
+    manifest = json.loads(
+        (build_root / "dist" / "ManiaLab" / "release-manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    rewrite_archive(archive_path, additions={"ManiaLab/": b"unhashed directory payload"})
+
+    with zipfile.ZipFile(archive_path) as archive:
+        with pytest.raises(SystemExit, match="directory entry with payload data"):
+            collect_release_validation._require_archive_payload_inventory(archive, manifest)
+
+
+@pytest.mark.parametrize('central_compressed_size', ['preserved', 'zero'])
+def test_archive_payload_inventory_rejects_compressed_data_hidden_by_directory_size(
+    tmp_path, central_compressed_size
+):
+    archive_path = tmp_path / "hidden-directory-payload.zip"
+    hidden_payload = b"unhashed directory payload"
+    with zipfile.ZipFile(archive_path, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr('ManiaLab/', hidden_payload)
+        archive.writestr('ManiaLab/release-manifest.json', b'{}')
+        archive.writestr('ManiaLab/payload.bin', b'x')
+
+    archive_bytes = bytearray(archive_path.read_bytes())
+    with zipfile.ZipFile(archive_path) as archive:
+        info = archive.getinfo('ManiaLab/')
+        local_crc_offset = info.header_offset + 14
+        local_size_offset = info.header_offset + 22
+        struct.pack_into('<I', archive_bytes, local_crc_offset, 0)
+        struct.pack_into('<I', archive_bytes, local_size_offset, 0)
+
+        central_offset = archive.start_dir
+        while archive_bytes[central_offset:central_offset + 4] == b'PK\x01\x02':
+            name_length, central_extra_length, comment_length = struct.unpack_from(
+                '<HHH', archive_bytes, central_offset + 28
+            )
+            name_start = central_offset + 46
+            name = archive_bytes[name_start:name_start + name_length].decode('utf-8')
+            if name == 'ManiaLab/':
+                struct.pack_into('<I', archive_bytes, central_offset + 16, 0)
+                struct.pack_into('<I', archive_bytes, central_offset + 24, 0)
+                if central_compressed_size == 'zero':
+                    struct.pack_into('<I', archive_bytes, central_offset + 20, 0)
+                break
+            central_offset += 46 + name_length + central_extra_length + comment_length
+        else:
+            raise AssertionError('Directory entry was not found in the central directory')
+
+    archive_path.write_bytes(archive_bytes)
+    manifest = {
+        'archive_payload': {
+            'files': {'ManiaLab/payload.bin': hashlib.sha256(b'x').hexdigest()},
+            'directories': ['ManiaLab/'],
+        },
+    }
+    with zipfile.ZipFile(archive_path) as archive:
+        directory = archive.getinfo('ManiaLab/')
+        assert directory.file_size == 0
+        if central_compressed_size == 'zero':
+            assert directory.compress_size == 0
+        else:
+            assert directory.compress_size > 0
+        assert archive.testzip() is None
+        expected_error = (
+            'local directory header differs from its central entry'
+            if central_compressed_size == 'zero'
+            else 'directory entry with payload data'
+        )
+        with pytest.raises(SystemExit, match=expected_error):
+            collect_release_validation._require_archive_payload_inventory(archive, manifest)
+
+
+def test_collect_core_validation_rejects_unlisted_asset_directory(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='core')
+    )
+    rewrite_archive(archive, additions={
+        'ManiaLab/_internal/assets/unlisted-empty/': b'',
+    })
+
+    with pytest.raises(SystemExit, match='undeclared staged asset directory'):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+def test_collect_core_validation_accepts_explicit_asset_root_directory(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='core')
+    )
+    rewrite_archive(archive, additions={
+        'ManiaLab/_internal/assets/': b'',
+    })
+
+    report, _, _ = collect(
+        build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence,
+    )
+
+    assert report['build_profile'] == 'core'
 
 
 @pytest.mark.parametrize(('prefix', 'change'), (
@@ -804,6 +1663,152 @@ def test_collect_extended_validation_requires_specialist_runtime_evidence(tmp_pa
     with pytest.raises(SystemExit, match='guitar real-audio cases'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(('name', 'mutation', 'message'), (
+    ('ManiaLab/_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe', 'missing',
+     'component inventory differs'),
+    ('ManiaLab/_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe', 'changed',
+     'differs from its manifest identity'),
+    ('ManiaLab/_internal/assets/deep/piano-regression.onnx', 'missing',
+     'missing required component'),
+    ('ManiaLab/_internal/assets/deep/piano-regression.onnx', 'changed',
+     'differs from its manifest identity'),
+    ('ManiaLab/_internal/assets/pattern-prior.json', 'missing',
+     'missing required component'),
+    ('ManiaLab/_internal/assets/pattern-prior.json', 'changed',
+     'differs from its manifest identity'),
+    ('ManiaLab/_internal/assets/deep/hdemucs_high_trained.pt', 'missing',
+     'missing required component'),
+    ('ManiaLab/_internal/assets/deep/hdemucs_high_trained.pt', 'changed',
+     'differs from its manifest identity'),
+    ('ManiaLab/_internal/assets/deep/beat-this-final0.ckpt', 'missing',
+     'missing required component'),
+    ('ManiaLab/_internal/assets/deep/beat-this-final0.ckpt', 'changed',
+     'differs from its manifest identity'),
+    ('ManiaLab/_internal/assets/deep/htdemucs_6s.th', 'missing',
+     'missing required component'),
+    ('ManiaLab/_internal/assets/deep/htdemucs_6s.th', 'changed',
+     'differs from its manifest identity'),
+))
+def test_collect_standard_validation_rejects_incomplete_or_changed_capability_assets(
+    tmp_path, name, mutation, message
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='standard')
+    )
+    if mutation == 'missing':
+        rewrite_archive(archive, omit=(name,))
+    else:
+        original = {
+            'ManiaLab/_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe':
+                TEST_SEPARATION_WORKER,
+            'ManiaLab/_internal/assets/deep/piano-regression.onnx': TEST_PIANO_MODEL,
+            'ManiaLab/_internal/assets/pattern-prior.json': b'{"fixture":true}',
+            'ManiaLab/_internal/assets/deep/hdemucs_high_trained.pt': TEST_HYBRID_MODEL,
+            'ManiaLab/_internal/assets/deep/beat-this-final0.ckpt': TEST_BEAT_MODEL,
+            'ManiaLab/_internal/assets/deep/htdemucs_6s.th': TEST_SIX_SOURCE_MODEL,
+        }[name]
+        rewrite_archive(archive, replacements={name: b'x' * len(original)})
+
+    with pytest.raises(SystemExit, match=message):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(('relative', 'mutation'), (
+    ('arrangement-profiles.json', 'missing'),
+    ('arrangement-profiles.json', 'changed'),
+    ('mapperatorinator-requirements.txt', 'missing'),
+    ('mapperatorinator-requirements.txt', 'changed'),
+    ('guitar-model.json', 'changed'),
+))
+def test_collect_standard_validation_checks_source_backed_asset_closure(
+    tmp_path, relative, mutation
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='standard')
+    )
+    name = 'ManiaLab/_internal/assets/' + relative
+    if mutation == 'missing':
+        rewrite_archive(archive, omit=(name,))
+    else:
+        rewrite_archive(archive, replacements={name: b'changed source-backed asset'})
+
+    expected_message = (
+        'missing required component' if mutation == 'missing'
+        else 'differs from its manifest identity'
+    )
+    with pytest.raises(SystemExit, match=expected_message):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(('name', 'payload', 'message'), (
+    ('ManiaLab/_internal/assets/unlisted.bin', b'extra',
+     'Release ZIP asset inventory differs'),
+    ('ManiaLab/_internal/assets/unlisted-empty/', b'',
+     'undeclared staged asset directory'),
+))
+def test_collect_standard_validation_rejects_unlisted_asset_paths(
+    tmp_path, name, payload, message
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='standard')
+    )
+    rewrite_archive(archive, additions={name: payload})
+
+    with pytest.raises(SystemExit, match=message):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+def test_collect_standard_validation_accepts_explicit_asset_parent_directories(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='standard')
+    )
+    rewrite_archive(archive, additions={
+        'ManiaLab/_internal/assets/': b'',
+        'ManiaLab/_internal/assets/deep/': b'',
+        'ManiaLab/_internal/assets/deep/ManiaLabAudio/': b'',
+        'ManiaLab/_internal/assets/runtime/': b'',
+    })
+
+    report, _, _ = collect(
+        build_root, pytest_report, portable_report, shutdown_report,
+        pytest_evidence=pytest_evidence,
+    )
+
+    assert report['build_profile'] == 'standard'
+
+
+@pytest.mark.parametrize(('name', 'payload', 'message'), (
+    ('ManiaLab/_internal/assets/deep/guitar-fl.onnx', TEST_GUITAR_MODEL,
+     'guitar model without guitar capability'),
+    ('ManiaLab/_internal/assets/instruments/injected.bin', b'extra',
+     'instrument assets without instruments capability'),
+    ('ManiaLab/_internal/assets/instruments/', b'',
+     'instrument assets without instruments capability'),
+))
+def test_collect_standard_validation_rejects_assets_for_disabled_specialist_capabilities(
+    tmp_path, name, payload, message
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='standard')
+    )
+    rewrite_archive(archive, additions={name: payload})
+
+    with pytest.raises(SystemExit, match=message):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
 
 
 @pytest.mark.parametrize(('name', 'content'), (
@@ -1461,13 +2466,16 @@ def _append_optional_piano_audio_evidence(checks, release_reasons):
         'release_manifest_sha256', 'verification_run_id',
     )
     identity = {field: checks[0][field] for field in identity_fields}
+    model_sha256 = next(
+        item['sha256'] for item in checks if item.get('check') == 'piano_onnx_runtime'
+    )
     candidate_count = sum(release_reasons.values())
     checks.extend([
         {
             'check': 'piano_cold_inference',
             **identity,
             'input_sha256': 'a' * 64,
-            'model_sha256': 'f' * 64,
+            'model_sha256': model_sha256,
             'candidates': candidate_count,
             'seconds': 1.0,
             'release_reasons': release_reasons,
@@ -1626,7 +2634,12 @@ def test_collect_rejects_noninteger_or_negative_piano_model_bytes(
     )
     manifest_path = build_root / 'dist' / 'ManiaLab' / 'release-manifest.json'
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-    manifest['piano_model']['bytes'] = manifest_bytes
+    if source.startswith('manifest_'):
+        manifest['piano_model']['bytes'] = manifest_bytes
+        failure = 'piano model identity'
+    else:
+        manifest_bytes = manifest['piano_model']['bytes']
+        failure = 'Piano runtime smoke does not match'
     _rewrite_fixture_manifest_identity(
         build_root, archive_path, portable_report, shutdown_report, manifest
     )
@@ -1636,6 +2649,6 @@ def test_collect_rejects_noninteger_or_negative_piano_model_bytes(
     runtime['bytes'] = portable_bytes
     portable_report.write_text(json.dumps(checks), encoding='utf-8')
 
-    with pytest.raises(SystemExit, match='Piano runtime smoke does not match'):
+    with pytest.raises(SystemExit, match=failure):
         collect(build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence)

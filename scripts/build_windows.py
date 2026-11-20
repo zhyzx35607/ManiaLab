@@ -25,7 +25,9 @@ add_profile_argument(parser)
 profile=parser.parse_args().profile
 enabled=capabilities(profile)
 from build_provenance import (
+    archive_payload_inventory,
     sha256,
+    source_snapshot_paths,
     download_uv_binary,
     verify_worker,
     verify_instrument_worker,
@@ -92,24 +94,16 @@ def stage_runtime_licenses(license_root, distributions, python_license_source=No
 
 
 def source_snapshot():
-    license_directory=ROOT/'licenses'
-    license_inputs=(sorted(path for path in license_directory.iterdir()
-        if path.name != 'runtime-inventory.json' and path.is_file())
-        if license_directory.is_dir() else [])
-    files=[ROOT/'launcher.py',ROOT/'README.md',ROOT/'LICENSE',ROOT/'THIRD_PARTY_NOTICES.md',
-           ROOT/'scripts/build_windows.py',
-           ROOT/'scripts/package_assets.py',ROOT/'scripts/worker_inventory.py',
-           ROOT/'scripts/build_provenance.py',*sorted((ROOT/'manialab').glob('*.py')),*sorted((ROOT/'assets').glob('*.py')),
-           *sorted((ROOT/'vendor').rglob('*.py')),ROOT/'vendor/mapperatorinator/template.osu',
-           *sorted(p for p in (ROOT/'static').rglob('*') if p.is_file()),
-           ROOT/'assets/pattern-prior.json',ROOT/'assets/arrangement-profiles.json',
-           ROOT/'assets/model-manifest.json',ROOT/'assets/piano-model.json',
-           ROOT/'assets/guitar-model.json',ROOT/'assets/deep-models.json',ROOT/'manialab/tsumugi-source.json',
-           *license_inputs]
-    if enabled['mapperatorinator_install']:
-        # uv.exe is fetched separately from its pinned upstream release.
-        files += [ROOT/'assets'/name for name in MAPPER_INSTALLER_FILES if name != 'runtime/uv.exe']
-    return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+    # uv.exe is fetched separately from its pinned upstream release.
+    root = ROOT.resolve()
+    snapshot = {}
+    for path in source_snapshot_paths(root, enabled):
+        relative = path.relative_to(root).as_posix()
+        resolved = path.resolve()
+        if not resolved.is_relative_to(root):
+            raise ValueError(f'Source snapshot path escapes build root: {relative}')
+        snapshot[relative] = sha256(resolved)
+    return snapshot
 build_sources=source_snapshot()
 core_model_identity=verify_core_model_files(ROOT/'assets')
 required=['basic-pitch.onnx','arrangement-profiles.json']
@@ -211,6 +205,14 @@ if worker_inventory(license_stage)!=license_files:
     raise SystemExit('License files changed during the build; rebuild before publishing.')
 instrument_runtime_license_files=(
     worker_inventory(ROOT/'licenses/instrument-runtime') if enabled['instruments'] else None)
+for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
+    shutil.copy2(ROOT/name,target/name)
+shutil.copytree(license_stage,target/'licenses',dirs_exist_ok=True)
+shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
+(target/'开始使用.txt').write_text(start_guide(__version__,enabled),encoding='utf-8-sig')
+if source_snapshot()!=build_sources:
+    raise SystemExit('Application sources changed while staging the portable package; rebuild before publishing.')
+archive_payload=archive_payload_inventory(target)
 release_manifest=dict(version=__version__,sources=build_sources,build_profile=profile,capabilities=enabled,
     executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
     core_models=bundled_core_model_identity,
@@ -222,13 +224,8 @@ release_manifest=dict(version=__version__,sources=build_sources,build_profile=pr
     instrument_runtime_license_files=instrument_runtime_license_files,
     runtime_license_files=runtime_license_files,
     runtime_license_inventory=runtime_license_inventory,
-    license_files=license_files)
+    license_files=license_files,archive_payload=archive_payload)
 (target/'release-manifest.json').write_text(json.dumps(release_manifest,indent=2),encoding='utf-8')
-for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
-    shutil.copy2(ROOT/name,target/name)
-shutil.copytree(license_stage,target/'licenses',dirs_exist_ok=True)
-shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
-(target/'开始使用.txt').write_text(start_guide(__version__,enabled),encoding='utf-8-sig')
 name=archive_stem(__version__,profile)
 archive=Path(shutil.make_archive(str(package_path/name),'zip',distpath,'ManiaLab'))
 with archive.open('rb') as stream:
