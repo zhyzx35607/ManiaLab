@@ -1,5 +1,6 @@
 """DNS resolver cancellation remains safe when its request loop has closed."""
 import asyncio
+import gc
 import socket
 import threading
 import time
@@ -20,17 +21,24 @@ def test_cancelled_request_prefers_cancel_over_completed_http_error(monkeypatch)
     monkeypatch.setattr(planner_module, '_post_json', fail_with_http_error)
 
     async def exercise():
-        async def timeout_at_completion(tasks, timeout=None):
+        loop = asyncio.get_running_loop()
+        loop_errors = []
+        loop.set_exception_handler(lambda _loop, context: loop_errors.append(context))
+
+        async def done_at_completion(tasks, timeout=None):
             await asyncio.sleep(0)
             assert all(task.done() for task in tasks)
             cancellation.set()
-            return set(), set(tasks)
+            return set(tasks), set()
 
-        monkeypatch.setattr(planner_module.asyncio, 'wait', timeout_at_completion)
+        monkeypatch.setattr(planner_module.asyncio, 'wait', done_at_completion)
         with pytest.raises(InterruptedError, match='已取消'):
             await planner_module._request_cancellable(
                 'https://api.example/v1', b'{}', {}, cancellation.is_set,
             )
+        gc.collect()
+        await asyncio.sleep(0)
+        assert not loop_errors
 
     asyncio.run(exercise())
 

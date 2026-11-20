@@ -407,6 +407,7 @@ async def _request_cancellable(url, body, headers, cancelled):
             done, _ = await asyncio.wait({request}, timeout=min(0.05, remaining))
             if done:
                 if cancelled is not None and cancelled():
+                    await _cancel_request(request)
                     raise InterruptedError("已取消，原有谱面已保留")
                 return request.result()
     finally:
