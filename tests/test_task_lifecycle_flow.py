@@ -220,3 +220,54 @@ def test_regional_generation_save_failure_preserves_parent_and_releases_worker(
     assert child['source_evidence']['locked'] == old_evidence['locked']
     assert child['source_evidence']['regional']['detected']['start'] == 1250
     assert service._idle.is_set()
+
+
+def test_http_cancel_during_post_commit_cleanup_keeps_successful_result(stem_project):
+    app, client, headers, pid, *_ = stem_project
+    projects = app.extensions['projects']
+    service = app.extensions['task_service']
+    before = projects.load(pid)
+    cleanup_started, release_cleanup = threading.Event(), threading.Event()
+    cleanup_arguments = []
+
+    def operation(state, progress, cancelled):
+        state['lifecycle_commit_marker'] = 'saved before cleanup'
+        return {'committed': True}
+
+    def cleanup(committed):
+        cleanup_arguments.append(committed)
+        cleanup_started.set()
+        assert release_cleanup.wait(15)
+
+    job = service.submit(pid, operation, cleanup=cleanup)
+    try:
+        assert cleanup_started.wait(15)
+        saved = projects.load(pid)
+        assert saved['lifecycle_commit_marker'] == 'saved before cleanup'
+        assert service.get(job['id'])['status'] == 'running'
+        assert 'result' not in service.get(job['id'])
+
+        response = client.post(f"/api/jobs/{job['id']}/cancel", headers=headers)
+        assert response.status_code == 200
+        assert response.json == {'ok': True}
+        pending = service.get(job['id'])
+        assert pending['status'] == 'running' and pending['cancel'] is True
+        assert projects.load(pid) == saved
+    finally:
+        release_cleanup.set()
+
+    result = wait_job(client, job)
+    expected = deepcopy(before)
+    expected['lifecycle_commit_marker'] = 'saved before cleanup'
+    assert result['status'] == 'done'
+    assert result['result'] == {'committed': True}
+    assert result['cancel'] is False
+    assert projects.load(pid) == expected
+    assert cleanup_arguments == [True]
+    assert service._idle.is_set()
+
+    recovered = service.submit(pid, lambda *_: {'worker_reused': True})
+    recovery = wait_job(client, recovered)
+    assert recovery['status'] == 'done'
+    assert recovery['result'] == {'worker_reused': True}
+    assert service._idle.is_set()

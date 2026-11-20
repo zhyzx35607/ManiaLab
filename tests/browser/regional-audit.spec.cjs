@@ -8,6 +8,18 @@ async function openProject(page, action) {
   await page.locator('#timingConfirmed').check();
 }
 
+async function selectNote(page, id, time) {
+  await expect.poll(async()=>{
+    const box=await page.evaluate(({id,time})=>{
+      seek(time);draw();const hit=hitboxes.find(item=>item.n.id===id);
+      return hit?{x:hit.x+hit.w/2,y:hit.y+hit.h/2}:null;
+    },{id,time});
+    if(!box)return false;
+    await page.locator('#roll').click({position:box});
+    return page.evaluate(id=>selected===id,id);
+  }).toBe(true);
+}
+
 async function mutePiano(page) {
   await page.locator('#piano_weight').evaluate(el=>{
     el.value='0';el.dispatchEvent(new Event('input',{bubbles:true}));
@@ -68,6 +80,83 @@ test('regional audit separates final locked output from whole-song proposed omis
   await expect(page.locator('#variants option:checked')).toContainText('局部');
   await assertRegionalOutput(page);
   expect(errors).toEqual([]);
+});
+
+test('editing a regional candidate keeps its origin and evidence without stale generation claims',async({page})=>{
+  const pid=await generateRegional(page,'edit');
+  const parent=await page.evaluate(()=>({index:state.active,candidate:structuredClone(variant())}));
+  const originalEvidence=parent.candidate.source_evidence.region;
+  await selectNote(page,'region',3.7);
+  await page.locator('#noteEditor').evaluate(el=>{el.open=true;});
+  const start=Number(await page.locator('#editStart').inputValue());
+  await page.locator('#editStart').fill(String(start+125));
+  await page.locator('#editSave').click();
+
+  await expect(page.locator('#variants option:checked')).toContainText('编辑自局部候选');
+  await expect(page.locator('#inspector')).toContainText('人工修改');
+  await expect(page.locator('#inspector')).toContainText('原始候选起点（原音频）');
+  await expect(page.locator('#inspector')).toContainText('来源描述保留原证据，不为人工修改后的音尾背书');
+  const edited=await page.evaluate(()=>structuredClone(variant()));
+  expect(edited.region).toBeNull();
+  expect(edited.generation_origin).toEqual({kind:'regional_generation',region:[3000,5000]});
+  expect(edited.source_evidence.region).toEqual(originalEvidence);
+  expect(edited.edits.at(-1)).toMatchObject({
+    op:'update',parent_created:parent.candidate.created,before:{id:'region'},after:{id:'region'},
+  });
+  expect(edited.selection).not.toHaveProperty('scope');
+  expect(edited.selection).not.toHaveProperty('proposal');
+  const audit=page.locator('#expressionAudit');
+  await expect(audit).not.toContainText('省略提案');
+  await expect(audit).not.toContainText('区域外锁定');
+  await expect(audit).not.toContainText('本次重写');
+
+  await page.reload();
+  await page.locator('#recent').selectOption(pid);
+  await expect(page.locator('#variants option:checked')).toContainText('编辑自局部候选');
+  const editedIndex=await page.evaluate(()=>state.active);
+  await page.locator('#variants').selectOption(String(parent.index));
+  await expect(page.locator('#variants option:checked')).toContainText('局部');
+  await assertRegionalOutput(page);
+  await page.locator('#variants').selectOption(String(editedIndex));
+  await expect(page.locator('#variants option:checked')).toContainText('编辑自局部候选');
+  await expect(page.locator('#expressionAudit')).not.toContainText('区域外锁定');
+  await selectNote(page,'region',3.7);
+  await expect(page.locator('#inspector')).toContainText('人工修改');
+  await expect(page.locator('#inspector')).toContainText('原始候选起点（原音频）');
+
+  await page.locator('#noteEditor').evaluate(el=>{el.open=true;});
+  const secondStart=Number(await page.locator('#editStart').inputValue());
+  const secondEnd=Number(await page.locator('#editEnd').inputValue());
+  await page.locator('#editStart').fill(String(secondStart+125));
+  await page.locator('#editEnd').fill(String(secondEnd+125));
+  await page.locator('#editSave').click();
+  await expect(page.locator('#variants option:checked')).toContainText('编辑自局部候选');
+  const twiceEdited=await page.evaluate(()=>structuredClone(variant()));
+  expect(twiceEdited.generation_origin).toEqual(edited.generation_origin);
+  expect(twiceEdited.edits).toHaveLength(2);
+  expect(twiceEdited.edits.at(-1).parent_created).toBe(edited.created);
+  expect(twiceEdited.source_evidence.region).toEqual(originalEvidence);
+  expect(twiceEdited.selection).not.toHaveProperty('proposal');
+  await expect(page.locator('#expressionAudit')).not.toContainText('省略提案');
+
+  await page.route(`**/api/projects/${pid}`,async route=>{
+    const response=await route.fetch(),data=await response.json();
+    data.variants=[data.variants[data.active]];data.active=0;
+    await route.fulfill({response,json:data});
+  });
+  await page.reload();
+  await page.locator('#recent').selectOption(pid);
+  await expect(page.locator('#variants option')).toHaveCount(1);
+  await expect(page.locator('#variants option:checked')).toContainText('编辑自局部候选');
+  const trimmed=await page.evaluate(()=>structuredClone(variant()));
+  expect(trimmed.generation_origin).toEqual({kind:'regional_generation',region:[3000,5000]});
+  expect(trimmed.selection).not.toHaveProperty('proposal');
+  await expect(page.locator('#expressionAudit')).not.toContainText('区域外锁定');
+  await expect(page.locator('#expressionAudit')).not.toContainText('本次重写');
+  const currentStart=await page.evaluate(()=>variant().notes.find(note=>note.id==='region').start);
+  await selectNote(page,'region',(currentStart+100)/1000);
+  await expect(page.locator('#inspector')).toContainText('人工修改');
+  await expect(page.locator('#inspector')).toContainText('原始候选起点（原音频）');
 });
 
 test('legacy regional reports derive counts from saved notes and label their uncertain scope',async({page})=>{

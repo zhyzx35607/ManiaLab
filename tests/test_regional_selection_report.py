@@ -5,6 +5,7 @@ from pathlib import Path
 from manialab.arrange import parameters
 from manialab.domain import Note, note_from, parse_osu, export_osu
 from manialab.generation import generate_variant
+from manialab.selection_report import resolve_generation_origin
 
 
 TEMPO = dict(bpm=120, offset=0, division=4, audio_shift_ms=0)
@@ -28,6 +29,8 @@ def test_muted_locked_note_is_retained_and_not_reported_as_final_omission():
                      Note(3500,4200,id='region',source='pitch',voice='bass')])
     old=deepcopy(generate(state))
     variant=generate(state,dict(piano_weight=0),[3000,5000])
+    assert old['generation_origin']==dict(kind='full_song_generation')
+    assert variant['generation_origin']==dict(kind='regional_generation',region=[3000,5000])
     report=variant['selection']
     assert report['selected']==len(variant['notes'])==2
     assert report['scope']=='regional_output'
@@ -51,6 +54,14 @@ def test_muted_locked_note_is_retained_and_not_reported_as_final_omission():
     content=export_osu([note_from(n) for n in variant['notes']],
         10,Path(__file__).parents[1]/'vendor/mapperatorinator/template.osu',bpm=120,offset=0)
     assert [(n.start,n.end) for n in parse_osu(content)['notes']]==[(1000,1750),(3500,4250)]
+
+
+def test_legacy_edited_candidate_origin_is_backfilled_from_available_parent():
+    root=dict(created=1.0,region=[3000,5000])
+    child=dict(created=2.0,region=None,edits=[dict(parent_created=1.0)])
+    assert resolve_generation_origin(child,[root,child])==dict(
+        kind='regional_generation',region=[3000,5000])
+    assert resolve_generation_origin(child,[child])==dict(kind='unknown')
 
 
 def test_manual_and_reanalyzed_locks_have_no_fresh_raw_decision_attached():
@@ -176,6 +187,18 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
         state['analysis'] = analysis
         app.extensions['projects'].save(state)
 
+        automatic = client.post(base + '/expression', headers=headers,
+            json=dict(action='automatic', settings=settings))
+        assert automatic.status_code == 200, automatic.json
+        manual_expression = automatic.json['expression']
+        manual_expression['sections'][0]['voices']['piano']['mode'] = 'sustain'
+        manual_expression['sections'][1]['voices']['vocals']['mode'] = 'phrase'
+        saved_expression = client.post(base + '/expression', headers=headers,
+            json={'expression': manual_expression})
+        assert saved_expression.status_code == 200, saved_expression.json
+        manual_expression = saved_expression.json['expression']
+        assert manual_expression['source'] == 'manual'
+
         def generate(payload):
             response = client.post(base + '/generate', json=payload, headers=headers)
             assert response.status_code == 200, response.json
@@ -186,26 +209,41 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
         payload = dict(mode='audio', settings=settings, timing_confirmed=True, **TEMPO)
         state = generate(payload)
         assert len(state['variants']) == 1
+        full_song = state['variants'][state['active']]
+        assert full_song['selection']['expression'] == manual_expression
+        assert next(note for note in full_song['notes'] if note['id'] == 'anchor')['end'] == 4125
+
+        regional_expression = deepcopy(manual_expression)
+        regional_expression['sections'][1]['voices']['vocals']['mode'] = 'onsets'
+        saved_expression = client.post(base + '/expression', headers=headers,
+            json={'expression': regional_expression})
+        assert saved_expression.status_code == 200, saved_expression.json
+        regional_expression = saved_expression.json['expression']
+        assert regional_expression['source'] == 'manual'
         state = generate(dict(payload, region=[2500, 5000]))
         regional = state['variants'][state['active']]
         assert regional['selection']['scope'] == 'regional_output'
         assert regional['selection']['structure'] == structure
-        assert regional['source_evidence']['anchor']['expressed'] == dict(
-            start=3000,
-            end=4125,
-            phrase=True,
-            release_reason='vocal_activity_decay',
-            support=['support'],
-            support_coverage=1,
-        )
+        assert regional['selection']['expression'] == regional_expression
+        assert regional['selection']['proposal']['expression'] == regional_expression
+        assert regional['selection']['proposal']['structure'] == structure
+        assert regional['selection']['actual_ln_ratio'] == round(1 / 3, 4)
+        assert regional['source_evidence']['anchor']['expressed']['start'] == 3000
+        assert regional['source_evidence']['anchor']['expressed']['end'] == 3000
+        assert regional['source_evidence']['anchor']['expressed']['phrase'] is False
         anchor = next(note for note in regional['notes'] if note['id'] == 'anchor')
         assert anchor['voice'] == 'vocals'
-        assert anchor['end'] == 4125
+        assert anchor['end'] == anchor['start'] == 3000
+        assert next(note for note in regional['notes'] if note['id'] == 'locked') == \
+            next(note for note in full_song['notes'] if note['id'] == 'locked')
+        regional_notes = [note for note in regional['notes'] if 2500 <= note['start'] < 5000]
+        assert {note['id'] for note in regional_notes} == {'anchor', 'support'}
+        assert all(note['end'] == note['start'] for note in regional_notes)
         support_decisions = {
             item['id']: item for item in regional['selection']['proposal']['decisions']
         }
-        assert support_decisions['support']['reason'] == 'represented_by_phrase'
-        assert support_decisions['support']['represented_by'] == 'anchor'
+        assert support_decisions['support']['reason'] == 'section_onsets'
+        assert support_decisions['support']['decision'] == 'selected'
 
         edited_response = client.post(base + '/edit', headers=headers, json=dict(
             op='update',
@@ -220,9 +258,10 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
         edited = edited_state['variants'][edited_state['active']]
         edited_anchor = next(note for note in edited['notes'] if note['id'] == 'anchor')
         assert edited_anchor['lane'] == 2
-        assert edited_anchor['start'] == 3000 and edited_anchor['end'] == 4125
+        assert edited_anchor['start'] == edited_anchor['end'] == 3000
         assert edited['source_evidence'] == regional['source_evidence']
         assert edited['selection']['structure'] == structure
+        assert edited['selection']['expression'] == regional_expression
         assert edited_state['variants'][0] != edited
     finally:
         app.extensions['executor'].shutdown()
@@ -239,7 +278,9 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
         assert exported_json.status_code == 200
         assert exported_json.json['variant'] == edited
         assert exported_json.json['analysis']['structure'] == structure
+        assert exported_json.json['expression'] == regional_expression
         assert exported_json.json['variant']['selection']['structure'] == structure
+        assert exported_json.json['variant']['selection']['expression'] == regional_expression
         assert exported_json.json['variant']['source_evidence']['anchor']['expressed'] == \
             regional['source_evidence']['anchor']['expressed']
 

@@ -19,6 +19,7 @@ from package_assets import (
     MAPPER_INSTALLER_FILES, PROFILES, archive_stem, capabilities, stage_assets, start_guide,
     verify_core_model_files,
 )
+from worker_inventory import worker_inventory
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--profile",choices=sorted(PROFILES),default="standard")
 profile=parser.parse_args().profile
@@ -90,6 +91,11 @@ for dist in metadata.distributions():
 for name in ['LICENSE.txt','LICENSE']:
     source=Path(sys.base_prefix)/name
     if source.exists():shutil.copy2(source,lic/'Python-LICENSE.txt');break
+runtime_license_files=worker_inventory(ROOT/'licenses/runtime')
+runtime_license_inventory_path=ROOT/'licenses/runtime-inventory.json'
+runtime_license_inventory=dict(
+    bytes=runtime_license_inventory_path.stat().st_size,
+    sha256=hashlib.sha256(runtime_license_inventory_path.read_bytes()).hexdigest())
 if enabled['mapperatorinator_install']:
     for suffix in ['MIT','APACHE']:
         target=ROOT/f'licenses/uv-{suffix}.txt'
@@ -142,13 +148,18 @@ if instrument_identity and verify_instrument_worker(ROOT,target/'_internal/asset
     raise SystemExit('Instrument worker changed during the build; rebuild before publishing.')
 if enabled['guitar'] and verify_guitar_model(target/'_internal')!=guitar_identity:
     raise SystemExit('Guitar model or attribution changed during the build; rebuild before publishing.')
+instrument_runtime_license_files=(
+    worker_inventory(ROOT/'licenses/instrument-runtime') if enabled['instruments'] else None)
 release_manifest=dict(version=__version__,sources=build_sources,build_profile=profile,capabilities=enabled,
     executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
     core_models=bundled_core_model_identity,
     worker_sha256=bundled_worker.get('worker_sha256') if bundled_worker else None,
     worker_sources=bundled_worker.get('worker_sources') if bundled_worker else None,
     worker_files=bundled_worker.get('worker_files') if bundled_worker else None,
-    piano_model=piano_identity,guitar_model=guitar_identity,instrument_worker=instrument_identity)
+    piano_model=piano_identity,guitar_model=guitar_identity,instrument_worker=instrument_identity,
+    instrument_runtime_license_files=instrument_runtime_license_files,
+    runtime_license_files=runtime_license_files,
+    runtime_license_inventory=runtime_license_inventory)
 (target/'release-manifest.json').write_text(json.dumps(release_manifest,indent=2),encoding='utf-8')
 for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
     shutil.copy2(ROOT/name,target/name)

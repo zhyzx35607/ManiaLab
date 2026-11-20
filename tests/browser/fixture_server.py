@@ -272,7 +272,7 @@ def main():
         legacy_region_fixture(projects)
         for action in ('clear', 'success', 'error', 'cancel', 'scope'):
             plan_fixture(projects, f'UI plan {action}')
-        for action in ('current', 'legacy', 'full'):
+        for action in ('current', 'legacy', 'full', 'edit'):
             regional_audit_fixture(projects, f'UI regional audit {action}')
         reanalyzed_regional_fixture(projects)
         try:

@@ -10,6 +10,8 @@
 
 当前稳定入口： [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
+当前源码和 Windows workflow 的唯一公开支持构建 profile 为 `core`。历史 dev.18 Release 保持其原有内容和说明；本地构建其他 profile 不表示它们已获公开支持。
+
 截至 2026-11-19，`main` 已包含 dev.18 发布后的结构、导入/编辑、拍号及真人盲评回收改进，完整范围见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。当前最新公开 Release 仍是 dev.18；本文下载的 ZIP 不含这些后续源码改动。main 上的便携构建和 EXE 验证已通过，但尚未作为新版本发布。
 
 2026-11-18 源码已核对真实多难度谱包的编辑与重开，并用两首外部歌曲运行了完整采音到导出流程。结果与试听、试打入口见[工程与音乐验收记录](docs/acceptance-20261118.md)。
@@ -100,6 +102,6 @@ uv pip sync --python .venv-audio\Scripts\python.exe --extra-index-url https://do
 .venv\Scripts\python.exe scripts\build_windows.py --profile standard
 ```
 
-以上用于干净检出；已有旧钢琴模型时先保留旧文件，按[模型与构建说明](docs/development.md)准备当前版本，构建会把选定模型规范为包内固定路径。
+以上用于干净检出和本机工程验证；`standard` 构建不代表公开发布资格，当前公开支持 profile 为 `core`。已有旧钢琴模型时先保留旧文件，按[模型与构建说明](docs/development.md)准备当前版本，构建会把选定模型规范为包内固定路径。
 
 浏览器回归独立使用合成项目，不需要模型下载：`npm ci --ignore-scripts` → `npx playwright install chromium` → `npm run test:ui`。详见[开发与验证](docs/development.md)。验证范围、真实音频对照与不足见 [验证记录](docs/validation.md)。本地语料审计用 `scripts/audit_corpus.py`；采集与训练脚本见 [训练计划](docs/training-plan.md)。

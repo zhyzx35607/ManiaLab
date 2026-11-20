@@ -8,10 +8,68 @@ import pytest
 
 from manialab import __version__
 from scripts import pytest_provenance
-from scripts.collect_release_validation import collect
+from scripts import collect_release_validation
+from scripts.collect_release_validation import collect as _collect
 from scripts.package_assets import CORE_FILES, capabilities, verify_core_model_files
 
 ROOT = Path(__file__).resolve().parents[1]
+TEST_GUITAR_MODEL = b"synthetic guitar model"
+TEST_GUITAR_LICENSE = b"synthetic guitar license"
+TEST_GUITAR_SOURCE_NOTICE = b"synthetic guitar source notice"
+TEST_GUITAR_NOTICE = b"synthetic guitar notice"
+TEST_INSTRUMENT_WORKER = b"synthetic instrument worker"
+TEST_INSTRUMENT_LICENSE = b"synthetic instrument license"
+TEST_INSTRUMENT_VERIFICATION = b"synthetic instrument verification"
+TEST_INSTRUMENT_SOURCE = b"synthetic instrument source"
+TEST_RUNTIME_LICENSE = b"synthetic runtime dependency license"
+TEST_RUNTIME_LICENSE_INVENTORY = b"[]"
+TEST_PACKAGED_RUNTIME_LICENSE = b"synthetic packaged runtime license"
+TEST_PACKAGED_RUNTIME_INVENTORY = b'[{"name":"fixture","version":"1","license":"MIT"}]'
+TEST_BASS_MODEL = b"synthetic bass model"
+TEST_OTHER_MODEL = b"synthetic other model"
+
+
+def payload_identity(value):
+    return hashlib.sha256(value).hexdigest()
+
+
+def payload_record(value):
+    return {"bytes": len(value), "sha256": payload_identity(value)}
+
+
+def write_runtime_license_payloads(archive):
+    for prefix in ('ManiaLab/licenses/', 'ManiaLab/_internal/licenses/'):
+        archive.writestr(prefix + 'runtime/fixture/LICENSE', TEST_PACKAGED_RUNTIME_LICENSE)
+        archive.writestr(prefix + 'runtime-inventory.json', TEST_PACKAGED_RUNTIME_INVENTORY)
+
+
+def make_guitar_model_identity():
+    identity = json.loads((ROOT / 'assets/guitar-model.json').read_text(encoding='utf-8'))
+    identity['sha256'] = payload_identity(TEST_GUITAR_MODEL)
+    identity['license_sha256'] = payload_identity(TEST_GUITAR_LICENSE)
+    identity['source_license_declaration_sha256'] = payload_identity(TEST_GUITAR_SOURCE_NOTICE)
+    identity['notice_sha256'] = payload_identity(TEST_GUITAR_NOTICE)
+    return identity
+
+
+TEST_GUITAR_IDENTITY = make_guitar_model_identity()
+
+
+def collect(*args, **kwargs):
+    original_guitar_validator = collect_release_validation._is_guitar_model_identity
+    original_instrument_validator = collect_release_validation._is_instrument_worker_identity
+    instrument_identity = make_instrument_worker_identity()
+    collect_release_validation._is_guitar_model_identity = (
+        lambda value: value == TEST_GUITAR_IDENTITY or original_guitar_validator(value)
+    )
+    collect_release_validation._is_instrument_worker_identity = (
+        lambda value: value == instrument_identity or original_instrument_validator(value)
+    )
+    try:
+        return _collect(*args, **kwargs)
+    finally:
+        collect_release_validation._is_guitar_model_identity = original_guitar_validator
+        collect_release_validation._is_instrument_worker_identity = original_instrument_validator
 
 
 def write_pytest_evidence(path, junit_report):
@@ -37,24 +95,34 @@ def write_pytest_evidence(path, junit_report):
 
 def make_instrument_worker_identity():
     from manialab.instrument_bundle import (
-        MODELS, MODEL_REVISION, SOURCE_COMMIT, runtime_identity, source_manifest,
+        MODEL_REVISION, SOURCE_COMMIT, runtime_identity,
     )
 
+    worker_sha = payload_identity(TEST_INSTRUMENT_WORKER)
+    models = {
+        "bass_v2": payload_identity(TEST_BASS_MODEL),
+        "other_v1_5": payload_identity(TEST_OTHER_MODEL),
+    }
     return {
         "source_commit": SOURCE_COMMIT,
         "model_revision": MODEL_REVISION,
-        "source_files": source_manifest()["source_files"],
-        "models": MODELS,
+        "source_files": {"fixture.py": payload_identity(TEST_INSTRUMENT_SOURCE)},
+        "models": models,
         "license": "MIT",
-        "license_sha256": "f" * 64,
+        "license_sha256": payload_identity(TEST_INSTRUMENT_LICENSE),
         "voices": ["bass", "other"],
         "prepared_only": False,
         "portable_runtime_verified": True,
         "worker_sources": runtime_identity(ROOT),
-        "worker_sha256": "2" * 64,
-        "worker_files": {"ManiaLabInstrument.exe": {"bytes": 1, "sha256": "2" * 64}},
-        "verified_models": ["bass_v2", "other_v1_5"],
-        "verification_sha256": "4" * 64,
+        "worker_sha256": worker_sha,
+        "worker_files": {
+            "ManiaLabInstrument.exe": {
+                "bytes": len(TEST_INSTRUMENT_WORKER),
+                "sha256": worker_sha,
+            }
+        },
+        "verified_models": list(models),
+        "verification_sha256": payload_identity(TEST_INSTRUMENT_VERIFICATION),
     }
 
 
@@ -76,9 +144,19 @@ def make_release_fixture(root, profile='standard'):
         "worker_sha256": "expected-worker-sha" if profile != 'core' else None,
         "worker_sources": {} if profile != 'core' else None,
         "worker_files": [] if profile != 'core' else None,
-        "guitar_model": json.loads((ROOT / 'assets/guitar-model.json').read_text(encoding='utf-8'))
-            if profile == 'extended' else None,
+        "guitar_model": TEST_GUITAR_IDENTITY if profile == 'extended' else None,
         "instrument_worker": make_instrument_worker_identity() if profile == 'extended' else None,
+        "instrument_runtime_license_files": (
+            {
+                "inventory.json": payload_record(TEST_RUNTIME_LICENSE_INVENTORY),
+                "torch/LICENSE": payload_record(TEST_RUNTIME_LICENSE),
+            }
+            if profile == 'extended' else None
+        ),
+        "runtime_license_files": {
+            "fixture/LICENSE": payload_record(TEST_PACKAGED_RUNTIME_LICENSE),
+        },
+        "runtime_license_inventory": payload_record(TEST_PACKAGED_RUNTIME_INVENTORY),
     }
     (executable.parent / "release-manifest.json").write_text(
         json.dumps(manifest), encoding="utf-8"
@@ -93,6 +171,42 @@ def make_release_fixture(root, profile='standard'):
         )
         for name in CORE_FILES:
             archive.write(ROOT / 'assets' / name, 'ManiaLab/_internal/assets/' + name)
+        write_runtime_license_payloads(archive)
+        if profile == 'extended':
+            archive.writestr(
+                'ManiaLab/_internal/assets/guitar-model.json',
+                json.dumps(manifest['guitar_model']),
+            )
+            archive.writestr(
+                'ManiaLab/_internal/assets/deep/guitar-fl.onnx', TEST_GUITAR_MODEL
+            )
+            for field, content in (
+                ('license_file', TEST_GUITAR_LICENSE),
+                ('source_license_declaration_file', TEST_GUITAR_SOURCE_NOTICE),
+                ('notice_file', TEST_GUITAR_NOTICE),
+            ):
+                archive.writestr('ManiaLab/' + manifest['guitar_model'][field], content)
+
+            instrument_root = 'ManiaLab/_internal/assets/instruments/'
+            identity = manifest['instrument_worker']
+            archive.writestr(instrument_root + 'manifest.json', json.dumps(identity))
+            archive.writestr(instrument_root + 'verification.json', TEST_INSTRUMENT_VERIFICATION)
+            archive.writestr(instrument_root + 'LICENSE-tsumugi', TEST_INSTRUMENT_LICENSE)
+            archive.writestr(
+                instrument_root + 'checkpoints/best_model_bass_v2.pth', TEST_BASS_MODEL
+            )
+            archive.writestr(
+                instrument_root + 'checkpoints/best_model_other_v1_5.pth', TEST_OTHER_MODEL
+            )
+            archive.writestr(instrument_root + 'source/fixture.py', TEST_INSTRUMENT_SOURCE)
+            archive.writestr(
+                instrument_root + 'ManiaLabInstrument/ManiaLabInstrument.exe',
+                TEST_INSTRUMENT_WORKER,
+            )
+            archive.writestr('ManiaLab/licenses/instrument-runtime/inventory.json',
+                             TEST_RUNTIME_LICENSE_INVENTORY)
+            archive.writestr('ManiaLab/licenses/instrument-runtime/torch/LICENSE',
+                             TEST_RUNTIME_LICENSE)
     reports = root / "reports"
     reports.mkdir()
     pytest_report = reports / "junit.xml"
@@ -202,6 +316,18 @@ def make_release_fixture(root, profile='standard'):
     return build_root, pytest_report, portable_report, shutdown_report, archive_path, pytest_evidence
 
 
+def rewrite_archive(archive_path, *, omit=(), replacements=None, additions=None):
+    with zipfile.ZipFile(archive_path) as archive:
+        entries = {name: archive.read(name) for name in archive.namelist()}
+    for name in omit:
+        entries.pop(name, None)
+    entries.update(replacements or {})
+    entries.update(additions or {})
+    with zipfile.ZipFile(archive_path, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, content in entries.items():
+            archive.writestr(name, content)
+
+
 def test_collect_release_validation_writes_hashes_and_sanitized_summary(tmp_path):
     build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = make_release_fixture(tmp_path)
     report, output, checksums = collect(
@@ -262,6 +388,7 @@ def test_collect_core_validation_rejects_declared_deep_components(tmp_path):
         bundle.writestr('ManiaLab/release-manifest.json', json.dumps(manifest))
         for name in CORE_FILES:
             bundle.write(ROOT / 'assets' / name, 'ManiaLab/_internal/assets/' + name)
+        write_runtime_license_payloads(bundle)
 
     with pytest.raises(SystemExit, match='Core manifest declares'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
@@ -284,10 +411,125 @@ def test_collect_core_validation_rejects_changed_basic_pitch_bytes(tmp_path):
                 bundle.writestr('ManiaLab/_internal/assets/' + name, b'changed model')
             else:
                 bundle.write(asset, 'ManiaLab/_internal/assets/' + name)
+        write_runtime_license_payloads(bundle)
 
     with pytest.raises(SystemExit, match='Basic Pitch model checksum'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(('prefix', 'change'), (
+    ('ManiaLab/licenses/', 'missing'),
+    ('ManiaLab/licenses/', 'changed'),
+    ('ManiaLab/licenses/', 'extra'),
+    ('ManiaLab/_internal/licenses/', 'missing'),
+    ('ManiaLab/_internal/licenses/', 'changed'),
+    ('ManiaLab/_internal/licenses/', 'extra'),
+))
+def test_collect_core_validation_checks_runtime_license_tree(tmp_path, prefix, change):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='core')
+    )
+    license_path = prefix + 'runtime/fixture/LICENSE'
+    if change == 'missing':
+        rewrite_archive(archive, omit=(license_path,))
+    elif change == 'changed':
+        rewrite_archive(archive, replacements={license_path: b'changed license'})
+    else:
+        rewrite_archive(archive, additions={
+            prefix + 'runtime/unlisted/COPYING': b'unlisted license',
+        })
+
+    message = 'differs from its manifest identity' if change == 'changed' else 'inventory differs'
+    with pytest.raises(SystemExit, match=message):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(('prefix', 'change'), (
+    ('ManiaLab/licenses/', 'missing'),
+    ('ManiaLab/licenses/', 'changed'),
+    ('ManiaLab/_internal/licenses/', 'missing'),
+    ('ManiaLab/_internal/licenses/', 'changed'),
+))
+def test_collect_core_validation_checks_runtime_license_inventory_file(
+    tmp_path, prefix, change
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='core')
+    )
+    inventory_path = prefix + 'runtime-inventory.json'
+    if change == 'missing':
+        rewrite_archive(archive, omit=(inventory_path,))
+        message = 'missing required component'
+    else:
+        rewrite_archive(archive, replacements={inventory_path: b'[]'})
+        message = 'differs from its manifest identity'
+
+    with pytest.raises(SystemExit, match=message):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(('left', 'right'), (
+    ('ManiaLab/docs', 'ManiaLab/DOCS/'),
+    ('ManiaLab/docs', 'ManiaLab/docs/file.txt'),
+))
+def test_collect_release_validation_rejects_component_case_or_file_directory_collision(
+    tmp_path, left, right
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='core')
+    )
+    rewrite_archive(archive, additions={left: b'file', right: b''})
+
+    with pytest.raises(SystemExit, match='case-insensitive path collisions'):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize('name', (
+    'ManiaLab/stream.txt:payload',
+    'ManiaLab/bad<name.txt',
+    'ManiaLab/bad>name.txt',
+    'ManiaLab/bad"name.txt',
+    'ManiaLab/bad|name.txt',
+    'ManiaLab/bad?name.txt',
+    'ManiaLab/bad*name.txt',
+    'ManiaLab/bad\x1fname.txt',
+    'ManiaLab/ leading-space.txt',
+    'ManiaLab/trailing-dot.',
+    'ManiaLab/trailing-space ',
+    'ManiaLab/CON.txt',
+    'ManiaLab/CONIN$',
+    'ManiaLab/CONOUT$',
+    'ManiaLab/subdir/aux/README.txt',
+    'ManiaLab/LPT9.log',
+    'ManiaLab/COM¹.bin',
+))
+def test_collect_release_validation_rejects_windows_unsafe_path_components(tmp_path, name):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='core')
+    )
+    rewrite_archive(archive, additions={name: b'unsafe path'})
+
+    with pytest.raises(SystemExit, match='unsafe entry path'):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+def test_windows_archive_component_key_normalizes_case_and_trailing_ascii_dot_space():
+    key = collect_release_validation._windows_archive_component_key
+
+    assert key('docs') == key('DOCS') == key('docs.') == key('docs ')
 
 
 def test_collect_extended_validation_requires_specialist_runtime_evidence(tmp_path):
@@ -313,6 +555,127 @@ def test_collect_extended_validation_requires_specialist_runtime_evidence(tmp_pa
     with pytest.raises(SystemExit, match='guitar real-audio cases'):
         collect(build_root, pytest_report, portable_report, shutdown_report,
             pytest_evidence=pytest_evidence)
+
+
+@pytest.mark.parametrize(('name', 'content'), (
+    ('ManiaLab/_internal/assets/deep/guitar-fl.onnx', b'changed guitar model'),
+    ('ManiaLab/_internal/assets/guitar-model.json', b'{}'),
+    ('ManiaLab/licenses/HFGuitar-Model-Card.md', b'changed guitar license'),
+    ('ManiaLab/_internal/assets/instruments/ManiaLabInstrument/ManiaLabInstrument.exe',
+        b'changed instrument worker'),
+    ('ManiaLab/_internal/assets/instruments/checkpoints/best_model_bass_v2.pth',
+        b'changed bass model'),
+    ('ManiaLab/_internal/assets/instruments/source/fixture.py', b'changed instrument source'),
+    ('ManiaLab/_internal/assets/instruments/LICENSE-tsumugi', b'changed instrument license'),
+    ('ManiaLab/_internal/assets/instruments/verification.json', b'changed verification'),
+))
+def test_collect_extended_validation_rejects_changed_specialist_zip_payloads(
+    tmp_path, name, content
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='extended')
+    )
+    rewrite_archive(archive, replacements={name: content})
+
+    with pytest.raises(SystemExit, match='differs from its manifest identity'):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(('name', 'message'), (
+    ('ManiaLab/_internal/assets/deep/guitar-fl.onnx', 'missing required component'),
+    ('ManiaLab/_internal/assets/instruments/ManiaLabInstrument/ManiaLabInstrument.exe',
+        'component inventory differs'),
+))
+def test_collect_extended_validation_rejects_missing_specialist_zip_payloads(
+    tmp_path, name, message
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='extended')
+    )
+    rewrite_archive(archive, omit=(name,))
+
+    with pytest.raises(SystemExit, match=message):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+def test_collect_extended_validation_rejects_unlisted_instrument_zip_payload(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='extended')
+    )
+    rewrite_archive(archive, additions={
+        'ManiaLab/_internal/assets/instruments/ManiaLabInstrument/injected.dll': b'extra',
+    })
+
+    with pytest.raises(SystemExit, match='component inventory differs'):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+@pytest.mark.parametrize(('change', 'expected'), (
+    ('changed', 'differs from its manifest identity'),
+    ('missing', 'component inventory differs'),
+    ('extra', 'component inventory differs'),
+))
+def test_collect_extended_validation_checks_runtime_license_inventory(tmp_path, change, expected):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='extended')
+    )
+    license_path = 'ManiaLab/licenses/instrument-runtime/torch/LICENSE'
+    if change == 'changed':
+        rewrite_archive(archive, replacements={license_path: b'changed runtime license'})
+    elif change == 'missing':
+        rewrite_archive(archive, omit=(license_path,))
+    else:
+        rewrite_archive(archive, additions={
+            'ManiaLab/licenses/instrument-runtime/unlisted/COPYING': b'unlisted',
+        })
+
+    with pytest.raises(SystemExit, match=expected):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
+def test_archive_inventory_can_require_a_byte_count(tmp_path):
+    archive_path = tmp_path / 'inventory.zip'
+    with zipfile.ZipFile(archive_path, 'w') as archive:
+        archive.writestr('licenses/LICENSE', TEST_RUNTIME_LICENSE)
+
+    with zipfile.ZipFile(archive_path) as archive:
+        with pytest.raises(SystemExit, match='invalid component identity'):
+            collect_release_validation._require_archive_inventory(
+                archive,
+                'licenses/',
+                {'LICENSE': {'sha256': payload_identity(TEST_RUNTIME_LICENSE)}},
+                require_bytes=True,
+            )
+
+
+def test_collect_extended_validation_rejects_case_insensitive_specialist_path_collision(
+    tmp_path,
+):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='extended')
+    )
+    rewrite_archive(archive, additions={
+        'ManiaLab/_internal/assets/INSTRUMENTS/ManiaLabInstrument/ManiaLabInstrument.exe':
+            TEST_INSTRUMENT_WORKER,
+    })
+
+    with pytest.raises(SystemExit, match='case-insensitive path collisions'):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
 
 
 SPECIALIST_REPORT_ROWS = (

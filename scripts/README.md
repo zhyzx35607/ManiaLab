@@ -7,7 +7,7 @@
 - `fetch_audio_models.py`：获取并校验打包需要的模型资源。
 - `fetch_piano_model.py`：从固定上游权重与源码重新导出并校验可选钢琴模型。
 - `build_audio_worker.py`：构建便携音频工作进程。
-- `build_windows.py --profile standard`：按明确组件清单构建隔离的 Windows 包，产物位于 `build/portable/<run-id>/`；`extended` 要求额外完整组件。
+- `build_windows.py --profile standard`：按明确组件清单构建隔离的 Windows 本地验证包，产物位于 `build/portable/<run-id>/`。当前公开支持 profile 是 `core`，Windows workflow 只验证该 profile；`standard`/`extended` 的本机构建不表示公开支持，`extended` 的专项门禁也不等于完整便携运行验收。
 - `package_assets.py`：维护构建范围、暂存资源和随包使用说明，避免夹带历史模型及研究文件。
 - `worker_inventory.py`：记录并核对 worker 全部运行文件；暂存按清单复制，拒绝额外文件、修改和链接。
 - `verify_portable.py`：用干净 PATH 和离线数据目录验证实际 EXE。

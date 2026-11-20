@@ -141,6 +141,230 @@ def _require_specialist_components(manifest, declared_capabilities):
             "Portable manifest must declare instrument_worker=null without instruments capability."
         )
 
+    runtime_license_files = manifest.get("instrument_runtime_license_files")
+    if declared_capabilities["instruments"]:
+        if not isinstance(runtime_license_files, dict) or not runtime_license_files:
+            raise SystemExit(
+                "Portable manifest has no instrument runtime license file inventory."
+            )
+    elif "instrument_runtime_license_files" not in manifest or runtime_license_files is not None:
+        raise SystemExit(
+            "Portable manifest must declare instrument_runtime_license_files=null without instruments capability."
+        )
+
+    runtime_license_files = manifest.get("runtime_license_files")
+    if not isinstance(runtime_license_files, dict) or not runtime_license_files:
+        raise SystemExit("Portable manifest has no runtime license file inventory.")
+    runtime_license_inventory = manifest.get("runtime_license_inventory")
+    if (
+        not isinstance(runtime_license_inventory, dict)
+        or type(runtime_license_inventory.get("bytes")) is not int
+        or runtime_license_inventory["bytes"] < 0
+        or not _is_sha256(runtime_license_inventory.get("sha256"))
+    ):
+        raise SystemExit("Portable manifest has no valid runtime license inventory identity.")
+
+
+def _is_safe_archive_relative_path(name):
+    if not isinstance(name, str) or not name:
+        return False
+    path = PurePosixPath(name)
+    return (
+        not path.is_absolute()
+        and path.as_posix() == name
+        and ".." not in path.parts
+        and "\\" not in name
+        and ":" not in name
+    )
+
+
+def _require_archive_file(archive, name, expected_sha256, expected_bytes=None):
+    try:
+        info = archive.getinfo(name)
+    except KeyError as exc:
+        raise SystemExit(f"Release ZIP is missing required component: {name}") from exc
+    if expected_bytes is not None and info.file_size != expected_bytes:
+        raise SystemExit(f"Release ZIP component size differs from its manifest identity: {name}")
+    with archive.open(info) as stream:
+        actual_sha256 = hashlib.file_digest(stream, "sha256").hexdigest()
+    if actual_sha256 != expected_sha256:
+        raise SystemExit(f"Release ZIP component differs from its manifest identity: {name}")
+
+
+def _require_archive_json(archive, name, expected):
+    try:
+        actual = json.loads(archive.read(name))
+    except KeyError as exc:
+        raise SystemExit(f"Release ZIP is missing required component: {name}") from exc
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"Release ZIP component is invalid JSON: {name}") from exc
+    if actual != expected:
+        raise SystemExit(f"Release ZIP component differs from its manifest identity: {name}")
+
+
+def _require_archive_inventory(archive, prefix, expected, *, require_bytes=False):
+    if not isinstance(expected, dict) or not expected:
+        raise SystemExit(f"Release manifest has no component inventory for {prefix}")
+    folded = set()
+    for name, record in expected.items():
+        if not _is_safe_archive_relative_path(name) or name.casefold() in folded:
+            raise SystemExit(f"Release manifest has an unsafe component path under {prefix}")
+        folded.add(name.casefold())
+        if record is not None and (
+            not isinstance(record, dict)
+            or (
+                "bytes" in record
+                and (type(record["bytes"]) is not int or record["bytes"] < 0)
+            )
+            or (require_bytes and type(record.get("bytes")) is not int)
+            or not _is_sha256(record.get("sha256"))
+        ):
+            raise SystemExit(f"Release manifest has an invalid component identity under {prefix}")
+
+    actual = {
+        info.filename[len(prefix):]
+        for info in archive.infolist()
+        if info.filename.startswith(prefix) and not info.is_dir()
+    }
+    actual_folded = [name.casefold() for name in actual]
+    if len(actual) != len(actual_folded) or len(actual_folded) != len(set(actual_folded)):
+        raise SystemExit(f"Release ZIP has duplicate component paths under {prefix}")
+    if actual != set(expected):
+        raise SystemExit(f"Release ZIP component inventory differs from its manifest: {prefix}")
+    for name, record in expected.items():
+        if record is not None:
+            _require_archive_file(
+                archive, prefix + name, record["sha256"], expected_bytes=record.get("bytes")
+            )
+
+
+def _require_specialist_zip_payloads(archive, manifest, declared_capabilities):
+    if declared_capabilities["guitar"]:
+        identity = manifest["guitar_model"]
+        assets_prefix = "ManiaLab/_internal/assets/"
+        _require_archive_json(archive, assets_prefix + "guitar-model.json", identity)
+        _require_archive_file(
+            archive,
+            assets_prefix + "deep/" + identity["filename"],
+            identity["sha256"],
+        )
+        for path_field, hash_field in (
+            ("license_file", "license_sha256"),
+            ("source_license_declaration_file", "source_license_declaration_sha256"),
+            ("notice_file", "notice_sha256"),
+        ):
+            relative = identity.get(path_field)
+            if not _is_safe_archive_relative_path(relative):
+                raise SystemExit("Portable manifest has an unsafe guitar attribution path.")
+            _require_archive_file(
+                archive, "ManiaLab/" + relative, identity.get(hash_field)
+            )
+
+    if declared_capabilities["instruments"]:
+        identity = manifest["instrument_worker"]
+        prefix = "ManiaLab/_internal/assets/instruments/"
+        files = {
+            "manifest.json": None,
+            "verification.json": {"sha256": identity["verification_sha256"]},
+            "LICENSE-tsumugi": {"sha256": identity["license_sha256"]},
+        }
+        files.update({
+            f"checkpoints/best_model_{name}.pth": {"sha256": digest}
+            for name, digest in identity["models"].items()
+        })
+        files.update({
+            f"source/{name}": {"sha256": digest}
+            for name, digest in identity["source_files"].items()
+        })
+        files.update({
+            f"ManiaLabInstrument/{name}": record
+            for name, record in identity["worker_files"].items()
+        })
+        _require_archive_inventory(archive, prefix, files)
+        _require_archive_json(archive, prefix + "manifest.json", identity)
+        _require_archive_inventory(
+            archive,
+            "ManiaLab/licenses/instrument-runtime/",
+            manifest["instrument_runtime_license_files"],
+            require_bytes=True,
+        )
+
+
+def _require_runtime_license_zip_payloads(archive, manifest):
+    files = manifest["runtime_license_files"]
+    inventory = manifest["runtime_license_inventory"]
+    for prefix in ("ManiaLab/licenses/", "ManiaLab/_internal/licenses/"):
+        _require_archive_inventory(
+            archive, prefix + "runtime/", files, require_bytes=True
+        )
+        _require_archive_file(
+            archive,
+            prefix + "runtime-inventory.json",
+            inventory["sha256"],
+            expected_bytes=inventory["bytes"],
+        )
+
+
+_WINDOWS_INVALID_PATH_CHARS = frozenset('<>:"|?*\\')
+_WINDOWS_RESERVED_DEVICE_NAMES = frozenset(
+    {"con", "prn", "aux", "nul", "conin$", "conout$"}
+    | {f"com{digit}" for digit in "123456789"}
+    | {f"lpt{digit}" for digit in "123456789"}
+    | {f"com{digit}" for digit in "¹²³"}
+    | {f"lpt{digit}" for digit in "¹²³"}
+)
+
+
+def _windows_archive_component_key(component):
+    return component.rstrip(" .").casefold()
+
+
+def _is_safe_windows_archive_component(component):
+    if (
+        not component
+        or component.startswith(" ")
+        or component.endswith((".", " "))
+        or any(ord(character) < 32 or character in _WINDOWS_INVALID_PATH_CHARS
+               for character in component)
+    ):
+        return False
+    device_basename = component.split(".", 1)[0].rstrip(" .").casefold()
+    return device_basename not in _WINDOWS_RESERVED_DEVICE_NAMES
+
+
+def _require_archive_path_tree(infos):
+    names = set()
+    nodes = {}
+    for info in infos:
+        name = info.filename
+        if name in names:
+            raise SystemExit("Release ZIP has duplicate entries.")
+        names.add(name)
+        path = PurePosixPath(name)
+        normalized_name = name[:-1] if info.is_dir() and name.endswith("/") else name
+        if (
+            path.is_absolute()
+            or not path.parts
+            or path.as_posix() != normalized_name
+            or name.endswith("/") != info.is_dir()
+            or path.parts[0] != "ManiaLab"
+            or any(part in (".", "..") for part in path.parts)
+            or "\\" in name
+            or any(not _is_safe_windows_archive_component(part) for part in path.parts)
+        ):
+            raise SystemExit("Release ZIP contains an unsafe entry path.")
+
+        for index, component in enumerate(path.parts):
+            spelling = path.parts[:index + 1]
+            key = tuple(_windows_archive_component_key(part) for part in spelling)
+            kind = "dir" if index < len(path.parts) - 1 or info.is_dir() else "file"
+            previous = nodes.get(key)
+            if previous is not None and previous != (spelling, kind):
+                raise SystemExit(
+                    "Release ZIP has case-insensitive path collisions or file/directory conflicts."
+                )
+            nodes[key] = (spelling, kind)
+
 
 def _require_mode_results(check, expected_modes, required_flags):
     modes = check.get("modes")
@@ -253,19 +477,11 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
     if size >= 2_000_000_000:
         raise SystemExit("Release ZIP exceeds the configured 2 GB publishing guard.")
     with zipfile.ZipFile(archive_path) as archive:
-        names = archive.namelist()
-        if len(names) != len(set(names)) or archive.testzip() is not None:
-            raise SystemExit("Release ZIP has duplicate entries or a CRC failure.")
-        for name in names:
-            path = PurePosixPath(name)
-            if (
-                path.is_absolute()
-                or not path.parts
-                or path.parts[0] != "ManiaLab"
-                or any(part in (".", "..") for part in path.parts)
-                or "\\" in name
-            ):
-                raise SystemExit("Release ZIP contains an unsafe entry path.")
+        infos = archive.infolist()
+        names = [info.filename for info in infos]
+        _require_archive_path_tree(infos)
+        if archive.testzip() is not None:
+            raise SystemExit("Release ZIP has a CRC failure.")
         if sha256_bytes(archive.read("ManiaLab/ManiaLab.exe")) != executable_sha:
             raise SystemExit("Release ZIP executable does not match the verified build.")
         archive_manifest = archive.read("ManiaLab/release-manifest.json")
@@ -288,6 +504,8 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *, pyte
             raise SystemExit(f"Release ZIP is missing valid core model provenance: {exc}") from exc
         if manifest.get("core_models") != core_models:
             raise SystemExit("Core model identity does not match the release manifest.")
+        _require_runtime_license_zip_payloads(archive, manifest)
+        _require_specialist_zip_payloads(archive, manifest, declared_capabilities)
 
     suites = ET.parse(pytest_report).getroot()
     suite_nodes = [suites] if suites.tag == "testsuite" else list(suites.findall("testsuite"))

@@ -150,6 +150,8 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
                    timing_diagnostics=timing_diagnostics,
                    snap=payload.get("snap", True) is True, timing_confirmed=payload.get("timing_confirmed", False) is True,
                    elapsed_seconds=round(time.perf_counter() - started, 2), created=time.time(), region=region,
+                   generation_origin=dict(kind='regional_generation', region=deepcopy(region))
+                       if region is not None else dict(kind='full_song_generation'),
                    event_count=len(upstream_events(output)))
     if mode == 'audio':
         variant["meter"] = previous_meter if region is not None else (
