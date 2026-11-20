@@ -46,19 +46,30 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
                 if snapshot_backup is not None:
                     snapshot_backup.unlink(missing_ok=True)
                 return
+            failures = []
             chart_path = publication.get("chart_path")
             if publication.get("chart_created") and chart_path is not None:
-                chart_path.unlink(missing_ok=True)
+                try:
+                    chart_path.unlink(missing_ok=True)
+                except OSError as error:
+                    failures.append(error)
             if snapshot_path is not None:
-                if snapshot_backup is not None and snapshot_backup.exists():
-                    snapshot_backup.replace(snapshot_path)
-                elif publication.get("archive_attempted") and not publication["snapshot_existed"]:
-                    snapshot_path.unlink(missing_ok=True)
+                try:
+                    if snapshot_backup is not None and snapshot_backup.exists():
+                        snapshot_backup.replace(snapshot_path)
+                    elif publication.get("archive_attempted") and not publication["snapshot_existed"]:
+                        snapshot_path.unlink(missing_ok=True)
+                except OSError as error:
+                    failures.append(error)
                 if not publication["snapshot_parent_existed"]:
                     try:
                         snapshot_path.parent.rmdir()
-                    except OSError:
+                    except FileNotFoundError:
                         pass
+                    except OSError as error:
+                        failures.append(error)
+            if failures:
+                raise ExceptionGroup("原模型发布资源回滚失败", failures)
 
         def operation(state, progress, cancelled):
             def check_cancelled():

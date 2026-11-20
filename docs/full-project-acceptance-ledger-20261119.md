@@ -4,7 +4,9 @@
 
 ## 当前结论
 
-- 第九十二阶段续接：候选稳定保存`generation_origin`；旧候选只有唯一、有限的`created`父键才能沿链回填，缺失、重复、循环或JSON往返后的NaN/±Infinity均降为`unknown`。手动逐段表达贯穿整谱生成、regional rewrite、编辑、重开与JSON导出的组合回归通过；提交成功后cleanup阻塞期间收到HTTP cancel仍以`done/result`收尾，父状态保留且worker可复用。collector将所有profile的`licenses/runtime/`及inventory逐文件大小/SHA写入manifest，并验证ZIP根目录和`_internal`两副本；extended还校验吉他/Tsumugi专项资源。ZIP入口拒绝Windows非法字符、保留设备名、尾随点/空格及大小写/文件目录规范化冲突。最终本地聚焦Python/API `174 passed`、regional Edge `5 passed`，compileall、静态JS语法和差异检查通过。README/脚本索引已明确唯一公开支持profile为`core`。PR #201原run `44677307367`于`2026-11-20 05:47:56 UTC`结束为`cancelled`，pytest step 6未完成且日志不可用；本地增强待新托管检查验证。ENG-05、ENG-06与MUS-01保持开放。
+- 第九十二阶段续接更正（2026-11-20）：旧head Windows run `44688448229`在pytest阶段失败（`34 failed, 2963 passed, 89 skipped`）；失败集中于尚未同步runtime许可inventory schema的身份测试夹具，已修正。回滚cleanup也补上谱面删除失败后仍恢复snapshot及归档前取消的处理。本地相关聚焦组`254 passed`，修改文件compileall和`git diff --check`通过；此前的`174 passed`仅覆盖首轮基础聚焦组。修正后的托管检查待推送后验证。构建目录复用导致ignored `licenses/runtime/`残留文件可能进入manifest是非阻断发布风险；`uv-*`和FFmpeg许可不在当前inventory哈希覆盖范围。ENG-05、ENG-06与MUS-01仍开放。
+
+- 第九十二阶段续接：候选稳定保存`generation_origin`；旧候选只有唯一、有限的`created`父键才能沿链回填，缺失、重复、循环或JSON往返后的NaN/±Infinity均降为`unknown`。手动逐段表达贯穿整谱生成、regional rewrite、编辑、重开与JSON导出的组合回归通过；提交成功后cleanup阻塞期间收到HTTP cancel仍以`done/result`收尾，父状态保留且worker可复用。collector将所有profile的`licenses/runtime/`及inventory逐文件大小/SHA写入manifest，并验证ZIP根目录和`_internal`两副本；extended还校验吉他/Tsumugi专项资源。ZIP入口拒绝Windows非法字符、保留设备名、尾随点/空格及大小写/文件目录规范化冲突。首轮本地聚焦Python/API `174 passed`、regional Edge `5 passed`，compileall、静态JS语法和差异检查通过。README/脚本索引已明确唯一公开支持profile为`core`。PR #201原run `44677307367`于`2026-11-20 05:47:56 UTC`结束为`cancelled`，pytest step 6未完成且日志不可用；后续CI与本地修正状态见上方续接更正。ENG-05、ENG-06与MUS-01保持开放。
 
 - 第一轮静态架构与工程路径审查没有发现 P0，也没有发现已确认的 P1/P2 数据破坏问题。阶段1用户文件与项目生命周期跨路径审查已收口：PR #186新增的两组失败路径故障注入已合入并由 main run `44500510492`验证，Python/API `2743 passed, 89 skipped`、Edge `38 passed`。阶段2–3及发布/真人验收仍开放。
 - 后续路径审计确认一个 P2 资源清理缺口：分离 worker 启动抛出 `OSError` 时会遗留预转码 WAV。第七十四阶段以合成故障注入复现并修复；PR #181/main run `44468079196`、`44468606711`通过，Python/API `2720 passed, 89 skipped`、Edge `38 passed`，Core便携构建按条件跳过；阶段3仍待集成审查。
