@@ -17,6 +17,14 @@ def _event_id(parent, event):
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _valid_event_id(value):
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 def _append(journal, parent, event):
     event_id = _event_id(parent, event)
     node = {"parent": parent, "event": event}
@@ -30,14 +38,19 @@ def _events(journal, head):
     result = []
     visited = set()
     while head is not None:
-        if head in visited or head not in journal:
+        if not _valid_event_id(head) or head in visited or head not in journal:
             raise ValueError("候选编辑历史链损坏")
         visited.add(head)
         node = journal[head]
-        if not isinstance(node, dict) or "event" not in node:
+        if not isinstance(node, dict) or set(node) != {"parent", "event"}:
             raise ValueError("候选编辑历史链损坏")
-        result.append(node["event"])
-        head = node.get("parent")
+        parent, event = node["parent"], node["event"]
+        if (parent is not None and not _valid_event_id(parent)) or not isinstance(event, dict):
+            raise ValueError("候选编辑历史链损坏")
+        if _event_id(parent, event) != head:
+            raise ValueError("候选编辑历史链损坏")
+        result.append(event)
+        head = parent
     result.reverse()
     return result
 
