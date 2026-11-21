@@ -55,6 +55,7 @@ def source_snapshot_paths(root, enabled):
     files = [
         root / 'launcher.py', root / 'README.md', root / 'LICENSE',
         root / 'THIRD_PARTY_NOTICES.md',
+        root / 'requirements-lock.txt',
         root / 'scripts/build_windows.py', root / 'scripts/package_assets.py',
         root / 'scripts/worker_inventory.py', root / 'scripts/build_provenance.py',
         *sorted((root / 'manialab').glob('*.py')),
@@ -68,6 +69,8 @@ def source_snapshot_paths(root, enabled):
         root / 'assets/guitar-model.json', root / 'assets/deep-models.json',
         root / 'manialab/tsumugi-source.json', *license_inputs,
     ]
+    if enabled['separation_four']:
+        files.append(root / 'requirements-deep-lock.txt')
     if enabled['mapperatorinator_install']:
         files.extend(
             root / 'assets' / name

@@ -48,6 +48,57 @@ def test_source_snapshot_paths_includes_docs_and_rejects_links(tmp_path, monkeyp
         build_provenance.source_snapshot_paths(tmp_path, capabilities('core'))
 
 
+@pytest.mark.parametrize(('profile', 'includes_deep_lock'), (
+    ('core', False),
+    ('standard', True),
+    ('extended', True),
+))
+def test_build_source_snapshot_hashes_profile_dependency_locks(
+        tmp_path, profile, includes_deep_lock):
+    lock_contents = {
+        'requirements-lock.txt': b'core lock fixture',
+        'requirements-deep-lock.txt': b'deep lock fixture',
+    }
+    lock_paths = {}
+    for name, contents in lock_contents.items():
+        path = tmp_path / name
+        path.write_bytes(contents)
+        lock_paths[path.resolve()] = name
+
+    build_script = Path(build_provenance.__file__).resolve().parents[1] / 'scripts' / 'build_windows.py'
+    source = ast.parse(build_script.read_text(encoding='utf-8'))
+    function = next(
+        node for node in source.body
+        if isinstance(node, ast.FunctionDef) and node.name == 'source_snapshot'
+    )
+
+    def synthetic_sha256(path):
+        path = Path(path)
+        if path in lock_paths:
+            return build_provenance.sha256(path)
+        return 'a' * 64
+
+    namespace = {
+        'ROOT': tmp_path,
+        'enabled': capabilities(profile),
+        'source_snapshot_paths': build_provenance.source_snapshot_paths,
+        'sha256': synthetic_sha256,
+    }
+    module = ast.Module(body=[function], type_ignores=[])
+    exec(compile(ast.fix_missing_locations(module), 'source-snapshot-only', 'exec'), namespace)
+    snapshot = namespace['source_snapshot']()
+
+    assert snapshot['requirements-lock.txt'] == build_provenance.sha256(
+        tmp_path / 'requirements-lock.txt'
+    )
+    if includes_deep_lock:
+        assert snapshot['requirements-deep-lock.txt'] == build_provenance.sha256(
+            tmp_path / 'requirements-deep-lock.txt'
+        )
+    else:
+        assert 'requirements-deep-lock.txt' not in snapshot
+
+
 def test_archive_payload_inventory_covers_final_tree_except_root_manifest(tmp_path):
     package = tmp_path / 'ManiaLab'
     runtime = package / '_internal' / 'runtime.dll'

@@ -106,6 +106,7 @@ def _snapshot(tmp_path, profile):
 @pytest.fixture
 def source_tree(tmp_path):
     files = ['launcher.py', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
+        'requirements-lock.txt', 'requirements-deep-lock.txt',
         'scripts/build_windows.py', 'scripts/package_assets.py', 'scripts/worker_inventory.py',
         'scripts/build_provenance.py', 'manialab/app.py', 'manialab/tsumugi-source.json',
         'assets/pattern-prior.json', 'assets/arrangement-profiles.json',
