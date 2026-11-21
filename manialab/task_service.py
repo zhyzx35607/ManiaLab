@@ -144,6 +144,13 @@ class ProjectTasks:
                                    elapsed_seconds=round(time.perf_counter() - started, 2))
                 except InterruptedError as error:
                     outcome = dict(status="cancelled", message=str(error))
+                    recovery_hints = _user_recovery_hints(error)
+                    if recovery_hints:
+                        outcome.update(
+                            status="error",
+                            cleanup_failed=True,
+                            message="取消后资源清理失败；" + "；".join(recovery_hints),
+                        )
                 except BaseException as error:
                     self.logger.exception("Project task failed: project=%s job=%s", project_id, job_id)
                     message = str(error) if isinstance(error, ValueError) else "任务失败，请查看本地日志"
