@@ -64,6 +64,7 @@ def test_project_routes_keep_endpoints_and_chart_variant_state(tmp_path):
         assert selected.status_code == 200, selected.json
         assert selected.json["active"] == 1
         assert selected.json["settings"]["keys"] == 8
+        assert "expression" not in selected.json
 
         restored = client.post(f"/api/projects/{project_id}/chart", json={"path": "a.osu"}, headers=headers)
         assert restored.status_code == 200

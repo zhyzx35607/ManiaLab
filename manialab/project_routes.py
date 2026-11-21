@@ -1,6 +1,7 @@
 from pathlib import Path
 import json
 import shutil
+from copy import deepcopy
 
 from flask import jsonify, request
 
@@ -114,7 +115,14 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             if type(index) is not int or not 0 <= index < len(state["variants"]):
                 raise ValueError("候选版本无效")
             state["active"] = index
-            state["settings"] = state["variants"][index]["settings"].copy()
+            variant = state["variants"][index]
+            state["settings"] = variant["settings"].copy()
+            selection = variant.get("selection")
+            expression = selection.get("expression") if isinstance(selection, dict) else None
+            if isinstance(expression, dict):
+                state["expression"] = deepcopy(expression)
+            else:
+                state.pop("expression", None)
             projects.save(state)
             return jsonify(project_with_meter(state))
 
