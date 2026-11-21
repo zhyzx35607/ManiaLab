@@ -273,6 +273,77 @@ def test_http_cancel_during_post_commit_cleanup_keeps_successful_result(stem_pro
     assert service._idle.is_set()
 
 
+def test_analysis_cancel_reports_snapshot_cleanup_failure_and_reuses_worker(
+        tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path / 'data')
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    projects = app.extensions['projects']
+    service = app.extensions['task_service']
+    source = tmp_path / 'source.wav'
+    source.write_bytes(_wave_bytes(2205))
+    imported = client.post('/api/import', headers=headers,
+        data={'files': (io.BytesIO(source.read_bytes()), 'mix.wav')})
+    assert imported.status_code == 200, imported.json
+    pid = imported.json['id']
+    state = projects.load(pid)
+    state['analysis'] = {'sentinel': 'previous analysis stays committed'}
+    projects.save(state)
+
+    snapshot_ready, release_analysis = threading.Event(), threading.Event()
+    snapshot_paths = []
+    real_unlink = Path.unlink
+
+    def fail_snapshot_unlink(path, *args, **kwargs):
+        if path.name.startswith('.analysis-input-'):
+            snapshot_paths.append(path)
+            raise OSError('synthetic snapshot deletion denied')
+        return real_unlink(path, *args, **kwargs)
+
+    def cancelled_analysis(path, work, model, settings, progress, cancelled):
+        from manialab.audio import _audio_snapshot
+
+        with _audio_snapshot(path, work, cancelled) as (snapshot, audio_hash):
+            snapshot_paths.append(snapshot)
+            assert len(audio_hash) == 64
+            snapshot_ready.set()
+            assert release_analysis.wait(5)
+            raise InterruptedError('已取消分析')
+
+    monkeypatch.setattr(app.extensions['analysis_services'], 'analyze', cancelled_analysis)
+    monkeypatch.setattr(Path, 'unlink', fail_snapshot_unlink)
+    try:
+        response = client.post(f'/api/projects/{pid}/analyze', json={}, headers=headers)
+        assert response.status_code == 200, response.json
+        job = response.json
+        assert snapshot_ready.wait(5)
+
+        cancel = client.post(f"/api/jobs/{job['id']}/cancel", headers=headers)
+        assert cancel.status_code == 200
+    finally:
+        release_analysis.set()
+
+    result = wait_job(client, job)
+    try:
+        assert result['status'] == 'error'
+        assert result['cleanup_failed'] is True
+        assert '资源清理失败' in result['message']
+        assert str(snapshot_paths[0]) in result['message']
+        assert '请手动删除' in result['message']
+        assert projects.load(pid) == state
+        assert len(snapshot_paths) >= 2
+        assert snapshot_paths[0].exists()
+        assert service._idle.is_set()
+
+        recovery = service.submit(pid, lambda *_: {'worker_reused': True})
+        assert wait_job(client, recovery)['status'] == 'done'
+    finally:
+        Path.unlink = real_unlink
+        for path in set(snapshot_paths):
+            real_unlink(path, missing_ok=True)
+        service.shutdown()
+
+
 def test_post_replace_cleanup_error_does_not_roll_back_committed_resource(
         stem_project, monkeypatch):
     app, client, headers, pid, upload, saved, roots, previous, old_wav, old_bytes = stem_project

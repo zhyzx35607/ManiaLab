@@ -78,6 +78,9 @@ def _audio_snapshot(path, work, cancelled):
             except OSError as cleanup_error:
                 error.add_note(
                     f"分析音频快照无法删除（路径：{snapshot}）：{cleanup_error!r}")
+                error.add_note(
+                    f"ManiaLab恢复提示：音频分析快照无法删除；请手动删除残留文件"
+                    f"以回收磁盘空间，路径：{snapshot}。")
         raise
     else:
         if snapshot is not None:
