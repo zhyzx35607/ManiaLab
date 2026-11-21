@@ -4,6 +4,7 @@ import time
 from flask import request
 
 from .arrange import layout_metrics
+from .candidate_identity import new_candidate_id
 from .domain import upstream_events, validate
 from .editing import edit_notes
 from .generation import generate_variant
@@ -34,20 +35,11 @@ def register_candidate_routes(app, *, submit, parameters, requested_tempo):
         def operation(state, progress, cancelled):
             if state["active"] < 0:
                 raise ValueError("请先生成候选谱面")
-            active_index = state["active"]
-            old = state["variants"][active_index]
-            base_created = payload.get("base_created")
-            base_index = payload.get("base_index")
-            if base_created != old.get("created"):
-                raise ValueError("候选版本已经改变，请重新选择音符再修改")
-            if base_index is not None:
-                stale_index = type(base_index) is not int or base_index != active_index
-            else:
-                matching_indices = [index for index, variant in enumerate(state["variants"])
-                                    if variant.get("created") == base_created]
-                stale_index = matching_indices != [active_index]
-            if stale_index:
-                raise ValueError("候选版本已经改变，请重新选择音符再修改")
+            old = state["variants"][state["active"]]
+            base_candidate_id = payload.get("base_candidate_id")
+            if (not isinstance(base_candidate_id, str)
+                    or base_candidate_id != old.get("candidate_id")):
+                raise ValueError("候选版本已经改变或页面版本过旧，请刷新后再修改")
             progress(20, "检查修改与相邻 LN 占轨")
             length = state.get("analysis", {}).get("duration")
             notes, edit = edit_notes(old, payload, round(length * 1000) if length else None)
@@ -66,6 +58,7 @@ def register_candidate_routes(app, *, submit, parameters, requested_tempo):
             variant = copy.deepcopy(old | {"selection": generation_context(old.get("selection", {}))})
             variant["generation_origin"] = resolve_generation_origin(old, state["variants"])
             variant.update(
+                candidate_id=new_candidate_id(),
                 notes=[note.data() for note in notes],
                 report=report,
                 created=time.time(),
@@ -73,7 +66,8 @@ def register_candidate_routes(app, *, submit, parameters, requested_tempo):
                 event_count=len(upstream_events(notes)),
                 region=None,
             )
-            variant["edits"] = [*old.get("edits", []), dict(parent_created=old["created"], **edit)]
+            variant["edits"] = [*old.get("edits", []), dict(
+                parent_created=old["created"], parent_candidate_id=old["candidate_id"], **edit)]
             variant["selection"]["message"] = "手动修改已保存为新候选。原始采音保留，可从候选列表返回上一版。"
             state["variants"] = (state["variants"] + [variant])[-8:]
             state["active"] = len(state["variants"]) - 1

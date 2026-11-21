@@ -65,11 +65,14 @@ def test_repeated_edits_store_each_event_once_and_keep_full_projection(tmp_path)
         tmp_path, analysis={"duration": 5}, notes=[Note(1000, 1000, 0, id="tap")])
     try:
         size_after_eight = None
+        initial_candidate_id = None
         for index in range(40):
             state = client.get(base).json
             parent = state["variants"][state["active"]]
+            if initial_candidate_id is None:
+                initial_candidate_id = parent["candidate_id"]
             response = client.post(base + "/edit", headers=headers, json={
-                "base_created": parent["created"], "op": "update", "note_id": "tap",
+                "base_candidate_id": parent["candidate_id"], "op": "update", "note_id": "tap",
                 "values": {"lane": (index + 1) % parent["settings"]["keys"]},
             })
             assert _wait_job(client, response)["status"] == "done"
@@ -80,6 +83,8 @@ def test_repeated_edits_store_each_event_once_and_keep_full_projection(tmp_path)
         active = state["variants"][state["active"]]
         assert len(active["edits"]) == 40
         assert active["edits"][0]["parent_created"] == 1.0
+        assert active["edits"][0]["parent_candidate_id"] == initial_candidate_id
+        assert all(event.get("parent_candidate_id") for event in active["edits"])
         assert active["edits"][-1]["after"]["id"] == "tap"
         assert len(state["variants"]) == 8
 
@@ -241,7 +246,7 @@ def test_regional_child_retains_deleted_outside_edit_in_json_and_after_reopen(tm
     try:
         parent = client.get(base).json["variants"][0]
         deleted_response = client.post(base + "/edit", headers=headers, json={
-            "base_created": parent["created"], "op": "delete", "note_id": "to-delete",
+            "base_candidate_id": parent["candidate_id"], "op": "delete", "note_id": "to-delete",
         })
         assert _wait_job(client, deleted_response)["status"] == "done"
         deleted = client.get(base).json["variants"][1]

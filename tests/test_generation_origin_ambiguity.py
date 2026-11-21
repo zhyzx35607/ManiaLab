@@ -141,7 +141,7 @@ def test_ambiguous_origin_survives_edit_history_pruning_restart_and_json_export(
             variant = current['variants'][current['active']]
             note = variant['notes'][0]
             response = client.post(base + '/edit', json={
-                'op': 'update', 'base_created': variant['created'], 'note_id': note['id'],
+                'op': 'update', 'base_candidate_id': variant['candidate_id'], 'note_id': note['id'],
                 'values': {'lane': (note['lane'] + 1) % 6},
             }, headers=headers)
             assert response.status_code == 200, response.json

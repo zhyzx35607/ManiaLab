@@ -33,7 +33,7 @@ def _wave(at_sample=0):
 
 def _edit(client, base, headers, candidate, **changes):
     response = client.post(base + '/edit', json={
-        'base_created': candidate['created'], **changes,
+        'base_candidate_id': candidate['candidate_id'], **changes,
     }, headers=headers)
     assert response.status_code == 200, response.json
     deadline = time.monotonic() + 5

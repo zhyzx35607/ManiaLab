@@ -152,7 +152,7 @@ def test_fixed_meter_survives_edit_reanalysis_selection_region_and_both_export_f
         assert client.get(base).json["detected_meter"] == 4
         audition(3)
         note = candidate["notes"][0]
-        edited = run("edit", dict(base_created=candidate["created"], op="update", note_id=note["id"],
+        edited = run("edit", dict(base_candidate_id=candidate["candidate_id"], op="update", note_id=note["id"],
                                   values={"lane": (note["lane"] + 1) % 6}))
         assert edited["meter"] == 3
         region = run("generate", {"region": [1600, 2400], "settings": {"keys": 6}})

@@ -2,9 +2,11 @@ import copy
 import io
 from pathlib import Path
 import time
+from types import SimpleNamespace
 
 import pytest
 
+from manialab import candidate_routes
 from manialab.arrange import parameters
 from manialab.domain import Note, parse_osu
 from manialab.editing import edit_notes
@@ -81,7 +83,8 @@ def test_unchanged_note_does_not_create_a_candidate(tmp_path, mode, values):
         before = store.load(project['id'])
         base = '/api/projects/' + project['id']
         response = client.post(base + '/edit', headers=headers, json={
-            'base_created': 8, 'op': 'update', 'note_id': 'a', 'values': values,
+            'base_candidate_id': before['variants'][7]['candidate_id'],
+            'op': 'update', 'note_id': 'a', 'values': values,
         })
         assert response.status_code == 200
         deadline = time.monotonic() + 5
@@ -98,12 +101,7 @@ def test_unchanged_note_does_not_create_a_candidate(tmp_path, mode, values):
         service.shutdown()
 
 
-@pytest.mark.parametrize(('base_index', 'expected'), [
-    (0, 'error'),
-    (None, 'error'),
-    (1, 'done'),
-])
-def test_edit_identity_disambiguates_candidates_with_duplicate_timestamps(tmp_path, base_index, expected):
+def test_edit_rejects_an_old_candidate_after_same_timestamp_and_index_are_reused(tmp_path, monkeypatch):
     app = create_app(ROOT, tmp_path)
     service = app.extensions['task_service']
     try:
@@ -113,38 +111,41 @@ def test_edit_identity_disambiguates_candidates_with_duplicate_timestamps(tmp_pa
             data={'files': (io.BytesIO(b'placeholder'), 'audio.wav')})
         store = app.extensions['projects']
         project = store.load(imported.json['id'])
-        previous = candidate() | {'created': 8.0}
-        active = candidate() | {'created': 8.0}
-        active['notes'][0] = Note(1250, 1750, 4, id='a').data()
-        project.update(active=1, variants=[previous, active])
+        variants = [candidate() | {'created': float(i)} for i in range(1, 9)]
+        variants[7]['notes'][0] = Note(1250, 1750, 4, id='a').data()
+        project.update(active=7, variants=variants)
         store.save(project)
-        before = store.load(project['id'])
-        payload = {
-            'base_created': 8.0, 'op': 'update', 'note_id': 'a',
-            'values': {'start': 1000, 'end': 2000, 'lane': 0},
-        }
-        if base_index is not None:
-            payload['base_index'] = base_index
-        response = client.post('/api/projects/' + project['id'] + '/edit',
-            headers=headers, json=payload)
-        assert response.status_code == 200
-        deadline = time.monotonic() + 5
-        while time.monotonic() < deadline:
-            job = service.get(response.json['id'])
-            if job['status'] in ('done', 'error'):
-                break
-            time.sleep(.01)
-        assert job['status'] == expected
+        monkeypatch.setattr(candidate_routes, 'time', SimpleNamespace(time=lambda: 8.0))
+
+        def run(identity, lane):
+            response = client.post('/api/projects/' + project['id'] + '/edit', headers=headers,
+                json={'op': 'update', 'note_id': 'a', 'values': {'lane': lane}, **identity})
+            assert response.status_code == 200
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline:
+                job = service.get(response.json['id'])
+                if job['status'] in ('done', 'error'):
+                    return job
+                time.sleep(.01)
+            pytest.fail('edit timed out')
+
+        old = store.load(project['id'])['variants'][7]
+        assert run({'base_candidate_id': old['candidate_id']}, 3)['status'] == 'done'
         after = store.load(project['id'])
-        if expected == 'error':
-            assert '版本已经改变' in job['message']
-            assert after == before
-        else:
-            assert after['active'] == 2
-            assert after['variants'][1] == before['variants'][1]
-            edited = after['variants'][2]
-            note = next(note for note in edited['notes'] if note['id'] == 'a')
-            assert (note['start'], note['end'], note['lane']) == (1000, 2000, 0)
+        current = after['variants'][7]
+        assert after['active'] == 7 and len(after['variants']) == 8
+        assert after['variants'][6] == old
+        assert current['created'] == old['created'] == 8.0
+        assert current['candidate_id'] != old['candidate_id']
+        assert current['notes'][0]['lane'] == 3
+
+        for identity in (
+            {'base_candidate_id': old['candidate_id']},
+            {'base_created': 8.0, 'base_index': 7},
+        ):
+            job = run(identity, 0)
+            assert job['status'] == 'error' and '版本已经改变' in job['message']
+            assert store.load(project['id']) == after
     finally:
         service.shutdown()
 
@@ -165,13 +166,16 @@ def test_http_edit_persists_new_candidate_and_exports_actual_correction(tmp_path
             if result['status'] in ('done','error'):return result
             time.sleep(.01)
         raise AssertionError('edit timed out')
-    payload=dict(op='update',note_id='a',values=dict(start=1118,end=2376,lane=4),base_created=1.)
+    payload=dict(op='update',note_id='a',values=dict(start=1118,end=2376,lane=4),
+                 base_candidate_id=project['variants'][0]['candidate_id'])
     assert client.post(base+'/edit',json=payload).status_code==403
     try:
         assert run(payload)['status']=='done'
         saved=client.get(base).json
         assert saved['analysis']==project['analysis'] and saved['variants'][0]==project['variants'][0]
         assert saved['active']==1 and len(saved['variants'][1]['edits'])==1
+        assert saved['variants'][1]['candidate_id'] != saved['variants'][0]['candidate_id']
+        assert saved['variants'][1]['edits'][0]['parent_candidate_id'] == saved['variants'][0]['candidate_id']
         assert saved['variants'][1]['source_evidence']==project['variants'][0]['source_evidence']
         assert saved['variants'][1]['report']['ln_patterns']['counts']['releases']==1
         text=client.get(base+'/export/osu').data.decode()
