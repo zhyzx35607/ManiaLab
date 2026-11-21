@@ -400,6 +400,7 @@ async function audition(mode,compare=false){
   const payload={mode,context:view,audio:state.audio||'',source_identity:$('voice').value==='mix'?null:playbackSourceIdentity(),
     start_ms:Number($('auditionStart').value)*1000,duration_ms:Number($('auditionLength').value)*1000,
     bpm:Number($('bpm').value),offset,division:Number($('division').value),audio_shift_ms:clockShift(),releases:true,voice:$('voice').value};
+  if(mode==='chart')payload.candidate_id=variant()?.candidate_id??null;
   if(mode==='beats')payload.beat_clock=originalBeats?'original':'fixed';
   $('auditionNote').textContent='正在混合音乐和提示音…';
   const response=await fetch(`/api/projects/${pid}/audition`,{method:'POST',headers:{'X-ManiaLab-Token':token,'Content-Type':'application/json'},body:JSON.stringify(payload)});

@@ -71,6 +71,13 @@ def register_playback_routes(app, *, projects, current_audio, requested_tempo):
         work = audio_work(projects.path(pid), state)
         _validate_audio_reference(state, payload.get('audio'))
         mode = payload.get("mode", "beats")
+        if mode == "chart" and "candidate_id" in payload:
+            active = state.get("active", -1)
+            candidate_id = (state["variants"][active].get("candidate_id")
+                            if isinstance(active, int) and 0 <= active < len(state["variants"])
+                            else None)
+            if payload["candidate_id"] != candidate_id:
+                raise ValueError("当前候选已经改变，请刷新项目后再试听")
         context = ('chart' if mode == 'chart' else 'evidence' if mode == 'evidence'
                    else payload.get('context', 'evidence'))
         preview = work / "preview.wav" if voice == "mix" else _context_stem_path(
