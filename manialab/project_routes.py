@@ -119,8 +119,14 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             state["settings"] = variant["settings"].copy()
             selection = variant.get("selection")
             expression = selection.get("expression") if isinstance(selection, dict) else None
+            analysis = state.get("analysis") or {}
             if isinstance(expression, dict):
-                state["expression"] = deepcopy(expression)
+                from .expression import signature
+
+                if expression.get("evidence_signature") == signature(analysis):
+                    state["expression"] = deepcopy(expression)
+                else:
+                    state.pop("expression", None)
             else:
                 state.pop("expression", None)
             projects.save(state)
