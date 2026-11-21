@@ -337,6 +337,70 @@ def test_deep_analysis_rejects_separation_for_a_different_audio_identity(tmp_pat
     assert not list(tmp_path.glob('.analysis-input-*'))
 
 
+@pytest.mark.parametrize(
+    ('rejected_id', 'expected_support'),
+    [('vocals:support', ('vocals:anchor',)), ('vocals:anchor', None)],
+)
+def test_deep_analysis_reconciles_phrase_sources_after_bleed_filter(
+        tmp_path, monkeypatch, rejected_id, expected_support):
+    from manialab.domain import Note
+
+    source = tmp_path / 'mix.wav'
+    source.write_bytes(b'synthetic mix')
+    samples = np.full(SR * 4, .2, dtype=np.float32)
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    separation = dict(source='provided', voices=['vocals'], audio_sha256=source_hash,
+        set_sha256='a' * 64, cached=True)
+    np.save(tmp_path / 'vocals.npy', samples * .5, allow_pickle=False)
+    notes = [
+        Note(1000, 1200, pitch=60, strength=.8, source='pitch', voice='vocals', id='anchor'),
+        Note(1500, 1600, pitch=64, strength=.4, source='pitch', voice='vocals', id='support'),
+    ]
+    frames = np.zeros((400, 88), dtype=np.float32)
+    frames[100:250, 39] = .8
+    activations = frames, np.zeros_like(frames), np.arange(400, dtype=np.float64) * .01
+
+    class Separator:
+        def separate(self, path, work, progress, cancelled):
+            return tmp_path, separation
+
+    def filter_bleed(candidates, stems, mix_attacks):
+        removed = [note for note in candidates if note.id == rejected_id]
+        return [note for note in candidates if note.id != rejected_id], [
+            dict(note=note.data(), parent_id='synthetic-parent', reason='weak_duplicate_attack')
+            for note in removed
+        ]
+
+    monkeypatch.setattr(audio, 'decode', lambda *args, **kwargs: samples)
+    monkeypatch.setattr(audio, 'model_identity', lambda *args, **kwargs: 'synthetic-model')
+    monkeypatch.setattr(audio, 'load_stem_activations', lambda *args, **kwargs: None)
+    monkeypatch.setattr(audio, 'infer', lambda *args, **kwargs: activations)
+    monkeypatch.setattr(audio, 'save_stem_activations', lambda *args, **kwargs: None)
+    monkeypatch.setattr(audio, 'rhythmic_evidence', lambda *args, **kwargs: ([], {'bpm': 120}))
+    monkeypatch.setattr(audio, 'pitched_notes', lambda *args, **kwargs: list(notes))
+    monkeypatch.setattr(audio, 'source_evidence', lambda candidates, *args: (candidates, 0))
+    monkeypatch.setattr(audio, 'refine_releases', lambda candidates, *args: (candidates, {}))
+    monkeypatch.setattr(audio, 'fuse_attacks', lambda candidates, *args: (candidates, [], 0))
+    monkeypatch.setattr(audio, 'reject_source_bleed', filter_bleed)
+    monkeypatch.setattr(audio, 'timing_evidence_quality', lambda tempo: {'coverage': .5, 'score': .5})
+
+    result = audio.analyze_deep(source, tmp_path, tmp_path / 'missing-model.onnx',
+                                parameters(), Separator())
+
+    assert {note['id'] for note in result['candidates']} == ({'vocals:support'}
+        if rejected_id == 'vocals:anchor' else {'vocals:anchor'})
+    if expected_support is None:
+        assert result['phrase_candidates'] == []
+    else:
+        assert len(result['phrase_candidates']) == 1
+        phrase = result['phrase_candidates'][0]
+        assert phrase['id'] == 'vocals:anchor'
+        assert tuple(phrase['support']) == expected_support
+        assert phrase['support_coverage'] == 1
+        assert phrase['end'] == 2500
+        assert phrase['strength'] == .8
+
+
 def test_silence():
     notes,_=rhythmic_evidence(np.zeros(SR*3))
     assert notes==[]
