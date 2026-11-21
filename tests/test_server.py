@@ -1602,6 +1602,76 @@ def test_archive_active_chart_removes_partial_snapshot_after_write_failure(tmp_p
     assert not snapshot_path.exists()
 
 
+def test_archive_active_chart_preserves_write_failure_when_temporary_cleanup_fails(
+        tmp_path,monkeypatch):
+    from manialab.chart_workspace import archive_active_chart, chart_workspace_snapshot_path
+
+    project=tmp_path/'project'
+    project.mkdir()
+    state={'audio':'song.wav','original':None,'charts':[],'settings':{}}
+    snapshot_path=chart_workspace_snapshot_path(project,None)
+    temporary=snapshot_path.with_suffix('.tmp')
+    write_text=Path.write_text
+    unlink=Path.unlink
+
+    def fail_after_partial_write(path,text,*args,**kwargs):
+        if path==temporary:
+            with path.open('w',encoding=kwargs.get('encoding','utf-8')) as output:
+                output.write(text[:8])
+                output.flush()
+            raise OSError('simulated snapshot write failure')
+        return write_text(path,text,*args,**kwargs)
+
+    def fail_temporary_unlink(path,*args,**kwargs):
+        if path==temporary:
+            raise PermissionError('simulated temporary cleanup failure')
+        return unlink(path,*args,**kwargs)
+
+    monkeypatch.setattr(Path,'write_text',fail_after_partial_write)
+    monkeypatch.setattr(Path,'unlink',fail_temporary_unlink)
+    try:
+        with pytest.raises(OSError,match='simulated snapshot write failure') as raised:
+            archive_active_chart(project,state)
+
+        assert any('ManiaLab恢复提示：' in note and str(temporary) in note
+                   for note in raised.value.__notes__)
+        assert any('simulated temporary cleanup failure' in note
+                   for note in raised.value.__notes__)
+        assert temporary.exists()
+        assert not snapshot_path.exists()
+    finally:
+        unlink(temporary,missing_ok=True)
+
+
+def test_archive_active_chart_reports_temporary_cleanup_failure_after_publish(
+        tmp_path,monkeypatch):
+    from manialab.chart_workspace import archive_active_chart, chart_workspace_snapshot_path
+
+    project=tmp_path/'project'
+    project.mkdir()
+    state={'audio':'song.wav','original':None,'charts':[],'settings':{}}
+    snapshot_path=chart_workspace_snapshot_path(project,None)
+    temporary=snapshot_path.with_suffix('.tmp')
+    unlink=Path.unlink
+
+    def fail_temporary_unlink(path,*args,**kwargs):
+        if path==temporary:
+            raise PermissionError('simulated temporary cleanup failure')
+        return unlink(path,*args,**kwargs)
+
+    monkeypatch.setattr(Path,'unlink',fail_temporary_unlink)
+    try:
+        with pytest.raises(PermissionError,match='simulated temporary cleanup failure') as raised:
+            archive_active_chart(project,state)
+
+        assert any('ManiaLab恢复提示：' in note and str(temporary) in note
+                   for note in raised.value.__notes__)
+        assert snapshot_path.is_file()
+        assert not temporary.exists()
+    finally:
+        unlink(temporary,missing_ok=True)
+
+
 def test_mapping_clock_changes_export_once_and_audition_uses_actual_chart_time(tmp_path):
     import numpy as np
     from scipy.io import wavfile
