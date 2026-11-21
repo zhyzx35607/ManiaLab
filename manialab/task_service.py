@@ -209,7 +209,13 @@ class ProjectTasks:
     def get(self, job_id):
         with self.lock:
             job = self.jobs.get(job_id)
-            return dict(job) if job is not None else None
+            if job is None:
+                return None
+            snapshot = dict(job)
+            if (snapshot["status"] in ("queued", "running")
+                    and self._shutdown_requested.is_set()):
+                snapshot["cancel"] = True
+            return snapshot
 
     def cancel(self, job_id):
         with self.lock:

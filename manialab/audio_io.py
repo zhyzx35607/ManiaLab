@@ -30,24 +30,140 @@ def run_hidden_cancellable(args, cancelled, *, timeout):
     )
 
     def kill_and_reap():
-        if process.poll() is None:
+        cleanup_failures = []
+        query_errors = []
+        signal_errors = []
+        cleanup_budget = timeout_for(cancelled, 5)
+        cleanup_deadline = time.monotonic() + cleanup_budget
+        reap_reserve = min(.2, cleanup_budget * .1)
+        reader_join_reserve = min(.1, cleanup_budget * .05)
+
+        def remaining_cleanup_time():
+            return min(max(0.0, cleanup_deadline - time.monotonic()), timeout_for(cancelled, 5))
+
+        def remember_cleanup_failure(message, error=None):
+            cleanup_failures.append((message, error))
+
+        def close_pipes():
+            if active_readers():
+                return False
+            for stream_name in ("stdin", "stdout", "stderr"):
+                stream = getattr(process, stream_name, None)
+                if stream is None or getattr(stream, "closed", False):
+                    continue
+                try:
+                    stream.close()
+                except OSError as error:
+                    remember_cleanup_failure(
+                        "FFmpeg process pipes could not be closed during cleanup", error
+                    )
+            return True
+
+        def active_readers():
+            return [
+                reader for name in ("stdout", "stderr")
+                if (reader := getattr(process, f"{name}_thread", None)) is not None
+                and reader.is_alive()
+            ]
+
+        def join_readers():
+            readers = active_readers()
+            join_deadline = min(
+                cleanup_deadline,
+                time.monotonic() + min(reader_join_reserve, remaining_cleanup_time()),
+            )
+            for index, reader in enumerate(readers):
+                remaining = min(
+                    max(0.0, join_deadline - time.monotonic()),
+                    remaining_cleanup_time(),
+                )
+                active_count = sum(candidate.is_alive() for candidate in readers[index:])
+                if remaining <= 0 or active_count <= 0:
+                    break
+                reader.join(timeout=remaining / active_count)
+            return not active_readers()
+
+        def poll():
+            try:
+                return process.poll()
+            except OSError as error:
+                query_errors.append(error)
+                return None
+
+        running = poll() is None
+        if running:
             try:
                 process.kill()
             except OSError as error:
-                if process.poll() is None:
-                    message = "FFmpeg process could not be killed during cleanup"
-                    report_process_cleanup_failure(cancelled, message)
-                    raise ChildProcessError(message) from error
+                if poll() is None:
+                    signal_errors.append(("FFmpeg process could not be killed during cleanup", error))
+
+        def remember_unresolved_signal_errors():
+            for message, error in signal_errors:
+                remember_cleanup_failure(message, error)
+
+        communicate_timeout = max(
+            0.0, remaining_cleanup_time() - reap_reserve - reader_join_reserve
+        )
         try:
-            process.communicate(timeout=timeout_for(cancelled, 5))
+            process.communicate(timeout=communicate_timeout)
         except subprocess.TimeoutExpired:
-            if process.poll() is None:
-                message = "FFmpeg process did not exit before its cleanup deadline"
-                report_process_cleanup_failure(
-                    cancelled,
-                    message,
+            running = poll() is None
+            if running:
+                try:
+                    process.wait(timeout=max(0.0, remaining_cleanup_time() - reader_join_reserve))
+                except subprocess.TimeoutExpired as wait_error:
+                    if poll() is None:
+                        remember_unresolved_signal_errors()
+                        remember_cleanup_failure(
+                            "FFmpeg process did not exit before its cleanup deadline", wait_error
+                        )
+                except OSError as wait_error:
+                    if poll() is None:
+                        remember_unresolved_signal_errors()
+                        remember_cleanup_failure(
+                            "FFmpeg process could not be reaped during cleanup", wait_error
+                        )
+            join_readers()
+            if not close_pipes():
+                remember_cleanup_failure(
+                    "FFmpeg process pipes remain open while communication threads are active"
                 )
-                raise ChildProcessError(message)
+        except OSError as error:
+            try:
+                process.wait(timeout=max(0.0, remaining_cleanup_time() - reader_join_reserve))
+            except subprocess.TimeoutExpired as wait_error:
+                if poll() is None:
+                    remember_unresolved_signal_errors()
+                    remember_cleanup_failure(
+                        "FFmpeg process did not exit before its cleanup deadline", wait_error
+                    )
+                    remember_cleanup_failure("FFmpeg cleanup communicate failed", error)
+            except OSError as wait_error:
+                if poll() is None:
+                    remember_unresolved_signal_errors()
+                    remember_cleanup_failure("FFmpeg process could not be reaped during cleanup", wait_error)
+                    remember_cleanup_failure("FFmpeg cleanup communicate failed", error)
+            finally:
+                join_readers()
+                if not close_pipes():
+                    remember_cleanup_failure(
+                        "FFmpeg process pipes remain open while communication threads are active"
+                    )
+
+        if cleanup_failures:
+            message, error = cleanup_failures[0]
+            cleanup_error = ChildProcessError(message)
+            report_process_cleanup_failure(cancelled, message)
+            if error is not None:
+                cleanup_error.add_note(f"Cleanup detail: {error!r}")
+            for detail, extra_error in cleanup_failures[1:]:
+                cleanup_error.add_note(
+                    f"{detail}: {extra_error!r}" if extra_error is not None else detail
+                )
+            for query_error in query_errors:
+                cleanup_error.add_note(f"Process state query detail: {query_error!r}")
+            raise cleanup_error
 
     deadline = time.monotonic() + timeout
     try:
@@ -66,6 +182,8 @@ def run_hidden_cancellable(args, cancelled, *, timeout):
         try:
             kill_and_reap()
         except ChildProcessError as cleanup_error:
+            if cleanup_error.__cause__ is not None:
+                cleanup_error.add_note(f"Cleanup detail: {cleanup_error.__cause__!r}")
             raise cleanup_error from error
         raise
 

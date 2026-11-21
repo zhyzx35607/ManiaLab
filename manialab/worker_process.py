@@ -11,7 +11,7 @@ import os
 import subprocess
 import time
 
-from .cancellation import report_process_cleanup_failure, timeout_for
+from .cancellation import poll_process_for_cleanup, report_process_cleanup_failure, timeout_for
 
 
 _IS_WINDOWS = os.name == 'nt'
@@ -84,8 +84,11 @@ class _WindowsAPI:
         try:
             self._check(self.kernel.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits)))
             return job
-        except BaseException:
-            self.close(job)
+        except BaseException as error:
+            try:
+                self.close(job)
+            except BaseException as close_error:
+                error.add_note(f'Could not close the unconfigured worker job handle: {close_error!r}')
             raise
 
     def assign(self, job, root):
@@ -95,7 +98,22 @@ class _WindowsAPI:
         snapshot = self.kernel.CreateToolhelp32Snapshot(4, 0)
         if snapshot == ctypes.c_void_p(-1).value:
             raise ctypes.WinError(ctypes.get_last_error())
-        handles, selected = [], False
+
+        handles = []
+
+        def close_owned(owned):
+            errors = []
+            for description, handle in owned:
+                try:
+                    self.close(handle)
+                except BaseException as error:
+                    errors.append((description, error))
+            return errors
+
+        def note_close_errors(primary, errors):
+            for description, error in errors:
+                primary.add_note(f'Could not close {description}: {error!r}')
+
         try:
             entry = _ThreadEntry(size=ctypes.sizeof(_ThreadEntry))
             found = self.kernel.Thread32First(snapshot, ctypes.byref(entry))
@@ -110,21 +128,18 @@ class _WindowsAPI:
                 raise ctypes.WinError(ctypes.get_last_error())
             if self.wait(root, 0) or len(handles) != 1:
                 raise ChildProcessError('Cannot identify one suspended worker thread')
-            selected = True
-        finally:
-            close_errors = []
-            try:
-                self.close(snapshot)
-            except OSError as error:
-                close_errors.append(error)
-            if not selected or close_errors:
-                for handle in handles:
-                    try:
-                        self.close(handle)
-                    except OSError as error:
-                        close_errors.append(error)
-            if close_errors:
-                raise close_errors[0]
+        except BaseException as error:
+            close_errors = close_owned([('thread snapshot', snapshot),
+                *(('worker thread', handle) for handle in handles)])
+            note_close_errors(error, close_errors)
+            raise
+
+        try:
+            self.close(snapshot)
+        except BaseException as error:
+            close_errors = close_owned([('worker thread', handle) for handle in handles])
+            note_close_errors(error, close_errors)
+            raise
         return handles.pop()
 
     def resume(self, thread):
@@ -178,15 +193,18 @@ class _WindowsAPI:
                     self.close(handle)  # Reused outside this job; never terminate it.
                     handles.pop()
             return handles
-        except BaseException:
+        except BaseException as error:
             close_errors = []
             for handle in handles:
                 try:
                     self.close(handle)
-                except OSError as error:
-                    close_errors.append(error)
+                except OSError as close_error:
+                    close_errors.append(close_error)
             if close_errors:
-                raise close_errors[0]
+                error.add_note(
+                    "Could not close every owned worker process handle: "
+                    + "; ".join(str(close_error) for close_error in close_errors)
+                )
             raise
 
 
@@ -205,7 +223,13 @@ class _WindowsJob:
         thread = self.api.initial_thread(self.root, process.pid)
         try:
             self.api.resume(thread)
-        finally:
+        except BaseException as error:
+            try:
+                self.api.close(thread)
+            except BaseException as close_error:
+                error.add_note(f'Could not close the suspended worker thread handle: {close_error!r}')
+            raise
+        else:
             self.api.close(thread)
 
     def stop(self, cancelled, maximum):
@@ -213,6 +237,16 @@ class _WindowsJob:
         # root and captured members; the count is not a historical-handle ledger.
         deadline = time.monotonic() + timeout_for(cancelled, maximum)
         handles, errors, job_terminated = [], [], False
+
+        def close_members():
+            close_errors = []
+            for handle in handles:
+                try:
+                    self.api.close(handle)
+                except OSError as error:
+                    close_errors.append(error)
+            return close_errors
+
         try:
             try:
                 handles = self.api.members(self.handle)
@@ -244,20 +278,21 @@ class _WindowsJob:
                 errors.append(error)
             if errors:
                 raise ChildProcessError('Owned worker process tree cleanup could not be verified') from errors[0]
-            return True
-        except BaseException:
+        except BaseException as error:
             report_process_cleanup_failure(cancelled, 'Owned worker process tree cleanup could not be verified')
-            raise
-        finally:
-            close_errors = []
-            for handle in handles:
-                try:
-                    self.api.close(handle)
-                except OSError as error:
-                    close_errors.append(error)
+            close_errors = close_members()
             if close_errors:
                 report_process_cleanup_failure(cancelled, 'Owned worker process tree handles could not be closed')
-                raise ChildProcessError('Owned worker process tree handles could not be closed') from close_errors[0]
+                error.add_note(
+                    'Owned worker process tree handles could not be closed: '
+                    + '; '.join(str(close_error) for close_error in close_errors)
+                )
+            raise
+        close_errors = close_members()
+        if close_errors:
+            report_process_cleanup_failure(cancelled, 'Owned worker process tree handles could not be closed')
+            raise ChildProcessError('Owned worker process tree handles could not be closed') from close_errors[0]
+        return True
 
     def close(self):
         if self.handle is not None:
@@ -288,17 +323,26 @@ class _WindowsWorkerPopen(subprocess.Popen):
                 if getattr(self, '_child_created', False):
                     job.root = int(self._handle)
                     job.stop(cancelled, 5)
-            except ChildProcessError as cleanup_error:
-                raise cleanup_error from original
-            finally:
-                try:
-                    job.close()
-                finally:
-                    self._worker_job = None
-                    for name in ('stdin', 'stdout', 'stderr'):
-                        stream = getattr(self, name, None)
-                        if stream is not None:
-                            stream.close()
+            except BaseException as cleanup_error:
+                detail = f'Worker startup cleanup also failed: {cleanup_error!r}'
+                if cleanup_error.__cause__ is not None:
+                    detail += f' (cause: {cleanup_error.__cause__!r})'
+                original.add_note(detail)
+            job_close_failed = False
+            try:
+                job.close()
+            except BaseException as close_error:
+                job_close_failed = True
+                report_process_cleanup_failure(cancelled, 'Owned worker process tree job handle could not be closed')
+                original.add_note(f'Worker startup job handle close also failed: {close_error!r}')
+            self._worker_job = job if job_close_failed else None
+            for name in ('stdin', 'stdout', 'stderr'):
+                stream = getattr(self, name, None)
+                if stream is not None:
+                    try:
+                        stream.close()
+                    except BaseException as close_error:
+                        original.add_note(f'Worker startup {name} stream close also failed: {close_error!r}')
             raise
 
     def _manialab_stop_tree(self, cancelled, maximum):
@@ -306,19 +350,30 @@ class _WindowsWorkerPopen(subprocess.Popen):
             raise ChildProcessError('Owned worker process tree cleanup remains unverified')
         job = self._worker_job
         if job is None:
-            return self.poll() is not None
-        try:
-            return job.stop(cancelled, maximum)
-        except BaseException:
-            self._tree_cleanup_failed = True
-            raise
-        finally:
             try:
-                job.close()
-            except BaseException:
+                return poll_process_for_cleanup(self, cancelled) is not None
+            except ChildProcessError:
                 self._tree_cleanup_failed = True
                 raise
+        stop_error = None
+        try:
+            result = job.stop(cancelled, maximum)
+        except BaseException as error:
+            self._tree_cleanup_failed = True
+            stop_error = error
+        try:
+            job.close()
+        except BaseException as close_error:
+            self._tree_cleanup_failed = True
+            report_process_cleanup_failure(cancelled, 'Owned worker process tree job handle could not be closed')
+            if stop_error is None:
+                raise
+            stop_error.add_note(f'Owned worker process tree job handle close also failed: {close_error!r}')
+        else:
             self._worker_job = None
+        if stop_error is not None:
+            raise stop_error
+        return result
 
     def __del__(self):
         try:

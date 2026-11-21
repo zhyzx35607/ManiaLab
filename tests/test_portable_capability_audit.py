@@ -11,6 +11,7 @@ import pytest
 from manialab.server import create_app
 from manialab.stems import separation_identity
 from scripts import verify_portable
+from scripts.build_provenance import sha256, source_snapshot_paths
 from scripts.package_assets import MAPPER_INSTALLER_FILES, capabilities
 
 
@@ -95,7 +96,8 @@ def _snapshot(tmp_path, profile):
         if isinstance(node, ast.FunctionDef) and node.name == 'source_snapshot')
     # Execute only the pure fingerprint function; importing the builder would run it.
     namespace = dict(ROOT=tmp_path, hashlib=hashlib, enabled=capabilities(profile),
-        MAPPER_INSTALLER_FILES=MAPPER_INSTALLER_FILES)
+        MAPPER_INSTALLER_FILES=MAPPER_INSTALLER_FILES,
+        source_snapshot_paths=source_snapshot_paths, sha256=sha256)
     module = ast.Module(body=[function], type_ignores=[])
     exec(compile(ast.fix_missing_locations(module), 'source_snapshot-only', 'exec'), namespace)
     return namespace['source_snapshot']

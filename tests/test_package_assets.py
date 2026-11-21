@@ -2,6 +2,7 @@ import ast
 import argparse
 from pathlib import Path
 import json
+import re
 import shutil
 
 import pytest
@@ -20,6 +21,102 @@ from scripts.package_assets import (
 from scripts.worker_inventory import worker_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _workflow_uses_public_profile(workflow):
+    lines = workflow.splitlines()
+
+    def block_end(start, indent):
+        for index in range(start + 1, len(lines)):
+            stripped = lines[index].lstrip(" ")
+            if stripped and not stripped.startswith("#"):
+                if len(lines[index]) - len(stripped) <= indent:
+                    return index
+        return len(lines)
+
+    def child_block(parent_start, parent_end, parent_indent, key):
+        indent = parent_indent + 2
+        candidates = []
+        for index in range(parent_start + 1, parent_end):
+            line = lines[index]
+            if line.startswith(" " * indent):
+                rest = line[indent:]
+                if re.match(rf"(?:{re.escape(key)}|['\"]{re.escape(key)}['\"])[ \t]*:", rest) or \
+                        re.fullmatch(rf"\?[ \t]*(?:{re.escape(key)}|['\"]{re.escape(key)}['\"])[ \t]*", rest):
+                    candidates.append(index)
+
+        if len(candidates) != 1:
+            return None
+        index = candidates[0]
+        if not re.fullmatch(rf"{' ' * indent}{re.escape(key)}:[ \t]*(?:#.*)?", lines[index]):
+            return None
+        return index
+
+    jobs = [index for index, line in enumerate(lines) if re.fullmatch(r"jobs:[ \t]*(?:#.*)?", line)]
+    if len(jobs) != 1:
+        return False
+    jobs_start = jobs[0]
+    verify = child_block(jobs_start, block_end(jobs_start, 0), 0, "verify")
+    if verify is None:
+        return False
+    env = child_block(verify, block_end(verify, 2), 2, "env")
+    if env is None:
+        return False
+
+    env_end = block_end(env, 4)
+    profile_count = 0
+    for line in lines[env + 1:env_end]:
+        if not line.strip() or line.lstrip(" ").startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if "\t" in line[:indent] or indent != 6:
+            return False
+        if "PORTABLE_PROFILE" in line:
+            match = re.fullmatch(r" {6}PORTABLE_PROFILE:[ \t]*(.*)", line)
+            if match is None:
+                return False
+            profile_count += 1
+            if re.fullmatch(r"core(?:[ \t]+#.*)?[ \t]*", match.group(1)) is None:
+                return False
+
+    return profile_count == 1
+
+
+def test_windows_workflow_uses_declared_public_profile():
+    workflow = (ROOT / '.github/workflows/windows.yml').read_text(encoding='utf-8')
+    assert _workflow_uses_public_profile(workflow)
+
+
+@pytest.mark.parametrize(('workflow', 'valid'), [
+    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE}\n', True),
+    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE} # portable release\n', True),
+    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE} extended\n', False),
+    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE}#suffix\n', False),
+    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE}\n  extended\n', False),
+    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE}\u00a0\n', False),
+])
+def test_workflow_profile_must_be_one_exact_scalar(workflow, valid):
+    wrapped = f'jobs:\n  verify:\n    env:\n      {workflow.rstrip(chr(10)).replace(chr(10), chr(10) + "      ")}\n'
+    assert _workflow_uses_public_profile(wrapped) is valid
+
+
+@pytest.mark.parametrize('env_block', [
+    f'      PORTABLE_PROFILE: {PUBLIC_PROFILE}\n      PORTABLE_PROFILE: {PUBLIC_PROFILE}\n',
+    f'      PORTABLE_PROFILE : {PUBLIC_PROFILE}\n',
+    f"      'PORTABLE_PROFILE': {PUBLIC_PROFILE}\n",
+    f'      "PORTABLE_PROFILE" : {PUBLIC_PROFILE}\n',
+    f'      ? PORTABLE_PROFILE\n      : {PUBLIC_PROFILE}\n',
+    f'      OTHER: {{PORTABLE_PROFILE: {PUBLIC_PROFILE}}}\n',
+    f'      PORTABLE_PROFILE: {PUBLIC_PROFILE}\n        extended\n',
+])
+def test_workflow_profile_guard_rejects_ambiguous_yaml_declarations(env_block):
+    workflow = f'jobs:\n  verify:\n    env:\n{env_block}'
+    assert not _workflow_uses_public_profile(workflow)
+
+
+def test_workflow_profile_guard_rejects_flow_env_mapping():
+    workflow = f'jobs:\n  verify:\n    env: {{PORTABLE_PROFILE: {PUBLIC_PROFILE}}}\n'
+    assert not _workflow_uses_public_profile(workflow)
 
 
 def _stage_license_inputs_function():
@@ -111,19 +208,45 @@ def test_extended_profile_requires_components_before_staging(tmp_path):
     assert not destination.exists()
     (source / 'instruments').mkdir()
     from manialab.instrument_bundle import MODELS, source_manifest
-    names = ['manifest.json', 'verification.json', 'LICENSE-tsumugi']
-    names += ['checkpoints/best_model_' + name + '.pth' for name in MODELS]
-    names += ['source/' + name for name in source_manifest()['source_files']]
-    names += ['ManiaLabInstrument/ManiaLabInstrument.exe']
-    for name in names:
+    instrument_files = ['manifest.json', 'verification.json', 'LICENSE-tsumugi']
+    instrument_files += ['checkpoints/best_model_' + name + '.pth' for name in MODELS]
+    instrument_files += ['source/' + name for name in source_manifest()['source_files']]
+    for name in instrument_files:
         target = source / 'instruments' / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(b'fixture')
+    worker_root = source / 'instruments/ManiaLabInstrument'
+    worker_files = ('ManiaLabInstrument.exe', 'runtime/worker-data.bin')
+    for name in worker_files:
+        target = worker_root / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b'worker fixture')
+    frozen_worker_inventory = worker_inventory(worker_root)
     (source / 'instruments/manifest.json').write_text(json.dumps(dict(
-        worker_files=worker_inventory(source / 'instruments/ManiaLabInstrument'))), encoding='utf-8')
+        worker_files=frozen_worker_inventory)), encoding='utf-8')
+
+    (source / 'deep/unlisted-specialist.onnx').write_bytes(b'unlisted model')
+    (source / 'instruments/private.wav').write_bytes(b'user audio')
+    (source / 'instruments/source/unlisted.py').write_bytes(b'unlisted source')
+    (source / 'unrelated.zip').write_bytes(b'research archive')
+
     enabled = stage_assets(tmp_path, destination, 'extended')
-    assert (destination / 'deep/guitar-fl.onnx').is_file()
-    assert (destination / 'instruments/manifest.json').is_file()
+    staged_files = {
+        path.relative_to(destination).as_posix()
+        for path in destination.rglob('*')
+        if path.is_file()
+    }
+    expected_files = (
+        set(BASE_FILES)
+        | {'deep/ManiaLabAudio/ManiaLabAudio.exe'}
+        | {'deep/guitar-fl.onnx'}
+        | {'instruments/' + name for name in instrument_files}
+        | {
+            'instruments/ManiaLabInstrument/' + name
+            for name in frozen_worker_inventory
+        }
+    )
+    assert staged_files == expected_files
     assert '本包未包含' not in start_guide('test', enabled)
 
 

@@ -6,6 +6,22 @@ from scripts import verify_portable
 from scripts.package_assets import capabilities
 
 
+def test_basic_analysis_evidence_uses_stable_engine_classification():
+    evidence = verify_portable.basic_analysis_evidence({
+        "engine": "Basic Pitch 0.4.0 ONNX + onset refinement + phase regression",
+        "candidates": [{"pitch": 60}],
+        "elapsed_seconds": 0.92,
+    })
+
+    assert evidence == {
+        "check": "basic_analysis",
+        "engine": "basic",
+        "analysis_engine": "Basic Pitch 0.4.0 ONNX + onset refinement + phase regression",
+        "candidates": 1,
+        "seconds": 0.92,
+    }
+
+
 def test_core_manifest_skips_worker_and_piano_identity_checks(tmp_path, monkeypatch):
     def unexpected(*args, **kwargs):
         pytest.fail("Core must not inspect excluded model or worker files")
