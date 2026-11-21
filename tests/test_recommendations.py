@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 
 from manialab.arrange import parameters
-from manialab.domain import UNOBSERVED_RELEASES
+from manialab.domain import Note, UNOBSERVED_RELEASES
+from manialab.generation import generate_variant
 from manialab.recommendations import adjusted_segments, pattern_opportunities, recommend, validate_plan, plan_evidence
 from manialab.server import create_app
 from manialab.storage import Projects
@@ -147,6 +148,30 @@ def test_recommendation_and_generation_use_same_strong_evidence_pool(tmp_path):
     assert omitted==1 and all(n['id']!='weak' for n in notes) and analysis==original
     assert plan_evidence(analysis,{})[0]==analysis['candidates']
     with pytest.raises(ValueError,match='足够强'):recommend(dict(analysis,candidates=[weak]),parameters(),tmp_path)
+
+
+def test_generation_keeps_weak_only_voice_in_automatic_expression_structure(tmp_path):
+    notes=[Note(1000,1300,id='piano-1',source='pitch',voice='piano',strength=.9),
+           Note(3000,3300,id='piano-2',source='pitch',voice='piano',strength=.8),
+           Note(5000,5400,id='vocal-weak-only',source='pitch',voice='vocals',strength=.2)]
+    analysis=dict(revision=13,duration=10,candidates=[n.data() for n in notes],phrase_candidates=[],
+        structure=dict(segments=[dict(start_ms=0,end_ms=10000,label='synthetic')]))
+    prefs=parameters()
+    proposal=recommend(analysis,prefs,tmp_path,bpm=120)
+    option=proposal['options'][0]
+    state=dict(analysis=analysis,settings=prefs,plan=dict(source='local-audio-recommendation',
+        keys=proposal['keys'],bpm=proposal['bpm'],evidence_signature=proposal['evidence_signature'],
+        preferences=option['preferences'],segments=option['segments']),variants=[],active=-1)
+
+    generate_variant(state,dict(mode='audio',timing_confirmed=True),prefs,
+        dict(bpm=120,offset=0,division=4,audio_shift_ms=0),lambda *_:None,lambda:False)
+
+    expression=state['expression']
+    assert set(expression['sections'][0]['voices'])=={'piano','vocals'}
+    assert expression['sections'][0]['voices']['vocals']['mode']=='omit'
+    variant=state['variants'][-1]
+    assert variant['selection']['recommendation_weak_candidates_omitted']==1
+    assert set(variant['source_evidence']) <= {'piano-1','piano-2'}
 
 
 @pytest.mark.parametrize('reason',sorted(UNOBSERVED_RELEASES))
