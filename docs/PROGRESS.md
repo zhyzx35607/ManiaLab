@@ -9,15 +9,15 @@
 
 `v0.1.0-alpha.6-dev.22` Core 预发布已发布并完成 tag 工件独立核验；音乐质量、Timing、6–10K/LN 真人手感及 Standard/Extended 许可和验证仍未完成。发布后的工程修复和验证状态如下：
 
-- 快照事务（PR #246，已合并）：`engine-generate` 回滚恢复失败及提交后备份清理失败都会在任务消息中报告仍存在的 `.rollback` 路径；路由定向回归 `15 passed, 36 deselected`。PR Windows run `44947304877`及合并后 main run `44948226156`均成功，合并 SHA `aa85012415db8cebb6ef9e9f0c43734953b0b08b`。Python/API 与合成浏览器检查通过；模型、Core 便携/EXE、媒体及关停证据步骤按普通 push 条件跳过。
-- 候选切换（PR #248，已合并）：请求携带 `candidate_id`，服务端在写状态前验证该 ID 仍对应请求索引；被淘汰或重排的旧页面请求拒绝。8 个相关 Python 模块`119 passed`，JS语法检查通过。Windows run `44948704166`和重基后run `44949455592`成功；PR于2026-11-21合并为`b231f892b4ca843617292ee282bbc1824234aecd`。仅覆盖带身份的新UI请求；无身份导出/试听API为兼容旧脚本仍按当前候选处理，便携验证脚本身份迁移仍待办。
-- 参考标记舍入（PR #247，已合并）：书签/Kiai导入与OSU/OSZ书签导出采用与音符一致的`floor(x + 0.5)`。六项正负`22.5 ms`回归在旧`round()`上复现1 ms偏差，修复后定向测试`54 passed`。PR Windows run `44948423541`及合并后main run `44949301459`成功，merge SHA `fabf3c9cb081228c68c61dab8afe7637a5ed9feb`；Python/API均`3598 passed, 156 skipped, 1 warning`、Chromium`69 passed`。Core便携/EXE、媒体/关停及模型验证依普通CI条件跳过。
-- 候选导出/试听身份（本地已验证，PR待建）：三个格式导出链接按候选 ID 绑定，旧链接拒绝；chart试听请求也携带候选身份，evidence/beat试听仍可在无候选时使用。导出组`68 passed`及Chromium`3 passed`，试听组`40 passed`及Chromium`2 passed`。独立审查未发现新UI调用错误；保留省略ID的旧脚本/API兼容路径。尚未推送或创建PR。
+- 快照事务（PR #246，已合并）：`engine-generate`回滚恢复失败及提交后备份清理失败都会在任务消息中报告仍存在的`.rollback`路径；PR Windows run `44947304877`、合并后main run `44948226156`成功，merge SHA `aa85012415db8cebb6ef9e9f0c43734953b0b08b`。
+- 候选切换（PR #248，已合并）：服务端按`candidate_id`拒绝已淘汰或重排的旧候选请求；Windows run `44949455592`成功，merge SHA `b231f892b4ca843617292ee282bbc1824234aecd`。
+- 参考标记舍入（PR #247，已合并）：书签/Kiai导入与OSU/OSZ导出使用`floor(x + 0.5)`；定向测试`54 passed`，PR run `44948423541`和main run `44949301459`成功，merge SHA `fabf3c9cb081228c68c61dab8afe7637a5ed9feb`。
+- 声轨输入快照清理（PR #249，已合并）：清理失败会报告残留路径并保留旧项目状态；PR run `44952384392`、main run `44991314496`成功，merge SHA `32c260fb4dcb3b27b1d6d82058c0ce44b7c924fb`。
+- 手动逐段表达（PR #250，已合并）：更新表达与候选切换后的JSON行为；Windows PR run `44992285994`、main run `44993002622`成功，merge SHA `43a7e9b16c728afa89f345f52e0ad96d192cc25b`。定向Python/API `45 passed`、Edge `16 passed`。
+- 候选导出/试听身份（PR #251，已合并）：导出链接和chart试听绑定显示中的候选身份；PR Windows run `44993054761`通过，merge SHA `b4cdb14ac4bea9f9e0b0524591e5ea31ad864baa`。合并后main Windows run `44993679106`成功。
+- 项目加载与操作竞态（PR #252）：开始生成或表达保存时，使挂起的recent项目加载失效；操作固定使用启动时捕获的项目ID。重基后Edge竞态与相邻项目切换为`4 passed`，Python项目路由/表达报告为`18 passed`，JS语法和`git diff --check`通过；PR Windows CI待完成。
 
-- 声轨输入快照清理（PR #249，已合并至`32c260fb4dcb3b27b1d6d82058c0ce44b7c924fb`）：取消、解码失败和准备完成后三种`.provided-inputs-*`删除失败均报告残留路径并保留原项目状态；shutdown将历史清理失败与活跃任务超时区分。PR Windows run `44952384392`及合并后main run `44991314496`均成功。
-- 手动逐段表达（PR #250，已重基并本地复验，Windows CI待完成）：Edge 合成端到端覆盖分段人声模式/LN、保存与候选切换后的 JSON；修复过期表达快照无效时仍可保存空方案的问题，保留旧候选历史并允许重新建议恢复。当前主线定向 Python/API `45 passed`、Edge `16 passed`；JS语法、浏览器fixture编译和`git diff --check`通过。仅合成数据，不代表真实音乐验收。
-
-仍开放的工程检查包括PR #250 Windows CI、上述尚未建PR的阶段，以及PR #252 recent项目延迟加载竞态修复的冲突解决与CI。真人音乐质量、Timing、6–10K/LN手感和osu!实际试打均未验收；工程/合成测试不替代这些验收。
+仍开放的工程检查包括PR #252 Windows CI及精确dev.23 tag构建、工件核对和发布。真人音乐质量、Timing、6–10K/LN手感和osu!实际试打均未验收；工程/合成测试不替代这些验收。
 
 下方原有`dev.22发布后工程验收（进行中）`条目记录的是本轮修复前的复现状态；当前进度以本节的修复与验证结果为准。
 
