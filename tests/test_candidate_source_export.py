@@ -129,6 +129,68 @@ def _audio_export_project(tmp_path, *, candidate_mode='audio', source_sha256=Non
     return app, client, headers, base, projects.path(pid) / 'files' / state['audio'], music, candidate
 
 
+@pytest.mark.parametrize('kind', ['json', 'osu', 'osz'])
+def test_export_rejects_an_old_tabs_candidate(tmp_path, kind):
+    app, first, headers, base, _, _, _ = _audio_export_project(tmp_path)
+    try:
+        pid = base.rsplit('/', 1)[1]
+        projects = app.extensions['projects']
+        state = projects.load(pid)
+        old_id = state['variants'][0]['candidate_id']
+        new_candidate = deepcopy(state['variants'][0])
+        new_candidate.pop('candidate_id')
+        new_candidate['notes'] = [Note(2000, 2500, 1).data()]
+        state['variants'].append(new_candidate)
+        projects.save(state)
+        new_id = state['variants'][1]['candidate_id']
+        route = f'{base}/export/{kind}'
+        old_link = f'{route}?candidate_id={old_id}'
+        assert first.get(old_link).status_code == 200
+
+        second = app.test_client()
+        selected = second.post(base + '/variant', headers=headers,
+                               json={'index': 1, 'candidate_id': new_id})
+        assert selected.status_code == 200, selected.json
+        stale = first.get(old_link)
+        assert stale.status_code == 400
+        assert '刷新' in stale.json['error']
+        assert 'Content-Disposition' not in stale.headers
+
+        fresh = second.get(route, query_string={'candidate_id': new_id})
+        current = first.get(route)
+        assert fresh.status_code == current.status_code == 200
+        assert _export_snapshot('/export/' + kind, fresh) == _export_snapshot('/export/' + kind, current)
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_analysis_export_can_require_that_no_candidate_is_selected(tmp_path):
+    app, client, _, base, _, _, _ = _audio_export_project(tmp_path)
+    try:
+        pid = base.rsplit('/', 1)[1]
+        projects = app.extensions['projects']
+        state = projects.load(pid)
+        state['analysis'] = {'duration': 5}
+        state['active'] = -1
+        projects.save(state)
+        route = base + '/export/json'
+        analysis_link = route + '?candidate_id='
+        response = client.get(analysis_link)
+        assert response.status_code == 200
+        assert response.json['variant'] is None
+        candidate_id = state['variants'][0]['candidate_id']
+        assert client.get(route, query_string={'candidate_id': candidate_id}).status_code == 400
+
+        state['active'] = 0
+        projects.save(state)
+        stale = client.get(analysis_link)
+        assert stale.status_code == 400
+        assert '刷新' in stale.json['error']
+        assert client.get(route).json['variant']['candidate_id'] == candidate_id
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 def test_osz_rejects_same_name_audio_replacement_but_json_and_osu_remain_available(tmp_path):
     original = _wave()
     replacement = _wave(400)

@@ -7,7 +7,7 @@ import re
 import tempfile
 import zipfile
 
-from flask import send_file
+from flask import request, send_file
 
 from .domain import export_osu, note_from, parse_osu
 from .storage import AUDIO, resolve_project_reference, safe_path
@@ -67,10 +67,14 @@ def register_export_routes(app, projects, resources, current_audio):
     @app.get("/api/projects/<pid>/export/<kind>")
     def export(pid, kind):
         state = projects.load(pid)
+        variant = state["variants"][state["active"]] if state["active"] >= 0 else None
+        expected_id = request.args.get("candidate_id")
+        current_id = variant["candidate_id"] if variant is not None else ""
+        if expected_id is not None and expected_id != current_id:
+            raise ValueError("当前候选已经改变，请刷新项目后再导出")
         if kind == "json":
-            if not state.get("analysis") and state["active"] < 0:
+            if not state.get("analysis") and variant is None:
                 raise ValueError("请先分析音频或生成候选，再下载分析 JSON")
-            variant = state["variants"][state["active"]] if state["active"] >= 0 else None
             evidence = {"title": state["title"],
                         "variant": dict(variant) if variant is not None else None,
                         "analysis": state.get("analysis"), "plan": state.get("plan"),
@@ -81,9 +85,8 @@ def register_export_routes(app, projects, resources, current_audio):
             return send_file(io.BytesIO(json.dumps(evidence, ensure_ascii=False, indent=2).encode()),
                              download_name="ManiaLab-analysis.json", as_attachment=True,
                              mimetype="application/json")
-        if state["active"] < 0:
+        if variant is None:
             raise ValueError("请先生成谱面")
-        variant = state["variants"][state["active"]]
         notes = [note_from(n) for n in variant["notes"]]
         if variant["mode"] == "audio" and variant.get("timing_revision", 0) < 3:
             raise ValueError("该候选来自旧版，未通过完整落线检查；请重新分析音频并生成整谱后导出")

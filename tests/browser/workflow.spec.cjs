@@ -7,16 +7,17 @@ test('audio candidate: generate, change keys, edit, reopen and export', async ({
   await expect(page.locator('#recent option')).toContainText(['打开已保存项目', 'UI synthetic']);
   await page.locator('#recent').selectOption({ label: 'UI synthetic' });
   await expect(page.locator('#projectTitle')).toHaveText('UI synthetic');
+  await expect(page.locator('#exportJson')).toHaveAttribute('href', /export\/json\?candidate_id=$/);
   await page.locator('#timingConfirmed').check();
   await page.locator('#generate').click();
   await expect(page.locator('#message')).toContainText('结构检查通过');
-  await expect(page.locator('#exportOsz')).toHaveAttribute('href', /export\/osz$/);
+  await expect(page.locator('#exportOsz')).toHaveAttribute('href', /export\/osz\?candidate_id=[0-9a-f]{32}$/);
   await page.locator('[data-key="6"]').click();
   await expect(page.locator('#gridReport')).toContainText('当前预览仍是 10K');
   await expect(page.locator('#exportOsz')).not.toHaveAttribute('href');
   await page.locator('#generate').click();
   await expect(page.locator('#variants option:checked')).toContainText('6K');
-  await expect(page.locator('#exportOsz')).toHaveAttribute('href', /export\/osz$/);
+  await expect(page.locator('#exportOsz')).toHaveAttribute('href', /export\/osz\?candidate_id=[0-9a-f]{32}$/);
   await page.locator('#noteEditor').evaluate(element => { element.open = true; });
   await page.locator('#editStart').fill('11500');
   await page.locator('#editEnd').fill('11500');
@@ -30,7 +31,11 @@ test('audio candidate: generate, change keys, edit, reopen and export', async ({
   await page.locator('#bpm').fill('121');
   await expect(page.locator('#exportOsz')).not.toHaveAttribute('href');
   await page.locator('#bpm').fill('120');
-  await expect(page.locator('#exportOsz')).toHaveAttribute('href', /export\/osz$/);
+  const project = await (await page.request.get(`/api/projects/${pid}`)).json();
+  const candidate = project.variants[project.active].candidate_id;
+  for (const [id, kind] of [['exportOsu', 'osu'], ['exportOsz', 'osz'], ['exportJson', 'json']]) {
+    await expect(page.locator(`#${id}`)).toHaveAttribute('href', `/api/projects/${pid}/export/${kind}?candidate_id=${candidate}`);
+  }
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#exportOsz').click();
   const download = await downloadPromise;
@@ -47,7 +52,7 @@ test('imported chart retains strict times after changing target keys', async ({ 
   await page.locator('#files').setInputFiles([{ name: 'chart.osu', mimeType: 'text/plain', buffer: Buffer.from(chart) }]);
   await expect(page.locator('#projectTitle')).toHaveText('Browser import');
   await page.locator('#generate').click();
-  await expect(page.locator('#exportOsu')).toHaveAttribute('href', /export\/osu$/);
+  await expect(page.locator('#exportOsu')).toHaveAttribute('href', /export\/osu\?candidate_id=[0-9a-f]{32}$/);
   await page.locator('[data-key="6"]').click();
   await expect(page.locator('#exportOsu')).not.toHaveAttribute('href');
   await page.locator('#generate').click();
