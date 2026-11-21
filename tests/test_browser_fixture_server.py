@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -8,9 +9,8 @@ import pytest
 from manialab.storage import Projects
 
 
-include_fixture_projects_in_recent = runpy.run_path(
-    str(Path(__file__).parent / "browser" / "fixture_server.py")
-)["include_fixture_projects_in_recent"]
+fixture_server = runpy.run_path(str(Path(__file__).parent / "browser" / "fixture_server.py"))
+include_fixture_projects_in_recent = fixture_server["include_fixture_projects_in_recent"]
 
 
 def add_project(projects, title):
@@ -41,6 +41,26 @@ def test_recent_wrapper_merges_fixtures_and_sorts_by_state_mtime(tmp_path):
 
     os.utime(fixture_path, (3000, 3000))
     assert [project["id"] for project in projects.recent()] == [fixture_id, dynamic_id]
+
+
+@pytest.mark.parametrize(("builder", "args"), [
+    ("timing_fixture", ("UI timing hash",)),
+    ("audio_meter_fixture", ()),
+    ("evidence_source_identity_fixture", ()),
+])
+def test_synthetic_fixture_audio_identity_matches_source_wav(tmp_path, builder, args):
+    projects = Projects(tmp_path / "projects")
+    project_id = fixture_server[builder](projects, *args)
+    state = projects.load(project_id)
+    source = projects.path(project_id) / "files" / "synthetic.wav"
+    expected = hashlib.sha256(source.read_bytes()).hexdigest()
+
+    assert state["analysis"]["audio_sha256"] == expected
+    separation = state["analysis"].get("separation")
+    if separation:
+        assert separation["audio_sha256"] == expected
+    if state["variants"]:
+        assert state["variants"][state["active"]]["source_audio_sha256"] == expected
 
 
 @pytest.mark.parametrize("damaged_state", [

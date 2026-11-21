@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from scipy.io import wavfile
 
 from manialab import audio
 from manialab.arrange import choose_holds, parameters
@@ -137,19 +138,23 @@ def test_cached_analysis_reconstructs_generic_release_metadata_without_inference
         BASIC_PITCH_INFERENCE_REVISION,
         model_identity,
         save_stem_activations,
+        sha256_file,
     )
     frames, onsets, times, duration = activations()
     samples = np.full(round(duration * audio.SR), .2, dtype=np.float32)
+    input_audio = tmp_path / 'mix.wav'
+    wavfile.write(input_audio, audio.SR, samples)
+    audio_hash = sha256_file(input_audio)
     voices = ['bass', 'guitar', 'vocals', 'other', 'piano']
     model = Path('unused.onnx')
     model_fingerprint = model_identity(model)
-    separation = dict(source='provided', voices=voices, audio_sha256='audio',
+    separation = dict(source='provided', voices=voices, audio_sha256=audio_hash,
                       set_sha256='stems', model_sha256='stems', cached=True)
     for voice in voices:
         np.save(tmp_path / f'{voice}.npy', samples)
         save_stem_activations(
             tmp_path / f'{voice}-activations.npz', (frames, onsets, times),
-            'audio', separation_identity(separation), model_fingerprint,
+            audio_hash, separation_identity(separation), model_fingerprint,
             BASIC_PITCH_INFERENCE_REVISION)
 
     class Sources:
@@ -160,7 +165,7 @@ def test_cached_analysis_reconstructs_generic_release_metadata_without_inference
     def unused(*args):
         raise AssertionError('Existing activations must be reused')
     monkeypatch.setattr(audio, 'infer', unused)
-    result = audio.analyze_deep(Path('mix.wav'), tmp_path, model, parameters(), Sources())
+    result = audio.analyze_deep(input_audio, tmp_path, model, parameters(), Sources())
     assert result['cached']
     assert {n['voice'] for n in result['candidates']} == set(voices)
     assert all(n['release_reason'] == 'input_boundary' for n in result['candidates'])

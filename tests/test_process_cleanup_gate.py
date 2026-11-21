@@ -350,7 +350,7 @@ def test_cancel_api_process_cleanup_failure_blocks_later_stem_upload(
 
         monkeypatch.setattr(process, 'terminate', denied)
 
-        def fail_to_reap(mix, sources, work, progress, cancelled):
+        def fail_to_reap(mix, sources, work, progress, cancelled, *, on_new_folder=None):
             started.set()
             assert release.wait(5)
             stop_process(process, cancelled, terminate_timeout=.01, kill_timeout=.01)

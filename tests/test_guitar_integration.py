@@ -1,5 +1,6 @@
 """Source routing, weak-residual filtering and LN policy without neural work."""
 from dataclasses import replace
+import hashlib
 from pathlib import Path
 
 import numpy as np
@@ -13,13 +14,16 @@ from manialab.domain import Note, UNOBSERVED_RELEASES
 @pytest.mark.parametrize('selected,release', [(False, False), (True, False), (True, True)])
 def test_only_explicit_guitar_uses_fl_and_keeps_source_energy_checks(tmp_path, monkeypatch, selected, release):
     mix = np.full(audio.SR, .2, dtype=np.float32)
+    mix_path = tmp_path / 'mix.wav'
+    mix_path.write_bytes(b'synthetic mix')
+    mix_sha256 = hashlib.sha256(b'synthetic mix').hexdigest()
     roles = ('guitar', 'other', 'piano')
     for index, voice in enumerate(roles):
         signal = np.full(audio.SR, .1 * (index + 1), dtype=np.float32)
         if voice == 'guitar':
             signal[int(.45 * audio.SR):int(.65 * audio.SR)] = 0
         np.save(tmp_path / (voice + '.npy'), signal)
-    separation = dict(source='provided', voices=list(roles), audio_sha256='mix', set_sha256='stems', cached=True)
+    separation = dict(source='provided', voices=list(roles), audio_sha256=mix_sha256, set_sha256='stems', cached=True)
     class Sources:
         def separate(self, *args):
             return tmp_path, separation
@@ -53,7 +57,7 @@ def test_only_explicit_guitar_uses_fl_and_keeps_source_energy_checks(tmp_path, m
     monkeypatch.setattr(audio, 'reject_source_bleed', reject)
     monkeypatch.setattr('manialab.structure.detect_structure',
                         lambda *args, **kwargs: dict(segments=[dict(start_ms=0, end_ms=1000)]))
-    result = audio.analyze_deep(Path('mix'), tmp_path, Path('unused'), parameters(), Sources(),
+    result = audio.analyze_deep(mix_path, tmp_path, Path('unused'), parameters(), Sources(),
         guitar_detector=Specialist() if selected else None, allow_guitar_predicted_releases=release)
     assert len(generic) == len(refinements) == len(fusions) == (2 if selected else 3)
     assert result['guitar_engine'] == ('fl' if selected else 'general')
@@ -85,12 +89,15 @@ def test_invalid_guitar_tail_request_fails_before_decoding(tmp_path, monkeypatch
 
 
 def test_guitar_cannot_run_on_other_as_a_substitute(tmp_path, monkeypatch):
+    mix_path = tmp_path / 'mix.wav'
+    mix_path.write_bytes(b'synthetic mix')
+    mix_sha256 = hashlib.sha256(b'synthetic mix').hexdigest()
     monkeypatch.setattr(audio, 'decode', lambda *args, **kwargs: np.zeros(audio.SR))
     class Sources:
         def separate(self, *args):
-            return tmp_path, dict(source='provided', voices=['other'], audio_sha256='mix', set_sha256='stems')
+            return tmp_path, dict(source='provided', voices=['other'], audio_sha256=mix_sha256, set_sha256='stems')
     with pytest.raises(ValueError, match='吉他声轨'):
-        audio.analyze_deep(Path('mix'), tmp_path, Path('unused'), parameters(), Sources(), guitar_detector=object())
+        audio.analyze_deep(mix_path, tmp_path, Path('unused'), parameters(), Sources(), guitar_detector=object())
 
 
 @pytest.mark.parametrize('release', [False, True])

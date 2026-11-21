@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 import numpy as np
 import pytest
@@ -19,12 +20,14 @@ def test_current_separation_selects_its_own_stems_and_rejects_unknown_voice(tmp_
 def test_six_source_pitch_cache_depends_on_separation_model(tmp_path,monkeypatch):
     directory=tmp_path/'stems-six';directory.mkdir()
     model=tmp_path/'basic-pitch.onnx';model.write_bytes(b'synthetic model A')
+    source=tmp_path/'same.wav';source.write_bytes(b'synthetic same mix')
+    audio_sha256=hashlib.sha256(source.read_bytes()).hexdigest()
     for voice in ('drums','bass','vocals','other','guitar','piano'):
         np.save(directory/f'{voice}.npy',np.zeros(audio.SR*2,dtype=np.float32))
-    report=dict(profile='six',audio_sha256='same-audio',model_sha256='model-a',cached=True)
+    report=dict(profile='six',audio_sha256=audio_sha256,model_sha256='model-a',cached=True)
     for voice in ('bass','vocals','other','guitar','piano'):
         np.savez_compressed(directory/f'{voice}-activations.npz',version=2,
-            audio_sha256='same-audio',separation_sha256='model-a',
+            audio_sha256=audio_sha256,separation_sha256='model-a',
             frames=np.ones((10,88)),onsets=np.ones((10,88)),times=np.arange(10)/86)
     class Cached:
         def separate(self,*args):return directory,report
@@ -35,21 +38,21 @@ def test_six_source_pitch_cache_depends_on_separation_model(tmp_path,monkeypatch
         return np.zeros((10,88)),np.zeros((10,88)),np.arange(10)/86
     monkeypatch.setattr(audio,'infer',infer)
     for expected,cached in [(5,False),(5,True)]:
-        result=audio.analyze_deep(Path('same.wav'),tmp_path,model,parameters(),Cached())
+        result=audio.analyze_deep(source,tmp_path,model,parameters(),Cached())
         assert len(calls)==expected and result['cached']==cached
         assert {v['voice'] for v in result['voices']}=={'drums','bass','vocals','other','guitar','piano'}
     model.write_bytes(b'synthetic model B')
-    result=audio.analyze_deep(Path('same.wav'),tmp_path,model,parameters(),Cached())
+    result=audio.analyze_deep(source,tmp_path,model,parameters(),Cached())
     assert len(calls)==10 and not result['cached']
     report['model_sha256']='model-b'
-    result=audio.analyze_deep(Path('same.wav'),tmp_path,model,parameters(),Cached())
+    result=audio.analyze_deep(source,tmp_path,model,parameters(),Cached())
     assert len(calls)==15 and not result['cached']
     report['input_processing']={'revision':2,'codec':'pcm_f32le'}
-    result=audio.analyze_deep(Path('same.wav'),tmp_path,model,parameters(),Cached())
+    result=audio.analyze_deep(source,tmp_path,model,parameters(),Cached())
     assert len(calls)==20 and not result['cached']
     # Volatile progress/beat metadata is not part of the separated audio identity.
     report['elapsed_seconds']=500
-    result=audio.analyze_deep(Path('same.wav'),tmp_path,model,parameters(),Cached())
+    result=audio.analyze_deep(source,tmp_path,model,parameters(),Cached())
     assert len(calls)==20 and result['cached']
 
 

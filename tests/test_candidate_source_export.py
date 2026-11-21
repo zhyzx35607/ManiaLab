@@ -15,6 +15,7 @@ from manialab.arrange import parameters
 from manialab.domain import Note, parse_osu
 from manialab.server import create_app
 from manialab.stems import separation_identity
+from manialab import export_routes
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -78,12 +79,458 @@ def _assert_exports(client, base, candidate, analysis, music):
     assert parsed['general']['AudioFilename'] == 'song.wav'
 
 
+def _export_snapshot(route, response):
+    if route != '/export/osz' or response.status_code != 200:
+        return response.status_code, response.data
+    with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
+        payloads = [(info.filename, archive.read(info)) for info in archive.infolist()]
+    return response.status_code, payloads
+
+
+def _audio_export_project(tmp_path, *, candidate_mode='audio', source_sha256=None,
+                          record_audio_identity=True, legacy_deep=False, audio_name='song.wav'):
+    """Build a tiny project without invoking analysis or inference code."""
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    music = _wave()
+    imported = client.post('/api/import', headers=headers,
+        data={'files': (io.BytesIO(music), 'song.wav')})
+    assert imported.status_code == 200, imported.json
+    pid = imported.json['id']
+    base = '/api/projects/' + pid
+    projects = app.extensions['projects']
+    state = projects.load(pid)
+    if audio_name != 'song.wav':
+        (projects.path(pid) / 'files' / 'song.wav').rename(
+            projects.path(pid) / 'files' / audio_name)
+        state['audio'] = audio_name
+    candidate = dict(
+        mode=candidate_mode, timing_revision=3, settings=parameters(),
+        notes=[Note(1000, 1500, 1).data()], bpm=120, offset=0, division=4, meter=4,
+    )
+    if candidate_mode == 'audio' and record_audio_identity:
+        candidate['source_audio_sha256'] = (
+            source_sha256 if source_sha256 is not None else hashlib.sha256(music).hexdigest())
+    if legacy_deep:
+        candidate['source_separation'] = {
+            'separation': {'audio_sha256': hashlib.sha256(music).hexdigest()}}
+    if candidate_mode == 'remap':
+        from manialab.domain import export_osu
+
+        source = export_osu([Note(1000, 1500, 1)], 6, ROOT / 'vendor/mapperatorinator/template.osu',
+                            audio=audio_name)
+        source_path = projects.path(pid) / 'files' / 'source.osu'
+        source_path.write_text(source, encoding='utf-8')
+        state.update(original='source.osu', input_notes=[Note(1000, 1500, 1).data()], input_keys=6,
+                     input_timing=parse_osu(source)['timing'], charts=[{'path': 'source.osu', 'label': '6K'}])
+    state.update(variants=[candidate], active=0)
+    projects.save(state)
+    return app, client, headers, base, projects.path(pid) / 'files' / state['audio'], music, candidate
+
+
+def test_osz_rejects_same_name_audio_replacement_but_json_and_osu_remain_available(tmp_path):
+    original = _wave()
+    replacement = _wave(400)
+    app, client, _, base, audio, _, candidate = _audio_export_project(
+        tmp_path)
+    try:
+        audio.write_bytes(original)
+        json_before = client.get(base + '/export/json')
+        osu_before = client.get(base + '/export/osu')
+        assert json_before.status_code == osu_before.status_code == 200
+        variant_before = json_before.json['variant']
+        audio.write_bytes(replacement)
+
+        response = client.get(base + '/export/osz')
+
+        assert response.status_code == 400
+        assert '原始音频' in response.json['error']
+        assert client.get(base + '/export/json').json['variant'] == variant_before
+        assert client.get(base + '/export/osu').data == osu_before.data
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_osz_audio_mismatch_closes_temporary_file(tmp_path, monkeypatch):
+    original = _wave()
+    replacement = _wave(400)
+    app, client, _, base, audio, _, _ = _audio_export_project(
+        tmp_path)
+    real_temporary_file = export_routes.tempfile.TemporaryFile
+    opened = []
+
+    def track_temporary_file(*args, **kwargs):
+        handle = real_temporary_file(*args, **kwargs)
+        opened.append(handle)
+        return handle
+
+    monkeypatch.setattr(export_routes.tempfile, 'TemporaryFile', track_temporary_file)
+    try:
+        audio.write_bytes(replacement)
+        response = client.get(base + '/export/osz')
+        assert response.status_code == 400
+        assert len(opened) == 1 and opened[0].closed
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_osz_checks_final_payload_when_audio_changes_during_zip_write(tmp_path, monkeypatch):
+    original = _wave()
+    replacement = _wave(400)
+    app, client, _, base, audio, _, _ = _audio_export_project(
+        tmp_path)
+    real_write = export_routes.zipfile.ZipFile.write
+
+    def replace_during_copy(archive, filename, *args, **kwargs):
+        if Path(filename).resolve() != audio.resolve():
+            return real_write(archive, filename, *args, **kwargs)
+        assert audio.read_bytes() == original
+        audio.write_bytes(replacement)
+        try:
+            return real_write(archive, filename, *args, **kwargs)
+        finally:
+            audio.write_bytes(original)
+
+    monkeypatch.setattr(export_routes.zipfile.ZipFile, 'write', replace_during_copy)
+    try:
+        response = client.get(base + '/export/osz')
+        assert response.status_code == 400
+        assert '原始音频' in response.json['error']
+        assert audio.read_bytes() == original
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_osz_legacy_deep_audio_identity_fallback(tmp_path):
+    original = _wave()
+    app, client, _, base, audio, _, _ = _audio_export_project(
+        tmp_path, record_audio_identity=False, legacy_deep=True)
+    try:
+        audio.write_bytes(original)
+        response = client.get(base + '/export/osz')
+        assert response.status_code == 200, response.json
+        with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
+            assert archive.read('song.wav') == original
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_osz_rejects_malformed_explicit_identity_instead_of_using_legacy_fallback(tmp_path):
+    original = _wave()
+    app, client, _, base, _, _, candidate = _audio_export_project(
+        tmp_path, source_sha256='invalid', legacy_deep=True)
+    try:
+        assert client.get(base + '/export/json').status_code == 200
+        assert client.get(base + '/export/osu').status_code == 200
+        response = client.get(base + '/export/osz')
+        assert response.status_code == 400
+        assert '未保存有效的原始音频 SHA-256' in response.json['error']
+        assert candidate['source_audio_sha256'] == 'invalid'
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_osz_rejects_legacy_basic_candidate_without_audio_identity(tmp_path):
+    app, client, _, base, _, _, candidate = _audio_export_project(
+        tmp_path, record_audio_identity=False)
+    try:
+        assert 'source_audio_sha256' not in candidate
+        assert client.get(base + '/export/json').status_code == 200
+        assert client.get(base + '/export/osu').status_code == 200
+        response = client.get(base + '/export/osz')
+        assert response.status_code == 400
+        assert '未保存有效的原始音频 SHA-256' in response.json['error']
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_remap_osz_does_not_require_audio_identity(tmp_path):
+    app, client, _, base, audio, _, candidate = _audio_export_project(
+        tmp_path, candidate_mode='remap')
+    try:
+        assert 'source_audio_sha256' not in candidate
+        response = client.get(base + '/export/osz')
+        assert response.status_code == 200, response.json
+        with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
+            assert archive.read('song.wav') == audio.read_bytes()
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_audio_osz_hash_resolves_case_insensitive_reference_to_unique_member(tmp_path, monkeypatch):
+    original = _wave()
+    app, client, _, base, audio, _, _ = _audio_export_project(
+        tmp_path, audio_name='SONG.WAV')
+    real_export_osu = export_routes.export_osu
+
+    def lowercase_audio_reference(*args, **kwargs):
+        content = real_export_osu(*args, **kwargs)
+        return content.replace('AudioFilename: SONG.WAV', 'AudioFilename: song.wav')
+
+    monkeypatch.setattr(export_routes, 'export_osu', lowercase_audio_reference)
+    try:
+        assert audio.name == 'SONG.WAV' and audio.exists()
+        response = client.get(base + '/export/osz')
+        assert response.status_code == 200, response.json
+        with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
+            chart = parse_osu(archive.read('ManiaLab.osu').decode())
+            assert chart['general']['AudioFilename'] == 'song.wav'
+            assert archive.read('SONG.WAV') == original
+            assert [name for name in archive.namelist()
+                    if name.casefold() == 'song.wav'] == ['SONG.WAV']
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+@pytest.mark.parametrize('duplicate', [False, True])
+def test_audio_osz_rejects_missing_or_duplicate_referenced_payload(tmp_path, monkeypatch, duplicate):
+    original = _wave()
+    app, client, _, base, audio, _, _ = _audio_export_project(
+        tmp_path)
+    real_write = export_routes.zipfile.ZipFile.write
+
+    def alter_audio_member(archive, filename, *args, **kwargs):
+        result = real_write(archive, filename, *args, **kwargs)
+        if Path(filename).resolve() == audio.resolve():
+            if duplicate:
+                archive.writestr('song.wav', _wave(600))
+            return result
+        return result
+
+    if duplicate:
+        monkeypatch.setattr(export_routes.zipfile.ZipFile, 'write', alter_audio_member)
+    else:
+        monkeypatch.setattr(export_routes.zipfile.ZipFile, 'write',
+            lambda archive, filename, *args, **kwargs: None
+            if Path(filename).resolve() == audio.resolve()
+            else real_write(archive, filename, *args, **kwargs))
+    try:
+        if duplicate:
+            with pytest.warns(UserWarning, match="Duplicate name: 'song.wav'"):
+                response = client.get(base + '/export/osz')
+        else:
+            response = client.get(base + '/export/osz')
+        assert response.status_code == 400
+        assert '缺失或重复' in response.json['error']
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_remap_osz_rejects_case_insensitive_duplicate_audio_members(tmp_path, monkeypatch):
+    app, client, _, base, audio, _, _ = _audio_export_project(
+        tmp_path, candidate_mode='remap')
+    real_write = export_routes.zipfile.ZipFile.write
+
+    def add_case_variant_duplicate(archive, filename, *args, **kwargs):
+        result = real_write(archive, filename, *args, **kwargs)
+        if Path(filename).resolve() == audio.resolve():
+            archive.writestr('SONG.WAV', _wave(600))
+        return result
+
+    monkeypatch.setattr(export_routes.zipfile.ZipFile, 'write', add_case_variant_duplicate)
+    try:
+        response = client.get(base + '/export/osz')
+        assert response.status_code == 400
+        assert '缺失或重复' in response.json['error']
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_remap_osz_rejects_osu_file_as_audio_reference(tmp_path):
+    app, client, _, base, _, _, _ = _audio_export_project(
+        tmp_path, candidate_mode='remap')
+    try:
+        state = app.extensions['projects'].load(base.rsplit('/', 1)[-1])
+        chart_path = app.extensions['projects'].path(state['id']) / 'files' / state['original']
+        chart = chart_path.read_text(encoding='utf-8')
+        assert 'AudioFilename: song.wav' in chart
+        chart_path.write_text(chart.replace(
+            'AudioFilename: song.wav', 'AudioFilename: source.osu'), encoding='utf-8')
+
+        response = client.get(base + '/export/osz')
+
+        assert response.status_code == 400
+        assert '不能引用 .osu' in response.json['error']
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_remap_osz_rejects_existing_non_audio_reference_before_creating_archive(
+        tmp_path, monkeypatch):
+    app, client, _, base, _, _, _ = _audio_export_project(
+        tmp_path, candidate_mode='remap')
+    real_temporary_file = export_routes.tempfile.TemporaryFile
+    opened = []
+
+    def track_temporary_file(*args, **kwargs):
+        handle = real_temporary_file(*args, **kwargs)
+        opened.append(handle)
+        return handle
+
+    monkeypatch.setattr(export_routes.tempfile, 'TemporaryFile', track_temporary_file)
+    try:
+        projects = app.extensions['projects']
+        state = projects.load(base.rsplit('/', 1)[-1])
+        project = projects.path(state['id'])
+        chart_path = project / 'files' / state['original']
+        chart = chart_path.read_text(encoding='utf-8')
+        assert 'AudioFilename: song.wav' in chart
+        chart_path.write_text(chart.replace(
+            'AudioFilename: song.wav', 'AudioFilename: cover.png'), encoding='utf-8')
+        (project / 'files' / 'cover.png').write_bytes(b'synthetic cover image')
+        state_path = project / 'state.json'
+        before_state = state_path.read_bytes()
+
+        response = client.get(base + '/export/osz')
+
+        assert response.status_code == 400
+        assert '支持的音频格式' in response.json['error']
+        assert not response.data.startswith(b'PK')
+        assert state_path.read_bytes() == before_state
+        assert opened == []
+        assert not list(tmp_path.rglob('ManiaLab.osz'))
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_regional_generation_rejects_changed_parent_source_without_mutating_exports(tmp_path):
+    app, client, headers, base, _, music, candidate = _audio_export_project(tmp_path)
+    try:
+        projects = app.extensions['projects']
+        state = projects.load(base.rsplit('/', 1)[-1])
+        audio_hash = hashlib.sha256(music).hexdigest()
+        parent_source = dict(source='provided', audio_sha256=audio_hash,
+            set_sha256='a' * 64, voices=['other'])
+        current_source = parent_source | {'set_sha256': 'b' * 64}
+        candidate['source_separation'] = dict(
+            identity=separation_identity(parent_source), separation=parent_source)
+        state.update(analysis=dict(revision=14, duration=5,
+            candidates=[Note(3500, 4250, id='tone', source='pitch', voice='other').data()],
+            phrase_candidates=[], timing_attacks=[], separation=current_source),
+            variants=[candidate], active=0)
+        projects.save(state)
+        state_path = projects.path(state['id']) / 'state.json'
+        before_state = state_path.read_bytes()
+        before_candidate = deepcopy(projects.load(state['id'])['variants'][0])
+        routes = ('/export/json', '/export/osu', '/export/osz')
+        before_exports = {}
+        for route in routes:
+            response = client.get(base + route)
+            assert response.status_code == 200, response.json
+            before_exports[route] = _export_snapshot(route, response)
+
+        submitted = client.post(base + '/generate', headers=headers, json=dict(
+            mode='audio', settings=candidate['settings'], bpm=120, offset=0,
+            division=4, audio_shift_ms=0, timing_confirmed=True, region=[3000, 5000]))
+        assert submitted.status_code == 200, submitted.json
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            job = client.get('/api/jobs/' + submitted.json['id']).json
+            if job['status'] in ('done', 'error', 'cancelled'):
+                break
+            time.sleep(.01)
+        assert job['status'] == 'error', job
+        assert '不能混用不同或未知的声轨来源' in job['message']
+
+        assert state_path.read_bytes() == before_state
+        assert projects.load(state['id'])['variants'][0] == before_candidate
+        for route in routes:
+            response = client.get(base + route)
+            assert response.status_code == 200, response.json
+            assert _export_snapshot(route, response) == before_exports[route]
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+@pytest.mark.parametrize('previous_audio_identity', ['missing', 'different'])
+def test_regional_generation_rejects_unknown_or_changed_audio_sha_without_mutating_exports(
+        tmp_path, previous_audio_identity):
+    app, client, headers, base, _, music, candidate = _audio_export_project(tmp_path)
+    try:
+        projects = app.extensions['projects']
+        state = projects.load(base.rsplit('/', 1)[-1])
+        if previous_audio_identity == 'missing':
+            candidate.pop('source_audio_sha256')
+        else:
+            candidate['source_audio_sha256'] = hashlib.sha256(music).hexdigest()
+        state.update(analysis=dict(revision=14, duration=5,
+            audio_sha256=hashlib.sha256(_wave(400)).hexdigest(),
+            candidates=[Note(3500, 4250, id='tone', source='pitch').data()],
+            phrase_candidates=[], timing_attacks=[]),
+            variants=[candidate], active=0)
+        projects.save(state)
+
+        state_path = projects.path(state['id']) / 'state.json'
+        before_state = state_path.read_bytes()
+        before_candidate = deepcopy(projects.load(state['id'])['variants'][0])
+        routes = ('/export/json', '/export/osu', '/export/osz')
+        before_exports = {}
+        for route in routes:
+            response = client.get(base + route)
+            expected_status = (400 if previous_audio_identity == 'missing'
+                               and route == '/export/osz' else 200)
+            assert response.status_code == expected_status, response.json
+            before_exports[route] = _export_snapshot(route, response)
+
+        submitted = client.post(base + '/generate', headers=headers, json=dict(
+            mode='audio', settings=candidate['settings'], bpm=120, offset=0,
+            division=4, audio_shift_ms=0, timing_confirmed=True, region=[3000, 5000]))
+        assert submitted.status_code == 200, submitted.json
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            job = client.get('/api/jobs/' + submitted.json['id']).json
+            if job['status'] in ('done', 'error', 'cancelled'):
+                break
+            time.sleep(.01)
+        assert job['status'] == 'error', job
+        assert '不能混用不同或未知的声轨来源' in job['message']
+
+        assert state_path.read_bytes() == before_state
+        assert projects.load(state['id'])['variants'][0] == before_candidate
+        for route in routes:
+            response = client.get(base + route)
+            assert _export_snapshot(route, response) == before_exports[route]
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_regional_generation_keeps_legacy_unknown_identity_when_both_sources_lack_identity(tmp_path):
+    app, client, headers, base, _, _, candidate = _audio_export_project(
+        tmp_path, record_audio_identity=False)
+    try:
+        projects = app.extensions['projects']
+        state = projects.load(base.rsplit('/', 1)[-1])
+        state.update(analysis=dict(revision=14, duration=5,
+            candidates=[Note(3500, 4250, id='tone', source='pitch').data()],
+            phrase_candidates=[], timing_attacks=[]),
+            variants=[candidate], active=0)
+        projects.save(state)
+
+        submitted = client.post(base + '/generate', headers=headers, json=dict(
+            mode='audio', settings=candidate['settings'], bpm=120, offset=0,
+            division=4, audio_shift_ms=0, timing_confirmed=True, region=[3000, 5000]))
+        assert submitted.status_code == 200, submitted.json
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            job = client.get('/api/jobs/' + submitted.json['id']).json
+            if job['status'] in ('done', 'error', 'cancelled'):
+                break
+            time.sleep(.01)
+        assert job['status'] == 'done', job
+        saved = projects.load(state['id'])
+        assert saved['variants'][saved['active']]['source_audio_sha256'] is None
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 @pytest.mark.parametrize('regional', [False, True])
 def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_path, regional):
     music = _wave()
+    source_audio_sha256 = hashlib.sha256(music).hexdigest()
     old_stem = _wave(800)
     current_stem = _wave(2400)
-    saved_source = dict(source='provided', audio_sha256=hashlib.sha256(music).hexdigest(),
+    saved_source = dict(source='provided', audio_sha256=source_audio_sha256,
         set_sha256='a' * 64, voices=['other'],
         decoded_files={'other': {'wav_sha256': hashlib.sha256(old_stem).hexdigest()}})
     reference = dict(identity=separation_identity(saved_source), separation=saved_source)
@@ -94,6 +541,7 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
                     evidence_start=1000, evidence_end=1800).data(),
                Note(2500, 2500, 1, source='transient', voice='other', id='tap').data()],
         report={}, selection={}, region=None, source_separation=reference,
+        source_audio_sha256=source_audio_sha256,
         source_evidence={
             'tone': dict(detected=raw, expressed=dict(raw, end=1895)),
             'tap': dict(
@@ -127,6 +575,7 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
             source_file.write_bytes(audio)
         stored = projects.load(pid)
         parent, current_analysis = stored['variants'][0], stored['analysis']
+        assert parent['source_audio_sha256'] == source_audio_sha256
 
         state, changed = _edit(client, base, headers, parent, op='update', note_id='tone',
             values=dict(start=1118, end=2376, lane=2))
@@ -147,6 +596,7 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
         assert final['meter'] == parent['meter']
         _assert_exports(client, base, final, current_analysis, music)
         evidence_export = client.get(base + '/export/json').json['variant']
+        assert evidence_export['source_audio_sha256'] == source_audio_sha256
         assert evidence_export['source_evidence']['tap'] == deleted_evidence
         assert evidence_export['edits'][-1]['before']['id'] == 'tap'
         assert not any(note['id'] == 'tap' for note in evidence_export['notes'])
@@ -172,8 +622,13 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
         headers = {'X-ManiaLab-Token': reopened.config['TOKEN']}
         history = client.get(base).json
         assert history['variants'] == state['variants']
+        assert [variant['source_audio_sha256'] for variant in history['variants']] == [
+            source_audio_sha256
+        ] * len(history['variants'])
         restored = client.post(base + '/variant', json={'index': 3}, headers=headers)
         assert restored.status_code == 200
+        reopened_export = client.get(base + '/export/json').json['variant']
+        assert reopened_export['source_audio_sha256'] == source_audio_sha256
         _assert_exports(client, base, final, current_analysis, music)
         response = client.get(base + '/stem/other?context=chart&source_identity=' + reference['identity'])
         assert response.status_code == 200 and response.data == old_stem

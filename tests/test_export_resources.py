@@ -1,4 +1,5 @@
 import io
+import hashlib
 from pathlib import Path
 import zipfile
 
@@ -29,6 +30,7 @@ def export_project(tmp_path):
         "offset": 0,
         "division": 4,
         "meter": 4,
+        "source_audio_sha256": hashlib.sha256(b"synthetic audio").hexdigest(),
     }]
     state["active"] = 0
     projects.save(state)

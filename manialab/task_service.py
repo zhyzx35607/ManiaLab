@@ -10,6 +10,23 @@ from .cancellation import CancellationContext, remaining_until
 
 
 TERMINAL_STATUSES = ("done", "error", "cancelled")
+_USER_RECOVERY_NOTE_PREFIX = "ManiaLab恢复提示："
+
+
+def _user_recovery_hints(error):
+    hints = []
+    pending = [error]
+    seen = set()
+    while pending:
+        current = pending.pop()
+        if id(current) in seen:
+            continue
+        seen.add(id(current))
+        for note in getattr(current, "__notes__", ()):
+            if note.startswith(_USER_RECOVERY_NOTE_PREFIX):
+                hints.append(note[len(_USER_RECOVERY_NOTE_PREFIX):].strip())
+        pending.extend(getattr(current, "exceptions", ()))
+    return list(dict.fromkeys(hint for hint in hints if hint))
 
 
 class ProjectTasks:
@@ -84,7 +101,7 @@ class ProjectTasks:
                 with self.lock:
                     job.update(progress=value, message=message)
 
-            def record_cleanup_failure(outcome, committed):
+            def record_cleanup_failure(outcome, committed, error):
                 self.logger.exception(
                     "Project task cleanup failed: project=%s job=%s", project_id, job_id)
                 cancellation.report_cleanup_failure(
@@ -97,6 +114,9 @@ class ProjectTasks:
                                else outcome["message"])
                     outcome.update(status="error",
                         message=message + "；资源清理失败，请重新打开项目核对")
+                hints = _user_recovery_hints(error)
+                if hints:
+                    outcome["message"] += "；" + "；".join(hints)
 
             def run():
                 started = time.perf_counter()
@@ -132,8 +152,8 @@ class ProjectTasks:
                     if cleanup is not None:
                         try:
                             cleanup(committed)
-                        except BaseException:
-                            record_cleanup_failure(outcome, committed)
+                        except BaseException as cleanup_error:
+                            record_cleanup_failure(outcome, committed, cleanup_error)
                     with self.lock:
                         job.update(outcome)
                         if outcome["status"] == "done":
@@ -160,8 +180,8 @@ class ProjectTasks:
                 if cleanup is not None:
                     try:
                         cleanup(False)
-                    except BaseException:
-                        record_cleanup_failure(job, False)
+                    except BaseException as cleanup_error:
+                        record_cleanup_failure(job, False, cleanup_error)
 
         if submission_error is not None:
             if not isinstance(submission_error, Exception):
