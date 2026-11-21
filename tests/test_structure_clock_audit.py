@@ -1,7 +1,9 @@
 """Reference-derived structure changes commit only usable audio boundaries."""
 from copy import deepcopy
+import hashlib
 import io
 from pathlib import Path
+import zipfile
 
 import pytest
 
@@ -11,6 +13,7 @@ from manialab.expression import propose_expression
 from manialab.generation import generate_variant
 from manialab.server import create_app
 from manialab.structure import edit_boundaries
+from manialab.timing import chart_clock_notes
 from tests.test_server import wait_job
 
 
@@ -100,6 +103,61 @@ def test_reference_structure_uses_audio_clock_and_invalidates_only_current_inten
     assert after['expression']['source'] == 'automatic'
     assert [(row['start_ms'], row['end_ms']) for row in after['expression']['sections']] == [
         (0, 3000 + shift), (3000 + shift, 7000 + shift), (7000 + shift, 10000)]
+
+
+@pytest.mark.parametrize('action,mark_field', [
+    ('bookmarks', 'bookmarks'), ('kiai', 'kiai_transitions'),
+])
+@pytest.mark.parametrize('mark,shift,expected', [
+    (3200, 22.5, 3223),
+    (3201, -22.5, 3179),
+])
+def test_reference_clock_half_millisecond_uses_chart_rounding(
+        structured_project, action, mark_field, mark, shift, expected):
+    client, headers, projects, pid = structured_project
+    state = projects.load(pid)
+    state['reference_marks'] = {mark_field: [mark]}
+    projects.save(state)
+
+    response = client.post(f'/api/projects/{pid}/structure', headers=headers,
+        json=dict(action=action, audio_shift_ms=shift))
+    assert response.status_code == 200
+    assert wait_job(client, response.json)['status'] == 'done'
+    after = client.get(f'/api/projects/{pid}').json
+
+    chart_expected = chart_clock_notes(
+        [Note(mark, mark, source='pitch', voice='mix', id='mark')], -shift)[0].start
+    assert chart_expected == expected
+    assert after['analysis']['structure']['boundaries'] == [0, expected, 10000]
+
+
+@pytest.mark.parametrize('shift,boundary,expected', [
+    (22.5, 3201, 3179),
+    (-22.5, 3200, 3223),
+])
+def test_osu_and_osz_bookmark_export_use_chart_rounding(
+        structured_project, shift, boundary, expected):
+    client, headers, projects, pid = structured_project
+    state = projects.load(pid)
+    variant = state['variants'][state['active']]
+    variant['audio_shift_ms'] = shift
+    variant['selection']['structure']['boundaries'] = [0, boundary, 10000]
+    audio_path = projects.path(pid) / 'files' / state['audio']
+    variant['source_audio_sha256'] = hashlib.sha256(audio_path.read_bytes()).hexdigest()
+    projects.save(state)
+
+    chart_expected = chart_clock_notes(
+        [Note(boundary, boundary, source='pitch', voice='mix', id='mark')], shift)[0].start
+    assert chart_expected == expected
+    osu = client.get(f'/api/projects/{pid}/export/osu', headers=headers)
+    assert osu.status_code == 200
+
+    osz = client.get(f'/api/projects/{pid}/export/osz', headers=headers)
+    assert osz.status_code == 200
+    with zipfile.ZipFile(io.BytesIO(osz.data)) as archive:
+        chart, = (name for name in archive.namelist() if name.lower().endswith('.osu'))
+        assert archive.read(chart) == osu.data
+    assert f'Bookmarks: {expected}' in osu.data.decode().splitlines()
 
 
 @pytest.mark.parametrize('boundaries', [[4000, 4100], [-1]])

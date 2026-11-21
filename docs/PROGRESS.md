@@ -7,11 +7,11 @@
 
 ### Release 后工程验收（2026-11-22）
 
-`v0.1.0-alpha.6-dev.22` Core 预发布已发布并完成 tag 工件独立核验；音乐质量、Timing、6–10K/LN 真人手感及 Standard/Extended 许可和验证仍未完成。发布后通过合成故障注入复现并完成三项最小工程修复，均待独立复审和 PR 验证：
+`v0.1.0-alpha.6-dev.22` Core 预发布已发布并完成 tag 工件独立核验；音乐质量、Timing、6–10K/LN 真人手感及 Standard/Extended 许可和验证仍未完成。发布后的工程修复和验证状态如下：
 
-- 快照事务：`engine-generate` 回滚恢复失败及提交后备份清理失败都会在任务消息中报告仍存在的 `.rollback` 路径；路由定向回归 `15 passed, 36 deselected`，`compileall` 与 `git diff --check` 通过。
+- 快照事务：`engine-generate` 回滚恢复失败及提交后备份清理失败都会在任务消息中报告仍存在的 `.rollback` 路径；路由定向回归 `15 passed, 36 deselected`，`compileall` 与 `git diff --check` 通过。PR #246 Windows run `44947304877` 成功，已合并至 `aa85012415db8cebb6ef9e9f0c43734953b0b08b`；合并后 Windows run `44948226156` 正在运行。
 - 候选切换：请求携带 `candidate_id`，服务端在改状态前校验它仍对应所请求索引；旧页面的缺失、淘汰或错位 ID 被拒绝。7 个相关模块 `117 passed`，`node --check static/app.js` 及 `git diff --check` 通过。
-- LN/书签舍入：导入的参考标记与 OSU/OSZ 导出统一使用 half-up `floor(x + 0.5)`，修正半毫秒偏移时跨入口不一致；结构与导出定向测试 `53 passed`，`git diff --check` 通过。
+- 参考标记舍入：书签/Kiai 导入与 OSU/OSZ 书签导出采用与音符一致的 `floor(x + 0.5)`。正负 `22.5 ms` 的六项回归在旧 `round()` 实现上均复现 1 ms 偏差，修复后验证两个归档入口的书签一致。`pytest -q --tb=short tests/test_structure_clock_audit.py tests/test_structure_expression.py` 为 `54 passed`；`git diff --check` 通过。仅使用合成项目。
 
 手动逐段表达控件到保存/候选切换/JSON 的浏览器端到端仍是覆盖空档，当前没有可复现行为缺陷证据；后续继续检查，不以工程检查替代真人音乐验收。
 

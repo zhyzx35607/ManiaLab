@@ -354,7 +354,7 @@ def test_structure_api_preserves_audio_evidence_and_exports_saved_plan(tmp_path)
         job=client.post(url+'/structure',json={'action':'bookmarks','audio_shift_ms':22.5},headers=h).json
         assert wait_job(client,job)['status']=='done'
         current=client.get(url).json
-        assert current['analysis']['structure']['boundaries']==[0,6022,12000]
+        assert current['analysis']['structure']['boundaries']==[0,6023,12000]
         assert current['analysis']['candidates']==original
         plan=current['expression'];plan['sections'][1]['voices']['vocals']['mode']='onsets'
         saved=client.post(url+'/expression',json={'expression':plan},headers=h)
@@ -363,14 +363,14 @@ def test_structure_api_preserves_audio_evidence_and_exports_saved_plan(tmp_path)
         assert wait_job(client,client.post(url+'/generate',json=payload,headers=h).json)['status']=='done'
         current=client.get(url).json;v=current['variants'][-1]
         assert all(n['end']>n['start'] for n in v['notes'] if n['start']<6000)
-        assert all(n['end']==n['start'] for n in v['notes'] if n['start']>6022)
+        assert all(n['end']==n['start'] for n in v['notes'] if n['start']>6023)
         text=client.get(url+'/export/osu').data.decode()
-        assert values(sections(text)['Editor'])['Bookmarks']=='6022'
+        assert values(sections(text)['Editor'])['Bookmarks']=='6023'
         assert len(v['selection']['decisions'])==10
         assert wait_job(client,client.post(url+'/structure',json={'action':'edit','boundaries':[5000]},headers=h).json)['status']=='done'
         assert client.post(url+'/expression',json={'expression':plan},headers=h).status_code==400
         # The saved variant keeps its own section snapshot after later edits.
-        assert values(sections(client.get(url+'/export/osu').data.decode())['Editor'])['Bookmarks']=='6022'
+        assert values(sections(client.get(url+'/export/osu').data.decode())['Editor'])['Bookmarks']=='6023'
         draft=client.get(url).json['expression']
         draft['sections'][1]['voices']['vocals']['mode']='onsets'
         saved=client.post(url+'/expression',json={'expression':draft},headers=h)
@@ -394,7 +394,7 @@ def test_structure_api_preserves_audio_evidence_and_exports_saved_plan(tmp_path)
         job=client.post(url+'/structure',json={'action':'kiai','audio_shift_ms':22.5},headers=h).json
         assert wait_job(client,job)['status']=='done'
         current=client.get(url).json
-        assert current['analysis']['structure']['boundaries']==[0,3022,6022,12000]
+        assert current['analysis']['structure']['boundaries']==[0,3023,6023,12000]
         assert current['analysis']['structure']['source']=='reference-kiai'
         assert 'Kiai 开关' in current['analysis']['structure']['notice']
         state=current

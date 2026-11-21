@@ -1,6 +1,7 @@
 import io
 import hashlib
 import json
+import math
 from pathlib import Path, PurePosixPath
 import re
 import tempfile
@@ -97,7 +98,7 @@ def register_export_routes(app, projects, resources, current_audio):
                              bpm=variant["bpm"], offset=variant["offset"], original=original, meter=variant.get("meter", 4),
                              grid_division=variant["division"] if variant["mode"] == "audio" else None,
                              version=f'ManiaLab {variant["settings"]["seed"]}',
-                             bookmarks=[max(0, round(t-variant.get('audio_shift_ms', 0))) for t in
+                             bookmarks=[max(0, math.floor(t-variant.get('audio_shift_ms', 0)+.5)) for t in
                                  variant.get('selection', {}).get('structure', {}).get('boundaries', [])[1:-1]])
         if variant.get('provided_timing'):
             from .upstream import verify_fixed_timing

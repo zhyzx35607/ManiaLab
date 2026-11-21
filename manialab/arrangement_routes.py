@@ -1,3 +1,5 @@
+import math
+
 from flask import jsonify, request
 from .chart_workspace import audio_work
 from .meter import project_with_meter
@@ -80,7 +82,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
                     raise ValueError("当前导入谱面没有书签")
                 # Bookmarks use the chart clock; acoustic sections use audio.
                 shift = requested_shift(payload, state)
-                marks = [round(t + shift) for t in marks]
+                marks = [math.floor(t + shift + .5) for t in marks]
                 marks = [t for t in marks if 0 < t < round(analysis["duration"] * 1000)]
                 if not marks:
                     raise ValueError("导入谱面的书签都不在当前音频范围内")
@@ -92,7 +94,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
                     raise ValueError("当前导入谱面没有 Kiai 开关点")
                 # Kiai state changes use the chart clock; acoustic sections use audio.
                 shift = requested_shift(payload, state)
-                marks = [round(t + shift) for t in marks]
+                marks = [math.floor(t + shift + .5) for t in marks]
                 marks = [t for t in marks if 0 < t < round(analysis["duration"] * 1000)]
                 if not marks:
                     raise ValueError("导入谱面的 Kiai 开关点都不在当前音频范围内")
