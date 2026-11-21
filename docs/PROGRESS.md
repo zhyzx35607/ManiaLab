@@ -5,6 +5,8 @@
 
 ## 当前状态（先读）
 
++ 第一百零五阶段通用子进程取消升级（本地验证通过，PR/CI待验证）：ENG-04复审发现`stop_process()`在`terminate()`抛`OSError`且子进程仍存活时立即报清理失败，不再尝试后续`kill()`；合成故障注入先确认旧代码在该用例失败。现记录terminate信号失败后继续共享deadline内的等待及kill升级；若kill也失败仍报告清理失败并由任务门禁阻止后续计算。原进程门禁夹具同步改为显式拒绝terminate和kill，保留失败边界。分支已rebase到当前`origin/main` `b2c5124`；精确命令`D:\project\ManiaLab\.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_cancellation.py tests/test_task_service.py tests/test_task_cleanup_errors.py tests/test_process_cleanup_gate.py tests/test_worker_process_tree.py tests/test_task_lifecycle_flow.py`为`77 passed in 6.31s`；`D:\project\ManiaLab\.venv\Scripts\python.exe -m compileall -q manialab tests`和`git diff --check`通过。PR尚待创建，未运行模型/研究脚本或读取ignored素材。
+
 + 第一百零四阶段状态保存提交边界（本地验证通过，PR #221检查中）：复现`os.replace(state.tmp,state.json)`成功后，`Projects.save`仍在`finally`清理已移动的临时路径；注入该清理异常会让任务报告error并回滚其已保存状态引用所指资源。修复为仅在原子替换失败时清理临时文件；storage故障注入与真实`/provided-stems`生命周期回归验证任务完成、状态引用对应的新解码缓存保留、旧缓存不变且worker可复用。精确命令`D:\project\ManiaLab\.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_storage.py tests/test_task_service.py tests/test_task_lifecycle_flow.py`结果`28 passed in 4.47s`；`D:\project\ManiaLab\.venv\Scripts\python.exe -m compileall -q manialab tests`及`git diff --check`通过。PR #221已创建，更新head的Windows PR CI待验证；测试仅使用临时目录和合成音频，未运行模型/研究脚本或读取ignored用户素材。
 
 + `main` 当前HEAD为`063dfabff4c7a5886372731e8da30b5311981a61`：PR #218于`523b4d7`合并；PR #219 head run `44907441797`通过并于2026-11-21 `13:17:38 UTC`合并为`063dfab`。PR #219合并后main run `44908128277`成功：Python/API `3561 passed, 156 skipped, 1 warning`，Chromium `69 passed`；便携/EXE、Core媒体、shutdown和collector按条件跳过。PR #220已rebase到该main，重新验证待完成。公开Release仍为`v0.1.0-alpha.6-dev.19`，tag固定指向`3bd0dfef89c25710c043f120a7290da5adb8dc84`；后续main与PR提交均不包含在dev.19中，文档提交不移动release tag。

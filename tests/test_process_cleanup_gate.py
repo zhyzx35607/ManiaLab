@@ -64,6 +64,7 @@ def test_real_child_cleanup_failure_blocks_next_task_even_after_child_eventually
         raise PermissionError('synthetic child termination denied')
 
     monkeypatch.setattr(process, 'terminate', denied)
+    monkeypatch.setattr(process, 'kill', denied)
 
     def operation(state, progress, cancelled):
         state['value'] = 'must not commit'
@@ -344,11 +345,13 @@ def test_cancel_api_process_cleanup_failure_blocks_later_stem_upload(
         [getattr(sys, '_base_executable', sys.executable), '-c', 'import time; time.sleep(60)'],
         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+    kill = process.kill
     try:
         def denied():
             raise PermissionError('synthetic child termination denied')
 
         monkeypatch.setattr(process, 'terminate', denied)
+        monkeypatch.setattr(process, 'kill', denied)
 
         def fail_to_reap(mix, sources, work, progress, cancelled, *, on_new_folder=None):
             started.set()
@@ -400,7 +403,7 @@ def test_cancel_api_process_cleanup_failure_blocks_later_stem_upload(
         release.set()
         try:
             if process.poll() is None:
-                process.kill()
+                kill()
             process.wait(timeout=5)
         finally:
             service.shutdown()
