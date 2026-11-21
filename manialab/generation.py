@@ -93,7 +93,7 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
             if not expression or expression.get('source') == 'automatic':
                 expression = propose_expression(
                     state['analysis'], prefs, segment_preferences=segment_preferences,
-                    candidate_evidence=detected, phrase_evidence=phrases)
+                    phrase_evidence=phrases)
             validate_expression(expression, state['analysis'])
             evidence, expression_meta, decisions = expression_evidence(
                 state['analysis'], expression, prefs, segment_preferences=segment_preferences,
