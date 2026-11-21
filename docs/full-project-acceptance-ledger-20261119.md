@@ -6,6 +6,8 @@
 
 状态补充（2026-11-21 08:26:38 UTC）：PR #209最终head `4fcbac8`的Windows run `44883194111`成功并合并为`54c094f4fd7b98c98551d4b6d3eba0552dd60396`；合并后main run `44884080485`成功。API/Chromium、Core包、离线Unicode EXE、Core媒体切换、worker关停及collector通过；模型下载、钢琴专项和音频worker构建按条件跳过。ENG-25本地组合`59 passed`，待提交并完成PR CI。此状态覆盖旧的PR仍开放描述。
 
+状态补充（2026-11-21 08:50 UTC）：PR #210以merge commit `2cd3ef3`合并，合并后main run `44886727098`仍在运行。独立复审发现声部缓存版本号从4误降到3而loader继续要求v4身份字段；其风险是已有v4缓存失效并触发不必要重推理，不影响CRC损坏恢复本身。修正恢复v4格式、修正有效缓存测试名称和版本，并新增真正缺少身份字段的旧v3缓存安全miss用例；本地`tests/test_audio_cache.py tests/test_piano_runtime.py`为`29 passed`，`git diff --check`通过，待PR/CI。缓存与工程检查不代表音乐验收。
+
 续接更新（2026-11-21）：阶段98定向pytest `123 passed`，波形编辑/LN端点Edge本地`2 passed`；PR #208 head run `44863244643`成功后于`2026-11-21 04:04:29 UTC`合并为`c3c1f407d0f4c2018b69618afa11107a93543af6`。合并后main run `44864272448`成功：pytest `3509 passed, 156 skipped`、Chromium `69 passed`；`BUILD_PORTABLE=false`，portable/EXE、Core媒体、shutdown和collector跳过，Edge未运行。阶段99定向节奏内存/取消组`56 passed`，隔离全量pytest `3532 passed, 159 skipped`（363.07秒）；`git diff --check`通过。全长摘要仍随时长增长；20分钟float32输入加已知核心数组估算约117.9 MiB，不含FFT工作区、其它状态及事件对象。审计新发现 phrase anchor/support 在source-bleed过滤后可能失配、区域子代丢失区域外删除历史、候选重复保存完整编辑前缀导致state无界增长，以及整曲/stem/piano缓存CRC损坏未捕获`BadZipFile`；后续逐项验证/处理，不代表当前音乐质量结论。所有验证为合成工程检查，ENG-05、ENG-06与MUS-01继续开放。
 
 - 第九十七阶段PR #207 head `5330b8c72cfd45c5a64d7c506013b87fa6b10b01`的Windows run `44841323526`于2026-11-21成功；pytest/API、Edge、Core EXE构建、离线Unicode检查、媒体源切换、worker shutdown及collector全通过。修正把`basic_analysis.engine`设为稳定分类`basic`并单独保留`analysis_engine`描述。PR于`2026-11-21 00:17:21 UTC`合并，merge commit `1ad69d710d4df5829a984bc4d60ed1f8103569e4`；合并后main run `44842816110`成功，Core便携链也通过。

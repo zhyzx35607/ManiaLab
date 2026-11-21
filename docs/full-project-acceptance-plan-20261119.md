@@ -15,6 +15,8 @@
 
 状态补充（2026-11-21 08:26:38 UTC）：PR #209最终head `4fcbac8`的Windows run `44883194111`成功并合并为`54c094f4fd7b98c98551d4b6d3eba0552dd60396`；合并后main run `44884080485`成功。API/Chromium、Core包、离线Unicode EXE、Core媒体切换、worker关停和collector通过；模型下载、钢琴专项及独立音频worker构建按条件跳过。阶段99已完成PR/main验证；第一百阶段ENG-25本地组合`59 passed`，待单独提交和PR CI。此状态覆盖本节后文阶段99待提交/待PR CI的旧描述。
 
+状态补充（2026-11-21 08:50 UTC）：PR #210以merge commit `2cd3ef3`合并；合并后main run `44886727098`仍在运行。独立复审发现该PR把声部缓存格式号从4降为3，但loader仍依赖v4身份字段，可能使既有缓存失效并触发重推理。后续本地修正恢复v4并新增真正legacy-v3安全miss回归，缓存测试`29 passed`、`git diff --check`通过；修正待PR/CI。以上为工程验证，不构成音乐验收。
+
 续接更新（2026-11-21）：阶段98定向pytest `123 passed`、波形端点Edge流程本地`2 passed`；PR #208 head run `44863244643`成功，PR于`2026-11-21 04:04:29 UTC`合并为`c3c1f407d0f4c2018b69618afa11107a93543af6`。合并后main run `44864272448`通过：pytest `3509 passed, 156 skipped`、Chromium `69 passed`；`BUILD_PORTABLE=false`导致portable/EXE、Core媒体、shutdown和collector跳过，Edge未运行。阶段99定向节奏内存/取消组`56 passed`，包括一ULP边界峰阈值回归；隔离全量pytest `3532 passed, 159 skipped`（363.07秒），`git diff --check`通过。块输入有上限，但全长摘要数组仍随时长线性增长，20分钟float32输入及已知核心数组估算约117.9 MiB，不含FFT工作区、其它分析状态及事件对象；SciPy/NumPy和`estimate_timing`同步内核期间不能协作取消。应用新项目路径使用`xb`并由单worker串行处理；外部程序在复制期间原地改写源文件仍可能产生混合副本，SHA与解码针对同一副本，该情形不属于受支持应用内竞态。以上为合成工程验证，不构成MUS-01真人音乐验收。
 
 下方阶段98/99首轮记录仅保留问题发现背景，旧测试数字和进行时状态已由本续接更新取代。
