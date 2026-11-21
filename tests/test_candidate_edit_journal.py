@@ -143,6 +143,66 @@ def test_edit_journal_keeps_branch_histories_separate(tmp_path):
     assert len(persisted["_candidate_edit_journal"]) == 3
 
 
+def test_legacy_project_edit_history_loads_and_migrates_to_journal(tmp_path):
+    projects = Projects(tmp_path / "projects")
+    project_id, project_path = projects.create()
+    edits = [dict(op="update", before={"lane": 0}, after={"lane": 1})]
+    legacy_state = dict(id=project_id, title="legacy", mode="audio", variants=[
+        dict(created=1.0, edits=edits),
+    ])
+    state_path = project_path / "state.json"
+    state_path.write_text(json.dumps(legacy_state), encoding="utf-8")
+
+    loaded = projects.load(project_id)
+    assert loaded["variants"][0]["edits"] == edits
+    projects.save(loaded)
+
+    persisted = json.loads(state_path.read_text(encoding="utf-8"))
+    assert "edits" not in persisted["variants"][0]
+    assert len(persisted["_candidate_edit_journal"]) == 1
+    assert projects.load(project_id)["variants"][0]["edits"] == edits
+
+
+def test_load_rejects_edit_content_changed_without_updating_its_hash(tmp_path):
+    projects = Projects(tmp_path / "projects")
+    project_id, project_path = projects.create()
+    projects.save({"id": project_id, "title": "synthetic", "mode": "audio", "variants": [
+        {"created": 1.0, "edits": [
+            {"op": "update", "before": {"lane": 0}, "after": {"lane": 1}},
+        ]},
+    ]})
+
+    state_path = project_path / "state.json"
+    persisted = json.loads(state_path.read_text(encoding="utf-8"))
+    node = next(iter(persisted["_candidate_edit_journal"].values()))
+    node["event"]["after"]["lane"] = 5
+    state_path.write_text(json.dumps(persisted), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="候选编辑历史链损坏"):
+        projects.load(project_id)
+
+
+def test_save_rejects_changed_journal_event_without_replacing_state(tmp_path):
+    projects = Projects(tmp_path / "projects")
+    project_id, project_path = projects.create()
+    projects.save({"id": project_id, "title": "synthetic", "mode": "audio", "variants": [
+        {"created": 1.0, "edits": [
+            {"op": "update", "before": {"lane": 0}, "after": {"lane": 1}},
+        ]},
+    ]})
+
+    state_path = project_path / "state.json"
+    original = state_path.read_bytes()
+    loaded = projects.load(project_id)
+    loaded["variants"][0]["edits"][0]["after"]["lane"] = 5
+
+    with pytest.raises(ValueError, match="候选编辑历史链损坏"):
+        projects.save(loaded)
+
+    assert state_path.read_bytes() == original
+    assert not state_path.with_suffix(".tmp").exists()
+
+
 def test_regional_child_retains_deleted_outside_edit_in_json_and_after_reopen(tmp_path):
     import hashlib
 
