@@ -378,7 +378,8 @@ def test_structure_api_preserves_audio_evidence_and_exports_saved_plan(tmp_path)
         draft=saved.json['expression']
         assert wait_job(client,client.post(url+'/generate',json=payload,headers=h).json)['status']=='done'
         # Selecting the older chart must not replace the plan for the current boundaries.
-        chosen=client.post(url+'/variant',json={'index':0},headers=h)
+        chosen=client.post(url+'/variant',json={
+            'index':0,'candidate_id':current['variants'][0]['candidate_id']},headers=h)
         assert chosen.status_code==200,chosen.json
         assert chosen.json.get('expression') is None
         exported=client.get(url+'/export/json',headers=h).json

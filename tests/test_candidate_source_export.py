@@ -610,7 +610,8 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
         ]
         response = client.get(base + '/stem/other?context=chart&source_identity=' + reference['identity'])
         assert response.status_code == 200 and response.data == old_stem
-        restored = client.post(base + '/variant', json={'index': 0}, headers=headers)
+        restored = client.post(base + '/variant', json={
+            'index': 0, 'candidate_id': parent['candidate_id']}, headers=headers)
         assert restored.status_code == 200
         _assert_exports(client, base, parent, current_analysis, music)
     finally:
@@ -625,7 +626,8 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
         assert [variant['source_audio_sha256'] for variant in history['variants']] == [
             source_audio_sha256
         ] * len(history['variants'])
-        restored = client.post(base + '/variant', json={'index': 3}, headers=headers)
+        restored = client.post(base + '/variant', json={
+            'index': 3, 'candidate_id': history['variants'][3]['candidate_id']}, headers=headers)
         assert restored.status_code == 200
         reopened_export = client.get(base + '/export/json').json['variant']
         assert reopened_export['source_audio_sha256'] == source_audio_sha256
@@ -738,7 +740,8 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
         assert refreshed['source_evidence']['locked']['detected']['end'] == 1900
         assert_source_identity(refreshed)
         assert state['analysis']['structure']['boundaries'] != initial_structure['boundaries']
-        switched = client.post(base + '/variant', json={'index': 0}, headers=headers)
+        switched = client.post(base + '/variant', json={
+            'index': 0, 'candidate_id': state['variants'][0]['candidate_id']}, headers=headers)
         assert switched.status_code == 200
         state = client.get(base).json
         assert state['active'] == 0
@@ -846,7 +849,9 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
             assert archive.read('song.wav') == music
         assert client.get(base + '/stem/other?context=chart&source_identity=' + reference['identity']).data == old_stem
 
-        assert client.post(base + '/variant', json={'index': 0}, headers=headers).status_code == 200
+        first_candidate_id = client.get(base).json['variants'][0]['candidate_id']
+        assert client.post(base + '/variant', json={
+            'index': 0, 'candidate_id': first_candidate_id}, headers=headers).status_code == 200
         parent = client.get(base).json['variants'][0]
         parent_json = client.get(base + '/export/json')
         assert parent_json.status_code == 200 and parent_json.json['variant'] == parent
@@ -858,7 +863,9 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
         with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
             assert archive.read('ManiaLab.osu') == parent_chart.data
             assert archive.read('song.wav') == music
-        assert client.post(base + '/variant', json={'index': 2}, headers=headers).status_code == 200
+        third_candidate_id = client.get(base).json['variants'][2]['candidate_id']
+        assert client.post(base + '/variant', json={
+            'index': 2, 'candidate_id': third_candidate_id}, headers=headers).status_code == 200
         reopened = client.get(base).json
         assert_source_identity(reopened['variants'][2])
         assert reopened['variants'][2]['selection']['scope'] == 'regional_output'

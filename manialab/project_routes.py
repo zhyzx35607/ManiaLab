@@ -111,11 +111,17 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
         with task_service.lock:
             task_service.ensure_project_idle(pid)
             state = projects.load(pid)
-            index = request.json["index"]
+            payload = request.get_json(silent=True)
+            if not isinstance(payload, dict):
+                raise ValueError("候选版本无效")
+            index = payload.get("index")
             if type(index) is not int or not 0 <= index < len(state["variants"]):
                 raise ValueError("候选版本无效")
-            state["active"] = index
             variant = state["variants"][index]
+            candidate_id = payload.get("candidate_id")
+            if not isinstance(candidate_id, str) or candidate_id != variant.get("candidate_id"):
+                raise ValueError("候选版本已经改变或页面版本过旧，请刷新后再切换")
+            state["active"] = index
             state["settings"] = variant["settings"].copy()
             selection = variant.get("selection")
             expression = selection.get("expression") if isinstance(selection, dict) else None

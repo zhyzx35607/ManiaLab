@@ -185,7 +185,8 @@ def test_http_edit_persists_new_candidate_and_exports_actual_correction(tmp_path
         failed=run(payload)
         assert failed['status']=='error' and '版本已经改变' in failed['message']
         assert client.get(base).json==saved
-        restored=client.post(base+'/variant',json={'index':0},headers=headers).json
+        restored=client.post(base+'/variant',json={
+            'index':0,'candidate_id':saved['variants'][0]['candidate_id']},headers=headers).json
         assert restored['variants'][restored['active']]['notes']==project['variants'][0]['notes']
         # The corrected candidate is still available after reopening the project.
         assert store.load(project['id'])['variants'][1]['notes']==saved['variants'][1]['notes']
