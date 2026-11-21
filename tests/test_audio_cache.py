@@ -113,15 +113,15 @@ def test_stem_activation_cache_round_trips_the_current_format(tmp_path):
         assert int(data["version"]) == STEM_ACTIVATION_CACHE_VERSION
 
 
-def test_stem_activation_cache_loads_existing_v3_entries(tmp_path):
-    cache = tmp_path / "existing-v3-activations.npz"
+def test_stem_activation_cache_loads_existing_v4_entries(tmp_path):
+    cache = tmp_path / "existing-v4-activations.npz"
     expected = activations()
     np.savez_compressed(
         cache,
         frames=expected[0],
         onsets=expected[1],
         times=expected[2],
-        version=3,
+        version=4,
         audio_sha256="audio-hash",
         separation_sha256="separation-hash",
         model_identity=MODEL_IDENTITY,
@@ -135,6 +135,24 @@ def test_stem_activation_cache_loads_existing_v3_entries(tmp_path):
     assert loaded is not None
     for actual, wanted in zip(loaded, expected):
         np.testing.assert_array_equal(actual, wanted)
+
+
+def test_stem_activation_cache_safely_misses_legacy_v3_entries(tmp_path):
+    cache = tmp_path / "legacy-v3-activations.npz"
+    expected = activations()
+    np.savez_compressed(
+        cache,
+        frames=expected[0],
+        onsets=expected[1],
+        times=expected[2],
+        version=3,
+        audio_sha256="audio-hash",
+        separation_sha256="separation-hash",
+    )
+
+    assert load_stem_activations(
+        cache, "audio-hash", "separation-hash",
+        MODEL_IDENTITY, BASIC_PITCH_INFERENCE_REVISION) is None
 
 
 @pytest.mark.parametrize(

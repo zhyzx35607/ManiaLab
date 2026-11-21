@@ -8,7 +8,7 @@ import numpy as np
 
 
 WHOLE_AUDIO_ACTIVATION_CACHE_VERSION = 3
-STEM_ACTIVATION_CACHE_VERSION = 3
+STEM_ACTIVATION_CACHE_VERSION = 4
 # Bump when infer() changes its activation inputs, clock, or output semantics.
 BASIC_PITCH_INFERENCE_REVISION = 1
 _SHA256_CHUNK_SIZE = 1024 * 1024
