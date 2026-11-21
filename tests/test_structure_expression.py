@@ -371,6 +371,23 @@ def test_structure_api_preserves_audio_evidence_and_exports_saved_plan(tmp_path)
         assert client.post(url+'/expression',json={'expression':plan},headers=h).status_code==400
         # The saved variant keeps its own section snapshot after later edits.
         assert values(sections(client.get(url+'/export/osu').data.decode())['Editor'])['Bookmarks']=='6022'
+        draft=client.get(url).json['expression']
+        draft['sections'][1]['voices']['vocals']['mode']='onsets'
+        saved=client.post(url+'/expression',json={'expression':draft},headers=h)
+        assert saved.status_code==200,saved.json
+        draft=saved.json['expression']
+        assert wait_job(client,client.post(url+'/generate',json=payload,headers=h).json)['status']=='done'
+        # Selecting the older chart must not replace the plan for the current boundaries.
+        chosen=client.post(url+'/variant',json={'index':0},headers=h)
+        assert chosen.status_code==200,chosen.json
+        assert chosen.json.get('expression') is None
+        exported=client.get(url+'/export/json',headers=h).json
+        assert exported['variant']['selection']['expression']==v['selection']['expression']
+        assert wait_job(client,client.post(url+'/generate',json=payload,headers=h).json)['status']=='done'
+        regenerated=client.get(url).json['variants'][-1]
+        assert regenerated['selection']['structure']['boundaries']==[0,5000,12000]
+        assert [(section['start_ms'],section['end_ms']) for section in
+            regenerated['selection']['expression']['sections']]==[(0,5000),(5000,12000)]
         state=client.get(url).json
         state['reference_marks']['kiai_transitions']=[3000,6000]
         Projects(tmp_path/'projects').save(state)
