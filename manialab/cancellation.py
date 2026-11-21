@@ -169,9 +169,6 @@ def stop_process(process, cancelled, *, terminate_timeout, kill_timeout):
     except OSError as error:
         message = "Child process could not be terminated during cleanup"
         if poll() is None:
-            if query_error is None:
-                report_process_cleanup_failure(cancelled, message)
-                raise ChildProcessError(message) from error
             signal_errors.append((message, error))
     if wait(timeout_for(cancelled, terminate_timeout)):
         return finish(True)

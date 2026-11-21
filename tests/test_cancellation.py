@@ -85,7 +85,13 @@ def test_process_signal_failure_is_recorded_when_child_remains_alive(caplog):
         def terminate(self):
             raise PermissionError("synthetic access denied")
 
-    with pytest.raises(ChildProcessError, match="could not be terminated"):
+        def wait(self, timeout):
+            raise subprocess.TimeoutExpired("worker", timeout)
+
+        def kill(self):
+            raise PermissionError("synthetic kill denied")
+
+    with pytest.raises(ChildProcessError, match="could not be killed"):
         cancellation.stop_process(
             Process(),
             context,
@@ -94,6 +100,43 @@ def test_process_signal_failure_is_recorded_when_child_remains_alive(caplog):
         )
 
     assert context.cleanup_failures == (
-        "Child process could not be terminated during cleanup",
+        "Child process could not be killed during cleanup",
     )
-    assert "could not be terminated" in caplog.text
+    assert "could not be killed" in caplog.text
+
+
+def test_process_kill_escalation_runs_after_terminate_failure():
+    context = cancellation.CancellationContext()
+
+    class Process:
+        def __init__(self):
+            self.alive = True
+            self.kill_calls = 0
+
+        def poll(self):
+            return None if self.alive else -9
+
+        def terminate(self):
+            raise PermissionError("synthetic terminate denial")
+
+        def wait(self, timeout):
+            if self.alive:
+                raise subprocess.TimeoutExpired("worker", timeout)
+            return -9
+
+        def kill(self):
+            self.kill_calls += 1
+            self.alive = False
+
+    process = Process()
+
+    assert cancellation.stop_process(
+        process,
+        context,
+        terminate_timeout=0,
+        kill_timeout=1,
+    )
+
+    assert process.kill_calls == 1
+    assert not process.alive
+    assert not context.cleanup_failures
