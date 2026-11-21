@@ -27,7 +27,7 @@ from .expression_selection import (
     select_expression as _select_expression,
 )
 from .structure import detect_structure
-from .voices import select_phrase_subset
+from .voices import reconcile_phrase_sources, select_phrase_subset
 
 MODES = ('sustain', 'articulation', 'onsets', 'phrase', 'omit')
 
@@ -71,17 +71,19 @@ def signature(analysis):
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
-def propose_expression(analysis, settings, segment_preferences=()):
+def propose_expression(analysis, settings, segment_preferences=(), *,
+                      candidate_evidence=None, phrase_evidence=None):
     p = parameters(settings)
     structure = analysis.get('structure') or detect_structure(analysis)
-    notes = analysis.get('candidates', [])
+    notes = analysis.get('candidates', []) if candidate_evidence is None else candidate_evidence
     identities = [note.get('id') for note in notes]
     if any(not isinstance(identity, str) or not identity for identity in identities):
         raise ValueError('候选音符标识缺失或无效')
     if len(set(identities)) != len(identities):
         raise ValueError('候选音符标识重复')
     anchors = {n.get('id'): note_from(n) for n in notes}
-    phrases = sorted([note_from(n) for n in analysis.get('phrase_candidates', [])], key=lambda n: n.start)
+    phrase_rows = analysis.get('phrase_candidates', []) if phrase_evidence is None else phrase_evidence
+    phrases = sorted([note_from(n) for n in phrase_rows], key=lambda n: n.start)
     sections = []
     voices = sorted({n.get('voice', 'mix') for n in notes})
     sources = {voice: [note_from(n) for n in notes if n.get('voice', 'mix') == voice and n.get('strength', 0) >= .35]
@@ -172,15 +174,19 @@ def validate_expression(value, analysis):
     return value
 
 
-def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segment_preferences=()):
+def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segment_preferences=(),
+                        candidate_evidence=None, phrase_evidence=None):
     """Apply an explicit source policy, without LN quotas or lane decisions."""
     validate_expression(plan, analysis)
     p = parameters(settings)
-    raw = [note_from(n) for n in analysis['candidates']]
+    candidate_rows = analysis['candidates'] if candidate_evidence is None else candidate_evidence
+    raw = [note_from(n) for n in candidate_rows]
     if (any(not isinstance(n.id,str) or not n.id for n in raw)
             or len({n.id for n in raw})!=len(raw)):
         raise ValueError('采音结果的音符标识缺失或重复，请重新分析音频')
-    phrases = sorted([note_from(n) for n in analysis.get('phrase_candidates', [])], key=lambda n: n.start)
+    phrase_rows = analysis.get('phrase_candidates', []) if phrase_evidence is None else phrase_evidence
+    phrases = sorted([note_from(n) for n in phrase_rows], key=lambda n: n.start)
+    phrases = reconcile_phrase_sources(phrases, raw)
     output, trace, metadata = [], {}, {}
     # Analyse the source's attack context once. Cutting chart sections through
     # a chord or run must not turn its last local object into a phrase ending.

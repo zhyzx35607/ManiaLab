@@ -1141,6 +1141,79 @@ def test_generation_applies_local_recommendation_expression_to_export(tmp_path):
         app.extensions['executor'].shutdown()
 
 
+def test_recommended_structured_generation_omits_weak_phrase_and_candidate(tmp_path):
+    from manialab.arrange import parameters
+    from manialab.recommendations import evidence_signature
+
+    app=create_app(ROOT,tmp_path)
+    client=app.test_client()
+    headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=state['id'];base=f'/api/projects/{pid}'
+    prefs=parameters({'keys':10,'ln_ratio':.55,'phrase_ln':1.,'min_ln':240})
+    anchor=Note(1000,1600,pitch=60,source='pitch',voice='vocals',id='anchor',strength=.9).data()
+    weak=Note(1700,2200,pitch=64,source='pitch',voice='vocals',id='weak',strength=.2).data()
+    late=Note(7000,7600,pitch=67,source='pitch',voice='vocals',id='late',strength=.9).data()
+    phrase=dict(anchor,end=3500,phrase=True,support=['anchor','weak'],support_coverage=1.,
+        strength=.2,release_reason='vocal_activity_decay')
+    analysis=dict(revision=3,duration=12.,tempo=dict(bpm=120,offset=0,division=4,stable=True),
+        candidates=[anchor,weak,late],phrase_candidates=[phrase],timing_attacks=[],
+        structure=dict(segments=[dict(start_ms=0,end_ms=12000)]))
+    state['settings']=prefs
+    state['analysis']=analysis
+    state['plan']=dict(source='local-audio-recommendation',preferences=prefs,
+        segments=[dict(start_ms=0,end_ms=12000,preferences=dict(phrase_ln=1.))],
+        keys=10,bpm=120,evidence_signature=evidence_signature(analysis))
+    Projects(tmp_path/'projects').save(state)
+
+    try:
+        job=client.post(base+'/generate',json=dict(mode='audio',settings=prefs,bpm=120,
+            offset=0,division=4,timing_confirmed=True),headers=headers).json
+        result=wait_job(client,job)
+        assert result['status']=='done',result
+
+        variant=client.get(base).json['variants'][-1]
+        placed={n['id']:n for n in variant['notes']}
+        assert 'weak' not in placed
+        assert placed['anchor']['end'] < 3000
+        assert variant['source_evidence']['anchor']['expressed']['phrase'] is False
+    finally:
+        app.extensions['executor'].shutdown()
+
+
+def test_legacy_structured_phrase_support_is_reconciled_in_json_export(tmp_path):
+    from manialab.arrange import parameters
+
+    app=create_app(ROOT,tmp_path)
+    client=app.test_client()
+    headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    state=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    anchor=Note(1000,1200,pitch=60,strength=.9,source='pitch',voice='vocals',id='anchor')
+    phrase=Note(1000,2500,pitch=60,strength=.9,source='pitch',voice='vocals',id='anchor',
+        phrase=True,support=('anchor','deleted-candidate'),support_coverage=1.,
+        release_reason='vocal_activity_decay')
+    state['settings']=parameters({'keys':6,'density':8,'ln_ratio':1.,'phrase_ln':1.})
+    state['analysis']=dict(revision=3,duration=4.,tempo=dict(bpm=120,offset=0,division=4,stable=True),
+        candidates=[anchor.data()],phrase_candidates=[phrase.data()],
+        structure=dict(segments=[dict(start_ms=0,end_ms=4000)]))
+    Projects(tmp_path/'projects').save(state)
+    base=f"/api/projects/{state['id']}"
+
+    try:
+        job=client.post(base+'/generate',json=dict(mode='audio',settings=state['settings'],bpm=120,
+            offset=0,division=4,timing_confirmed=True),headers=headers).json
+        result=wait_job(client,job)
+        assert result['status']=='done',result
+
+        exported=client.get(base+'/export/json',headers=headers)
+        assert exported.status_code==200
+        evidence=exported.json['variant']['source_evidence']['anchor']
+        assert evidence['expressed']['phrase'] is True
+        assert evidence['expressed']['support']==['anchor']
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 def test_original_model_requires_confirmation_and_preserves_provided_clock(tmp_path,monkeypatch):
     from manialab.upstream import MapperEngine
     app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
