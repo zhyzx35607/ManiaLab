@@ -993,6 +993,13 @@ def _require_license_zip_payloads(archive, manifest):
 
 def _require_staged_asset_inventory(archive, manifest, declared_capabilities):
     prefix = "ManiaLab/_internal/assets/"
+    if any(
+        tuple(part.casefold() for part in PurePosixPath(info.filename).parts[:3])
+        == ("manialab", "_internal", "models")
+        for info in archive.infolist()
+    ):
+        raise SystemExit("Release ZIP contains an unapproved model directory.")
+
     expected = set(CORE_FILES)
     source_backed = set(CORE_FILES) - {"basic-pitch.onnx"}
 
