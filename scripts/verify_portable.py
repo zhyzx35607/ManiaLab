@@ -228,6 +228,13 @@ def verify_analysis_stem_playback(request, base, state, voices):
         assert request(base + '/waveform?' + query)['sample_rate'] == 22050
 
 
+def basic_analysis_evidence(analysis):
+    return dict(check="basic_analysis", engine="basic",
+                analysis_engine=analysis["engine"],
+                candidates=len(analysis["candidates"]),
+                seconds=analysis["elapsed_seconds"])
+
+
 def verify_core_workflow(request, wait, start, stop, work, source, record):
     imported = request("/api/import", upload=("files", source.name, source.read_bytes()))
     base = "/api/projects/" + imported["id"]
@@ -236,9 +243,7 @@ def verify_core_workflow(request, wait, start, stop, work, source, record):
     state = request(base)
     analysis = state["analysis"]
     assert isinstance(analysis.get("candidates"), list), analysis
-    record(dict(check="basic_analysis", engine=analysis["engine"],
-                       candidates=len(analysis["candidates"]),
-                       seconds=analysis["elapsed_seconds"]))
+    record(basic_analysis_evidence(analysis))
 
     last_notes = None
     for keys in range(6, 11):
