@@ -105,8 +105,8 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
                 state["expression"] = propose_expression(state["analysis"], prefs)
             else:
                 state.pop("expression", None)
-            if state.get("plan", {}).get("source") == "local-audio-recommendation":
-                state.pop("plan", None)
+            # Local and external plans refer to the previous analysis sections.
+            state.pop("plan", None)
             # Keep old variants selectable, but never mask a fresh timing result
             # with the previously selected candidate's BPM / Offset.
             if state["mode"] == "audio":
