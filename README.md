@@ -6,13 +6,13 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.20 · Core profile · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.20)。本版增强候选编辑历史的完整性校验与旧项目迁移，修正结构化生成中段落/乐句证据与过滤后候选的对应，并为 Windows 短暂状态文件读取锁增加有界保存重试。发布包仅含 Core profile：包含固定 Basic Pitch，不含 Demucs checkpoint、Beat This 节拍模型、钢琴专用 ONNX、吉他/Tsumugi 模型或其它非 Core checkpoint；Standard 和 Extended profile 未由本版验证。以上工程修复不代表采音准确率或音乐质量提升。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；随包模型的来源、许可与限制见[第三方声明](THIRD_PARTY_NOTICES.md)。Timing 与真实歌曲音乐质量尚未完成验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.20说明](docs/releases/0.1.0-alpha.6-dev-20.md)。
+**0.1.0-alpha.6-dev.20 · Core profile · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.20)。本版增强候选编辑历史的完整性校验与旧项目迁移，修复弱声部推荐过滤后的表达方案生成和候选切换时表达快照未恢复、状态原子替换后异常清理导致的已提交资源回滚，并为 Windows 状态文件锁增加有界重试、为子进程终止失败增加kill升级。发布包仅含 Core profile：包含固定 Basic Pitch，不含 Demucs checkpoint、Beat This 节拍模型、钢琴专用 ONNX、吉他/Tsumugi 模型或其它非 Core checkpoint；Standard 和 Extended profile 未由本版验证。以上工程修复不代表采音准确率或音乐质量提升。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；随包模型的来源、许可与限制见[第三方声明](THIRD_PARTY_NOTICES.md)。Timing 与真实歌曲音乐质量尚未完成验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.20说明](docs/releases/0.1.0-alpha.6-dev-20.md)。
 
 当前稳定入口： [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
 当前源码和 Windows workflow 的唯一公开支持构建 profile 为 `core`。历史 dev.18、dev.19 Release 保持原有内容和说明；dev.20 仅发布并验证 Core，本地构建 Standard 或 Extended 不表示它们已获公开支持。
 
-dev.20 源码快照包含 dev.19 之后合入的候选历史完整性、乐句来源协调与状态保存可靠性修复。发布源码与验证范围以本页版本及[dev.20说明](docs/releases/0.1.0-alpha.6-dev-20.md)为准；完整工程与音乐验收状态见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。
+dev.20 源码快照包含 dev.19 之后合入的候选历史完整性、乐句来源协调、弱声部生成、候选表达恢复、状态保存事务和子进程清理修复。发布源码与验证范围以本页版本及[dev.20说明](docs/releases/0.1.0-alpha.6-dev-20.md)为准；完整工程与音乐验收状态见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。
 
 2026-11-18 源码已核对真实多难度谱包的编辑与重开，并用两首外部歌曲运行了完整采音到导出流程。结果与试听、试打入口见[工程与音乐验收记录](docs/acceptance-20261118.md)。
 
