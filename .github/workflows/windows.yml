@@ -452,6 +452,7 @@ jobs:
             test-data/core-media-ci/probe.stdout.log
             test-data/core-media-ci/probe.stderr.log
             test-data/release-ci/junit.xml
+            test-data/release-ci/junit.xml.provenance.json
           retention-days: 7
           if-no-files-found: ignore
       - name: Save verified build
