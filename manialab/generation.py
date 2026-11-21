@@ -92,10 +92,12 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
             expression = state.get('expression')
             if not expression or expression.get('source') == 'automatic':
                 expression = propose_expression(
-                    state['analysis'], prefs, segment_preferences=segment_preferences)
+                    state['analysis'], prefs, segment_preferences=segment_preferences,
+                    candidate_evidence=detected, phrase_evidence=phrases)
             validate_expression(expression, state['analysis'])
             evidence, expression_meta, decisions = expression_evidence(
-                state['analysis'], expression, prefs, segment_preferences=segment_preferences)
+                state['analysis'], expression, prefs, segment_preferences=segment_preferences,
+                candidate_evidence=detected, phrase_evidence=phrases)
             phrase_report = dict(used=sum(n.phrase for n in evidence), explanation='由段落声部策略选择连续乐句表达')
             state['expression'] = expression
         else:
