@@ -12,6 +12,7 @@ from dataclasses import replace
 import tempfile
 import threading
 import time
+import zipfile
 
 import numpy as np
 import onnxruntime as ort
@@ -137,7 +138,7 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
                         and str(data["model_identity"]) == model_fingerprint
                         and int(data["inference_revision"]) == BASIC_PITCH_INFERENCE_REVISION):
                     cached = (data["frames"], data["onsets"], data["times"])
-        except (ValueError, KeyError, OSError, EOFError):
+        except (ValueError, KeyError, OSError, EOFError, zipfile.BadZipFile):
             cached = None
     if cached is not None:
         frames, onsets, times = cached
@@ -145,12 +146,31 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     else:
         frames, onsets, times = infer(
             samples, model, progress, cancelled, model_fingerprint)
-        temporary = cache.with_name("activations.pending.npz")
-        np.savez_compressed(
-            temporary, frames=frames, onsets=onsets, times=times,
-            version=WHOLE_AUDIO_ACTIVATION_CACHE_VERSION, audio_sha256=audio_hash,
-            model_identity=model_fingerprint, inference_revision=BASIC_PITCH_INFERENCE_REVISION)
-        temporary.replace(cache)
+        temporary = None
+        try:
+            if cancelled():
+                raise InterruptedError("已取消分析")
+            with tempfile.NamedTemporaryFile(
+                    prefix=f".{cache.name}.", suffix=".pending.npz",
+                    dir=cache.parent, delete=False) as stream:
+                temporary = Path(stream.name)
+                np.savez_compressed(
+                    stream, frames=frames, onsets=onsets, times=times,
+                    version=WHOLE_AUDIO_ACTIVATION_CACHE_VERSION, audio_sha256=audio_hash,
+                    model_identity=model_fingerprint,
+                    inference_revision=BASIC_PITCH_INFERENCE_REVISION)
+            if cancelled():
+                raise InterruptedError("已取消分析")
+            temporary.replace(cache)
+            temporary = None
+        except BaseException as error:
+            if temporary is not None:
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError as cleanup_error:
+                    error.add_note(
+                        f"激活缓存暂存文件无法删除（路径：{temporary}）：{cleanup_error!r}")
+            raise
     if cancelled():
         raise InterruptedError("已取消分析")
     progress(90, "校准瞬态、比较 BPM 候选并检查全曲漂移")
@@ -287,7 +307,8 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
                     cancelled, basic_pitch_model_identity)
                 save_stem_activations(
                     cache, data, separation['audio_sha256'], stem_identity,
-                    basic_pitch_model_identity, BASIC_PITCH_INFERENCE_REVISION)
+                    basic_pitch_model_identity, BASIC_PITCH_INFERENCE_REVISION,
+                    cancelled=cancelled)
             else:
                 cached = True
             pitch_cached.append(cached)

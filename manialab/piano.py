@@ -8,6 +8,7 @@ from math import ceil, gcd
 import hashlib
 import json
 from pathlib import Path
+import zipfile
 
 import numpy as np
 from scipy.signal import resample_poly
@@ -179,7 +180,7 @@ class PianoDetector:
                     if str(data['identity'])==signature:
                         activations={key:data[key] for key in OUTPUTS}
                         continuations=json.loads(str(data['continuations']))
-            except (ValueError,KeyError,OSError,EOFError):
+            except (ValueError,KeyError,OSError,EOFError,zipfile.BadZipFile):
                 activations=None;continuations=[]
         cached=activations is not None
         if not cached:
