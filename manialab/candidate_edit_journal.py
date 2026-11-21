@@ -96,6 +96,8 @@ def pack_state(state):
 
 def unpack_state(state):
     """Restore the existing candidate.edits shape for application code and APIs."""
+    if not isinstance(state, dict):
+        raise ValueError("项目状态格式无效")
     journal = state.get(_JOURNAL, {})
     if not isinstance(journal, dict):
         raise ValueError("候选编辑历史格式无效")
