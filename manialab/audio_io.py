@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import os
 import subprocess
+import tempfile
 import time
 
 import imageio_ffmpeg
@@ -219,5 +220,17 @@ def decode(path, work, *, runner=None, cancelled=None):
         raise ValueError("首版支持不超过 20 分钟的音频")
     if not np.all(np.isfinite(samples)):
         raise ValueError("音频含无效采样值")
-    wavfile.write(Path(work) / "preview.wav", SR, (np.clip(samples, -1, 1) * 32767).astype(np.int16))
+    preview_path = Path(work) / "preview.wav"
+    with tempfile.NamedTemporaryFile(prefix=".preview-", suffix=".wav", dir=preview_path.parent,
+                                     delete=False) as temporary:
+        temporary_path = Path(temporary.name)
+    try:
+        wavfile.write(temporary_path, SR, (np.clip(samples, -1, 1) * 32767).astype(np.int16))
+        os.replace(temporary_path, preview_path)
+    except BaseException:
+        try:
+            temporary_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
     return samples
