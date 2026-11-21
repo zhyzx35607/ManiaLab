@@ -70,7 +70,7 @@ def test_repeated_edits_store_each_event_once_and_keep_full_projection(tmp_path)
             parent = state["variants"][state["active"]]
             response = client.post(base + "/edit", headers=headers, json={
                 "base_created": parent["created"], "op": "update", "note_id": "tap",
-                "values": {"lane": index % parent["settings"]["keys"]},
+                "values": {"lane": (index + 1) % parent["settings"]["keys"]},
             })
             assert _wait_job(client, response)["status"] == "done"
             if index == 7:

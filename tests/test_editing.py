@@ -60,6 +60,44 @@ def test_add_delete_and_explicit_tap_are_distinct_operations():
     assert [n.id for n in result]==['b']
 
 
+@pytest.mark.parametrize(('mode', 'values'), [
+    ('audio', {}),
+    ('audio', {'start': 1001, 'end': 2001, 'lane': 0}),
+    ('remap', {'lane': 0}),
+])
+def test_unchanged_note_does_not_create_a_candidate(tmp_path, mode, values):
+    app = create_app(ROOT, tmp_path)
+    service = app.extensions['task_service']
+    try:
+        client = app.test_client()
+        headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+        imported = client.post('/api/import', headers=headers,
+            data={'files': (io.BytesIO(b'placeholder'), 'audio.wav')})
+        assert imported.status_code == 200
+        store = app.extensions['projects']
+        project = store.load(imported.json['id'])
+        project.update(active=7, variants=[candidate(mode) | {'created': i} for i in range(1, 9)])
+        store.save(project)
+        before = store.load(project['id'])
+        base = '/api/projects/' + project['id']
+        response = client.post(base + '/edit', headers=headers, json={
+            'base_created': 8, 'op': 'update', 'note_id': 'a', 'values': values,
+        })
+        assert response.status_code == 200
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            job = service.get(response.json['id'])
+            if job['status'] in ('done', 'error'):
+                break
+            time.sleep(.01)
+        assert job['status'] == 'error'
+        assert '没有变化' in job['message']
+        assert store.load(project['id']) == before
+        assert client.get(base + '/export/json').json['variant'] == before['variants'][-1]
+    finally:
+        service.shutdown()
+
+
 def test_http_edit_persists_new_candidate_and_exports_actual_correction(tmp_path):
     app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
     project=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'audio.wav')},headers=headers).json
