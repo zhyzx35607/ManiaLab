@@ -271,3 +271,40 @@ def test_http_cancel_during_post_commit_cleanup_keeps_successful_result(stem_pro
     assert recovery['status'] == 'done'
     assert recovery['result'] == {'worker_reused': True}
     assert service._idle.is_set()
+
+
+def test_post_replace_cleanup_error_does_not_roll_back_committed_resource(
+        stem_project, monkeypatch):
+    app, client, headers, pid, upload, saved, roots, previous, old_wav, old_bytes = stem_project
+    projects = app.extensions['projects']
+    service = app.extensions['task_service']
+    state_path = projects.path(pid) / 'state.json'
+    temporary = state_path.with_suffix('.tmp')
+    unlink = Path.unlink
+
+    def fail_if_unlinked_after_replace(path, *args, **kwargs):
+        if path == temporary:
+            raise OSError('synthetic post-replace temporary cleanup failure')
+        return unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, 'unlink', fail_if_unlinked_after_replace)
+    job = upload(4410)
+    result = wait_job(client, job)
+
+    assert result['status'] == 'done'
+    committed = projects.load(pid)
+    new_key = committed['provided_stems']['set_sha256']
+    assert new_key != saved['provided_stems']['set_sha256']
+    assert (roots[1] / new_key / 'separation.json').is_file()
+    assert (roots[1] / new_key / 'piano.wav').is_file()
+    assert previous[0] <= set(roots[0].iterdir())
+    assert previous[1] <= set(roots[1].iterdir())
+    assert old_wav.read_bytes() == old_bytes
+    assert service._idle.is_set()
+
+    monkeypatch.setattr(Path, 'unlink', unlink)
+    recovered = service.submit(pid, lambda *_: {'worker_reused': True})
+    recovery = wait_job(client, recovered)
+    assert recovery['status'] == 'done'
+    assert recovery['result'] == {'worker_reused': True}
+    assert service._idle.is_set()
