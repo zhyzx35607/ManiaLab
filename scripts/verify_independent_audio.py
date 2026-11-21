@@ -123,6 +123,13 @@ def successful(response):
     return response
 
 
+def variant_selection_payload(saved, index):
+    candidate_id = saved["variants"][index].get("candidate_id")
+    check(isinstance(candidate_id, str) and candidate_id,
+          "Saved candidate has no persistent identity")
+    return {"index": index, "candidate_id": candidate_id}
+
+
 def task(client, url, payload, headers):
     request = successful(client.post(url, json=payload, headers=headers)).get_json()
     last = -1
@@ -194,7 +201,8 @@ def run_case(client, headers, work, name, locked):
             result = task(client, base + "/generate", payload, headers)
             check(result["status"] == "done", f"{name}-{keys}K: {result['message']}")
         elif index != saved["active"]:
-            successful(client.post(base + "/variant", headers=headers, json={"index": index}))
+            successful(client.post(base + "/variant", headers=headers,
+                                   json=variant_selection_payload(saved, index)))
         saved = state()
         variant = saved["variants"][saved["active"]]
         notes = variant["notes"]

@@ -60,7 +60,8 @@ def test_project_routes_keep_endpoints_and_chart_variant_state(tmp_path):
             {"settings": {"keys": 8}, "notes": []},
         ]
         projects.save(state)
-        selected = client.post(f"/api/projects/{project_id}/variant", json={"index": 1}, headers=headers)
+        selected = client.post(f"/api/projects/{project_id}/variant", json={
+            "index": 1, "candidate_id": state["variants"][1]["candidate_id"]}, headers=headers)
         assert selected.status_code == 200, selected.json
         assert selected.json["active"] == 1
         assert selected.json["settings"]["keys"] == 8
@@ -73,6 +74,58 @@ def test_project_routes_keep_endpoints_and_chart_variant_state(tmp_path):
         assert client.get(f"/api/projects/{project_id}/audio").data == b"stale"
         again = client.post(f"/api/projects/{project_id}/chart", json={"path": "b.osu"}, headers=headers)
         assert again.json == selected.json
+    finally:
+        app.extensions["executor"].shutdown()
+
+
+def test_variant_switch_rejects_stale_candidate_identity_without_mutating_project(tmp_path):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    try:
+        imported = client.post("/api/import", data={
+            "files": (io.BytesIO(b"synthetic audio"), "song.wav")}, headers=headers)
+        assert imported.status_code == 200, imported.json
+        project_id = imported.json["id"]
+        projects = app.extensions["projects"]
+        candidate_ids = [f"{index:032x}" for index in range(1, 10)]
+        state = projects.load(project_id)
+        state["variants"] = [
+            {"candidate_id": candidate_id, "settings": {"keys": index + 4},
+             "notes": [], "selection": {}}
+            for index, candidate_id in enumerate(candidate_ids[:8])
+        ]
+        state["active"] = 0
+        projects.save(state)
+        stale_candidate_id = state["variants"][0]["candidate_id"]
+
+        state = projects.load(project_id)
+        state["variants"] = (state["variants"] + [{
+            "candidate_id": candidate_ids[8], "settings": {"keys": 12},
+            "notes": [], "selection": {},
+        }])[-8:]
+        state["active"] = len(state["variants"]) - 1
+        projects.save(state)
+        before = projects.load(project_id)
+        assert before["variants"][0]["candidate_id"] == candidate_ids[1]
+
+        stale_requests = [
+            {"index": 0},
+            {"index": 0, "candidate_id": stale_candidate_id},
+            {"index": 1, "candidate_id": candidate_ids[1]},
+        ]
+        for payload in stale_requests:
+            response = client.post(
+                f"/api/projects/{project_id}/variant", json=payload, headers=headers)
+            assert response.status_code == 400, response.json
+            assert projects.load(project_id) == before
+
+        selected = client.post(f"/api/projects/{project_id}/variant", json={
+            "index": 0, "candidate_id": candidate_ids[1]}, headers=headers)
+        assert selected.status_code == 200, selected.json
+        assert selected.json["active"] == 0
+        assert selected.json["variants"][0]["candidate_id"] == candidate_ids[1]
+        assert selected.json["settings"]["keys"] == 5
     finally:
         app.extensions["executor"].shutdown()
 

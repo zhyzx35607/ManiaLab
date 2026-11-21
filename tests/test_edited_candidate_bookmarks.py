@@ -175,7 +175,8 @@ def test_late_edit_for_deselected_candidate_does_not_change_active_exports(tmp_p
         assert edited_state["variants"][0] == first
         assert edited_state["variants"][1] == second
 
-        selected = client.post(base + "/variant", json={"index": 0}, headers=headers)
+        selected = client.post(base + "/variant", json={
+            "index": 0, "candidate_id": first["candidate_id"]}, headers=headers)
         assert selected.status_code == 200, selected.json
         before = client.get(base).json
         assert before["active"] == 0

@@ -128,7 +128,8 @@ def test_variant_switch_restores_expression_for_regional_rewrite_and_json_export
             'vocal-early','piano-early','vocal-late','piano-late'}
         assert second['variants'][1]['selection']['expression']==onsets
 
-        selected=client.post(base+'/variant',headers=headers,json={'index':0})
+        selected=client.post(base+'/variant',headers=headers,json={
+            'index':0,'candidate_id':first['variants'][0]['candidate_id']})
         assert selected.status_code==200,selected.json
         assert selected.json['expression']==omit
         exported=client.get(base+'/export/json',headers=headers)

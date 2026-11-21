@@ -245,7 +245,7 @@ async function switchSavedSelection(kind,payload){
   finally{$('charts').value=state.original||'';$('variants').value=state.active;setBusy(false);}
 }
 $('charts').onchange=guarded(e=>switchSavedSelection('chart',{path:e.target.value}));
-$('variants').onchange=guarded(e=>switchSavedSelection('variant',{index:Number(e.target.value)}));
+$('variants').onchange=guarded(e=>{const index=Number(e.target.value);return switchSavedSelection('variant',{index,candidate_id:state?.variants[index]?.candidate_id});});
 $('analyze').onclick=guarded(()=>runJob('analyze',{settings:settings(),engine:$('analysisEngine').value,piano_engine:window.pianoSelection?.()||'general',...(window.instrumentSelection?.()||{instrument_engine:'general',allow_predicted_releases:false}),...(window.guitarSelection?.()||{guitar_engine:'general',allow_guitar_predicted_releases:false}),audio_shift_ms:clockShift()}));$('generate').onclick=guarded(()=>generate());
 $('another').onclick=guarded(()=>{$('seed').value=Math.floor(Math.random()*2147483647);return generate();});
 $('regenerate').onclick=guarded(()=>generate([Number($('regionStart').value)*1000,Number($('regionEnd').value)*1000]));

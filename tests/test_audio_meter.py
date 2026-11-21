@@ -161,7 +161,9 @@ def test_fixed_meter_survives_edit_reanalysis_selection_region_and_both_export_f
         manual = run("generate", {"bpm": 150, "offset": 193, "timing_confirmed": True, "settings": {"keys": 6}})
         assert manual["meter"] == 4
         audition(4, 193)
-        assert client.post(base + "/variant", headers=headers, json={"index": 0}).status_code == 200
+        first_candidate_id = client.get(base).json["variants"][0]["candidate_id"]
+        assert client.post(base + "/variant", headers=headers,
+                           json={"index": 0, "candidate_id": first_candidate_id}).status_code == 200
         audition(3)
         # An old saved candidate has its original four-beat header even when current evidence says three.
         state = projects.load(pid)
