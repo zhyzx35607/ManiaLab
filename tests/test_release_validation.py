@@ -756,6 +756,37 @@ def test_collect_rejects_extra_source_key_before_hashing_its_in_root_file(tmp_pa
     assert sentinel not in hashed_paths
 
 
+@pytest.mark.parametrize(('profile', 'expected_locks'), (
+    ('core', {'requirements-lock.txt'}),
+    ('standard', {'requirements-lock.txt', 'requirements-deep-lock.txt'}),
+    ('extended', {'requirements-lock.txt', 'requirements-deep-lock.txt'}),
+))
+def test_collector_requires_profile_dependency_lock_sources(profile, expected_locks):
+    enabled = capabilities(profile)
+    paths = collect_release_validation.source_snapshot_paths(ROOT, enabled)
+    source_keys = {path.relative_to(ROOT).as_posix() for path in paths}
+    sources = {key: 'a' * 64 for key in source_keys}
+
+    assert expected_locks.issubset(source_keys)
+    collect_release_validation._require_source_snapshot_keys(sources, ROOT, enabled)
+
+    for required_lock in expected_locks:
+        incomplete_sources = dict(sources)
+        del incomplete_sources[required_lock]
+        with pytest.raises(SystemExit, match='source snapshot key inventory'):
+            collect_release_validation._require_source_snapshot_keys(
+                incomplete_sources, ROOT, enabled
+            )
+
+    if profile == 'core':
+        unexpected_sources = dict(sources)
+        unexpected_sources['requirements-deep-lock.txt'] = 'b' * 64
+        with pytest.raises(SystemExit, match='source snapshot key inventory'):
+            collect_release_validation._require_source_snapshot_keys(
+                unexpected_sources, ROOT, enabled
+            )
+
+
 @pytest.mark.parametrize("mutation", ("missing", "noncanonical", "invalid_digest"))
 def test_collect_rejects_invalid_source_snapshot_keys_before_source_hashing(
     tmp_path, monkeypatch, mutation
