@@ -1,4 +1,5 @@
 """User-supplied source audio on the original song clock, without reseparation."""
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -57,6 +58,30 @@ def _remove_path(path):
         path.unlink(missing_ok=True)
 
 
+@contextmanager
+def _provided_inputs(work):
+    directory = tempfile.TemporaryDirectory(prefix='.provided-inputs-', dir=work)
+    snapshot = Path(directory.name)
+    primary_error = None
+    try:
+        yield snapshot
+    except BaseException as error:
+        primary_error = error
+        raise
+    finally:
+        try:
+            directory.cleanup()
+        except OSError as cleanup_error:
+            error = primary_error if primary_error is not None else cleanup_error
+            if primary_error is not None:
+                error.add_note(f'声轨输入快照无法删除：{cleanup_error!r}')
+            error.add_note(
+                f'ManiaLab恢复提示：声轨输入快照无法删除（{cleanup_error!r}）；'
+                f'请手动删除残留目录，路径：{snapshot}。')
+            if primary_error is None:
+                raise
+
+
 def _install_snapshot(staging, folder, on_new_folder):
     if not folder.exists():
         staging.replace(folder)
@@ -87,8 +112,7 @@ def prepare_provided_stems(mix, sources, work, progress=lambda p,s:None, cancell
     """Hash and decode one private snapshot of the mix and every supplied stem."""
     if not sources or set(sources)-set(VOICES):raise ValueError('至少选择一个有效声部')
     work=Path(work)
-    with tempfile.TemporaryDirectory(prefix='.provided-inputs-',dir=work) as temporary_inputs:
-        snapshot_dir=Path(temporary_inputs)
+    with _provided_inputs(work) as snapshot_dir:
         mix_path=Path(mix)
         mix_snapshot=snapshot_dir/('mix'+mix_path.suffix)
         mix_hash=_copy_snapshot(mix_path,mix_snapshot,cancelled)

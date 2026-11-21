@@ -2,9 +2,11 @@
 import io
 import os
 from pathlib import Path
+import threading
 import time
 import wave
 
+import numpy as np
 import pytest
 
 from manialab.chart_workspace import audio_work
@@ -34,6 +36,93 @@ def _finished(client, job):
             return result
         time.sleep(.01)
     pytest.fail('Synthetic stem import did not finish')
+
+
+@pytest.mark.parametrize('failure', ['cancelled', 'decode-failed', 'prepared'])
+def test_provided_input_snapshot_cleanup_reports_path_without_committing(
+        tmp_path, monkeypatch, failure):
+    from manialab import provided_stems
+
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    service = app.extensions['task_service']
+    projects = app.extensions['projects']
+    headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+    snapshots = set()
+    entered, proceed = threading.Event(), threading.Event()
+    remove = provided_stems.shutil.rmtree
+
+    def upload(pid):
+        response = client.post(f'/api/projects/{pid}/provided-stems', headers=headers,
+            data={'piano': (io.BytesIO(b'synthetic piano'), 'piano.wav')})
+        assert response.status_code == 200, response.json
+        return response.json
+
+    def fake_decode(path, work, *, cancelled):
+        snapshots.add(Path(path).parent)
+        if failure == 'cancelled':
+            entered.set()
+            assert proceed.wait(5)
+            assert cancelled()
+            raise InterruptedError('已取消声轨导入')
+        if failure == 'decode-failed':
+            raise ValueError('synthetic invalid stem')
+        return np.zeros(800, dtype=np.float32)
+
+    def fail_snapshot_cleanup(path, *args, **kwargs):
+        if Path(path) in snapshots:
+            raise PermissionError('synthetic input snapshot is locked')
+        return remove(path, *args, **kwargs)
+
+    try:
+        imported = client.post('/api/import', headers=headers,
+            data={'files': (io.BytesIO(b'synthetic mix'), 'mix.wav')})
+        assert imported.status_code == 200, imported.json
+        pid = imported.json['id']
+        saved = projects.load(pid)
+        saved['analysis'] = {'sentinel': 'keep the previous analysis'}
+        projects.save(saved)
+        work = audio_work(projects.path(pid), saved)
+        with monkeypatch.context() as patched:
+            patched.setattr(provided_stems, 'decode', fake_decode)
+            patched.setattr(provided_stems.shutil, 'rmtree', fail_snapshot_cleanup)
+            job = upload(pid)
+            if failure == 'cancelled':
+                try:
+                    assert entered.wait(5)
+                    response = client.post(f"/api/jobs/{job['id']}/cancel", headers=headers)
+                    assert response.status_code == 200, response.json
+                finally:
+                    proceed.set()
+            result = _finished(client, job)
+
+        snapshot, = snapshots
+        assert result['status'] == 'error'
+        assert result['cancel'] is (failure == 'cancelled')
+        assert result['cleanup_failed'] is True
+        assert str(snapshot) in result['message']
+        assert '请手动删除' in result['message']
+        assert 'synthetic input snapshot is locked' in result['message']
+        if failure == 'cancelled':
+            assert '已取消声轨导入' in result['message']
+            assert '取消后资源清理失败' in result['message']
+        if failure == 'decode-failed':
+            assert 'synthetic invalid stem' in result['message']
+        assert (snapshot / 'mix.wav').read_bytes() == b'synthetic mix'
+        assert (snapshot / 'piano.wav').read_bytes() == b'synthetic piano'
+        assert projects.load(pid) == saved
+        assert not list((work / 'provided-uploads').iterdir())
+        assert not list((work / 'stems-provided').iterdir())
+
+        monkeypatch.setattr(provided_stems, 'decode', lambda *args, **kwargs: np.zeros(800, dtype=np.float32))
+        recovered = _finished(client, upload(pid))
+        assert recovered['status'] == 'done', recovered
+        assert not recovered.get('cleanup_failed', False)
+        assert projects.load(pid)['provided_stems']['voices'] == ['piano']
+        assert service.shutdown() is False
+    finally:
+        proceed.set()
+        service.shutdown()
 
 
 @pytest.mark.parametrize('failure', ['cancelled', 'save-failed'])
