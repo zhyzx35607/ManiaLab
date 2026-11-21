@@ -54,7 +54,14 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
             snapshot_backup = publication.get("snapshot_backup")
             if committed:
                 if snapshot_backup is not None:
-                    snapshot_backup.unlink(missing_ok=True)
+                    try:
+                        snapshot_backup.unlink(missing_ok=True)
+                    except OSError as error:
+                        if snapshot_backup.exists():
+                            error.add_note(
+                                f"ManiaLab恢复提示：结果已保存；旧工作区快照备份尚未清理，"
+                                f"路径为 {snapshot_backup}。")
+                        raise
                 return
             failures = []
             chart_path = publication.get("chart_path")
@@ -70,6 +77,10 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
                     elif publication.get("archive_attempted") and not publication["snapshot_existed"]:
                         snapshot_path.unlink(missing_ok=True)
                 except OSError as error:
+                    if snapshot_backup is not None and snapshot_backup.exists():
+                        error.add_note(
+                            f"ManiaLab恢复提示：旧工作区快照未能恢复；备份仍在 "
+                            f"{snapshot_backup}，目标路径为 {snapshot_path}。请保留备份并核对项目状态。")
                     failures.append(error)
                 if not publication["snapshot_parent_existed"]:
                     try:
