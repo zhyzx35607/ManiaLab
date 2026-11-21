@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 import threading
@@ -129,3 +130,17 @@ def test_recent_returns_only_the_most_recent_thirty_projects(tmp_path):
 
     assert len(recent) == 30
     assert [project["id"] for project in recent] == list(reversed(project_ids[1:]))
+
+
+def test_legacy_candidates_receive_distinct_persistent_ids(tmp_path):
+    projects, project_id, state_path, _ = project_with_saved_state(tmp_path)
+    legacy = json.loads(state_path.read_text(encoding="utf-8"))
+    legacy.update(variants=[{"created": 1.0}, {"created": 1.0}], active=1)
+    state_path.write_text(json.dumps(legacy), encoding="utf-8")
+
+    state = projects.load(project_id)
+    ids = [variant["candidate_id"] for variant in state["variants"]]
+    assert len(set(ids)) == 2
+    assert [variant["candidate_id"] for variant in
+            json.loads(state_path.read_text(encoding="utf-8"))["variants"]] == ids
+    assert Projects(projects.root).load(project_id) == state

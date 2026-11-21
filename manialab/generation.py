@@ -8,6 +8,7 @@ import math
 import time
 
 from .arrange import assign_lanes, layout_metrics
+from .candidate_identity import new_candidate_id
 from .candidate_selection import select_notes
 from .domain import note_from, validate, upstream_events
 from .timing import align_candidates, chart_clock_notes, grid_report, analysis_timing_diagnostics
@@ -169,7 +170,8 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
     timing_diagnostics = analysis_timing_diagnostics(state.get('analysis', {}), tempo) if mode == 'audio' else None
     if region is not None:
         selection = regional_selection_report(selection, output, locked)
-    variant = dict(notes=[n.data() for n in output], settings=prefs, mode=mode, report=report, selection=selection,
+    variant = dict(candidate_id=new_candidate_id(), notes=[n.data() for n in output], settings=prefs,
+                   mode=mode, report=report, selection=selection,
                    bpm=tempo["bpm"], offset=tempo["offset"], division=tempo["division"],
                    audio_shift_ms=tempo["audio_shift_ms"],
                    timing_revision=3,

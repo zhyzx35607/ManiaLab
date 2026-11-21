@@ -6,6 +6,7 @@ import time
 from flask import request
 
 from .arrange import layout_metrics, parameters
+from .candidate_identity import new_candidate_id
 from .audio_io import decode
 from .chart_workspace import archive_active_chart, audio_work, chart_workspace_snapshot_path
 from .domain import clean_meta, parse_osu, upstream_events, validate
@@ -147,7 +148,8 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
             if warnings:
                 message += "\n原模型警告（可能包含未配对并被上游丢弃的 LN）：\n" + "\n".join(warnings)
             variant = dict(
-                notes=[note.data() for note in assigned], settings=prefs, mode="remap", report=report,
+                candidate_id=new_candidate_id(), notes=[note.data() for note in assigned],
+                settings=prefs, mode="remap", report=report,
                 selection={
                     "message": message, "upstream_warnings": warnings, "alignment": alignment,
                     "layout_origin": "mapperatorinator",

@@ -5,11 +5,13 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import threading
 import time
 import uuid
 import zipfile
 
 from .candidate_edit_journal import pack_state, unpack_state
+from .candidate_identity import ensure_candidate_ids
 
 AUDIO = {".mp3", ".ogg", ".wav", ".flac", ".m4a", ".opus", ".aac"}
 ASSETS = AUDIO | {".osu", ".jpg", ".jpeg", ".png", ".webp", ".bmp"}
@@ -133,6 +135,7 @@ class Projects:
     def __init__(self, root):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
+        self._state_lock = threading.RLock()
 
     def path(self, project_id):
         if not re.fullmatch(r"[0-9a-f]{32}", project_id):
@@ -151,20 +154,30 @@ class Projects:
         return project_id, path
 
     def save(self, state):
-        path = self.path(state["id"]) / "state.json"
-        temporary = path.with_suffix(".tmp")
-        replaced = False
-        try:
-            temporary.write_text(json.dumps(pack_state(state), ensure_ascii=False), encoding="utf-8")
-            _replace_state_with_retry(temporary, path)
-            replaced = True
-        finally:
-            if not replaced:
-                temporary.unlink(missing_ok=True)
+        with self._state_lock:
+            ensure_candidate_ids(state)
+            path = self.path(state["id"]) / "state.json"
+            temporary = path.with_suffix(".tmp")
+            replaced = False
+            try:
+                temporary.write_text(json.dumps(pack_state(state), ensure_ascii=False), encoding="utf-8")
+                _replace_state_with_retry(temporary, path)
+                replaced = True
+            finally:
+                if not replaced:
+                    temporary.unlink(missing_ok=True)
 
     def load(self, project_id):
-        state = json.loads((self.path(project_id) / "state.json").read_text(encoding="utf-8"))
-        return unpack_state(state)
+        path = self.path(project_id) / "state.json"
+        state = unpack_state(json.loads(path.read_text(encoding="utf-8")))
+        if not ensure_candidate_ids(state):
+            return state
+        # Read the latest snapshot under the save lock before migrating legacy data.
+        with self._state_lock:
+            state = unpack_state(json.loads(path.read_text(encoding="utf-8")))
+            if ensure_candidate_ids(state):
+                self.save(state)
+            return state
 
     def recent(self):
         paths = sorted(self.root.glob("*/state.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:30]
