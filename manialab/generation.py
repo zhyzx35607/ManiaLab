@@ -23,11 +23,34 @@ from .recommendation_plan import adjusted_segments, plan_evidence, validate_plan
 from .stems import separation_identity
 
 
+def _analysis_audio_identity(analysis):
+    identity = analysis.get('audio_sha256')
+    if isinstance(identity, str) and identity:
+        return identity
+    separation = analysis.get('separation')
+    identity = separation.get('audio_sha256') if isinstance(separation, dict) else None
+    return identity if isinstance(identity, str) and identity else None
+
+
+def _candidate_audio_identity(variant):
+    if 'source_audio_sha256' in variant:
+        identity = variant.get('source_audio_sha256')
+        return identity if isinstance(identity, str) and identity else None
+    source = variant.get('source_separation')
+    separation = source.get('separation') if isinstance(source, dict) else None
+    identity = separation.get('audio_sha256') if isinstance(separation, dict) else None
+    return identity if isinstance(identity, str) and identity else None
+
+
 def generate_variant(state, payload, prefs, tempo, progress, cancelled):
     mode = payload.get("mode", "audio")
     region = payload.get("region")
     if region is not None and mode == 'audio' and state.get('active', -1) >= 0:
         previous = state['variants'][state['active']]
+        previous_audio_identity = _candidate_audio_identity(previous)
+        current_audio_identity = _analysis_audio_identity(state.get('analysis') or {})
+        if previous_audio_identity != current_audio_identity:
+            raise ValueError('局部重写不能混用不同或未知的声轨来源；请先重新生成整谱')
         previous_source = previous.get('source_separation')
         current_separation = (state.get('analysis') or {}).get('separation')
         previous_identity = None
@@ -154,6 +177,14 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
                        if region is not None else dict(kind='full_song_generation'),
                    event_count=len(upstream_events(output)))
     if mode == 'audio':
+        source_audio_identity = _analysis_audio_identity(state['analysis'])
+        if region is not None:
+            previous = state['variants'][state['active']]
+            previous_audio_identity = _candidate_audio_identity(previous)
+            if (previous_audio_identity is None or source_audio_identity is None
+                    or previous_audio_identity != source_audio_identity):
+                source_audio_identity = None
+        variant['source_audio_sha256'] = source_audio_identity
         variant["meter"] = previous_meter if region is not None else (
             tempo["meter"] if "meter" in tempo else meter_for_clock(state["analysis"], tempo))
         variant['source_evidence'] = capture_source_evidence(state['analysis'], evidence, output,

@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 import numpy as np
 import pytest
@@ -130,6 +131,210 @@ def test_audio_analysis_streams_identity_hash_and_reuses_cache(tmp_path, monkeyp
     sixth = analyze(source, tmp_path, model_b, parameters())
     assert not fifth["cached"] and sixth["cached"]
     assert len(inferred) == 3
+
+
+def test_audio_decode_and_cache_identity_use_the_same_snapshot(tmp_path, monkeypatch):
+    source = tmp_path / "source.wav"
+    source_a, source_b = b"synthetic source A", b"synthetic source B"
+    source.write_bytes(source_a)
+    decoded = []
+    inferred = []
+    replaced = False
+
+    def decode_snapshot(path, work, cancelled=None):
+        nonlocal replaced
+        path = Path(path)
+        assert path != source and path.suffix == source.suffix
+        payload = path.read_bytes()
+        decoded.append(payload)
+        if not replaced:
+            source.write_bytes(source_b)
+            replaced = True
+        return np.full(SR, 0.1 if payload == source_a else 0.2, dtype=np.float32)
+
+    def fake_infer(samples, *args, **kwargs):
+        inferred.append(float(samples[0]))
+        values = np.full((1, 88), samples[0], dtype=np.float32)
+        return values, values.copy(), np.zeros(1, dtype=np.float64)
+
+    monkeypatch.setattr(audio, "decode", decode_snapshot)
+    monkeypatch.setattr(audio, "infer", fake_infer)
+    monkeypatch.setattr(audio, "rhythmic_evidence", lambda *args, **kwargs: ([], {}))
+    monkeypatch.setattr(audio, "pitched_notes", lambda *args, **kwargs: [])
+    monkeypatch.setattr(audio, "refine_releases", lambda notes, samples: (notes, {}))
+    monkeypatch.setattr(audio, "fuse_attacks", lambda notes, attacks: (notes, [], 0))
+    monkeypatch.setattr(
+        "manialab.structure.detect_structure",
+        lambda analysis, samples, sample_rate, **kwargs: {"segments": []},
+    )
+
+    model = tmp_path / "missing-model.onnx"
+    first = analyze(source, tmp_path, model, parameters())
+    assert first["audio_sha256"] == hashlib.sha256(source_a).hexdigest()
+    assert not list(tmp_path.glob(".analysis-input-*"))
+
+    second = analyze(source, tmp_path, model, parameters())
+    assert second["audio_sha256"] == hashlib.sha256(source_b).hexdigest()
+    assert decoded == [source_a, source_b]
+    assert inferred == pytest.approx([0.1, 0.2])
+    assert not first["cached"] and not second["cached"]
+    assert not list(tmp_path.glob(".analysis-input-*"))
+
+
+def test_audio_snapshot_is_removed_after_copy_cancellation_and_decode_error(tmp_path, monkeypatch):
+    from manialab.audio import _audio_snapshot
+
+    source = tmp_path / "large-source.wav"
+    source.write_bytes(b"x" * (2 * 1024 * 1024 + 1))
+    checks = 0
+
+    def cancel_during_copy():
+        nonlocal checks
+        checks += 1
+        return checks == 2
+
+    with pytest.raises(InterruptedError, match="快照"):
+        with _audio_snapshot(source, tmp_path, cancel_during_copy):
+            pytest.fail("cancelled snapshot must not be yielded")
+    assert not list(tmp_path.glob(".analysis-input-*"))
+
+    monkeypatch.setattr(audio, "decode", lambda *args, **kwargs: (_ for _ in ()).throw(
+        RuntimeError("synthetic decode failure")))
+    with pytest.raises(RuntimeError, match="synthetic decode failure"):
+        analyze(source, tmp_path, tmp_path / "missing-model.onnx", parameters())
+    assert not list(tmp_path.glob(".analysis-input-*"))
+
+
+def test_audio_snapshot_preserves_body_error_when_cleanup_fails(tmp_path, monkeypatch):
+    from manialab.audio import _audio_snapshot
+
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"synthetic source")
+    missing = tmp_path / "missing.wav"
+
+    with pytest.raises(FileNotFoundError):
+        with _audio_snapshot(missing, tmp_path, lambda: False):
+            pytest.fail("missing source must not yield a snapshot")
+    assert not list(tmp_path.glob(".analysis-input-*"))
+
+    real_unlink = Path.unlink
+    cleanup_targets = []
+
+    def fail_snapshot_cleanup(path, *args, **kwargs):
+        if path.name.startswith(".analysis-input-"):
+            cleanup_targets.append(path)
+            raise OSError("synthetic cleanup failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_snapshot_cleanup)
+    body_error = RuntimeError("synthetic body failure")
+    try:
+        with pytest.raises(RuntimeError, match="synthetic body failure") as raised:
+            with _audio_snapshot(source, tmp_path, lambda: False):
+                raise body_error
+
+        assert raised.value is body_error
+        assert len(cleanup_targets) == 1
+        assert any("synthetic cleanup failure" in note
+                   for note in raised.value.__notes__)
+        assert any(str(cleanup_targets[0]) in note
+                   for note in raised.value.__notes__)
+        assert cleanup_targets[0].parent == tmp_path
+    finally:
+        for path in cleanup_targets:
+            real_unlink(path, missing_ok=True)
+
+
+def test_audio_snapshot_reports_normal_exit_cleanup_failure(tmp_path, monkeypatch):
+    from manialab.audio import _audio_snapshot
+
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"synthetic source")
+    real_unlink = Path.unlink
+    cleanup_targets = []
+
+    def fail_snapshot_cleanup(path, *args, **kwargs):
+        if path.name.startswith(".analysis-input-"):
+            cleanup_targets.append(path)
+            raise OSError("synthetic cleanup failure")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_snapshot_cleanup)
+    try:
+        with pytest.raises(OSError, match="synthetic cleanup failure") as raised:
+            with _audio_snapshot(source, tmp_path, lambda: False) as (snapshot, _):
+                assert snapshot.exists()
+
+        assert len(cleanup_targets) == 1
+        assert raised.value.__notes__ == [
+            f"分析音频快照无法删除（路径：{cleanup_targets[0]}）"]
+        assert cleanup_targets[0].exists()
+    finally:
+        for path in cleanup_targets:
+            real_unlink(path, missing_ok=True)
+
+
+def test_deep_analysis_decodes_and_separates_the_same_audio_snapshot(tmp_path, monkeypatch):
+    source = tmp_path / "mix.wav"
+    source_a, source_b = b"synthetic mix A", b"synthetic mix B"
+    source.write_bytes(source_a)
+    expected_hash = hashlib.sha256(source_a).hexdigest()
+    calls = []
+    samples = np.full(SR, 0.2, dtype=np.float32)
+    separation = dict(source='provided', voices=['drums'], audio_sha256=expected_hash,
+        set_sha256='a' * 64, model_sha256='a' * 64, cached=True)
+    np.save(tmp_path / 'drums.npy', samples, allow_pickle=False)
+
+    def decode_snapshot(path, work, cancelled=None):
+        path = Path(path)
+        calls.append(('decode', path, path.read_bytes()))
+        assert path != source
+        source.write_bytes(source_b)
+        return samples
+
+    class Separator:
+        def separate(self, path, work, progress, cancelled):
+            path = Path(path)
+            calls.append(('separate', path, path.read_bytes()))
+            return tmp_path, separation
+
+    monkeypatch.setattr(audio, 'decode', decode_snapshot)
+    monkeypatch.setattr(audio, 'rhythmic_evidence', lambda *args, **kwargs: ([], {'bpm': 120}))
+    monkeypatch.setattr(audio, 'source_evidence', lambda notes, *args: (notes, 0))
+    monkeypatch.setattr(audio, 'reject_source_bleed', lambda notes, *args: (notes, []))
+    monkeypatch.setattr(audio, 'timing_evidence_quality', lambda tempo: {'coverage': 0, 'score': 0})
+    monkeypatch.setattr(
+        'manialab.structure.detect_structure',
+        lambda analysis, samples, sample_rate, **kwargs: {'segments': []},
+    )
+
+    result = audio.analyze_deep(source, tmp_path, tmp_path / 'missing-model.onnx',
+        parameters(), Separator())
+
+    assert calls[0][0] == 'decode' and calls[1][0] == 'separate'
+    assert calls[0][1] == calls[1][1]
+    assert calls[0][2] == calls[1][2] == source_a
+    assert source.read_bytes() == source_b
+    assert result['audio_sha256'] == result['separation']['audio_sha256'] == expected_hash
+    assert not calls[0][1].exists()
+    assert not list(tmp_path.glob('.analysis-input-*'))
+
+
+def test_deep_analysis_rejects_separation_for_a_different_audio_identity(tmp_path, monkeypatch):
+    source = tmp_path / 'mix.wav'
+    source.write_bytes(b'synthetic mix')
+    monkeypatch.setattr(audio, 'decode', lambda *args, **kwargs: np.zeros(SR, dtype=np.float32))
+
+    class MismatchedSeparator:
+        def separate(self, path, work, progress, cancelled):
+            return tmp_path, dict(source='provided', voices=['drums'], audio_sha256='0' * 64,
+                                  set_sha256='a' * 64, model_sha256='a' * 64, cached=True)
+
+    with pytest.raises(ValueError, match='声部来源摘要与音频快照不匹配'):
+        audio.analyze_deep(source, tmp_path, tmp_path / 'missing-model.onnx',
+                           parameters(), MismatchedSeparator())
+
+    assert not list(tmp_path.glob('.analysis-input-*'))
 
 
 def test_silence():

@@ -1,5 +1,6 @@
 """Real application routing and API controls; no neural model is loaded."""
 from dataclasses import replace
+import hashlib
 import io
 from pathlib import Path
 import time
@@ -19,12 +20,15 @@ ROOT=Path(__file__).resolve().parents[1]
 @pytest.mark.parametrize('specialist',[False,True])
 def test_application_routes_only_selected_bass_other_and_keeps_energy_filter(tmp_path,monkeypatch,specialist):
     mixture=np.full(audio.SR,.2,dtype=np.float32)
+    mix_path=tmp_path/'mix.wav'
+    mix_path.write_bytes(b'synthetic mix')
+    mix_sha256=hashlib.sha256(b'synthetic mix').hexdigest()
     roles=['bass','vocals','other','guitar']
     for i,voice in enumerate(roles):
         stem=np.full(audio.SR,.1*(i+1),dtype=np.float32)
         if voice=='bass':stem[int(.45*audio.SR):int(.6*audio.SR)]=0
         np.save(tmp_path/(voice+'.npy'),stem)
-    separation=dict(source='provided',voices=roles,audio_sha256='audio',set_sha256='stems',cached=True)
+    separation=dict(source='provided',voices=roles,audio_sha256=mix_sha256,set_sha256='stems',cached=True)
     class Sources:
         def separate(self,*args):return tmp_path,separation
     special_calls=[]
@@ -51,7 +55,7 @@ def test_application_routes_only_selected_bass_other_and_keeps_energy_filter(tmp
     monkeypatch.setattr('manialab.voices.vocal_phrases',lambda *args:[])
     monkeypatch.setattr('manialab.structure.detect_structure',
                         lambda *args,**kwargs:dict(segments=[dict(start_ms=0,end_ms=1000)]))
-    result=audio.analyze_deep(Path('mix'),tmp_path,Path('unused.onnx'),parameters(),Sources(),
+    result=audio.analyze_deep(mix_path,tmp_path,Path('unused.onnx'),parameters(),Sources(),
         instrument_detector=Specialist() if specialist else None,allow_predicted_releases=specialist)
     assert len(generic_calls)==len(refinements)==len(fusions)==(2 if specialist else 4)
     assert result['instrument_engine']==('tsumugi' if specialist else 'general')

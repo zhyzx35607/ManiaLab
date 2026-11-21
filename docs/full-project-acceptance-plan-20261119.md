@@ -1,6 +1,6 @@
 # ManiaLab 全项目验收计划
 
-更新：2026-11-20。目标不是用一次大重写替代验收，而是沿实际用户工作流补齐可复核证据，只在发现可复现的高风险问题时修改实现。
+更新：2026-11-21。目标不是用一次大重写替代验收，而是沿实际用户工作流补齐可复核证据，只在发现可复现的高风险问题时修改实现。
 
 ## 验收目标
 
@@ -13,7 +13,13 @@
 
 ## 当前基线
 
-- 当前基线为合并后的 `main` 提交 `d45ddb3f710edd6c0c8fb0557c49334eb61a5a69`；PR #204 head run `44740972271`与合并后 main run `44742135848`成功。两次CI Python/API均为`3062 passed, 89 skipped`、Edge `66 passed`；main run另通过Core构建、离线/Unicode EXE、shutdown与collector。阶段95本地全量pytest为`3061 passed, 90 skipped`，Edge `66 passed`，compileall、静态JS语法、差异检查及JUnit provenance通过。Core仍是唯一公开支持profile；standard/extended实际包、权重再分发许可与MUS-01真人音乐验收保持开放。历史PR明细见验收账本。
+续接更新（2026-11-21）：阶段98本地合成定向组123 passed，波形编辑/LN端点Edge流程2 passed；Provided状态保存/缓存清理失败回滚、候选来源缺失/冲突拒绝、快照清理诊断和remap非音频引用均有回归覆盖。阶段99节奏内存/取消定向组51 passed，含float32/float64及跨块对照、真实API取消集成，SciPy时间戳运算顺序与旧实现一致。完整Python/API第二轮为3527 passed、159 skipped（348.12秒）；第一轮有一项worker句柄数503/502的间歇观察失败，单项复跑1 passed、完整worker文件30 passed，第二轮全量通过，根因未确认。compileall与`git diff --check`通过。应用使用独占新路径导入并串行处理任务；外部程序若在复制期间原地改写源文件，仍可能产生混合副本，但SHA与解码针对同一私有快照，这是受支持工作流之外的边界，不是未完成的应用内竞态修复。STFT/RMS运算块有固定上限，全长摘要仍随时长线性增长；20分钟输入下已知核心数组约117.9 MiB，不含FFT临时量、其它分析状态和事件对象。PR #208旧head `c576114`的Windows run `44861914971`已通过；新增清理失败传播测试后的阶段98新head待推送并重新进行Windows CI，之后仍需合并后main验证。阶段99待基于更新后的main单独提交并创建PR。以上工程检查不构成MUS-01真人音乐验收。
+
+下方阶段98/99首轮记录仅保留问题发现背景，旧测试数字和进行时状态已由本续接更新取代。
+
+首轮计划里`132 passed, 1 deselected`未能追溯到对应测试命令，本轮不将它作为验证证据；以当前可复现命令和明确文件范围的结果为准。
+
+- 当前基线为合并后的 `main` 提交 `1ad69d710d4df5829a984bc4d60ed1f8103569e4`；PR #207 head run `44841323526`与合并后 main run `44842816110`成功。PR与main Windows流程均通过pytest/API、Edge、Core构建、离线Unicode EXE、媒体切换、shutdown和collector；PR #207修正Core `basic_analysis`证据的稳定引擎分类值。PR #208旧head `c576114`的Windows run `44861914971`已通过；新增清理失败传播测试后的新head待推送及Windows复验，PR合并后main验证也待完成。阶段99本地修复和回归已完成，待基于更新main单独提交并经PR/CI验证。Core仍是唯一公开支持profile；ENG-05/06与MUS-01真人音乐验收保持开放。历史PR明细见验收账本。
 - 当前公开 Pre-release 仍为 `v0.1.0-alpha.6-dev.18`；主线修复不自动包含在该包中。
 - 架构已经按服务端路由、领域逻辑、音频组件、存储与浏览器分层。先验证边界契约和用户路径，不做没有缺陷证据的大面积重写。
 - 现有记录已明确真实盲听、玩家试打和两首独立歌曲评审尚未回收；Demucs 四/六声部 checkpoint 的独立再分发授权也尚未核实。
@@ -67,6 +73,8 @@
 
 第九十五阶段的本地回归补查候选来源与区域编辑/导出对应关系：候选删除后报告保留来源历史，`.osu/.osz`只包含当前候选音符；候选来源和区域报告定向pytest为`16 passed`，区域报告API为`6 passed`，上述删除/导出集成为`3 passed`，Edge evidence与regional-audit spec为`17 passed`。本地全量Python/API为`3061 passed, 90 skipped`，Edge UI为`66 passed`；PR #204 head/main CI均通过，Python/API `3062 passed, 89 skipped`、Edge `66 passed`，main Core portable验证通过。本地和CI结果均为合成工程证据，不说明音乐采音或段落质量已通过；阶段2的其他跨路径验收仍开放。
 
+第九十八阶段的首轮合成竞态曾复现Basic/deep/Provided来源身份与实际解码输入错配、区域候选来源混用及OSZ载荷与候选来源不一致。当前实现以私有快照绑定Basic/deep分析与Provided导入的摘要和解码；Provided缓存事务在项目状态保存或清理失败时恢复旧目录或报告备份位置；候选来源已知缺失或冲突时拒绝区域重写；audio/remap OSZ要求谱面引用唯一归档成员，audio模式校验SHA，remap验证音频扩展名并拒绝`.osu`。拒绝编辑后项目状态和候选不变。最终阶段98定向组123 passed，波形编辑/LN端点Edge流程2 passed。完整Python/API第二轮`3527 passed, 159 skipped`；首轮一个句柄计数失败在单项和完整worker文件复验通过，第二轮全量通过，根因未确认。此前`130 passed, 1 deselected`、`61 passed`等数字属于发现期间基线，不能替代最终结果。独立复核未发现阻断缺陷。PR #208旧head `c576114`的Windows run `44861914971`已通过；新增清理失败传播测试后的阶段98新head待推送及Windows复验，合并后main验证待完成，合成工程结果不构成音乐验收。
+
 **验证：**现有 Python 领域/API 测试、Edge 合成端到端工作流、冻结输入的既有结果和官方解码器。冻结对照只复用已保存输入身份及适用结论，不重新运行模型；凡没有证据的历史结果标为“需复验”，不伪称通过。
 
 **退出条件：**无未解释的跨层时钟/身份错配；新增问题有最小复现、回归测试和独立审查。
@@ -80,6 +88,8 @@
 第七十八阶段发现计划 API 的同步 HTTP 调用不响应任务取消，会占住唯一任务worker；主线修复由PR #185与main run `44496133010`验证，HTTP 1xx、chunked、HTTP代理认证、CONNECT分支及端口边界有定向回归。第九十四阶段将系统DNS解析从`asyncio`默认执行器迁到单个有界daemon resolver：取消可释放任务worker，旧loop结果被丢弃；系统`getaddrinfo`本身不可取消，若永久挂起，resolver会一直busy直到解析返回或进程重启。第九十五阶段本机测试`.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_server.py -k real_tls_over_tls`为`1 passed, 42 deselected`，通过合成证书实际建立HTTPS代理与origin两层TLS，覆盖CONNECT及代理/origin认证隔离。该结果不覆盖外部代理环境。Mapper事务`tests/test_upstream.py`为`26 passed`、生命周期定向组`5 passed`、保存提交后cancel竞态`1 passed, 43 deselected`。本地全量pytest`3061 passed, 90 skipped`，Edge UI `66 passed`、静态检查通过；PR #204 head run `44740972271`与main run `44742135848`均通过，CI Python/API `3062 passed, 89 skipped`、Edge `66 passed`，main Core portable/EXE/shutdown/collector也通过。一次共享改写期间较早的evidence digest stale只表示旧证据无效，不作为测试通过或产品缺陷。其余限制与关闭条件见问题账本ENG-10。
 
 第九十五阶段最终验证更新（2026-11-20）：本地全量pytest`3061 passed, 90 skipped`，Edge UI`66 passed`，compileall、静态JS语法、差异检查及JUnit provenance source digest通过。PR #204 head run `44740972271`和main run `44742135848`均通过；两次CI Python/API为`3062 passed, 89 skipped`、Edge `66 passed`，main Core profile构建、离线/Unicode EXE、shutdown与collector成功。main合并提交`d45ddb3f710edd6c0c8fb0557c49334eb61a5a69`。此前并行改写期间evidence digest stale属于旧产物身份不匹配，不作为通过或产品缺陷。
+
+第九十九阶段针对阶段3的大型频谱内存与取消响应：长输入`rhythmic_evidence`的STFT最多处理256帧一块，RMS最多处理4096个窗口一块；调用方传入取消回调并在分块及后处理边界检查。最终节奏内存/取消定向组51 passed，覆盖短/长与float32/float64跨块oracle、取消传播、回调异常及真实API任务取消。完整Python/API第二轮为3527 passed、159 skipped；首轮worker句柄计数失败随后单项、文件组和完整全量复验通过，根因未确认。摘要数组仍按音频时长线性增长，native算子调用中不能协作取消；固定块限制的是STFT/RMS临时运算。阶段99待基于更新后的main单独提交并创建PR、完成PR及合并后main验证；工程测试不构成音乐验收。
 
 **验证：**已有取消/故障注入、线程竞争、FFmpeg/Windows 子进程测试、资源基准及便携启动/退出报告；在合并版本上确认真实覆盖，不重复执行无关模型实验。
 

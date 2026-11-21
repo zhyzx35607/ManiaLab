@@ -38,7 +38,8 @@ def timing_fixture(projects, title):
     notes = [Note(1115+i*500, 1865+i*500, pitch=60+i%8, source='pitch', id=f'timing{i}') for i in range(20)]
     projects.save(dict(id=pid, title=title, artist='Fixture', mode='audio', settings=parameters({'ln_ratio':1}),
         variants=[], active=-1, charts=[], audio='synthetic.wav', original=None, input_notes=[], audio_shift_ms=22.5,
-        analysis=dict(revision=3, duration=12, candidates=[n.data() for n in notes],
+        analysis=dict(revision=3, duration=12, audio_sha256=sha256(folder / 'files/synthetic.wav'),
+            candidates=[n.data() for n in notes],
             timing_attacks=[n.data() for n in notes], waveform=[0]*100,
             tempo=dict(bpm=120, offset=115, division=4, stable=True,
                 reliability='起音与网格整体一致；仍需试听确认',
@@ -80,10 +81,12 @@ def audio_meter_fixture(projects):
     pid = timing_fixture(projects, 'UI audio meter')
     state = projects.load(pid)
     beats = [115 + i * 500 for i in range(24)]
-    state['analysis']['separation'] = dict(profile='four', audio_sha256='a'*64,
+    state['analysis']['separation'] = dict(profile='four',
+        audio_sha256=state['analysis']['audio_sha256'],
         model_sha256='b'*64, input_processing=dict(revision=2), algorithm_revision=1,
         beat_evidence=dict(beats_ms=beats, downbeats_ms=beats[::3]))
     projects.save(state)
+    return pid
 
 
 def ln_remap_fixture(projects):
@@ -110,16 +113,18 @@ def evidence_fixture(projects, title):
         shutil.copyfile(folder / 'preview.wav', stem_folder / f'{voice}.wav')
     decoded_files = {voice:dict(wav_sha256=sha256(stem_folder/f'{voice}.wav'))
                      for voice in ('other', 'piano')}
+    audio_sha256 = sha256(folder / 'files/synthetic.wav')
     notes = [Note(1040+i*500, 1710+i*500, pitch=60+i%8, source='pitch', voice='other',
         id=f'evidence{i}', release_reason='model_predicted_offset') for i in range(14)]
     notes += [Note(9000, 9600, source='pitch', voice='other', id='unobserved', release_reason='input_boundary'),
               Note(10000, 10250, source='pitch', voice='piano', id='unknown')]
     projects.save(dict(id=pid, title=title, artist='Fixture', mode='audio', settings=parameters({'ln_ratio':1}),
         variants=[], active=-1, charts=[], audio='synthetic.wav', original=None, input_notes=[], audio_shift_ms=22.5,
-        analysis=dict(revision=13, duration=12, candidates=[n.data() for n in notes], phrase_candidates=[],
+        analysis=dict(revision=13, duration=12, audio_sha256=audio_sha256,
+            candidates=[n.data() for n in notes], phrase_candidates=[],
             timing_attacks=[n.data() for n in notes], waveform=[0]*100,
             voices=[dict(voice=v) for v in ('other', 'piano')],
-            separation=dict(source='provided', audio_sha256='c'*64, voices=['other', 'piano'],
+            separation=dict(source='provided', audio_sha256=audio_sha256, voices=['other', 'piano'],
                 set_sha256='a'*64, decoded_files=decoded_files),
             structure=dict(boundaries=[0,12000], segments=[dict(start_ms=0,end_ms=12000)]),
             tempo=dict(bpm=120, offset=0, division=4, stable=True))))
@@ -132,7 +137,8 @@ def evidence_source_identity_fixture(projects):
     generate_variant(state, dict(mode='audio', timing_confirmed=True), state['settings'],
         dict(bpm=120, offset=-22, division=4, audio_shift_ms=22.5), lambda *_:None, lambda:False)
     state['analysis']['separation'] = dict(
-        source='provided', audio_sha256='c'*64, voices=['other', 'piano'], set_sha256='b'*64)
+        source='provided', audio_sha256=state['analysis']['audio_sha256'],
+        voices=['other', 'piano'], set_sha256='b'*64)
     state['analysis']['candidates'] = [
         note | {'start': note['start'] + 400, 'end': note['end'] + 400}
         for note in state['analysis']['candidates']
@@ -308,7 +314,8 @@ def main():
         notes = [Note(1000 + i * 500, 1250 + i * 500, pitch=60+i%8, source='pitch', id=str(i)).data() for i in range(20)]
         projects.save(dict(id=pid, title='UI synthetic', artist='Fixture', mode='audio', settings=parameters(),
             variants=[], active=-1, charts=[], audio='synthetic.wav', original=None, input_notes=[], audio_shift_ms=0,
-            analysis=dict(revision=3, duration=12, candidates=notes, timing_attacks=notes,
+            analysis=dict(revision=3, duration=12,
+                audio_sha256=sha256(folder / 'files/synthetic.wav'), candidates=notes, timing_attacks=notes,
                 tempo=dict(bpm=120, offset=0, division=4, stable=True), waveform=[0]*100)))
         timing_fixture(projects, 'UI timing clock')
         timing_fixture(projects, 'UI timing wave')

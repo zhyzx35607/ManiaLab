@@ -1,4 +1,5 @@
 import io
+import hashlib
 from copy import deepcopy
 from pathlib import Path
 import time
@@ -88,9 +89,11 @@ def test_successive_edits_export_the_saved_candidates_section_bookmarks(tmp_path
     try:
         project = client.post("/api/import", data={"files": (_silent_audio(), "silence.wav")}, headers=headers).json
         base = "/api/projects/" + project["id"]
+        audio_digest = hashlib.sha256(_silent_audio().getvalue()).hexdigest()
         parent = dict(notes=[Note(1000, 2000, 0, id="hold").data(), Note(1500, 1500, 1, id="tap").data()],
                       mode="audio", created=1., settings=parameters(), report={}, timing_revision=3,
-                      bpm=120, offset=0, division=4, audio_shift_ms=20, timing_confirmed=True)
+                      bpm=120, offset=0, division=4, audio_shift_ms=20, timing_confirmed=True,
+                      source_audio_sha256=audio_digest)
         context = {}
         bookmarks = ""
         if source != "legacy":
@@ -102,7 +105,8 @@ def test_successive_edits_export_the_saved_candidates_section_bookmarks(tmp_path
             parent["region"] = [0, 2000]
             parent["selection"].update(scope="regional_output", proposal={"scope": "full_song_proposal"})
         project.update(variants=[parent], active=0,
-                       analysis={"duration": 5, "structure": {"boundaries": [0, 4000, 5000]}})
+                       analysis={"duration": 5, "audio_sha256": audio_digest,
+                           "structure": {"boundaries": [0, 4000, 5000]}})
         Projects(tmp_path / "projects").save(project)
         parent = client.get(base).json["variants"][0]
 
@@ -111,6 +115,9 @@ def test_successive_edits_export_the_saved_candidates_section_bookmarks(tmp_path
         assert _exported_notes(client, base, bookmarks) == [(1000, 2000, 2), (1500, 1500, 1)]
         saved = _edit(client, base, headers, moved["variants"][moved["active"]]["created"], op="delete", note_id="tap")
         assert saved["variants"][0] == parent
+        assert [variant["source_audio_sha256"] for variant in saved["variants"]] == [
+            audio_digest
+        ] * len(saved["variants"])
         for edited in saved["variants"][1:]:
             selection = dict(edited["selection"])
             assert selection.pop("message")
@@ -123,7 +130,11 @@ def test_successive_edits_export_the_saved_candidates_section_bookmarks(tmp_path
     reopened = create_app(ROOT, tmp_path)
     try:
         client = reopened.test_client()
-        assert client.get(base).json["variants"] == saved["variants"]
+        reopened_variants = client.get(base).json["variants"]
+        assert reopened_variants == saved["variants"]
+        assert [variant["source_audio_sha256"] for variant in reopened_variants] == [
+            audio_digest
+        ] * len(saved["variants"])
         assert _exported_notes(client, base, bookmarks) == [(1000, 2000, 2)]
     finally:
         reopened.extensions["executor"].shutdown()
@@ -136,9 +147,11 @@ def test_late_edit_for_deselected_candidate_does_not_change_active_exports(tmp_p
     try:
         project = client.post("/api/import", data={"files": (_silent_audio(), "silence.wav")}, headers=headers).json
         base = "/api/projects/" + project["id"]
+        audio_digest = hashlib.sha256(_silent_audio().getvalue()).hexdigest()
         project.update(analysis={
             "revision": 13,
             "duration": 5,
+            "audio_sha256": audio_digest,
             "candidates": [
                 Note(1000, 1000, id="first").data(),
                 Note(3000, 3000, id="second").data(),

@@ -1,4 +1,5 @@
 import io
+import hashlib
 from pathlib import Path
 import zipfile
 
@@ -104,9 +105,12 @@ def test_fixed_meter_survives_edit_reanalysis_selection_region_and_both_export_f
                                data={"files": (io.BytesIO(b"fixture audio"), "song.wav")}).json
         pid = imported["id"]
         base = "/api/projects/" + pid
+        source_sha256 = hashlib.sha256(b"fixture audio").hexdigest()
         state = projects.load(pid)
         notes = [Note(515 + i*400, 715 + i*400, source="pitch", id=f"n{i}").data() for i in range(14)]
-        state.update(audio_shift_ms=22.5, analysis=analysis() | {"candidates": notes, "timing_attacks": notes})
+        initial_analysis = analysis() | {"candidates": notes, "timing_attacks": notes}
+        initial_analysis["separation"]["audio_sha256"] = source_sha256
+        state.update(audio_shift_ms=22.5, analysis=initial_analysis)
         projects.save(state)
         preview = projects.path(pid) / "preview.wav"
         wavfile.write(preview, 8000, np.zeros(8000 * 8, np.int16))
@@ -141,7 +145,9 @@ def test_fixed_meter_survives_edit_reanalysis_selection_region_and_both_export_f
         exported(3)
         # Simulate reanalysis on the same beat clock with different downbeat evidence.
         state = projects.load(pid)
-        state["analysis"]["separation"] = analysis(meter=4)["separation"]
+        reanalysis = analysis(meter=4)["separation"]
+        reanalysis["audio_sha256"] = source_sha256
+        state["analysis"]["separation"] = reanalysis
         projects.save(state)
         assert client.get(base).json["detected_meter"] == 4
         audition(3)
@@ -160,7 +166,9 @@ def test_fixed_meter_survives_edit_reanalysis_selection_region_and_both_export_f
         # An old saved candidate has its original four-beat header even when current evidence says three.
         state = projects.load(pid)
         del state["variants"][0]["meter"]
-        state["analysis"]["separation"] = analysis()["separation"]
+        current_evidence = analysis()["separation"]
+        current_evidence["audio_sha256"] = source_sha256
+        state["analysis"]["separation"] = current_evidence
         projects.save(state)
         audition(4)
         exported(4)

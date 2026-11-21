@@ -375,8 +375,8 @@ def test_cancelled_provided_stems_remove_new_decoded_folder_before_job_finishes(
     pid = import_mix(client, headers)
     ready, release = threading.Event(), threading.Event()
     original = app.extensions['analysis_services'].prepare_provided_stems
-    def prepare(*args):
-        report = original(*args)
+    def prepare(*args, **kwargs):
+        report = original(*args, **kwargs)
         ready.set()
         assert release.wait(5)
         return report
@@ -407,7 +407,7 @@ def test_request_and_background_failures_use_persistent_logger(api, tmp_path, mo
         with monkeypatch.context() as request_patch:
             request_patch.setattr(app.extensions['projects'], 'load', fail_load)
             assert client.get(f'/api/projects/{pid}').status_code == 500
-        def fail(*args):
+        def fail(*args, **kwargs):
             raise RuntimeError('background failure sentinel')
         monkeypatch.setattr(app.extensions['analysis_services'], 'prepare_provided_stems', fail)
         result = wait_job(client, client.post(f'/api/projects/{pid}/provided-stems',

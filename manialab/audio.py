@@ -5,8 +5,11 @@ The detector is not a source separator and its activations are not calibrated pr
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+import hashlib
 from pathlib import Path
 from dataclasses import replace
+import tempfile
 import threading
 import time
 
@@ -31,16 +34,56 @@ from .audio_cache import (
     load_stem_activations,
     model_identity,
     save_stem_activations,
-    sha256_file,
 )
 
 _session = None
 _session_model_identity = None
 _lock = threading.Lock()
+_SNAPSHOT_CHUNK_SIZE = 1024 * 1024
 
 
 def decode(path, work, cancelled=None):
     return decode_audio(path, work, runner=run_hidden, cancelled=cancelled)
+
+
+@contextmanager
+def _audio_snapshot(path, work, cancelled):
+    """Hash and decode one private copy of the source, even if its path changes."""
+    source = Path(path)
+    snapshot = None
+    try:
+        digest = hashlib.sha256()
+        with source.open("rb") as original:
+            with tempfile.NamedTemporaryFile(
+                    prefix=".analysis-input-", suffix=source.suffix,
+                    dir=work, delete=False) as copied:
+                snapshot = Path(copied.name)
+                while True:
+                    if cancelled():
+                        raise InterruptedError("已取消音频快照")
+                    chunk = original.read(_SNAPSHOT_CHUNK_SIZE)
+                    if not chunk:
+                        break
+                    copied.write(chunk)
+                    digest.update(chunk)
+        if cancelled():
+            raise InterruptedError("已取消音频快照")
+        yield snapshot, digest.hexdigest()
+    except BaseException as error:
+        if snapshot is not None:
+            try:
+                snapshot.unlink(missing_ok=True)
+            except OSError as cleanup_error:
+                error.add_note(
+                    f"分析音频快照无法删除（路径：{snapshot}）：{cleanup_error!r}")
+        raise
+    else:
+        if snapshot is not None:
+            try:
+                snapshot.unlink(missing_ok=True)
+            except OSError as cleanup_error:
+                cleanup_error.add_note(f"分析音频快照无法删除（路径：{snapshot}）")
+                raise
 
 
 def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False,
@@ -80,10 +123,10 @@ def infer(samples, model, progress=lambda p, s: None, cancelled=lambda: False,
 def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=lambda: False):
     started = time.perf_counter()
     progress(2, "解码音频")
-    samples = decode(path, work, cancelled=cancelled)
+    with _audio_snapshot(path, work, cancelled) as (snapshot, audio_hash):
+        samples = decode(snapshot, work, cancelled=cancelled)
     duration = len(samples) / SR
     cache = Path(work) / "activations.npz"
-    audio_hash = sha256_file(path, cancelled=cancelled)
     model_fingerprint = model_identity(model, cancelled)
     cached = None
     if cache.exists():
@@ -118,7 +161,8 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     chunks = np.array_split(np.abs(samples), min(2400, len(samples)))
     waveform = [round(float(np.max(x)), 4) for x in chunks]
     candidates = sorted(notes + unmatched, key=lambda n: (n.start, n.pitch))
-    result = {"revision": 8, "duration": duration, "waveform": waveform, "tempo": tempo,
+    result = {"revision": 8, "duration": duration, "audio_sha256": audio_hash,
+            "waveform": waveform, "tempo": tempo,
             "elapsed_seconds": round(time.perf_counter() - started, 2), "cached": cached is not None,
             "timing_attacks": [n.data() for n in transients], "fused_attacks": fused,
             "release_refinement": releases,
@@ -144,9 +188,12 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     if type(allow_guitar_predicted_releases) is not bool or (allow_guitar_predicted_releases and guitar_detector is None):
         raise ValueError('吉他模型音尾选项需要显式选择吉他专用采音')
     started = time.perf_counter()
-    samples = decode(path, work, cancelled=cancelled)
-    duration = len(samples) / SR
-    stem_root, separation = separator.separate(path, work, progress, cancelled)
+    with _audio_snapshot(path, work, cancelled) as (snapshot, audio_hash):
+        samples = decode(snapshot, work, cancelled=cancelled)
+        duration = len(samples) / SR
+        stem_root, separation = separator.separate(snapshot, work, progress, cancelled)
+        if separation.get('audio_sha256') != audio_hash:
+            raise ValueError('声部来源摘要与音频快照不匹配，请重新分析')
     stem_identity = separation_identity(separation)
     beats_ms = separation.get("beat_evidence", {}).get("beats_ms")
     voices = separation_voices(separation)
@@ -286,7 +333,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     if use_drums:
         tempo, attacks = cover_missing_timing_windows(tempo,drum_attacks,mix_attacks)
     candidates = sorted(all_candidates, key=lambda n: (n.start, n.pitch, n.voice))
-    result = dict(revision=14, duration=duration, tempo=tempo,
+    result = dict(revision=14, duration=duration, audio_sha256=audio_hash, tempo=tempo,
         waveform=[round(float(np.max(x)), 4) for x in np.array_split(np.abs(samples), min(2400, len(samples)))],
         elapsed_seconds=round(time.perf_counter() - started, 2), cached=separation["cached"] and all(pitch_cached),
         timing_attacks=[n.data() for n in attacks], fused_attacks=0, candidates=[n.data() for n in candidates],

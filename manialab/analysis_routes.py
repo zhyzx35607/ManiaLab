@@ -1,3 +1,4 @@
+import os
 import secrets
 import shutil
 from pathlib import Path
@@ -145,31 +146,62 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
                 target = safe_path(folder / voice, name)
                 uploads_to_save.append((voice, upload, target))
             sources = {}
-            new_decoded_folder = None
+            new_decoded_folders = []
+            replaced_decoded_folders = []
+
+            def remove_path(path):
+                target = Path(path)
+                if target.is_dir() and not target.is_symlink():
+                    shutil.rmtree(target)
+                else:
+                    target.unlink(missing_ok=True)
 
             def cleanup(committed):
-                if not committed:
-                    failures = []
-                    for target in (folder, new_decoded_folder):
-                        if target is None:
-                            continue
+                failures = []
+                if committed:
+                    targets = [backup for _, backup in replaced_decoded_folders]
+                else:
+                    targets = [folder, *new_decoded_folders]
+                    for canonical, backup in reversed(replaced_decoded_folders):
                         try:
-                            shutil.rmtree(target)
+                            remove_path(canonical)
+                            if backup.exists():
+                                os.replace(backup, canonical)
                         except OSError as error:
-                            if isinstance(error, FileNotFoundError) and not target.exists():
+                            if backup.exists():
+                                error.add_note(
+                                    f"ManiaLab恢复提示：旧声轨缓存备份仍在 {backup}；"
+                                    f"目标目录为 {canonical}。请保留备份并核对项目状态。")
+                            if isinstance(error, FileNotFoundError) and not backup.exists():
                                 continue
                             failures.append(error)
-                    if failures:
-                        raise ExceptionGroup('声轨导入资源清理失败', failures)
+                for target in targets:
+                    try:
+                        remove_path(target)
+                    except OSError as error:
+                        if committed and Path(target).exists():
+                            error.add_note(
+                                f"ManiaLab恢复提示：任务结果已保存；旧声轨缓存备份"
+                                f"尚未清理，路径为 {target}。")
+                        if isinstance(error, FileNotFoundError) and not Path(target).exists():
+                            continue
+                        failures.append(error)
+                if failures:
+                    raise ExceptionGroup('声轨导入资源清理失败', failures)
 
             def operation(state, progress, cancelled):
-                nonlocal new_decoded_folder
-                _, key = services.provided_stem_identity(current_audio(state), sources)
-                decoded_folder = work / "stems-provided" / key
-                if not decoded_folder.exists():
-                    new_decoded_folder = decoded_folder
+                def track_new_folder(path, *, backup=None):
+                    target = Path(path)
+                    if backup is not None:
+                        replacement = target, Path(backup)
+                        if replacement not in replaced_decoded_folders:
+                            replaced_decoded_folders.append(replacement)
+                    elif target not in new_decoded_folders:
+                        new_decoded_folders.append(target)
+
                 report = services.prepare_provided_stems(
                     current_audio(state), sources, work, progress, cancelled,
+                    on_new_folder=track_new_folder,
                 )
                 state["provided_stems"] = report
                 return {"voices": report["voices"], "duration_seconds": report["duration_seconds"]}

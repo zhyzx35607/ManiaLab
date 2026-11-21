@@ -1,5 +1,6 @@
 """Regional reports distinguish the whole-song proposal from saved output."""
 from copy import deepcopy
+import hashlib
 from pathlib import Path
 
 from manialab.arrange import parameters
@@ -167,6 +168,7 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
     analysis = dict(
         revision=13,
         duration=5,
+        audio_sha256=hashlib.sha256(audio).hexdigest(),
         candidates=[note.data() for note in candidates],
         phrase_candidates=[phrase.data()],
         timing_attacks=[],

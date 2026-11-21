@@ -100,13 +100,16 @@ def test_specialist_cache_tracks_input_and_does_not_overwrite_general_activation
 
 
 def test_deep_analysis_routes_only_piano_to_specialist(tmp_path,monkeypatch):
+    import hashlib
     from pathlib import Path
     from manialab import audio
     from manialab.arrange import parameters
     from manialab.domain import Note
     samples=np.full(audio.SR*2,.1,dtype=np.float32)
     np.save(tmp_path/'piano.npy',samples)
-    report=dict(source='provided',voices=['piano'],audio_sha256='audio',set_sha256='stems',model_sha256='stems',cached=True)
+    source=tmp_path/'mix.wav'
+    source.write_bytes(b'synthetic mix')
+    report=dict(source='provided',voices=['piano'],audio_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),set_sha256='stems',model_sha256='stems',cached=True)
     class Sources:
         def separate(self,*args):return tmp_path,report
     class Specialist:
@@ -117,13 +120,13 @@ def test_deep_analysis_routes_only_piano_to_specialist(tmp_path,monkeypatch):
     monkeypatch.setattr(audio,'decode',lambda *args,**kwargs:samples)
     def unused(*args):raise AssertionError('The general piano model must not also run')
     monkeypatch.setattr(audio,'infer',unused)
-    result=audio.analyze_deep(Path('mix.wav'),tmp_path,Path('unused.onnx'),parameters(),Sources(),piano_detector=Specialist())
+    result=audio.analyze_deep(source,tmp_path,Path('unused.onnx'),parameters(),Sources(),piano_detector=Specialist())
     assert result['piano_engine']=='specialist' and result['cached']
     assert result['candidates'][0]['start']==400 and result['candidates'][0]['release_reason']=='release_regression'
     assert result['voices'][0]['detector']=='piano-specialist'
     report['voices']=['bass']
     with pytest.raises(ValueError,match='钢琴声轨'):
-        audio.analyze_deep(Path('mix.wav'),tmp_path,Path('unused.onnx'),parameters(),Sources(),piano_detector=Specialist())
+        audio.analyze_deep(source,tmp_path,Path('unused.onnx'),parameters(),Sources(),piano_detector=Specialist())
 
 
 def test_piano_api_requires_explicit_selection_and_an_isolated_piano_input(tmp_path,monkeypatch):
