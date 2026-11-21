@@ -22,6 +22,16 @@ def test_cancellation_deadline_is_shared_and_can_only_shrink(monkeypatch):
     assert cancellation.timeout_for(context, 8) == 0
 
 
+def test_child_cleanup_failure_is_reported_by_parent():
+    parent = cancellation.CancellationContext()
+    child = cancellation.CancellationContext(parent=parent)
+
+    child.report_cleanup_failure("synthetic cleanup failure")
+
+    assert parent.cleanup_failures == ("synthetic cleanup failure",)
+    assert child.cleanup_failures == ("synthetic cleanup failure",)
+
+
 def test_process_escalation_does_not_reset_shutdown_budget(monkeypatch, caplog):
     now = [100.0]
     monkeypatch.setattr(time, "monotonic", lambda: now[0])
