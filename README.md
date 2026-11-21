@@ -6,13 +6,13 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.22 · Core profile · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.22)。本版改进分析取消和图表快照保存失败时的清理错误报告与恢复路径；不改变采音或编谱算法。发布包仅含 Core profile：包含固定 Basic Pitch，不含 Demucs checkpoint、Beat This 节拍模型、钢琴专用 ONNX、吉他/Tsumugi 模型或其它非 Core checkpoint；Standard 和 Extended profile 未由本版验证。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；随包模型的来源、许可与限制见[第三方声明](THIRD_PARTY_NOTICES.md)。Timing 与真实歌曲音乐质量尚未完成验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.22说明](docs/releases/0.1.0-alpha.6-dev-22.md)。
+**0.1.0-alpha.6-dev.23 · Core profile · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.23)。本版改进图表快照事务失败时的恢复路径提示、统一段落书签的半毫秒舍入，并拒绝过期候选切换请求；不改变采音或编谱算法。发布包仅含 Core profile：包含固定 Basic Pitch，不含 Demucs checkpoint、Beat This 节拍模型、钢琴专用 ONNX、吉他/Tsumugi 模型或其它非 Core checkpoint；Standard 和 Extended profile 未由本版验证。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；随包模型的来源、许可与限制见[第三方声明](THIRD_PARTY_NOTICES.md)。Timing 与真实歌曲音乐质量尚未完成验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.23说明](docs/releases/0.1.0-alpha.6-dev-23.md)。
 
 当前稳定入口： [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
-当前源码和 Windows workflow 的唯一公开支持构建 profile 为 `core`。历史 dev.18 至 dev.21 Release 保持原有内容和说明；dev.22 仅发布并验证 Core，本地构建 Standard 或 Extended 不表示它们已获公开支持。
+当前源码和 Windows workflow 的唯一公开支持构建 profile 为 `core`。历史 dev.18 至 dev.22 Release 保持原有内容和说明；dev.23 仅发布并验证 Core，本地构建 Standard 或 Extended 不表示它们已获公开支持。
 
-dev.22 源码快照基于 dev.21 发布后的主线改进。发布源码与验证范围以本页版本及[dev.22说明](docs/releases/0.1.0-alpha.6-dev-22.md)为准；完整工程与音乐验收状态见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。
+dev.23 源码快照基于 dev.22 发布后的主线改进。发布源码与验证范围以本页版本及[dev.23说明](docs/releases/0.1.0-alpha.6-dev-23.md)为准；完整工程与音乐验收状态见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。
 
 2026-11-18 源码已核对真实多难度谱包的编辑与重开，并用两首外部歌曲运行了完整采音到导出流程。结果与试听、试打入口见[工程与音乐验收记录](docs/acceptance-20261118.md)。
 
@@ -26,7 +26,7 @@ dev.22 源码快照基于 dev.21 发布后的主线改进。发布源码与验�
 
 不熟悉 BPM / Offset、LN 比例和声部参数时，先看 [第一次使用](docs/quick-start.md)。
 
-dev.22 Core 便携包自带 CPU 运行时、固定 Basic Pitch 模型和 FFmpeg，可分析导入的音频声轨；它不提供自动声部分离，也不含节拍、钢琴专用或其它非 Core 模型。日常可用功能不需要 Python、Docker、CUDA 或手动部署；可选 API 助手需要网络。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
+dev.23 Core 便携包自带 CPU 运行时、固定 Basic Pitch 模型和 FFmpeg，可分析导入的音频声轨；它不提供自动声部分离，也不含节拍、钢琴专用或其它非 Core 模型。日常可用功能不需要 Python、Docker、CUDA 或手动部署；可选 API 助手需要网络。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
 
 分析能力取决于便携包 profile；Core 包仅运行其所含的模型，并可复用已完成的缓存结果。界面显示实际耗时和缓存状态。Release 中随 ZIP 提供的 `*-SHA256SUMS.txt` 是对应版本的校验文件，正常使用只需下载 ZIP。
 
@@ -36,8 +36,8 @@ dev.22 Core 便携包自带 CPU 运行时、固定 Basic Pitch 模型和 FFmpeg�
 
 ## 音频、Timing 和 LN
 
-- **深度采音（扩展组件）**：源码中包含 Hybrid Demucs 四声部和可选 HTDemucs 六声部分离路径；只有具备相应模型的本机构建才能使用。dev.22 Core 便携包不含 Demucs checkpoint，不提供自动声部分离。六声部没有证明整体更准，扩展构建保留四声部用于对照；还可逐声部提取起音及持续音、过滤极弱分离残留，对进入近静音的模型尾巴做有界回收，并试听声部、查看波形及原始检测时间。
-- **节拍校准**：起音拟合全曲 BPM 与 Offset；Beat This! 辅助仅适用于带有该模型的本机构建，dev.22 Core 包不含 Beat This。默认整理小数噪声，例如 `210.00073 → 210`；保留常见 `.25/.333/.5/.667/.75`。真实小数若取整会造成漂移，会另列精确候选并要求试听。手动 BPM 不强制取整。
+- **深度采音（扩展组件）**：源码中包含 Hybrid Demucs 四声部和可选 HTDemucs 六声部分离路径；只有具备相应模型的本机构建才能使用。dev.23 Core 便携包不含 Demucs checkpoint，不提供自动声部分离。六声部没有证明整体更准，扩展构建保留四声部用于对照；还可逐声部提取起音及持续音、过滤极弱分离残留，对进入近静音的模型尾巴做有界回收，并试听声部、查看波形及原始检测时间。
+- **节拍校准**：起音拟合全曲 BPM 与 Offset；Beat This! 辅助仅适用于带有该模型的本机构建，dev.23 Core 包不含 Beat This。默认整理小数噪声，例如 `210.00073 → 210`；保留常见 `.25/.333/.5/.667/.75`。真实小数若取整会造成漂移，会另列精确候选并要求试听。手动 BPM 不强制取整。
 - **明确的时间基准**：新项目默认「制谱提前量」22.5ms，对应用户参考工具的补偿；设 0 使用原始音频时间。这是可见的制谱选择，不是解码纠错。原始采音保留，换算只发生一次。osu! 官方编辑器采用 20ms 的波形视觉补偿，背景及差异见 [Timing 调查](docs/timing-investigation-165340.md)。不同音源或环境可能需要调整。
 - **完整落线**：短键起点、LN 起止量化到 3/4/6/8/12/16 拍内细分。导出回读实际 `.osu` 红线，允许整数毫秒存储产生的最多 0.501ms 舍入误差。量化移动超过 30ms 的起音会单独列出。**落线不等于采音正确。**
 - **LN 取舍**：先在全曲密度与和弦约束下选择起音，再选择有持续依据且不堵轨的 LN。目标比例是 LN 数÷物件数，显示实际值及约束下可达值。可调最短 LN、同时占轨、声部取舍和放键间隔。
