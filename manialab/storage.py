@@ -5,6 +5,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import time
 import uuid
 import zipfile
 
@@ -15,6 +16,21 @@ ASSETS = AUDIO | {".osu", ".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 MAX_IMPORT_BYTES = 512 * 1024 * 1024
 MAX_IMPORT_ENTRIES = 3000
 MAX_IMPORT_CENTRAL_DIRECTORY_BYTES = 32 * 1024 * 1024
+_STATE_REPLACE_RETRY_DELAYS = (0.01, 0.02, 0.04, 0.08, 0.16)
+
+
+def _replace_state_with_retry(source, destination):
+    if os.name != "nt":
+        os.replace(source, destination)
+        return
+    for delay in _STATE_REPLACE_RETRY_DELAYS:
+        try:
+            os.replace(source, destination)
+            return
+        except PermissionError:
+            # A concurrent project read can briefly hold state.json open on Windows.
+            time.sleep(delay)
+    os.replace(source, destination)
 
 
 def safe_path(root, name):
@@ -139,7 +155,7 @@ class Projects:
         temporary = path.with_suffix(".tmp")
         try:
             temporary.write_text(json.dumps(pack_state(state), ensure_ascii=False), encoding="utf-8")
-            os.replace(temporary, path)
+            _replace_state_with_retry(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)
 
