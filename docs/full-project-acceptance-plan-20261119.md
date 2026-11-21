@@ -13,7 +13,7 @@
 
 ## 当前基线
 
-续接状态（2026-11-21）：PR #218 已合并到`main`，merge SHA `523b4d7f9e22cd8f65197e4a9b7d5b71e74be02a`；Windows PR run `44905185931`通过，合并后main run `44906384408`仍在运行。第一百零一阶段短暂Windows状态读取锁修复已合并，PR基线定向测试`36 passed`；永久占用/ACL与并发写者语义不在覆盖范围。第一百零二阶段ENG-24修复已在PR #219并rebase到该main，当前head `b5d082a`的Windows CI待完成；rebase前head run `44905346269`通过，59项定向pytest、`compileall`和`git diff --check`通过。dev.19仍是当前公开Release，只包含tag指向的提交`3bd0dfef89c25710c043f120a7290da5adb8dc84`；#218、#219及其后续main提交不在该Release中。工程合成验证不构成真人音乐验收。
+续接状态（2026-11-21）：PR #218已合并到`main`，merge SHA `523b4d7f9e22cd8f65197e4a9b7d5b71e74be02a`；Windows PR run `44905185931`与合并后main run `44906384408`均成功，main Python/API `3559 passed, 156 skipped`、Chromium `69 passed`，便携/EXE、Core媒体、shutdown和collector按条件跳过。第一百零一阶段ENG-27短暂Windows状态读取锁修复已合并并完成main验证，PR基线定向测试`36 passed`；永久占用/ACL与并发写者语义不在覆盖范围。第一百零二阶段ENG-24已在PR #219 rebase到该main，代码提交`b5d082a`，定向pytest`59 passed`、`compileall`和差异检查通过。PR的最新文档同步head仍需Windows CI验证；旧文档同步head run `44906849968`不能代表更新后的最终head。dev.19仍是当前公开Release，只包含tag指向的提交`3bd0dfef89c25710c043f120a7290da5adb8dc84`；#218、#219及其后续main提交不在该Release中。工程合成验证不构成真人音乐验收。
 
 状态补充（2026-11-21 08:26:38 UTC）：PR #209最终head `4fcbac8`的Windows run `44883194111`成功并合并为`54c094f4fd7b98c98551d4b6d3eba0552dd60396`；合并后main run `44884080485`成功。API/Chromium、Core包、离线Unicode EXE、Core媒体切换、worker关停和collector通过；模型下载、钢琴专项及独立音频worker构建按条件跳过。阶段99已完成PR/main验证；第一百阶段ENG-25本地组合`59 passed`，待单独提交和PR CI。此状态覆盖本节后文阶段99待提交/待PR CI的旧描述。
 
@@ -25,7 +25,7 @@
 
 首轮计划里`132 passed, 1 deselected`未能追溯到对应测试命令，本轮不将它作为验证证据；以当前可复现命令和明确文件范围的结果为准。
 
-- 当前基线为合并后的 `main` 提交 `523b4d7f9e22cd8f65197e4a9b7d5b71e74be02a`；合并后main run `44906384408`仍在运行。PR #218已合并，第一百零一阶段短暂状态读取锁修复的Windows PR run `44905185931`通过。PR #219已rebase到该基线，当前CI待完成；其rebase前PR run `44905346269`通过，代码定向组`59 passed`。Core仍是唯一公开支持profile，ENG-05/06与MUS-01真人音乐验收保持开放。历史PR明细见验收账本。
+- 当前基线为合并后的 `main` 提交 `523b4d7f9e22cd8f65197e4a9b7d5b71e74be02a`；main run `44906384408`通过，Python/API `3559 passed, 156 skipped`、Chromium `69 passed`，Core便携相关检查按条件跳过。PR #218已合并，PR #219已rebase到该基线，代码定向组`59 passed`；最新文档同步head的Windows CI待完成。Core仍是唯一公开支持profile，ENG-05/06与MUS-01真人音乐验收保持开放。历史PR明细见验收账本。
 - 当前公开 Pre-release 为 `v0.1.0-alpha.6-dev.19`，tag精确指向`3bd0dfef89c25710c043f120a7290da5adb8dc84`；主线修复不自动包含在该包中。
 - 架构已经按服务端路由、领域逻辑、音频组件、存储与浏览器分层。先验证边界契约和用户路径，不做没有缺陷证据的大面积重写。
 - 现有记录已明确真实盲听、玩家试打和两首独立歌曲评审尚未回收；Demucs 四/六声部 checkpoint 的独立再分发授权也尚未核实。
