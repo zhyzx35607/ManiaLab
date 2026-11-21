@@ -38,8 +38,22 @@ def archive_active_chart(project, state):
     try:
         temporary.write_text(json.dumps(snapshot, ensure_ascii=False), encoding="utf-8")
         temporary.replace(path)
-    finally:
+    except BaseException as error:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError as cleanup_error:
+            error.add_note(
+                f"ManiaLab恢复提示：谱面快照临时文件未能清理，路径：{temporary}；"
+                f"清理错误：{cleanup_error!r}"
+            )
+        raise
+    try:
         temporary.unlink(missing_ok=True)
+    except OSError as cleanup_error:
+        cleanup_error.add_note(
+            f"ManiaLab恢复提示：谱面快照临时文件未能清理，路径：{temporary}"
+        )
+        raise
     if source is None and not any(c["path"] == "" for c in state["charts"]):
         state["charts"].insert(0, {"path": "", "label": "原始音频项目"})
 
