@@ -649,6 +649,14 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
         set_sha256='a' * 64, voices=['other'],
         decoded_files={'other': {'wav_sha256': hashlib.sha256(old_stem).hexdigest()}})
     reference = dict(identity=separation_identity(separation), separation=separation)
+
+    def assert_source_identity(candidate):
+        source = candidate['source_separation']
+        assert source['identity'] == reference['identity']
+        assert separation_identity(source['separation']) == reference['identity']
+        assert source['separation']['audio_sha256'] == separation['audio_sha256']
+        assert source['separation']['decoded_files'] == separation['decoded_files']
+
     parent_candidates = [
         Note(1000, 1500, id='locked', source='pitch', voice='other',
              release_reason='frame_decay').data(),
@@ -657,6 +665,9 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
         Note(3500, 4200, id='region', source='pitch', voice='other',
              release_reason='frame_decay').data(),
     ]
+    initial_structure = dict(boundaries=[0, 3000, 5000], segments=[
+        dict(start_ms=0, end_ms=3000), dict(start_ms=3000, end_ms=5000),
+    ])
     analysis = dict(revision=13, duration=5, candidates=deepcopy(parent_candidates),
         phrase_candidates=[Note(1000, 2800, id='locked', source='pitch', voice='vocals',
             phrase=True, support=('locked', 'support'), support_coverage=1,
@@ -704,17 +715,39 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
         vocal_phrase = Note(3600, 4350, id='region', source='pitch', voice='vocals',
             phrase=True, support=('region-support',), support_coverage=1,
             release_reason='vocal_activity_decay').data()
-        state['analysis'] = dict(analysis, phrase_candidates=[vocal_phrase],
+        state['analysis']['structure'] = initial_structure
+        projects.save(state)
+        assert projects.load(pid)['analysis']['structure']['boundaries'] == [0, 3000, 5000]
+        updated_structure = dict(boundaries=[0, 3200, 5000], segments=[
+            dict(start_ms=0, end_ms=3200), dict(start_ms=3200, end_ms=5000),
+        ])
+        state['analysis'] = dict(state['analysis'], phrase_candidates=[vocal_phrase],
             candidates=[changed_locked,
                 Note(1700, 2300, id='support', source='pitch', voice='other',
                     release_reason='frame_decay').data(),
                 Note(2500, 2900, id='outside', source='pitch', voice='other',
                     release_reason='frame_decay').data(),
-                vocal_anchor, vocal_support],
-            structure=dict(boundaries=[0, 5000], segments=[dict(start_ms=0, end_ms=5000)]))
+                vocal_anchor, vocal_support], structure=updated_structure)
         projects.save(state)
+
+        # Refresh a full-song candidate against the changed sections, then
+        # return to the older source snapshot before rewriting only one region.
+        state, refreshed = _generate(client, base, headers, dict(mode='audio', settings=settings,
+            timing_confirmed=True, **clock))
+        assert refreshed['selection']['structure']['boundaries'] == [0, 3200, 5000]
+        assert refreshed['source_evidence']['locked']['detected']['end'] == 1900
+        assert_source_identity(refreshed)
+        assert state['analysis']['structure']['boundaries'] != initial_structure['boundaries']
+        switched = client.post(base + '/variant', json={'index': 0}, headers=headers)
+        assert switched.status_code == 200
+        state = client.get(base).json
+        assert state['active'] == 0
+        parent = state['variants'][0]
+        assert parent['source_evidence']['locked']['detected']['end'] == 1500
+
         state, child = _generate(client, base, headers, dict(mode='audio', settings=settings,
             timing_confirmed=True, region=[3000, 5000], **clock))
+        assert child['selection']['structure']['boundaries'] == [0, 3200, 5000]
         assert child['selection']['scope'] == 'regional_output'
         assert child['selection']['locked'] == 2 and child['selection']['generated'] == 1
         decisions = {row['id']: row for row in child['selection']['decisions']}
@@ -727,7 +760,7 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
         assert child['source_evidence']['region']['detected']['start'] == 3600
         assert child['source_evidence']['region']['detected']['end'] == 3900
         assert child['source_evidence']['region']['detected']['voice'] == 'vocals'
-        assert child['source_separation'] == reference
+        assert_source_identity(child)
         assert child['source_evidence']['locked'] == parent['source_evidence']['locked']
         assert child['source_evidence']['support'] == parent['source_evidence']['support']
         assert child['source_evidence']['locked']['detected']['end'] == 1500
@@ -768,11 +801,11 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
         client = app.test_client()
         headers = {'X-ManiaLab-Token': app.config['TOKEN']}
         saved = client.get(base).json
-        assert len(saved['variants']) == 2 and saved['active'] == 1
-        child = saved['variants'][1]
+        assert len(saved['variants']) == 3 and saved['active'] == 2
+        child = saved['variants'][2]
         state, edited = _edit(client, base, headers, child, op='update', note_id='region',
             values=dict(start=3701, end=4401, lane=2))
-        assert edited['source_separation'] == reference
+        assert_source_identity(edited)
         assert edited['source_evidence'] == child['source_evidence']
         edited_region = next(note for note in edited['notes'] if note['id'] == 'region')
         assert edited_region['end'] > edited_region['start']
@@ -825,11 +858,11 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
         with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
             assert archive.read('ManiaLab.osu') == parent_chart.data
             assert archive.read('song.wav') == music
-        assert client.post(base + '/variant', json={'index': 1}, headers=headers).status_code == 200
+        assert client.post(base + '/variant', json={'index': 2}, headers=headers).status_code == 200
         reopened = client.get(base).json
-        assert reopened['variants'][1]['source_separation'] == reference
-        assert reopened['variants'][1]['selection']['scope'] == 'regional_output'
-        reopened_child = reopened['variants'][1]
+        assert_source_identity(reopened['variants'][2])
+        assert reopened['variants'][2]['selection']['scope'] == 'regional_output'
+        reopened_child = reopened['variants'][2]
         assert reopened_child['source_evidence']['locked'] == parent['source_evidence']['locked']
         assert reopened_child['source_evidence']['region']['detected']['voice'] == 'vocals'
         reopened_region = next(note for note in reopened_child['notes'] if note['id'] == 'region')
