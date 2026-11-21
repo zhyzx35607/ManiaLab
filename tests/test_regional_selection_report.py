@@ -65,6 +65,88 @@ def test_legacy_edited_candidate_origin_is_backfilled_from_available_parent():
     assert resolve_generation_origin(child,[child])==dict(kind='unknown')
 
 
+def test_variant_switch_restores_expression_for_regional_rewrite_and_json_export(tmp_path):
+    import io
+    from manialab.expression import propose_expression
+    from manialab.recommendations import evidence_signature
+    from manialab.server import create_app
+    from tests.test_server import wait_job
+
+    root=Path(__file__).parents[1]
+    app=create_app(root,tmp_path)
+    client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    try:
+        imported=client.post('/api/import',headers=headers,
+            data={'files':(io.BytesIO(b'placeholder'),'song.wav')})
+        assert imported.status_code==200,imported.json
+        base=f"/api/projects/{imported.json['id']}"
+        prefs=parameters({'keys':10,'ln_ratio':.55,'min_ln':240})
+        candidates=[
+            Note(1000,1500,pitch=60,source='pitch',voice='vocals',id='vocal-early').data(),
+            Note(2500,3000,pitch=64,source='pitch',voice='piano',id='piano-early').data(),
+            Note(7000,7500,pitch=67,source='pitch',voice='vocals',id='vocal-late').data(),
+            Note(8500,9000,pitch=72,source='pitch',voice='piano',id='piano-late').data(),
+        ]
+        analysis=dict(revision=3,duration=12.,tempo=dict(bpm=120,offset=0,division=4,stable=True),
+            candidates=candidates,phrase_candidates=[],timing_attacks=[],
+            structure=dict(segments=[dict(start_ms=0,end_ms=6000),dict(start_ms=6000,end_ms=12000)]))
+        def expression(vocal_mode):
+            result=propose_expression(analysis,prefs)
+            result['source']='manual'
+            for section in result['sections']:
+                section['voices']['vocals']['mode']=vocal_mode
+                section['voices']['piano']['mode']='onsets'
+            return result
+
+        omit=expression('omit')
+        onsets=expression('onsets')
+        state=imported.json
+        state.update(settings=prefs,analysis=analysis,expression=omit,
+            plan=dict(source='local-audio-recommendation',preferences=prefs,
+                segments=[dict(start_ms=0,end_ms=6000,preferences={}),
+                          dict(start_ms=6000,end_ms=12000,preferences={})],
+                keys=10,bpm=120,evidence_signature=evidence_signature(analysis)))
+        app.extensions['projects'].save(state)
+        payload=dict(mode='audio',settings=prefs,timing_confirmed=True,**TEMPO)
+
+        def generate(extra=None):
+            submitted=client.post(base+'/generate',headers=headers,json=payload|(extra or {}))
+            assert submitted.status_code==200,submitted.json
+            result=wait_job(client,submitted.json)
+            assert result['status']=='done',result
+            return client.get(base).json
+
+        first=generate()
+        assert {note['id'] for note in first['variants'][0]['notes']}=={'piano-early','piano-late'}
+        assert first['variants'][0]['selection']['expression']==omit
+
+        state=app.extensions['projects'].load(imported.json['id'])
+        state['expression']=onsets
+        app.extensions['projects'].save(state)
+        second=generate()
+        assert {note['id'] for note in second['variants'][1]['notes']}=={
+            'vocal-early','piano-early','vocal-late','piano-late'}
+        assert second['variants'][1]['selection']['expression']==onsets
+
+        selected=client.post(base+'/variant',headers=headers,json={'index':0})
+        assert selected.status_code==200,selected.json
+        assert selected.json['expression']==omit
+        exported=client.get(base+'/export/json',headers=headers)
+        assert exported.status_code==200
+        assert exported.json['expression']==omit
+        assert exported.json['variant']['selection']['expression']==omit
+
+        rewritten=generate({'region':[0,6000]})
+        regional=rewritten['variants'][rewritten['active']]
+        assert regional['selection']['expression']==omit
+        assert {note['voice'] for note in regional['notes']}=={'piano'}
+        exported=client.get(base+'/export/json',headers=headers)
+        assert exported.json['expression']==omit
+        assert exported.json['variant']['selection']['expression']==omit
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 def test_manual_and_reanalyzed_locks_have_no_fresh_raw_decision_attached():
     state=state_for([Note(1000,1800,id='locked',source='pitch',voice='piano'),
                      Note(3500,4200,id='region',source='pitch',voice='bass')])
