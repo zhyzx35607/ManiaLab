@@ -12,6 +12,39 @@ from .domain import Note
 from .timing import estimate_timing
 
 
+_RHYTHM_STFT_NPERSEG = 1024
+_RHYTHM_STFT_HOP = 256
+_RHYTHM_STFT_CHUNK_FRAMES = 256
+_RHYTHM_RMS_CHUNK_WINDOWS = 4096
+
+
+def _check_cancelled(cancelled):
+    if cancelled is not None and cancelled():
+        raise InterruptedError("已取消瞬态分析")
+
+
+def _rms_window_block(samples, step):
+    return np.sqrt(np.mean(samples.reshape(-1, step) ** 2, axis=1))
+
+
+def _chunked_rms(samples, step, cancelled=None):
+    usable = len(samples) // step * step
+    window_count = usable // step
+    if not window_count:
+        return _rms_window_block(samples[:usable], step)
+
+    rms = None
+    for first in range(0, window_count, _RHYTHM_RMS_CHUNK_WINDOWS):
+        _check_cancelled(cancelled)
+        stop = min(window_count, first + _RHYTHM_RMS_CHUNK_WINDOWS)
+        block_rms = _rms_window_block(samples[first * step:stop * step], step)
+        if rms is None:
+            rms = np.empty(window_count, dtype=block_rms.dtype)
+        rms[first:stop] = block_rms
+    _check_cancelled(cancelled)
+    return rms
+
+
 def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_threshold=.3, attacks=None, suppressed=()):
     # infer() retains frame starts strictly inside the audio. A final frame's
     # cell can extend past EOF, but observations after EOF are not valid release
@@ -74,29 +107,95 @@ def pitched_notes(frames, onsets, times, duration, onset_threshold=.45, frame_th
     return sorted(notes, key=lambda n: (n.start, n.pitch))
 
 
-def rhythmic_evidence(samples, beats_ms=None, estimate=True):
-    _, times, z = stft(samples, SR, nperseg=1024, noverlap=768)
-    magnitude = np.abs(z)
-    flux = np.r_[0, np.maximum(0, np.diff(magnitude, axis=1)).sum(axis=0)]
-    energy = np.sqrt(np.sum(magnitude ** 2, axis=0))
+def rhythmic_evidence(samples, beats_ms=None, estimate=True, cancelled=None):
+    samples = np.asarray(samples)
+    nperseg = _RHYTHM_STFT_NPERSEG
+    hop = _RHYTHM_STFT_HOP
+    _check_cancelled(cancelled)
+    if len(samples) < nperseg:
+        # Keep SciPy's short-input nperseg adjustment and its validation behavior.
+        _, times, z = stft(samples, SR, nperseg=nperseg, noverlap=nperseg - hop)
+        _check_cancelled(cancelled)
+        magnitude = np.abs(z)
+        flux = np.r_[0, np.maximum(0, np.diff(magnitude, axis=1)).sum(axis=0)]
+        energy = np.sqrt(np.sum(magnitude ** 2, axis=0))
+        amplitude = np.max(magnitude, axis=0)
+    else:
+        frame_count = (len(samples) + hop - 1) // hop + 1
+        # Match SciPy's centered-STFT arithmetic order; RMS window indexing
+        # truncates these timestamps, so equivalent formulas can differ by one.
+        times = np.arange(nperseg / 2, nperseg / 2 + frame_count * hop,
+                          hop) / float(SR)
+        times -= (nperseg / 2) / SR
+        flux = None
+        energy = None
+        amplitude = None
+        previous_magnitude = None
+        for first in range(0, frame_count, _RHYTHM_STFT_CHUNK_FRAMES):
+            _check_cancelled(cancelled)
+            stop = min(frame_count, first + _RHYTHM_STFT_CHUNK_FRAMES)
+            block_start = first * hop - nperseg // 2
+            block_end = (stop - 1) * hop + nperseg - nperseg // 2
+            source_start = max(0, block_start)
+            source_end = min(len(samples), block_end)
+            block = samples[source_start:source_end]
+            left = source_start - block_start
+            right = block_end - source_end
+            if left or right:
+                block = np.pad(block, (left, right))
+            _, _, z = stft(block, SR, nperseg=nperseg, noverlap=nperseg - hop,
+                           boundary=None, padded=False)
+            magnitude = np.abs(z)
+            block_energy = np.sqrt(np.sum(magnitude ** 2, axis=0))
+            block_amplitude = np.max(magnitude, axis=0)
+            if flux is None:
+                # Keep the legacy full-STFT reductions and their downstream
+                # threshold arithmetic in the magnitude dtype.
+                flux = np.zeros(frame_count, dtype=magnitude.dtype)
+                energy = np.empty(frame_count, dtype=block_energy.dtype)
+                amplitude = np.empty(frame_count, dtype=block_amplitude.dtype)
+            energy[first:stop] = block_energy
+            amplitude[first:stop] = block_amplitude
+            if previous_magnitude is None:
+                flux[first:stop] = np.r_[
+                    0, np.maximum(0, np.diff(magnitude, axis=1)).sum(axis=0)]
+            else:
+                local_flux = np.empty(stop - first, dtype=magnitude.dtype)
+                boundary_pair = np.empty((magnitude.shape[0], 3),
+                                         dtype=magnitude.dtype)
+                boundary_pair[:, 0] = previous_magnitude
+                boundary_pair[:, 1] = magnitude[:, 0]
+                boundary_pair[:, 2] = magnitude[:, 0]
+                local_flux[0] = np.maximum(
+                    0, np.diff(boundary_pair, axis=1)).sum(axis=0)[0]
+                if stop - first > 1:
+                    local_flux[1:] = np.maximum(
+                        0, np.diff(magnitude, axis=1)).sum(axis=0)
+                flux[first:stop] = local_flux
+            previous_magnitude = magnitude[:, -1].copy()
+        _check_cancelled(cancelled)
     rise = energy - np.r_[np.zeros(min(3, len(energy))), energy[:-3]]
     # Spectral spreading at a release is not a new attack. Require a small energy rise.
     flux[rise <= np.maximum(np.max(energy) * .002, energy * .01)] = 0
-    amplitude = np.max(magnitude, axis=0)
     flux[amplitude < max(.00003, float(np.max(amplitude)) * .004)] = 0
+    _check_cancelled(cancelled)
     if not np.any(flux):
         return [], {"bpm": 120.0, "offset": 0.0, "estimated": True, "reliability": "无可靠节奏证据"}
     base = median_filter(flux, size=43)
+    _check_cancelled(cancelled)
     peaks, _ = find_peaks(flux, height=base * 1.6 + np.max(flux) * .025, distance=3, prominence=np.max(flux) * .02)
+    _check_cancelled(cancelled)
     scale = max(float(np.percentile(flux[peaks], 90)) if len(peaks) else 1, 1e-9)
     notes = []
     # Refine each STFT attack on a 1 ms RMS envelope. The flux peak itself can
     # precede or follow the physical attack by a window-dependent amount.
     step = 22
-    usable = len(samples) // step * step
-    rms = np.sqrt(np.mean(samples[:usable].reshape(-1, step) ** 2, axis=1))
+    rms = _chunked_rms(samples, step, cancelled)
     smooth = np.convolve(rms, np.ones(3) / 3, mode="same")
-    for i in peaks:
+    _check_cancelled(cancelled)
+    for peak_index, i in enumerate(peaks):
+        if peak_index % 256 == 0:
+            _check_cancelled(cancelled)
         center = int(times[i] * SR / step)
         lo, hi = max(0, center - 30), min(len(smooth), center + 25)
         if hi - lo < 3:
@@ -112,7 +211,10 @@ def rhythmic_evidence(samples, beats_ms=None, estimate=True):
         if notes and at - notes[-1].start < 35:
             continue
         notes.append(Note(at, at, -1, 48, round(min(1, float(flux[i]) / scale), 4), "transient", f"t{i}"))
-    return notes, estimate_timing(notes, len(samples) / SR, beats_ms) if estimate else None
+    _check_cancelled(cancelled)
+    timing = estimate_timing(notes, len(samples) / SR, beats_ms) if estimate else None
+    _check_cancelled(cancelled)
+    return notes, timing
 
 
 def fuse_attacks(pitched, transients):

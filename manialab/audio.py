@@ -154,7 +154,9 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
     if cancelled():
         raise InterruptedError("已取消分析")
     progress(90, "校准瞬态、比较 BPM 候选并检查全曲漂移")
-    transients, tempo = rhythmic_evidence(samples)
+    transients, tempo = rhythmic_evidence(samples, cancelled=cancelled)
+    if cancelled():
+        raise InterruptedError("已取消分析")
     notes = pitched_notes(frames, onsets, times, duration, settings["onset_threshold"], settings["frame_threshold"], transients)
     notes, releases = refine_releases(notes, samples)
     notes, unmatched, fused = fuse_attacks(notes, transients)
@@ -215,10 +217,16 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
         stem, end_padding = align_stem_samples(stem, len(samples))
         stage = 31 + round(index * 61 / len(voices))
         progress(stage, f"分析 {voice} 的起音与持续区间")
-        attacks, _ = rhythmic_evidence(stem, estimate=False)
+        attacks, _ = rhythmic_evidence(stem, estimate=False, cancelled=cancelled)
+        if cancelled():
+            raise InterruptedError("已取消声部分析")
         attacks, rejected_attacks = source_evidence(attacks, stem, samples)
         if voice == "drums":
+            if cancelled():
+                raise InterruptedError("已取消声部分析")
             tempos[voice] = estimate_timing(attacks, duration, beats_ms)
+            if cancelled():
+                raise InterruptedError("已取消声部分析")
         attacks = [replace(n, voice=voice, id=f"{voice}:{n.id}") for n in attacks]
         cached = False
         articulation = []
@@ -312,7 +320,9 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
             peak = max(float(np.max(np.abs(stem))), 1.)
             wavfile.write(stem_root / f"{voice}.wav", SR, (np.clip(stem / peak, -1, 1) * 32767).astype(np.int16))
     progress(94, "核对声部与混音拍线，保留持续段证据")
-    mix_attacks, mix_tempo = rhythmic_evidence(samples, beats_ms)
+    mix_attacks, mix_tempo = rhythmic_evidence(samples, beats_ms, cancelled=cancelled)
+    if cancelled():
+        raise InterruptedError("已取消声部分析")
     stem_signals = {v:np.load(stem_root/f'{v}.npy',allow_pickle=False,mmap_mode='r') for v in voices if v!='drums'}
     protected=[n for n in all_candidates if n.voice in unit_weight_voices]
     generic=[n for n in all_candidates if n.voice not in unit_weight_voices]

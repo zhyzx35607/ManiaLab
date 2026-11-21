@@ -13,13 +13,15 @@
 
 ## 当前基线
 
-续接更新（2026-11-21）：阶段98本地合成定向组123 passed，波形编辑/LN端点Edge流程2 passed；Provided状态保存/缓存清理失败回滚、候选来源缺失/冲突拒绝、快照清理诊断和remap非音频引用均有回归覆盖。阶段99节奏内存/取消定向组51 passed，含float32/float64及跨块对照、真实API取消集成，SciPy时间戳运算顺序与旧实现一致。完整Python/API第二轮为3527 passed、159 skipped（348.12秒）；第一轮有一项worker句柄数503/502的间歇观察失败，单项复跑1 passed、完整worker文件30 passed，第二轮全量通过，根因未确认。compileall与`git diff --check`通过。应用使用独占新路径导入并串行处理任务；外部程序若在复制期间原地改写源文件，仍可能产生混合副本，但SHA与解码针对同一私有快照，这是受支持工作流之外的边界，不是未完成的应用内竞态修复。STFT/RMS运算块有固定上限，全长摘要仍随时长线性增长；20分钟输入下已知核心数组约117.9 MiB，不含FFT临时量、其它分析状态和事件对象。PR #208旧head `c576114`的Windows run `44861914971`已通过；新增清理失败传播测试后的阶段98新head待推送并重新进行Windows CI，之后仍需合并后main验证。阶段99待基于更新后的main单独提交并创建PR。以上工程检查不构成MUS-01真人音乐验收。
+状态补充（2026-11-21 07:56:57 UTC）：当前`main`仍为`c3c1f407d0f4c2018b69618afa11107a93543af6`，PR #209 head `65ea63a1528190825ab8285584b8e1bc47140c87`的Windows run `44882090317`成功。API/Chromium、Core便携构建、离线Unicode EXE、Core媒体切换、worker关停和collector通过；模型下载、钢琴专项、独立音频worker构建按条件跳过。PR仍开放；先推送文档同步的新head并复验，再合并、验证main。此状态覆盖本节后文阶段99旧的“待提交并完成PR/CI”描述。
+
+续接更新（2026-11-21）：阶段98定向pytest `123 passed`、波形端点Edge流程本地`2 passed`；PR #208 head run `44863244643`成功，PR于`2026-11-21 04:04:29 UTC`合并为`c3c1f407d0f4c2018b69618afa11107a93543af6`。合并后main run `44864272448`通过：pytest `3509 passed, 156 skipped`、Chromium `69 passed`；`BUILD_PORTABLE=false`导致portable/EXE、Core媒体、shutdown和collector跳过，Edge未运行。阶段99定向节奏内存/取消组`56 passed`，包括一ULP边界峰阈值回归；隔离全量pytest `3532 passed, 159 skipped`（363.07秒），`git diff --check`通过。块输入有上限，但全长摘要数组仍随时长线性增长，20分钟float32输入及已知核心数组估算约117.9 MiB，不含FFT工作区、其它分析状态及事件对象；SciPy/NumPy和`estimate_timing`同步内核期间不能协作取消。应用新项目路径使用`xb`并由单worker串行处理；外部程序在复制期间原地改写源文件仍可能产生混合副本，SHA与解码针对同一副本，该情形不属于受支持应用内竞态。以上为合成工程验证，不构成MUS-01真人音乐验收。
 
 下方阶段98/99首轮记录仅保留问题发现背景，旧测试数字和进行时状态已由本续接更新取代。
 
 首轮计划里`132 passed, 1 deselected`未能追溯到对应测试命令，本轮不将它作为验证证据；以当前可复现命令和明确文件范围的结果为准。
 
-- 当前基线为合并后的 `main` 提交 `1ad69d710d4df5829a984bc4d60ed1f8103569e4`；PR #207 head run `44841323526`与合并后 main run `44842816110`成功。PR与main Windows流程均通过pytest/API、Edge、Core构建、离线Unicode EXE、媒体切换、shutdown和collector；PR #207修正Core `basic_analysis`证据的稳定引擎分类值。PR #208旧head `c576114`的Windows run `44861914971`已通过；新增清理失败传播测试后的新head待推送及Windows复验，PR合并后main验证也待完成。阶段99本地修复和回归已完成，待基于更新main单独提交并经PR/CI验证。Core仍是唯一公开支持profile；ENG-05/06与MUS-01真人音乐验收保持开放。历史PR明细见验收账本。
+- 当前基线为合并后的 `main` 提交 `c3c1f407d0f4c2018b69618afa11107a93543af6`；PR #207 head run `44841323526`及合并后main run `44842816110`成功，Core验证通过。PR #208 head run `44863244643`及合并后main run `44864272448`均成功；main Python/API `3509 passed, 156 skipped`、Chromium `69 passed`，portable/EXE、Core媒体、shutdown、collector因`BUILD_PORTABLE=false`跳过，Edge未运行。阶段99本地完整pytest `3532 passed, 159 skipped`，待提交并完成PR/CI；Core仍是唯一公开支持profile，ENG-05/06与MUS-01真人音乐验收保持开放。历史PR明细见验收账本。
 - 当前公开 Pre-release 仍为 `v0.1.0-alpha.6-dev.18`；主线修复不自动包含在该包中。
 - 架构已经按服务端路由、领域逻辑、音频组件、存储与浏览器分层。先验证边界契约和用户路径，不做没有缺陷证据的大面积重写。
 - 现有记录已明确真实盲听、玩家试打和两首独立歌曲评审尚未回收；Demucs 四/六声部 checkpoint 的独立再分发授权也尚未核实。
@@ -89,7 +91,7 @@
 
 第九十五阶段最终验证更新（2026-11-20）：本地全量pytest`3061 passed, 90 skipped`，Edge UI`66 passed`，compileall、静态JS语法、差异检查及JUnit provenance source digest通过。PR #204 head run `44740972271`和main run `44742135848`均通过；两次CI Python/API为`3062 passed, 89 skipped`、Edge `66 passed`，main Core profile构建、离线/Unicode EXE、shutdown与collector成功。main合并提交`d45ddb3f710edd6c0c8fb0557c49334eb61a5a69`。此前并行改写期间evidence digest stale属于旧产物身份不匹配，不作为通过或产品缺陷。
 
-第九十九阶段针对阶段3的大型频谱内存与取消响应：长输入`rhythmic_evidence`的STFT最多处理256帧一块，RMS最多处理4096个窗口一块；调用方传入取消回调并在分块及后处理边界检查。最终节奏内存/取消定向组51 passed，覆盖短/长与float32/float64跨块oracle、取消传播、回调异常及真实API任务取消。完整Python/API第二轮为3527 passed、159 skipped；首轮worker句柄计数失败随后单项、文件组和完整全量复验通过，根因未确认。摘要数组仍按音频时长线性增长，native算子调用中不能协作取消；固定块限制的是STFT/RMS临时运算。阶段99待基于更新后的main单独提交并创建PR、完成PR及合并后main验证；工程测试不构成音乐验收。
+第九十九阶段针对阶段3的大型频谱内存与取消响应：长输入`rhythmic_evidence`的STFT最多处理256帧一块，RMS最多处理4096个窗口一块；取消回调从Basic/deep调用路径传入，并在分块与后处理边界检查。定向组`56 passed`，包含float32/float64、跨块click、取消传播、API取消集成，以及一ULP峰阈值边界回归。全量Python/API `3532 passed, 159 skipped`（363.07秒）；`git diff --check`通过。跨块首帧频谱差分采用保留旧频率归约判定的临时二维块；分块STFT的舍入差异仍意味着不保证任意输入逐位等价。全长摘要数组仍按音频时长增长；native算子与`estimate_timing`同步调用期间不能协作取消。下一步提交阶段99并完成PR/Windows CI及合并后main验证；工程测试不构成音乐验收。
 
 **验证：**已有取消/故障注入、线程竞争、FFmpeg/Windows 子进程测试、资源基准及便携启动/退出报告；在合并版本上确认真实覆盖，不重复执行无关模型实验。
 
