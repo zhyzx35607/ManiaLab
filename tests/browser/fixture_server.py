@@ -15,10 +15,12 @@ sys.path.insert(0, str(ROOT))
 from manialab.arrange import parameters
 from manialab.chart_workspace import audio_work
 from manialab.domain import Note
+from manialab.expression import propose_expression
 from manialab.generation import generate_variant
 from manialab import server
 from manialab.planner import validate_plan
 from manialab.server import create_app
+from manialab.structure import edit_boundaries
 from manialab.timing import grid_diagnostics
 from waitress import serve
 
@@ -75,6 +77,31 @@ def offset_rounding_fixture(projects):
     )
     projects.save(state)
     return pid
+
+
+def manual_expression_fixture(projects):
+    pid = timing_fixture(projects, 'UI manual expression')
+    state = projects.load(pid)
+    notes = [
+        Note(t, t + 100, source='pitch', voice='vocals', id=f'{section}-{part}')
+        for section, start in (('early', 1000), ('late', 7000))
+        for part, t in (('head', start), ('support', start + 500))
+    ]
+    analysis = state['analysis']
+    analysis.update(candidates=[n.data() for n in notes],
+        timing_attacks=[n.data() for n in notes],
+        phrase_candidates=[
+            dict(head.data(), end=head.start + 1000, phrase=True,
+                 support=[head.id, support.id], support_coverage=1.,
+                 release_reason='vocal_activity_decay')
+            for head, support in zip(notes[::2], notes[1::2])
+        ],
+        tempo=dict(bpm=120, offset=0, division=4, stable=True))
+    analysis['structure'] = edit_boundaries({}, [6000], analysis)
+    analysis['segments'] = analysis['structure']['segments']
+    state.update(audio_shift_ms=0, settings=parameters({'phrase_ln': 0}))
+    state['expression'] = propose_expression(analysis, state['settings'])
+    projects.save(state)
 
 
 def audio_meter_fixture(projects):
@@ -323,6 +350,7 @@ def main():
         timing_fixture(projects, 'UI timing style')
         precise_timing_fixture(projects)
         offset_rounding_fixture(projects)
+        manual_expression_fixture(projects)
         audio_meter_fixture(projects)
         timing_fixture(projects, 'UI LN navigation audio')
         ln_remap_fixture(projects)
