@@ -3,6 +3,7 @@ import hashlib
 from pathlib import Path
 import tempfile
 import zipfile
+import zlib
 
 import numpy as np
 
@@ -50,7 +51,7 @@ def load_stem_activations(path, audio_sha256, separation_sha256,
                     or int(data["inference_revision"]) != inference_revision):
                 return None
             return data["frames"], data["onsets"], data["times"]
-    except (ValueError, KeyError, OSError, EOFError, zipfile.BadZipFile):
+    except (ValueError, KeyError, OSError, EOFError, zipfile.BadZipFile, zlib.error):
         return None
 
 

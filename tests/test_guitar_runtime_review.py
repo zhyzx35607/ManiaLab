@@ -89,7 +89,7 @@ def test_cache_identity_includes_every_execution_dependency(runtime, monkeypatch
 
 
 @pytest.mark.parametrize('damage', ['json', 'identity', 'missing_file', 'file_path',
-    'inner_identity', 'missing_head', 'shape', 'nan', 'negative', 'above_one'])
+    'inner_identity', 'missing_head', 'shape', 'nan', 'negative', 'above_one', 'bad_deflate'])
 def test_structurally_corrupted_cache_recomputes_without_reusing_bad_heads(runtime, damage):
     _, initial = _analyze(runtime)
     marker = Path(initial['evidence_cache'])
@@ -104,6 +104,19 @@ def test_structurally_corrupted_cache_recomputes_without_reusing_bad_heads(runti
         target.unlink()
     elif damage == 'file_path':
         saved['file'] = 'activations-../outside.npz'
+        marker.write_text(json.dumps(saved), encoding='utf-8')
+    elif damage == 'bad_deflate':
+        import struct
+        import zipfile
+        with zipfile.ZipFile(target) as archive:
+            member = archive.getinfo(guitar.OUTPUTS[0] + '.npy')
+            assert member.compress_type == zipfile.ZIP_DEFLATED
+        damaged = bytearray(target.read_bytes())
+        name_length, extra_length = struct.unpack_from('<HH', damaged, member.header_offset + 26)
+        data_offset = member.header_offset + 30 + name_length + extra_length
+        damaged[data_offset] = 0xff
+        target.write_bytes(damaged)
+        saved['sha256'] = hashlib.sha256(target.read_bytes()).hexdigest()
         marker.write_text(json.dumps(saved), encoding='utf-8')
     else:
         with np.load(target, allow_pickle=False) as data:

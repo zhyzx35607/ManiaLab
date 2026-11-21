@@ -13,6 +13,7 @@ import tempfile
 import threading
 import time
 import zipfile
+import zlib
 
 import numpy as np
 import onnxruntime as ort
@@ -138,7 +139,7 @@ def analyze(path, work, model, settings, progress=lambda p, s: None, cancelled=l
                         and str(data["model_identity"]) == model_fingerprint
                         and int(data["inference_revision"]) == BASIC_PITCH_INFERENCE_REVISION):
                     cached = (data["frames"], data["onsets"], data["times"])
-        except (ValueError, KeyError, OSError, EOFError, zipfile.BadZipFile):
+        except (ValueError, KeyError, OSError, EOFError, zipfile.BadZipFile, zlib.error):
             cached = None
     if cached is not None:
         frames, onsets, times = cached

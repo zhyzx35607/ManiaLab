@@ -37,6 +37,17 @@ def corrupt_stored_member_crc(path, member):
     path.write_bytes(raw)
 
 
+def corrupt_deflated_member(path, member):
+    with zipfile.ZipFile(path) as archive:
+        info = archive.getinfo(member)
+        assert info.compress_type == zipfile.ZIP_DEFLATED
+        raw = bytearray(path.read_bytes())
+    name_length, extra_length = struct.unpack_from("<HH", raw, info.header_offset + 26)
+    data_start = info.header_offset + 30 + name_length + extra_length
+    raw[data_start] = 0xff
+    path.write_bytes(raw)
+
+
 def test_sha256_file_streams_contents_without_read_bytes(tmp_path, monkeypatch):
     path = tmp_path / "source-audio.bin"
     contents = bytes(range(256)) * 12289
@@ -177,7 +188,7 @@ def test_stem_activation_cache_requires_all_source_and_detector_identities(
 
 
 @pytest.mark.parametrize(
-    "kind", ["old-version", "missing-field", "corrupt", "bad-crc", "missing-file"])
+    "kind", ["old-version", "missing-field", "corrupt", "bad-crc", "bad-deflate", "missing-file"])
 def test_stem_activation_cache_treats_invalid_entries_as_misses(tmp_path, kind):
     cache = tmp_path / "activations.npz"
     if kind == "old-version":
@@ -212,6 +223,20 @@ def test_stem_activation_cache_treats_invalid_entries_as_misses(tmp_path, kind):
             inference_revision=BASIC_PITCH_INFERENCE_REVISION,
         )
         corrupt_stored_member_crc(cache, "frames.npy")
+    elif kind == "bad-deflate":
+        values = activations()
+        np.savez_compressed(
+            cache,
+            frames=values[0],
+            onsets=values[1],
+            times=values[2],
+            version=STEM_ACTIVATION_CACHE_VERSION,
+            audio_sha256="audio-hash",
+            separation_sha256="separation-hash",
+            model_identity=MODEL_IDENTITY,
+            inference_revision=BASIC_PITCH_INFERENCE_REVISION,
+        )
+        corrupt_deflated_member(cache, "frames.npy")
 
     assert load_stem_activations(
         cache, "audio-hash", "separation-hash",

@@ -463,6 +463,24 @@ def _write_stored_activation_cache(path, audio_sha256, model_identity):
             archive.writestr(f"{name}.npy", payload.getvalue())
 
 
+def _write_compressed_activation_cache(path, audio_sha256, model_identity):
+    from manialab.audio_cache import (
+        BASIC_PITCH_INFERENCE_REVISION,
+        WHOLE_AUDIO_ACTIVATION_CACHE_VERSION,
+    )
+
+    np.savez_compressed(
+        path,
+        frames=np.full((2, 3), .25, dtype=np.float32),
+        onsets=np.full((2, 3), .5, dtype=np.float32),
+        times=np.array([0.0, .01, .02], dtype=np.float64),
+        version=WHOLE_AUDIO_ACTIVATION_CACHE_VERSION,
+        audio_sha256=audio_sha256,
+        model_identity=model_identity,
+        inference_revision=BASIC_PITCH_INFERENCE_REVISION,
+    )
+
+
 def _corrupt_stored_zip_member(path, member):
     with zipfile.ZipFile(path) as archive:
         info = archive.getinfo(member)
@@ -475,6 +493,19 @@ def _corrupt_stored_zip_member(path, member):
         original = archive.read(1)
         archive.seek(data_offset + info.file_size - 1)
         archive.write(bytes([original[0] ^ 1]))
+
+
+def _corrupt_deflated_zip_member(path, member):
+    with zipfile.ZipFile(path) as archive:
+        info = archive.getinfo(member)
+        assert info.compress_type == zipfile.ZIP_DEFLATED
+    with path.open("r+b") as archive:
+        archive.seek(info.header_offset)
+        local_header = archive.read(30)
+        filename_size, extra_size = struct.unpack_from("<HH", local_header, 26)
+        data_offset = info.header_offset + 30 + filename_size + extra_size
+        archive.seek(data_offset)
+        archive.write(b"\xff")
 
 
 def _synthetic_activations():
@@ -491,6 +522,24 @@ def test_whole_audio_cache_recomputes_after_member_crc_error(tmp_path, monkeypat
     fingerprint = audio.model_identity(model)
     _write_stored_activation_cache(cache, audio_hash, fingerprint)
     _corrupt_stored_zip_member(cache, "frames.npy")
+
+    result = audio.analyze(source, tmp_path, model, settings)
+
+    assert calls == [True]
+    assert result["cached"] is False
+    with np.load(cache, allow_pickle=False) as data:
+        assert np.array_equal(data["frames"], _synthetic_activations()[0])
+
+
+def test_whole_audio_cache_recomputes_after_deflate_stream_error(tmp_path, monkeypatch):
+    calls = []
+    audio, source, source_bytes, model, settings = _prepare_synthetic_basic_analysis(
+        tmp_path, monkeypatch, lambda: (calls.append(True), _synthetic_activations())[1])
+    cache = tmp_path / "activations.npz"
+    audio_hash = hashlib.sha256(source_bytes).hexdigest()
+    fingerprint = audio.model_identity(model)
+    _write_compressed_activation_cache(cache, audio_hash, fingerprint)
+    _corrupt_deflated_zip_member(cache, "frames.npy")
 
     result = audio.analyze(source, tmp_path, model, settings)
 
