@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -53,6 +54,44 @@ def test_audio_decode_does_not_publish_partial_preview_on_write_failure(
     assert preview_path.exists() is existing_preview
     if existing_preview:
         assert preview_path.read_bytes() == original_preview
+    assert not list(tmp_path.glob('.preview-*.wav'))
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows readers can block preview replacement')
+@pytest.mark.parametrize('release_reader', [True, False])
+def test_audio_decode_retries_windows_preview_reader_without_overwriting_it(
+        tmp_path, monkeypatch, release_reader):
+    samples = np.full(audio.SR // 2, .25, dtype='<f4')
+    preview_path = tmp_path / 'preview.wav'
+    wavfile.write(preview_path, audio.SR, np.zeros(len(samples), dtype=np.int16))
+    original_preview = preview_path.read_bytes()
+    delays = []
+
+    def fake_runner(args, **kwargs):
+        return subprocess.CompletedProcess(args, 0, stdout=samples.tobytes())
+
+    with preview_path.open('rb') as reader:
+        def sleep(delay):
+            delays.append(delay)
+            reader.seek(0)
+            assert reader.read() == original_preview
+            if release_reader:
+                reader.close()
+
+        monkeypatch.setattr(audio_io.time, 'sleep', sleep)
+        if release_reader:
+            assert np.array_equal(audio_io.decode(Path('synthetic.wav'), tmp_path, runner=fake_runner),
+                                  samples)
+            assert len(delays) == 1
+            rate, preview = wavfile.read(preview_path)
+            assert rate == audio.SR
+            assert np.array_equal(preview, (samples * 32767).astype(np.int16))
+        else:
+            with pytest.raises(PermissionError) as error:
+                audio_io.decode(Path('synthetic.wav'), tmp_path, runner=fake_runner)
+            assert error.value.winerror in (5, 32)
+            assert delays and sum(delays) <= .5
+            assert preview_path.read_bytes() == original_preview
     assert not list(tmp_path.glob('.preview-*.wav'))
 
 

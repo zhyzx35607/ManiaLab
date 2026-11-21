@@ -14,6 +14,8 @@ from scipy.io import wavfile
 from .audio_config import SR
 from .cancellation import report_process_cleanup_failure, timeout_for
 
+_PREVIEW_REPLACE_RETRY_DELAYS = (.01, .02, .04, .08, .16)
+
 
 def run_hidden(args, **kwargs):
     return subprocess.run(args, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0, **kwargs)
@@ -203,6 +205,20 @@ def decode_preview_window(path, first_sample, frames):
     return (np.clip(samples, -1, 1) * 32767).astype(np.int16)
 
 
+def _replace_preview(source, destination):
+    if os.name == "nt":
+        for delay in _PREVIEW_REPLACE_RETRY_DELAYS:
+            try:
+                os.replace(source, destination)
+                return
+            except PermissionError as error:
+                # A playback response can briefly keep the old preview open.
+                if getattr(error, "winerror", None) not in (5, 32):
+                    raise
+                time.sleep(delay)
+    os.replace(source, destination)
+
+
 def decode(path, work, *, runner=None, cancelled=None):
     runner = run_hidden if runner is None else runner
     args = [imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-nostdin", "-i", str(path),
@@ -226,7 +242,7 @@ def decode(path, work, *, runner=None, cancelled=None):
         temporary_path = Path(temporary.name)
     try:
         wavfile.write(temporary_path, SR, (np.clip(samples, -1, 1) * 32767).astype(np.int16))
-        os.replace(temporary_path, preview_path)
+        _replace_preview(temporary_path, preview_path)
     except BaseException:
         try:
             temporary_path.unlink(missing_ok=True)
