@@ -5,6 +5,8 @@
 
 ## 当前状态（先读）
 
++ 第一百零四阶段状态保存提交边界（本地验证通过，PR #221检查中）：复现`os.replace(state.tmp,state.json)`成功后，`Projects.save`仍在`finally`清理已移动的临时路径；注入该清理异常会让任务报告error并回滚其已保存状态引用所指资源。修复为仅在原子替换失败时清理临时文件；storage故障注入与真实`/provided-stems`生命周期回归验证任务完成、状态引用对应的新解码缓存保留、旧缓存不变且worker可复用。精确命令`D:\project\ManiaLab\.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_storage.py tests/test_task_service.py tests/test_task_lifecycle_flow.py`结果`28 passed in 4.47s`；`D:\project\ManiaLab\.venv\Scripts\python.exe -m compileall -q manialab tests`及`git diff --check`通过。PR #221已创建，更新head的Windows PR CI待验证；测试仅使用临时目录和合成音频，未运行模型/研究脚本或读取ignored用户素材。
+
 + `main` 当前HEAD为`063dfabff4c7a5886372731e8da30b5311981a61`：PR #218于`523b4d7`合并；PR #219 head run `44907441797`通过并于2026-11-21 `13:17:38 UTC`合并为`063dfab`。PR #219合并后main run `44908128277`成功：Python/API `3561 passed, 156 skipped, 1 warning`，Chromium `69 passed`；便携/EXE、Core媒体、shutdown和collector按条件跳过。PR #220已rebase到该main，重新验证待完成。公开Release仍为`v0.1.0-alpha.6-dev.19`，tag固定指向`3bd0dfef89c25710c043f120a7290da5adb8dc84`；后续main与PR提交均不包含在dev.19中，文档提交不移动release tag。
 
 + dev.19已发布（2026-11-21）：PR #211合并修复声部缓存格式号问题；PR #212于`2026-11-21 09:54:17 UTC`合入`main`，merge commit `3bd0dfef89c25710c043f120a7290da5adb8dc84`，合并后main Windows run `44891768664`成功。annotated tag `v0.1.0-alpha.6-dev.19`精确指向该提交；tag Windows run `44892302625`成功（8分24秒）：pytest `3547 passed, 156 skipped, 1 warning`，合成浏览器 `69 passed`，Core包构建、离线Unicode EXE、媒体切换、关停、collector和工件上传均通过。

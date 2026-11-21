@@ -57,6 +57,24 @@ def test_save_removes_temporary_file_after_replace_failure(tmp_path, monkeypatch
     assert not temporary.exists()
 
 
+def test_save_does_not_clean_temporary_path_after_successful_replace(tmp_path, monkeypatch):
+    projects, project_id, state_path, temporary = project_with_saved_state(tmp_path)
+    unlink = Path.unlink
+
+    def fail_if_unlinked(path, *args, **kwargs):
+        if path == temporary:
+            raise OSError("simulated post-replace temporary cleanup failure")
+        return unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", fail_if_unlinked)
+
+    projects.save({"id": project_id, "title": "after", "mode": "audio"})
+
+    assert projects.load(project_id)["title"] == "after"
+    assert not temporary.exists()
+    assert state_path.is_file()
+
+
 @pytest.mark.skipif(os.name != "nt", reason="Windows readers can block replace of an open state file")
 def test_save_retries_after_concurrent_state_reader_closes(tmp_path, monkeypatch):
     projects, project_id, state_path, _ = project_with_saved_state(tmp_path)

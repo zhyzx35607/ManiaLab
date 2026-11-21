@@ -153,11 +153,14 @@ class Projects:
     def save(self, state):
         path = self.path(state["id"]) / "state.json"
         temporary = path.with_suffix(".tmp")
+        replaced = False
         try:
             temporary.write_text(json.dumps(pack_state(state), ensure_ascii=False), encoding="utf-8")
             _replace_state_with_retry(temporary, path)
+            replaced = True
         finally:
-            temporary.unlink(missing_ok=True)
+            if not replaced:
+                temporary.unlink(missing_ok=True)
 
     def load(self, project_id):
         state = json.loads((self.path(project_id) / "state.json").read_text(encoding="utf-8"))
