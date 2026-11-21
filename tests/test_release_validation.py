@@ -1512,6 +1512,29 @@ def test_collect_core_validation_rejects_unlisted_asset_directory(tmp_path):
         )
 
 
+def test_collect_core_validation_rejects_unapproved_models_directory(tmp_path):
+    build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
+        make_release_fixture(tmp_path, profile='core')
+    )
+    target = build_root / 'dist' / 'ManiaLab'
+    future_model = target / '_internal' / 'models' / 'future-weights.bin'
+    future_model.parent.mkdir(parents=True)
+    future_model.write_bytes(b'synthetic future model weights')
+    manifest_path = target / 'release-manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    manifest['archive_payload'] = archive_payload_inventory(target)
+    write_fixture_release_archive(archive, build_root, manifest)
+    _rewrite_fixture_manifest_identity(
+        build_root, archive, portable_report, shutdown_report, manifest
+    )
+
+    with pytest.raises(SystemExit, match='unapproved model directory'):
+        collect(
+            build_root, pytest_report, portable_report, shutdown_report,
+            pytest_evidence=pytest_evidence,
+        )
+
+
 def test_collect_core_validation_accepts_explicit_asset_root_directory(tmp_path):
     build_root, pytest_report, portable_report, shutdown_report, archive, pytest_evidence = (
         make_release_fixture(tmp_path, profile='core')
@@ -2663,6 +2686,12 @@ def _rewrite_fixture_manifest_identity(
         if 'release_manifest_sha256' in row:
             row['release_manifest_sha256'] = manifest_sha256
     portable_report.write_text(json.dumps(checks), encoding='utf-8')
+
+    core_media_report = portable_report.with_name('core-media.json')
+    if core_media_report.is_file():
+        core_media = json.loads(core_media_report.read_text(encoding='utf-8'))
+        core_media['release_manifest_sha256'] = manifest_sha256
+        core_media_report.write_text(json.dumps(core_media), encoding='utf-8')
 
     shutdown = json.loads(shutdown_report.read_text(encoding='utf-8'))
     shutdown['capabilities'] = manifest['capabilities']
