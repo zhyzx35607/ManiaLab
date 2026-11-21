@@ -47,6 +47,8 @@ def edit_notes(variant, payload, duration_ms=None):
             new = replace(snapped[0],raw='')
             if duration_ms is not None and new.end > duration_ms:
                 raise ValueError('量化后的尾端超出音频结尾，请缩短一格')
+        if old is not None and (new.start, new.end, new.lane) == (old.start, old.end, old.lane):
+            raise ValueError('修改没有变化')
         result = [new if n is old else n for n in notes] if old else notes+[new]
     if not result:
         raise ValueError('请至少保留一个音符')
