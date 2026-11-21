@@ -16,6 +16,19 @@ from manialab.cancellation import remaining_until
 SHUTDOWN_GRACE_SECONDS = 15
 
 
+def _task_service_has_active(task_service):
+    lock = getattr(task_service, "lock", None)
+    if lock is None:
+        return task_service.has_active()
+    # Keep this status check inside the shared shutdown deadline.
+    if not lock.acquire(blocking=False):
+        return True
+    try:
+        return task_service.has_active()
+    finally:
+        lock.release()
+
+
 def _run_server(server, task_service):
     try:
         server.run()
@@ -34,9 +47,24 @@ def _run_server(server, task_service):
                 finally:
                     stopped = task_service.shutdown(wait=True, deadline=deadline)
                     if not stopped:
-                        message = "Task service did not stop before the shutdown deadline"
-                        logging.error(message)
-                        raise ChildProcessError(message)
+                        if _task_service_has_active(task_service):
+                            message = "Task service did not stop before the shutdown deadline"
+                            logging.error(message)
+                            raise ChildProcessError(message)
+
+                        shutdown_cancellation = getattr(task_service, "_shutdown_cancellation", None)
+                        cleanup_failures = getattr(shutdown_cancellation, "cleanup_failures", ())
+                        if cleanup_failures:
+                            message = "Task service stopped with cleanup failures: " + "; ".join(
+                                cleanup_failures)
+                            logging.error(message)
+                            if getattr(shutdown_cancellation, "process_cleanup_failed", False):
+                                raise ChildProcessError(
+                                    "Task service stopped with child-process cleanup failures")
+                        else:
+                            message = "Task service shutdown could not be confirmed before the deadline"
+                            logging.error(message)
+                            raise ChildProcessError(message)
 
 
 def main():
