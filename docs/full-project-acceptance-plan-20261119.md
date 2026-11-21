@@ -13,7 +13,7 @@
 
 ## 当前基线
 
-状态补充（2026-11-21 07:56:57 UTC）：当前`main`仍为`c3c1f407d0f4c2018b69618afa11107a93543af6`，PR #209 head `65ea63a1528190825ab8285584b8e1bc47140c87`的Windows run `44882090317`成功。API/Chromium、Core便携构建、离线Unicode EXE、Core媒体切换、worker关停和collector通过；模型下载、钢琴专项、独立音频worker构建按条件跳过。PR仍开放；先推送文档同步的新head并复验，再合并、验证main。此状态覆盖本节后文阶段99旧的“待提交并完成PR/CI”描述。
+状态补充（2026-11-21 08:26:38 UTC）：PR #209最终head `4fcbac8`的Windows run `44883194111`成功并合并为`54c094f4fd7b98c98551d4b6d3eba0552dd60396`；合并后main run `44884080485`成功。API/Chromium、Core包、离线Unicode EXE、Core媒体切换、worker关停和collector通过；模型下载、钢琴专项及独立音频worker构建按条件跳过。阶段99已完成PR/main验证；第一百阶段ENG-25本地组合`59 passed`，待单独提交和PR CI。此状态覆盖本节后文阶段99待提交/待PR CI的旧描述。
 
 续接更新（2026-11-21）：阶段98定向pytest `123 passed`、波形端点Edge流程本地`2 passed`；PR #208 head run `44863244643`成功，PR于`2026-11-21 04:04:29 UTC`合并为`c3c1f407d0f4c2018b69618afa11107a93543af6`。合并后main run `44864272448`通过：pytest `3509 passed, 156 skipped`、Chromium `69 passed`；`BUILD_PORTABLE=false`导致portable/EXE、Core媒体、shutdown和collector跳过，Edge未运行。阶段99定向节奏内存/取消组`56 passed`，包括一ULP边界峰阈值回归；隔离全量pytest `3532 passed, 159 skipped`（363.07秒），`git diff --check`通过。块输入有上限，但全长摘要数组仍随时长线性增长，20分钟float32输入及已知核心数组估算约117.9 MiB，不含FFT工作区、其它分析状态及事件对象；SciPy/NumPy和`estimate_timing`同步内核期间不能协作取消。应用新项目路径使用`xb`并由单worker串行处理；外部程序在复制期间原地改写源文件仍可能产生混合副本，SHA与解码针对同一副本，该情形不属于受支持应用内竞态。以上为合成工程验证，不构成MUS-01真人音乐验收。
 
@@ -21,7 +21,7 @@
 
 首轮计划里`132 passed, 1 deselected`未能追溯到对应测试命令，本轮不将它作为验证证据；以当前可复现命令和明确文件范围的结果为准。
 
-- 当前基线为合并后的 `main` 提交 `c3c1f407d0f4c2018b69618afa11107a93543af6`；PR #207 head run `44841323526`及合并后main run `44842816110`成功，Core验证通过。PR #208 head run `44863244643`及合并后main run `44864272448`均成功；main Python/API `3509 passed, 156 skipped`、Chromium `69 passed`，portable/EXE、Core媒体、shutdown、collector因`BUILD_PORTABLE=false`跳过，Edge未运行。阶段99本地完整pytest `3532 passed, 159 skipped`，待提交并完成PR/CI；Core仍是唯一公开支持profile，ENG-05/06与MUS-01真人音乐验收保持开放。历史PR明细见验收账本。
+- 当前基线为合并后的 `main` 提交 `54c094f4fd7b98c98551d4b6d3eba0552dd60396`；PR #209最终head run `44883194111`及合并后main run `44884080485`均成功，main API/Chromium、Core构建、离线Unicode EXE、Core媒体、shutdown和collector通过；模型下载、钢琴专项、独立音频worker按条件跳过。阶段100 ENG-25本地组合`59 passed`，待提交并完成PR CI。Core仍是唯一公开支持profile，ENG-05/06与MUS-01真人音乐验收保持开放。历史PR明细见验收账本。
 - 当前公开 Pre-release 仍为 `v0.1.0-alpha.6-dev.18`；主线修复不自动包含在该包中。
 - 架构已经按服务端路由、领域逻辑、音频组件、存储与浏览器分层。先验证边界契约和用户路径，不做没有缺陷证据的大面积重写。
 - 现有记录已明确真实盲听、玩家试打和两首独立歌曲评审尚未回收；Demucs 四/六声部 checkpoint 的独立再分发授权也尚未核实。

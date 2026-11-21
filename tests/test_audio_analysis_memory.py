@@ -1,4 +1,8 @@
 import hashlib
+import io
+import struct
+import zipfile
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -408,3 +412,228 @@ def test_basic_and_deep_analysis_forward_cancellation_to_rhythm(tmp_path, monkey
 
     assert rhythm_calls == [True]
     assert replaced == []
+
+
+def _prepare_synthetic_basic_analysis(tmp_path, monkeypatch, infer_result):
+    from manialab import audio
+
+    source = tmp_path / "mix.wav"
+    source_bytes = b"synthetic mix"
+    source.write_bytes(source_bytes)
+    model = tmp_path / "model.onnx"
+    model.write_bytes(b"synthetic model identity")
+    samples = np.full(SR * 2, .1, dtype=np.float32)
+    settings = {"onset_threshold": .45, "frame_threshold": .3}
+
+    monkeypatch.setattr(audio, "decode", lambda *args, **kwargs: samples)
+    monkeypatch.setattr(audio, "infer", lambda *args, **kwargs: infer_result())
+    monkeypatch.setattr(
+        audio, "rhythmic_evidence",
+        lambda *args, **kwargs: ([], {"bpm": 120.0, "offset": 0.0, "estimated": True}),
+    )
+    monkeypatch.setattr(audio, "pitched_notes", lambda *args, **kwargs: [])
+    monkeypatch.setattr(audio, "refine_releases", lambda notes, values: (notes, {}))
+    monkeypatch.setattr(audio, "fuse_attacks", lambda notes, attacks: (notes, [], 0))
+    monkeypatch.setattr(
+        "manialab.structure.detect_structure",
+        lambda analysis, values, sample_rate, **kwargs: {"segments": []},
+    )
+    return audio, source, source_bytes, model, settings
+
+
+def _write_stored_activation_cache(path, audio_sha256, model_identity):
+    from manialab.audio_cache import (
+        BASIC_PITCH_INFERENCE_REVISION,
+        WHOLE_AUDIO_ACTIVATION_CACHE_VERSION,
+    )
+
+    arrays = {
+        "frames": np.full((2, 3), .25, dtype=np.float32),
+        "onsets": np.full((2, 3), .5, dtype=np.float32),
+        "times": np.array([0.0, .01, .02], dtype=np.float64),
+        "version": np.asarray(WHOLE_AUDIO_ACTIVATION_CACHE_VERSION),
+        "audio_sha256": np.asarray(audio_sha256),
+        "model_identity": np.asarray(model_identity),
+        "inference_revision": np.asarray(BASIC_PITCH_INFERENCE_REVISION),
+    }
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_STORED) as archive:
+        for name, array in arrays.items():
+            payload = io.BytesIO()
+            np.lib.format.write_array(payload, array, allow_pickle=False)
+            archive.writestr(f"{name}.npy", payload.getvalue())
+
+
+def _corrupt_stored_zip_member(path, member):
+    with zipfile.ZipFile(path) as archive:
+        info = archive.getinfo(member)
+    with path.open("r+b") as archive:
+        archive.seek(info.header_offset)
+        local_header = archive.read(30)
+        filename_size, extra_size = struct.unpack_from("<HH", local_header, 26)
+        data_offset = info.header_offset + 30 + filename_size + extra_size
+        archive.seek(data_offset + info.file_size - 1)
+        original = archive.read(1)
+        archive.seek(data_offset + info.file_size - 1)
+        archive.write(bytes([original[0] ^ 1]))
+
+
+def _synthetic_activations():
+    frames = np.full((2, 3), .75, dtype=np.float32)
+    return frames, frames.copy(), np.array([0.0, .01, .02], dtype=np.float64)
+
+
+def test_whole_audio_cache_recomputes_after_member_crc_error(tmp_path, monkeypatch):
+    calls = []
+    audio, source, source_bytes, model, settings = _prepare_synthetic_basic_analysis(
+        tmp_path, monkeypatch, lambda: (calls.append(True), _synthetic_activations())[1])
+    cache = tmp_path / "activations.npz"
+    audio_hash = hashlib.sha256(source_bytes).hexdigest()
+    fingerprint = audio.model_identity(model)
+    _write_stored_activation_cache(cache, audio_hash, fingerprint)
+    _corrupt_stored_zip_member(cache, "frames.npy")
+
+    result = audio.analyze(source, tmp_path, model, settings)
+
+    assert calls == [True]
+    assert result["cached"] is False
+    with np.load(cache, allow_pickle=False) as data:
+        assert np.array_equal(data["frames"], _synthetic_activations()[0])
+
+
+def test_whole_audio_cache_write_failure_preserves_canonical_and_cleans_temp(
+        tmp_path, monkeypatch):
+    audio, source, source_bytes, model, settings = _prepare_synthetic_basic_analysis(
+        tmp_path, monkeypatch, _synthetic_activations)
+    cache = tmp_path / "activations.npz"
+    _write_stored_activation_cache(cache, "0" * 64, audio.model_identity(model))
+    original_cache = cache.read_bytes()
+    real_savez = np.savez_compressed
+
+    def fail_after_write(*args, **kwargs):
+        real_savez(*args, **kwargs)
+        raise OSError("injected cache write failure")
+
+    monkeypatch.setattr(audio.np, "savez_compressed", fail_after_write)
+    with pytest.raises(OSError, match="injected cache write failure"):
+        audio.analyze(source, tmp_path, model, settings)
+
+    assert cache.read_bytes() == original_cache
+    assert list(tmp_path.glob(".activations.npz.*.pending.npz")) == []
+
+
+def test_whole_audio_cache_replace_failure_preserves_canonical_and_cleans_temp(
+        tmp_path, monkeypatch):
+    audio, source, source_bytes, model, settings = _prepare_synthetic_basic_analysis(
+        tmp_path, monkeypatch, _synthetic_activations)
+    cache = tmp_path / "activations.npz"
+    _write_stored_activation_cache(cache, "0" * 64, audio.model_identity(model))
+    original_cache = cache.read_bytes()
+    real_replace = Path.replace
+
+    def fail_cache_replace(path, target):
+        if path.name.startswith(".activations.npz."):
+            raise OSError("injected cache replace failure")
+        return real_replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", fail_cache_replace)
+    with pytest.raises(OSError, match="injected cache replace failure"):
+        audio.analyze(source, tmp_path, model, settings)
+
+    assert cache.read_bytes() == original_cache
+    assert list(tmp_path.glob(".activations.npz.*.pending.npz")) == []
+
+
+def test_whole_audio_cache_cancellation_after_infer_does_not_write(tmp_path, monkeypatch):
+    state = {"cancelled": False}
+
+    def infer_result():
+        state["cancelled"] = True
+        return _synthetic_activations()
+
+    audio, source, source_bytes, model, settings = _prepare_synthetic_basic_analysis(
+        tmp_path, monkeypatch, infer_result)
+    cache = tmp_path / "activations.npz"
+    _write_stored_activation_cache(cache, "0" * 64, audio.model_identity(model))
+    original_cache = cache.read_bytes()
+
+    with pytest.raises(InterruptedError, match="取消"):
+        audio.analyze(source, tmp_path, model, settings,
+                      cancelled=lambda: state["cancelled"])
+
+    assert cache.read_bytes() == original_cache
+    assert list(tmp_path.glob(".activations.npz.*.pending.npz")) == []
+
+
+def test_whole_audio_cache_cancellation_after_write_preserves_canonical_and_cleans_temp(
+        tmp_path, monkeypatch):
+    state = {"cancelled": False}
+    audio, source, source_bytes, model, settings = _prepare_synthetic_basic_analysis(
+        tmp_path, monkeypatch, _synthetic_activations)
+    cache = tmp_path / "activations.npz"
+    _write_stored_activation_cache(cache, "0" * 64, audio.model_identity(model))
+    original_cache = cache.read_bytes()
+    real_savez = np.savez_compressed
+
+    def cancel_after_write(*args, **kwargs):
+        real_savez(*args, **kwargs)
+        state["cancelled"] = True
+
+    monkeypatch.setattr(audio.np, "savez_compressed", cancel_after_write)
+    with pytest.raises(InterruptedError, match="取消"):
+        audio.analyze(source, tmp_path, model, settings,
+                      cancelled=lambda: state["cancelled"])
+
+    assert cache.read_bytes() == original_cache
+    assert list(tmp_path.glob(".activations.npz.*.pending.npz")) == []
+
+
+def test_deep_analysis_passes_cancellation_to_stem_cache_save(tmp_path, monkeypatch):
+    from manialab import audio
+
+    source = tmp_path / "mix.wav"
+    source_bytes = b"synthetic mix"
+    source.write_bytes(source_bytes)
+    model = tmp_path / "model.onnx"
+    model.write_bytes(b"synthetic model identity")
+    samples = np.full(SR * 2, .1, dtype=np.float32)
+    np.save(tmp_path / "other.npy", samples, allow_pickle=False)
+    separation = dict(
+        source="provided", voices=["other"],
+        audio_sha256=hashlib.sha256(source_bytes).hexdigest(),
+        set_sha256="a" * 64, cached=True,
+    )
+
+    class Separator:
+        def separate(self, path, work, progress, cancelled):
+            return tmp_path, separation
+
+    monkeypatch.setattr(audio, "decode", lambda *args, **kwargs: samples)
+    monkeypatch.setattr(audio, "infer", lambda *args, **kwargs: _synthetic_activations())
+    monkeypatch.setattr(audio, "load_stem_activations", lambda *args, **kwargs: None)
+    saved_cancellations = []
+    monkeypatch.setattr(
+        audio, "save_stem_activations",
+        lambda *args, **kwargs: saved_cancellations.append(kwargs.get("cancelled")),
+    )
+    monkeypatch.setattr(
+        audio, "rhythmic_evidence",
+        lambda *args, **kwargs: ([], {"bpm": 120.0, "offset": 0.0, "estimated": True}),
+    )
+    monkeypatch.setattr(audio, "pitched_notes", lambda *args, **kwargs: [])
+    monkeypatch.setattr(audio, "source_evidence", lambda notes, *args: (notes, 0))
+    monkeypatch.setattr(audio, "refine_releases", lambda notes, values: (notes, {}))
+    monkeypatch.setattr(audio, "fuse_attacks", lambda notes, attacks: (notes, [], 0))
+    monkeypatch.setattr(audio, "reject_source_bleed", lambda notes, *args: (notes, []))
+    monkeypatch.setattr(
+        "manialab.structure.detect_structure",
+        lambda analysis, values, sample_rate, **kwargs: {"segments": []},
+    )
+    cancellation = lambda: False
+
+    audio.analyze_deep(
+        source, tmp_path, model,
+        {"onset_threshold": .45, "frame_threshold": .3}, Separator(),
+        cancelled=cancellation,
+    )
+
+    assert saved_cancellations == [cancellation]

@@ -99,6 +99,48 @@ def test_specialist_cache_tracks_input_and_does_not_overwrite_general_activation
     assert len(calls)==3 and general.read_bytes()==b'existing-general-cache'
 
 
+def test_specialist_cache_recovers_from_npz_crc_corruption(tmp_path,monkeypatch):
+    import hashlib
+    import json
+    import struct
+    import zipfile
+    import onnxruntime as ort
+    from manialab import piano
+    monkeypatch.setattr(piano,'MODEL_SHA256',hashlib.sha256(b'fake-model').hexdigest())
+    monkeypatch.setattr(piano,'MODEL_BYTES',len(b'fake-model'))
+    detector=piano.PianoDetector(tmp_path)
+    detector.model.parent.mkdir(parents=True)
+    detector.model.write_bytes(b'fake-model')
+    monkeypatch.setattr(ort,'InferenceSession',lambda *a,**k:object())
+    calls=[]
+    def prediction(*args):
+        calls.append(1)
+        return {key:np.zeros((100,88),dtype=np.float32) for key in OUTPUTS}
+    monkeypatch.setattr(piano,'infer',prediction)
+
+    samples=np.zeros(16000,dtype=np.float32)
+    identity=dict(revision=2,model_sha256=piano.MODEL_SHA256,stem_identity='same-stem',
+                  pcm_sha256=hashlib.sha256(np.asarray(samples,dtype='<f4').tobytes()).hexdigest(),
+                  sample_rate=16000,samples=len(samples))
+    cache=tmp_path/'piano-specialist-activations.npz'
+    np.savez(cache,identity=json.dumps(identity,sort_keys=True),continuations='[]',
+             **{key:np.zeros((100,88),dtype=np.float32) for key in OUTPUTS})
+
+    damaged=bytearray(cache.read_bytes())
+    with zipfile.ZipFile(cache) as archive:
+        member=archive.getinfo('reg_onset_output.npy')
+        assert member.compress_type==zipfile.ZIP_STORED
+        name_length,extra_length=struct.unpack_from('<HH',damaged,member.header_offset+26)
+        data_offset=member.header_offset+30+name_length+extra_length
+        damaged[data_offset+member.file_size-1]^=1
+    cache.write_bytes(damaged)
+
+    notes,report=detector.analyze(samples,16000,cache,'same-stem')
+    assert not notes and report['cached'] is False and len(calls)==1
+    notes,report=detector.analyze(samples,16000,cache,'same-stem')
+    assert not notes and report['cached'] is True and len(calls)==1
+
+
 def test_deep_analysis_routes_only_piano_to_specialist(tmp_path,monkeypatch):
     import hashlib
     from pathlib import Path
