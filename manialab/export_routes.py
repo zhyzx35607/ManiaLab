@@ -69,11 +69,14 @@ def register_export_routes(app, projects, resources, current_audio):
         if kind == "json":
             if not state.get("analysis") and state["active"] < 0:
                 raise ValueError("请先分析音频或生成候选，再下载分析 JSON")
+            variant = state["variants"][state["active"]] if state["active"] >= 0 else None
             evidence = {"title": state["title"],
-                        "variant": state["variants"][state["active"]] if state["active"] >= 0 else None,
+                        "variant": dict(variant) if variant is not None else None,
                         "analysis": state.get("analysis"), "plan": state.get("plan"),
                         "reference_style": state.get("reference_style"),
                         "expression": state.get("expression"), "reference_marks": state.get("reference_marks")}
+            if evidence["variant"] is not None:
+                evidence["variant"].pop("_edit_journal_head", None)
             return send_file(io.BytesIO(json.dumps(evidence, ensure_ascii=False, indent=2).encode()),
                              download_name="ManiaLab-analysis.json", as_attachment=True,
                              mimetype="application/json")

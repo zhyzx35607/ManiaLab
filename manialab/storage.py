@@ -8,6 +8,8 @@ import shutil
 import uuid
 import zipfile
 
+from .candidate_edit_journal import pack_state, unpack_state
+
 AUDIO = {".mp3", ".ogg", ".wav", ".flac", ".m4a", ".opus", ".aac"}
 ASSETS = AUDIO | {".osu", ".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 MAX_IMPORT_BYTES = 512 * 1024 * 1024
@@ -136,13 +138,14 @@ class Projects:
         path = self.path(state["id"]) / "state.json"
         temporary = path.with_suffix(".tmp")
         try:
-            temporary.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+            temporary.write_text(json.dumps(pack_state(state), ensure_ascii=False), encoding="utf-8")
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)
 
     def load(self, project_id):
-        return json.loads((self.path(project_id) / "state.json").read_text(encoding="utf-8"))
+        state = json.loads((self.path(project_id) / "state.json").read_text(encoding="utf-8"))
+        return unpack_state(state)
 
     def recent(self):
         paths = sorted(self.root.glob("*/state.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:30]

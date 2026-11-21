@@ -143,7 +143,9 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
         previous_evidence = variant.get('source_evidence')
         locked_ids = {n.id for n in locked}
         locked_edits = [deepcopy(edit) for edit in variant.get('edits', [])
-            if (edit.get('after') or {}).get('id') in locked_ids]
+            if (edit.get('after') or {}).get('id') in locked_ids
+            or (edit.get('op') == 'delete' and isinstance(edit.get('before'), dict)
+                and not a <= edit['before'].get('start', a) < b)]
         selected = [n for n in selected if a <= n.start < b]
         if locked_ids & {n.id for n in selected}:
             raise ValueError('局部采音与保留物件的标识冲突；请重新生成整谱，避免混用不同分析的音符')

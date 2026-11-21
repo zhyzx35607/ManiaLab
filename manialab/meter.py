@@ -1,6 +1,8 @@
 """Meter for a single fixed audio clock, expressed as beats per measure."""
 import math
 
+from .candidate_edit_journal import public_state
+
 
 def valid_audio_clock(tempo):
     if not isinstance(tempo, dict):
@@ -78,7 +80,7 @@ def meter_for_clock(analysis, clock):
 
 def project_with_meter(state):
     """Expose the draft meter without rewriting saved analysis or historical candidates."""
-    result = dict(state, detected_meter=detected_meter(state.get("analysis") or {}))
+    result = dict(public_state(state), detected_meter=detected_meter(state.get("analysis") or {}))
     analysis = state.get("analysis")
     separation = analysis.get("separation") if isinstance(analysis, dict) else None
     if isinstance(separation, dict):
