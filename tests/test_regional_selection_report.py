@@ -210,7 +210,7 @@ def test_regional_report_survives_save_json_export_and_later_manual_edit(tmp_pat
         assert 'Bookmarks: 3000' in text
         assert [(n.start,n.end) for n in parse_osu(text)['notes']]==[(1000,1750),(3500,4250)]
         changed=client.post(base+'/edit',json=dict(op='update',note_id='locked',
-            base_created=current['created'],values={'end':2000}),headers=headers).json
+            base_candidate_id=current['candidate_id'],values={'end':2000}),headers=headers).json
         assert wait_job(client,changed)['status']=='done'
         edited=client.get(base+'/export/json').json['variant']
         assert edited['region'] is None and 'proposal' not in edited['selection']
@@ -380,7 +380,7 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
         edited_response = client.post(base + '/edit', headers=headers, json=dict(
             op='update',
             note_id='anchor',
-            base_created=regional['created'],
+            base_candidate_id=regional['candidate_id'],
             values={'lane': 2},
         ))
         assert edited_response.status_code == 200, edited_response.json

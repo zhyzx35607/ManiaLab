@@ -25,7 +25,7 @@ async function submitNoteEdit(op){
   const v=editableVariant(),values={start:Number($('editStart').value),end:Number($('editEnd').value),lane:Number($('editLane').value)-1};
   if(op!=='add'&&!editorNoteId)throw Error('请在谱面预览中选中音符');
   const playhead=currentTime(),voice=$('voice').value,detailCursor=waveDetail?Number($('waveCursor').value):null;audio.pause();
-  await runJob('edit',{op,note_id:editorNoteId,values,base_created:v.created,base_index:state.active});
+  await runJob('edit',{op,note_id:editorNoteId,values,base_candidate_id:v.candidate_id});
   seek(playhead);
   if(voice!==$('voice').value&&!$('voice').disabled){$('voice').value=voice;$('voice').dispatchEvent(new Event('change'));}
   const edited=variant()?.edits?.at(-1)?.after;

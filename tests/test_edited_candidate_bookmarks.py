@@ -26,8 +26,8 @@ def _silent_audio():
     return buffer
 
 
-def _edit(client, base, headers, parent_created, **changes):
-    job = client.post(base + "/edit", json={"base_created": parent_created, **changes}, headers=headers)
+def _edit(client, base, headers, parent_id, **changes):
+    job = client.post(base + "/edit", json={"base_candidate_id": parent_id, **changes}, headers=headers)
     assert job.status_code == 200
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
@@ -111,9 +111,9 @@ def test_successive_edits_export_the_saved_candidates_section_bookmarks(tmp_path
         parent = client.get(base).json["variants"][0]
 
         assert _exported_notes(client, base, bookmarks) == [(1000, 2000, 0), (1500, 1500, 1)]
-        moved = _edit(client, base, headers, parent["created"], op="update", note_id="hold", values={"lane": 2})
+        moved = _edit(client, base, headers, parent["candidate_id"], op="update", note_id="hold", values={"lane": 2})
         assert _exported_notes(client, base, bookmarks) == [(1000, 2000, 2), (1500, 1500, 1)]
-        saved = _edit(client, base, headers, moved["variants"][moved["active"]]["created"], op="delete", note_id="tap")
+        saved = _edit(client, base, headers, moved["variants"][moved["active"]]["candidate_id"], op="delete", note_id="tap")
         assert saved["variants"][0] == parent
         assert [variant["source_audio_sha256"] for variant in saved["variants"]] == [
             audio_digest
@@ -168,7 +168,7 @@ def test_late_edit_for_deselected_candidate_does_not_change_active_exports(tmp_p
         assert len(second_state["variants"]) == 2
         assert second_state["active"] == 1
 
-        edited_state = _edit(client, base, headers, second["created"], op="update",
+        edited_state = _edit(client, base, headers, second["candidate_id"], op="update",
             note_id="first", values={"lane": (second["notes"][0]["lane"] + 1) % 7})
         assert len(edited_state["variants"]) == 3
         assert edited_state["active"] == 2
@@ -183,7 +183,7 @@ def test_late_edit_for_deselected_candidate_does_not_change_active_exports(tmp_p
         before_exports = _export_payloads(client, base)
 
         delayed = client.post(base + "/edit", json={
-            "base_created": second["created"],
+            "base_candidate_id": second["candidate_id"],
             "op": "update",
             "note_id": "first",
             "values": {"lane": (second["notes"][0]["lane"] + 2) % 7},

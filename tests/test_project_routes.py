@@ -177,7 +177,7 @@ def test_chart_switch_preserves_saved_edits_and_uses_its_own_audio_across_restar
         version = history["variants"][0]
         changed_lane = (version["notes"][0]["lane"] + 1) % 8
         edited = _finish(client, base, headers, "edit", {
-            "op": "update", "base_created": version["created"], "note_id": version["notes"][0]["id"],
+            "op": "update", "base_candidate_id": version["candidate_id"], "note_id": version["notes"][0]["id"],
             "values": {"lane": changed_lane},
         })
         preview_a = project / "preview.wav"
