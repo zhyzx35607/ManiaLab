@@ -6,13 +6,13 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.18 · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.18)。本版修正分段表达偏好在实际生成路径中的应用，将 Basic Pitch ONNX 算子线程限制为 2，并恢复钢琴专用 ONNX 的确定性构建与便携包分发；钢琴采音仍为显式选择、默认关闭。以上修正不代表采音准确率或音乐质量提升。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；随包固定模型的来源、许可和已知限制见[第三方声明](THIRD_PARTY_NOTICES.md)。Demucs checkpoint 的单独再分发授权仍未核实。Timing 与真实歌曲音乐质量尚未完成验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.18说明](docs/releases/0.1.0-alpha.6-dev-18.md)。
+**0.1.0-alpha.6-dev.19 · Core profile · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.19)。本版修复激活缓存损坏后的恢复与取消期间的缓存写入，并恢复带模型身份字段的声部缓存 v4 兼容。发布包仅含 Core profile：包含固定 Basic Pitch，不含 Demucs checkpoint、Beat This 节拍模型、钢琴专用 ONNX、吉他/Tsumugi 模型或其它非 Core checkpoint；Standard 和 Extended profile 未由本版验证。以上工程修复不代表采音准确率或音乐质量提升。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；随包模型的来源、许可与限制见[第三方声明](THIRD_PARTY_NOTICES.md)。Timing 与真实歌曲音乐质量尚未完成验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.19说明](docs/releases/0.1.0-alpha.6-dev-19.md)。
 
 当前稳定入口： [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
-当前源码和 Windows workflow 的唯一公开支持构建 profile 为 `core`。历史 dev.18 Release 保持其原有内容和说明；本地构建其他 profile 不表示它们已获公开支持。
+当前源码和 Windows workflow 的唯一公开支持构建 profile 为 `core`。历史 dev.18 Release 保持其原有内容和说明；dev.19 仅发布并验证 Core，本地构建 Standard 或 Extended 不表示它们已获公开支持。
 
-截至 2026-11-19，`main` 已包含 dev.18 发布后的结构、导入/编辑、拍号及真人盲评回收改进，完整范围见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。当前最新公开 Release 仍是 dev.18；本文下载的 ZIP 不含这些后续源码改动。main 上的便携构建和 EXE 验证已通过，但尚未作为新版本发布。
+dev.19 源码快照包含 dev.18 之后合入的分析取消响应、来源绑定、任务清理和缓存恢复改进。发布源码与验证范围以本页版本及[dev.19说明](docs/releases/0.1.0-alpha.6-dev-19.md)为准；完整工程与音乐验收状态见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。
 
 2026-11-18 源码已核对真实多难度谱包的编辑与重开，并用两首外部歌曲运行了完整采音到导出流程。结果与试听、试打入口见[工程与音乐验收记录](docs/acceptance-20261118.md)。
 
@@ -26,11 +26,11 @@
 
 不熟悉 BPM / Offset、LN 比例和声部参数时，先看 [第一次使用](docs/quick-start.md)。
 
-完整包自带 CPU 运行时、四／六声部分离模型、节拍模型、音高模型和 FFmpeg。日常功能离线可用，不需要 Python、Docker、CUDA 或手动部署。仅 API 助手和可选 Mapperatorinator 原模型首次安装需要联网。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
+dev.19 Core 便携包自带 CPU 运行时、固定 Basic Pitch 模型和 FFmpeg，可分析导入的音频声轨；它不提供自动声部分离，也不含节拍、钢琴专用或其它非 Core 模型。日常可用功能不需要 Python、Docker、CUDA 或手动部署；可选 API 助手需要网络。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
 
-首次全曲深度分析会真实运行多个模型，耗时取决于长度与 CPU；再次调整门槛会复用已完成的模型结果。界面显示实际耗时和缓存状态。Release 中随 ZIP 提供的 `*-SHA256SUMS.txt` 是对应版本的校验文件，正常使用只需下载 ZIP。
+分析能力取决于便携包 profile；Core 包仅运行其所含的模型，并可复用已完成的缓存结果。界面显示实际耗时和缓存状态。Release 中随 ZIP 提供的 `*-SHA256SUMS.txt` 是对应版本的校验文件，正常使用只需下载 ZIP。
 
-当前包提供钢琴专用模型，默认关闭；吉他 FL 和 Tsumugi 贝斯／伴奏组件未包含在 dev.18 中。以[组件范围](docs/instrument-choices.md)和对应 Release 验证 JSON 为准。
+本版 Core 包不含钢琴专用模型、吉他 FL 或 Tsumugi 贝斯／伴奏组件。以[组件范围](docs/instrument-choices.md)和对应 Release 验证 JSON 为准。
 
 项目自动保存到 `%LOCALAPPDATA%\ManiaLab\projects`，日志在 `%LOCALAPPDATA%\ManiaLab\ManiaLab.log`。迁移项目可复制项目文件夹。
 
