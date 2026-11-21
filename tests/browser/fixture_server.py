@@ -79,8 +79,8 @@ def offset_rounding_fixture(projects):
     return pid
 
 
-def manual_expression_fixture(projects):
-    pid = timing_fixture(projects, 'UI manual expression')
+def manual_expression_fixture(projects, title):
+    pid = timing_fixture(projects, title)
     state = projects.load(pid)
     notes = [
         Note(t, t + 100, source='pitch', voice='vocals', id=f'{section}-{part}')
@@ -350,7 +350,8 @@ def main():
         timing_fixture(projects, 'UI timing style')
         precise_timing_fixture(projects)
         offset_rounding_fixture(projects)
-        manual_expression_fixture(projects)
+        for title in ('UI manual expression', 'UI stale expression'):
+            manual_expression_fixture(projects, title)
         audio_meter_fixture(projects)
         timing_fixture(projects, 'UI LN navigation audio')
         ln_remap_fixture(projects)

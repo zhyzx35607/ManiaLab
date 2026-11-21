@@ -88,7 +88,8 @@ window.lockStructure=()=>{
   structurePanel.querySelectorAll('button,input,select').forEach(e=>{
     e.disabled=busy||!state?.analysis||(e===bookmarkImport&&!state?.reference_marks?.bookmarks?.length)||
       (e===kiaiImport&&!state?.reference_marks?.kiai_transitions?.length)||
-      ([sectionSave,expressionAuto,expressionSave].includes(e)&&!state?.analysis?.structure);
+      ([sectionSave,expressionAuto].includes(e)&&!state?.analysis?.structure)||
+      (e===expressionSave&&!expressionDraft);
   });
   structurePanel.querySelectorAll('[data-section-phrase-ln]').forEach(e=>{
     const section=expressionDraft?.sections?.[Number(e.dataset.sectionPhraseLn)];
