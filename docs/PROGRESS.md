@@ -1,9 +1,11 @@
 # 续接进度
 
-更新：2026-11-21，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
+更新：2026-11-22，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
 ## 当前状态（先读）
+
++ dev.21 Core 发布准备（进行中）：当前源码基线为`main`提交`d29b847bad528cb010eed4fb41275907d8a1b2aa`，已合入PR #230–#232；PR Windows `verify`分别由run `44923272397`、`44924288993`与`44923691199`通过。#230基于旧head的main run `44924170942`被更高优先级请求取消，不计为通过或失败；#232合并后main run `44924434781`成功；#231合并后main run `44925041033`仍在运行，不能记为完成。dev.21尚未创建tag或Release资产。版本准备变更只提升版本元数据并记录外部计划失效、无操作编辑拒绝、Core依赖锁指纹和发布包路径限制；后续用标题`[portable]`触发的PR检查Core包、精确tag Windows验证、独立核对ZIP及报告后再发布。依赖锁指纹只证明构建输入身份，不代表依赖许可。源码/workflow公开profile仅为Core，Standard/Extended未由dev.21验证；音乐质量、Timing、LN实际手感和真人osu!试打仍开放。
 
 + 第一百零五阶段子进程取消升级（PR及main验证通过）：ENG-04复审复现`terminate()`因权限错误抛`OSError`而子进程仍存活时，旧逻辑未尝试后续`kill()`；现在在共享deadline内继续升级，只有两种信号均失败时才报告清理失败并触发任务门禁。旧实现负例先失败、修复后正例确认`kill()`被调用且进程回收；联合定向命令`D:\project\ManiaLab\.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_cancellation.py tests/test_task_service.py tests/test_task_cleanup_errors.py tests/test_process_cleanup_gate.py tests/test_worker_process_tree.py tests/test_task_lifecycle_flow.py`为`77 passed in 6.31s`，compileall和diff-check通过。PR #225 Windows run `44914856388`通过（pytest/API `3568 passed, 156 skipped, 1 warning`；Chromium `69 passed`），于2026-11-21 14:45 UTC合并为`a3ad0bab4e601b8631cc20ff0116d011e115b1e9`；合并后main run `44915587110`于2026-11-21 14:53 UTC成功（pytest/API `3569 passed, 156 skipped, 1 warning`，Chromium `69 passed`），portable步骤因普通main push条件跳过。仅用合成子进程故障注入，未运行模型/研究脚本或读取ignored素材。
 + ENG-24候选表达恢复（PR验证通过并合并）：候选切换现恢复该候选`selection.expression`快照；旧候选没有方案快照时清除项目级表达方案，避免区域重写和JSON导出误用其他候选的方案。回归先在旧代码失败，再以合成API覆盖A(omit)→B(onsets)→切回A→区域重写和导出；定向组`18 passed`，compileall和diff-check通过。PR #224 Windows run `44914691159`通过，并于2026-11-21 14:42 UTC合并为`f51b74e98b39a193f2e302518ca4b8b2637a4767`；其后main run `44915344957`被新main提交取消。未验证真实音频质量、其他候选字段的完整快照恢复或跨项目迁移。
