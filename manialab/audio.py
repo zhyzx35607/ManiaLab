@@ -204,7 +204,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
                  *, piano_detector=None, instrument_detector=None, allow_predicted_releases=False,
                  guitar_detector=None, allow_guitar_predicted_releases=False):
     """Separate sources, then run pitch/attack analysis on each isolated voice."""
-    from .voices import vocal_phrases
+    from .voices import reconcile_phrase_sources, vocal_phrases
     from .stems import archive_review_stems,separation_voices,separation_label,separation_identity
     if type(allow_predicted_releases) is not bool or (allow_predicted_releases and instrument_detector is None):
         raise ValueError('模型音尾选项需要显式选择专用采音')
@@ -350,6 +350,7 @@ def analyze_deep(path, work, model, settings, separator, progress=lambda p, s: N
     generic=[n for n in all_candidates if n.voice not in unit_weight_voices]
     generic, bleed_rejections = reject_source_bleed(generic,stem_signals,mix_attacks)
     all_candidates=generic+protected
+    phrases = reconcile_phrase_sources(phrases, all_candidates)
     for summary in summaries:
         summary['rejected_cross_source_bleed'] = sum(r['note']['voice']==summary['voice'] for r in bleed_rejections)
         summary['cross_source_bleed_checked'] = summary['voice'] not in unit_weight_voices

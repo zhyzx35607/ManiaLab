@@ -78,6 +78,18 @@ def _phrase(begin, finish, times, active, strength, notes, frame_ms, *, release_
                     strength=round(float(np.mean(strength[begin:finish])), 4))]
 
 
+def reconcile_phrase_sources(phrases, candidates):
+    """Keep phrase anchors and support references aligned with final candidates."""
+    candidate_ids = {note.id for note in candidates}
+    reconciled = []
+    for phrase in phrases:
+        if phrase.id not in candidate_ids:
+            continue
+        support = tuple(identity for identity in phrase.support if identity in candidate_ids)
+        reconciled.append(phrase if support == phrase.support else replace(phrase, support=support))
+    return reconciled
+
+
 def apply_phrase_evidence(candidates, phrases, amount, segment_preferences=()):
     """Substitute a bounded number of existing vocal anchors, no new attacks.
 
@@ -88,8 +100,11 @@ def apply_phrase_evidence(candidates, phrases, amount, segment_preferences=()):
     # A phrase is useful only when it carries an existing attack beyond its
     # single pitch. A capped phrase must never truncate a longer original LN.
     original = {n.id: n for n in candidates}
+    phrases = reconcile_phrase_sources(phrases, candidates)
     phrases = [n for n in phrases if n.id in original and n.end > original[n.id].end
-               and n.release_reason not in UNOBSERVED_RELEASES]
+               and n.release_reason not in UNOBSERVED_RELEASES
+               and not any(segment['start_ms'] <= n.start < segment['end_ms']
+                           and n.end > segment['end_ms'] for segment in segment_preferences)]
     if (amount <= 0 and not segment_preferences) or not phrases:
         return list(candidates), dict(available=len(phrases), used=0)
     groups = {}

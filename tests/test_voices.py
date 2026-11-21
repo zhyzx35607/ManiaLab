@@ -60,6 +60,28 @@ def test_phrase_expression_can_change_at_a_segment_boundary():
     assert result[0]==first and result[1].end==7000 and report['used']==1
 
 
+def test_legacy_phrase_is_capped_at_its_segment_and_drops_stale_support():
+    anchor=Note(1000,1300,source='pitch',voice='vocals',id='anchor')
+    phrase=replace(anchor,end=2100,phrase=True,support=('anchor','removed'),
+                   support_coverage=1,release_reason='vocal_activity_decay')
+    result,report=apply_phrase_evidence([anchor],[phrase],1,[
+        dict(start_ms=0,end_ms=2000,preferences={'phrase_ln':1}),
+        dict(start_ms=2000,end_ms=4000,preferences={'phrase_ln':1}),
+    ])
+    assert result==[anchor]
+    assert report['used']==0
+
+    inside=replace(phrase,end=1800)
+    result,report=apply_phrase_evidence([anchor],[inside],1,[
+        dict(start_ms=0,end_ms=2000,preferences={'phrase_ln':1}),
+        dict(start_ms=2000,end_ms=4000,preferences={'phrase_ln':1}),
+    ])
+    assert result[0].end==1800
+    assert result[0].support==('anchor',)
+    assert result[0].support_coverage==1
+    assert report['used']==1
+
+
 def test_phrase_cap_cannot_shorten_an_original_long_sustain():
     note=Note(1000,12000,source='pitch',voice='vocals',id='long')
     phrase=replace(note,end=7000,phrase=True,support=('long',),support_coverage=1)
