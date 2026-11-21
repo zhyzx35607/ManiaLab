@@ -28,6 +28,34 @@ def test_audio_decode_keeps_legacy_run_hidden_patch_point(tmp_path, monkeypatch)
     assert rate == audio.SR and preview.dtype == np.int16
 
 
+@pytest.mark.parametrize('existing_preview', [False, True])
+def test_audio_decode_does_not_publish_partial_preview_on_write_failure(
+        tmp_path, monkeypatch, existing_preview):
+    samples = np.zeros(audio.SR // 2, dtype=np.float32)
+    preview_path = tmp_path / 'preview.wav'
+    original_preview = b'existing-preview'
+    if existing_preview:
+        preview_path.write_bytes(original_preview)
+
+    def fake_runner(args, **kwargs):
+        return subprocess.CompletedProcess(args, 0, stdout=samples.astype('<f4').tobytes())
+
+    def partial_write(path, rate, data):
+        Path(path).write_bytes(b'partial-wav')
+        raise OSError('synthetic disk-full during preview write')
+
+    monkeypatch.setattr(audio_io, 'run_hidden', fake_runner)
+    monkeypatch.setattr(audio_io.wavfile, 'write', partial_write)
+
+    with pytest.raises(OSError, match='synthetic disk-full'):
+        audio_io.decode(Path('synthetic.wav'), tmp_path)
+
+    assert preview_path.exists() is existing_preview
+    if existing_preview:
+        assert preview_path.read_bytes() == original_preview
+    assert not list(tmp_path.glob('.preview-*.wav'))
+
+
 def test_audio_decode_cancellation_terminates_and_reaps_ffmpeg(tmp_path, monkeypatch):
     cancelled = iter((False, False, True))
     calls = []
