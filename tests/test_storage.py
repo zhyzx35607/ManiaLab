@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import threading
 
 import pytest
 
@@ -54,6 +55,47 @@ def test_save_removes_temporary_file_after_replace_failure(tmp_path, monkeypatch
 
     assert state_path.read_bytes() == previous
     assert not temporary.exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows readers can block replace of an open state file")
+def test_save_retries_after_concurrent_state_reader_closes(tmp_path, monkeypatch):
+    projects, project_id, state_path, _ = project_with_saved_state(tmp_path)
+    reader = state_path.open("rb")
+    replace_blocked = threading.Event()
+    lock_errors = []
+    save_errors = []
+    replace = storage.os.replace
+
+    def observe_replace(source, destination):
+        if Path(destination) == state_path:
+            try:
+                return replace(source, destination)
+            except PermissionError as error:
+                lock_errors.append(error)
+                replace_blocked.set()
+                raise
+        return replace(source, destination)
+
+    monkeypatch.setattr(storage.os, "replace", observe_replace)
+
+    def save():
+        try:
+            projects.save({"id": project_id, "title": "after", "mode": "audio"})
+        except BaseException as error:
+            save_errors.append(error)
+
+    worker = threading.Thread(target=save)
+    worker.start()
+    try:
+        assert replace_blocked.wait(5)
+        assert getattr(lock_errors[0], "winerror", None) == 5
+    finally:
+        reader.close()
+        worker.join(timeout=5)
+
+    assert not worker.is_alive()
+    assert not save_errors
+    assert projects.load(project_id)["title"] == "after"
 
 
 def test_recent_returns_only_the_most_recent_thirty_projects(tmp_path):
