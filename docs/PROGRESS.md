@@ -14,7 +14,7 @@
 - 参考标记舍入（PR #247，已合并）：书签/Kiai导入与OSU/OSZ书签导出采用与音符一致的`floor(x + 0.5)`。六项正负`22.5 ms`回归在旧`round()`上复现1 ms偏差，修复后定向测试`54 passed`。PR Windows run `44948423541`及合并后main run `44949301459`成功，merge SHA `fabf3c9cb081228c68c61dab8afe7637a5ed9feb`；Python/API均`3598 passed, 156 skipped, 1 warning`、Chromium`69 passed`。Core便携/EXE、媒体/关停及模型验证依普通CI条件跳过。
 - 手动逐段表达（本地已验证，PR待建）：Edge 合成端到端覆盖分段人声模式/LN、保存与候选切换后的 JSON；修复过期表达快照无效时保存按钮仍启用并提交空方案的问题，保留旧候选表达历史并允许自动建议恢复。Edge 定向`11 passed`、Python/API`44 passed`，JS语法与diff检查通过。还未推送/创建PR；不代表真实音乐听感验收。
 - 候选导出/试听身份（本地已验证，PR待建）：三个格式导出链接按候选 ID 绑定，旧链接拒绝；chart试听请求也携带候选身份，evidence/beat试听仍可在无候选时使用。导出组`68 passed`及Chromium`3 passed`，试听组`40 passed`及Chromium`2 passed`。独立审查未发现新UI调用错误；保留省略ID的旧脚本/API兼容路径。尚未推送或创建PR。
-- 声轨输入快照清理（PR #249，重基后待CI）：合成故障注入覆盖取消、解码失败、准备完成后三种`.provided-inputs-*`删除失败，任务报告残留路径且不提交旧项目状态，之后可重新导入。独立审查发现空闲任务服务存在历史清理错误时会被启动器误报为deadline超时，已加入回归修复；活跃任务超时仍应被报告。重基前综合定向测试`47 passed`，compileall和diff-check通过。旧head Windows run `44950444439`成功；同head run `44950439232`为`SKIPPED`（未执行验证步骤），不能作为失败记录。当前head已重基至`b231f89`，本地复验及新PR CI待完成。
+- 声轨输入快照清理（PR #249，已重基至`b231f89`，新head CI待完成）：合成故障注入覆盖取消、解码失败、准备完成后三种`.provided-inputs-*`删除失败，任务报告残留路径且不提交旧项目状态，之后可重新导入。独立审查发现空闲任务服务存在历史清理错误时会被启动器误报为deadline超时，已加入回归修复；活跃任务超时仍应被报告。重基后定向命令`python -m pytest -q --tb=short tests/test_launcher.py tests/test_task_lifecycle_flow.py tests/test_task_service.py tests/test_task_cleanup_errors.py tests/test_provided_cleanup_errors.py`为`47 passed in 9.53s`；`compileall`与`git diff --check origin/main...HEAD`通过。旧head Windows run `44950444439`成功；同head run `44950439232`为`SKIPPED`（未执行验证步骤），不能作为失败记录。新提交推送后应复核Windows PR CI。
 
 仍开放的工程检查包括PR #249重基后的CI、上述尚未建PR的阶段，以及recent项目延迟加载与生成/表达保存交错的竞态审查。真人音乐质量、Timing、6–10K/LN手感和osu!实际试打均未验收；工程/合成测试不替代这些验收。
 
