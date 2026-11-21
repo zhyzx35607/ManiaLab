@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import zipfile
+import zlib
 
 import numpy as np
 from scipy.signal import resample_poly
@@ -180,7 +181,7 @@ class PianoDetector:
                     if str(data['identity'])==signature:
                         activations={key:data[key] for key in OUTPUTS}
                         continuations=json.loads(str(data['continuations']))
-            except (ValueError,KeyError,OSError,EOFError,zipfile.BadZipFile):
+            except (ValueError,KeyError,OSError,EOFError,zipfile.BadZipFile,zlib.error):
                 activations=None;continuations=[]
         cached=activations is not None
         if not cached:

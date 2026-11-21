@@ -13,6 +13,7 @@ from pathlib import Path
 import sys
 import uuid
 import zipfile
+import zlib
 
 import numpy as np
 from scipy.signal import resample_poly
@@ -156,7 +157,8 @@ class GuitarDetector:
                     loaded = {key: data[key] for key in OUTPUTS}
                 _validate_heads(loaded, len(pcm), sample_rate)
                 heads = loaded
-            except (ValueError, KeyError, OSError, EOFError, TypeError, zipfile.BadZipFile):
+            except (ValueError, KeyError, OSError, EOFError, TypeError,
+                    zipfile.BadZipFile, zlib.error):
                 cache_error = '旧缓存不完整或校验失败，已重新计算'
         cached = heads is not None
         if heads is None:
