@@ -98,6 +98,57 @@ def test_unchanged_note_does_not_create_a_candidate(tmp_path, mode, values):
         service.shutdown()
 
 
+@pytest.mark.parametrize(('base_index', 'expected'), [
+    (0, 'error'),
+    (None, 'error'),
+    (1, 'done'),
+])
+def test_edit_identity_disambiguates_candidates_with_duplicate_timestamps(tmp_path, base_index, expected):
+    app = create_app(ROOT, tmp_path)
+    service = app.extensions['task_service']
+    try:
+        client = app.test_client()
+        headers = {'X-ManiaLab-Token': app.config['TOKEN']}
+        imported = client.post('/api/import', headers=headers,
+            data={'files': (io.BytesIO(b'placeholder'), 'audio.wav')})
+        store = app.extensions['projects']
+        project = store.load(imported.json['id'])
+        previous = candidate() | {'created': 8.0}
+        active = candidate() | {'created': 8.0}
+        active['notes'][0] = Note(1250, 1750, 4, id='a').data()
+        project.update(active=1, variants=[previous, active])
+        store.save(project)
+        before = store.load(project['id'])
+        payload = {
+            'base_created': 8.0, 'op': 'update', 'note_id': 'a',
+            'values': {'start': 1000, 'end': 2000, 'lane': 0},
+        }
+        if base_index is not None:
+            payload['base_index'] = base_index
+        response = client.post('/api/projects/' + project['id'] + '/edit',
+            headers=headers, json=payload)
+        assert response.status_code == 200
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            job = service.get(response.json['id'])
+            if job['status'] in ('done', 'error'):
+                break
+            time.sleep(.01)
+        assert job['status'] == expected
+        after = store.load(project['id'])
+        if expected == 'error':
+            assert '版本已经改变' in job['message']
+            assert after == before
+        else:
+            assert after['active'] == 2
+            assert after['variants'][1] == before['variants'][1]
+            edited = after['variants'][2]
+            note = next(note for note in edited['notes'] if note['id'] == 'a')
+            assert (note['start'], note['end'], note['lane']) == (1000, 2000, 0)
+    finally:
+        service.shutdown()
+
+
 def test_http_edit_persists_new_candidate_and_exports_actual_correction(tmp_path):
     app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
     project=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'audio.wav')},headers=headers).json

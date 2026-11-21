@@ -34,8 +34,19 @@ def register_candidate_routes(app, *, submit, parameters, requested_tempo):
         def operation(state, progress, cancelled):
             if state["active"] < 0:
                 raise ValueError("请先生成候选谱面")
-            old = state["variants"][state["active"]]
-            if payload.get("base_created") != old.get("created"):
+            active_index = state["active"]
+            old = state["variants"][active_index]
+            base_created = payload.get("base_created")
+            base_index = payload.get("base_index")
+            if base_created != old.get("created"):
+                raise ValueError("候选版本已经改变，请重新选择音符再修改")
+            if base_index is not None:
+                stale_index = type(base_index) is not int or base_index != active_index
+            else:
+                matching_indices = [index for index, variant in enumerate(state["variants"])
+                                    if variant.get("created") == base_created]
+                stale_index = matching_indices != [active_index]
+            if stale_index:
                 raise ValueError("候选版本已经改变，请重新选择音符再修改")
             progress(20, "检查修改与相邻 LN 占轨")
             length = state.get("analysis", {}).get("duration")
