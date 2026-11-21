@@ -1576,6 +1576,121 @@ def test_original_model_save_failure_rolls_back_files_and_workspace(tmp_path,mon
         app.extensions['executor'].shutdown()
 
 
+def test_original_model_cancel_reports_snapshot_backup_when_restore_fails(tmp_path,monkeypatch):
+    from manialab.chart_workspace import archive_active_chart, chart_workspace_snapshot_path
+    from manialab.upstream import MapperEngine
+
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    fake_mapper_install(tmp_path)
+    projects=app.extensions['projects']
+    imported=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=imported['id'];base=f'/api/projects/{pid}';project=projects.path(pid)
+    (project/'preview.wav').write_bytes(b'placeholder')
+    previous=projects.load(pid)
+    snapshot_path=chart_workspace_snapshot_path(project,None)
+    previous_snapshot=b'{"original":null,"sentinel":"previous workspace"}'
+    snapshot_path.parent.mkdir()
+    snapshot_path.write_bytes(previous_snapshot)
+    archived=threading.Event();release=threading.Event()
+
+    def model(self,audio,output,prefs,progress,cancelled,seconds,tempo):
+        output.mkdir(parents=True)
+        target=output/'generated.osu'
+        target.write_text(export_osu([Note(1000,4000,0),Note(2000,2000,1)],10,
+            ROOT/'vendor/mapperatorinator/template.osu'),encoding='utf-8')
+        return target
+
+    def blocked_archive(path,state):
+        archive_active_chart(path,state)
+        archived.set()
+        assert release.wait(5)
+
+    original_replace=Path.replace
+    failed_backups=[]
+    def fail_snapshot_restore(path,target):
+        if path.name.endswith('.rollback') and Path(target)==snapshot_path:
+            failed_backups.append(path)
+            raise PermissionError('synthetic snapshot restore denied')
+        return original_replace(path,target)
+
+    monkeypatch.setattr(MapperEngine,'generate',model)
+    monkeypatch.setattr('manialab.upstream_routes.archive_active_chart',blocked_archive)
+    monkeypatch.setattr(Path,'replace',fail_snapshot_restore)
+    try:
+        response=client.post(base+'/engine-generate',json={'settings':{'keys':10}},headers=headers)
+        assert response.status_code==200,response.json
+        job=response.json
+        assert archived.wait(5)
+        assert client.post('/api/jobs/'+job['id']+'/cancel',headers=headers).json=={'ok':True}
+        release.set()
+        result=wait_job(client,job)
+
+        backups=list(snapshot_path.parent.glob('.*.rollback'))
+        assert result['status']=='error',result
+        assert result['cleanup_failed'] is True
+        assert len(failed_backups)==len(backups)==1
+        assert backups[0].read_bytes()==previous_snapshot
+        assert str(backups[0]) in result['message']
+        assert '请保留备份' in result['message']
+        assert projects.load(pid)==previous
+        assert not list((project/'files').glob('Mapperatorinator-*.osu'))
+    finally:
+        release.set()
+        app.extensions['executor'].shutdown()
+
+
+def test_original_model_reports_snapshot_backup_when_post_commit_cleanup_fails(tmp_path,monkeypatch):
+    from manialab.chart_workspace import chart_workspace_snapshot_path
+    from manialab.upstream import MapperEngine
+
+    app=create_app(ROOT,tmp_path);client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
+    fake_mapper_install(tmp_path)
+    projects=app.extensions['projects']
+    imported=client.post('/api/import',data={'files':(io.BytesIO(b'placeholder'),'song.wav')},headers=headers).json
+    pid=imported['id'];base=f'/api/projects/{pid}';project=projects.path(pid)
+    (project/'preview.wav').write_bytes(b'placeholder')
+    snapshot_path=chart_workspace_snapshot_path(project,None)
+    previous_snapshot=b'{"original":null,"sentinel":"previous workspace"}'
+    snapshot_path.parent.mkdir()
+    snapshot_path.write_bytes(previous_snapshot)
+
+    def model(self,audio,output,prefs,progress,cancelled,seconds,tempo):
+        output.mkdir(parents=True)
+        target=output/'generated.osu'
+        target.write_text(export_osu([Note(1000,4000,0),Note(2000,2000,1)],10,
+            ROOT/'vendor/mapperatorinator/template.osu'),encoding='utf-8')
+        return target
+
+    original_unlink=Path.unlink
+    failed_backups=[]
+    def fail_backup_cleanup(path,*args,**kwargs):
+        if path.name.endswith('.rollback'):
+            failed_backups.append(path)
+            raise PermissionError('synthetic post-commit backup cleanup denied')
+        return original_unlink(path,*args,**kwargs)
+
+    monkeypatch.setattr(MapperEngine,'generate',model)
+    monkeypatch.setattr(Path,'unlink',fail_backup_cleanup)
+    try:
+        response=client.post(base+'/engine-generate',json={'settings':{'keys':10}},headers=headers)
+        assert response.status_code==200,response.json
+        result=wait_job(client,response.json)
+
+        backups=list(snapshot_path.parent.glob('.*.rollback'))
+        state=projects.load(pid)
+        assert result['status']=='done',result
+        assert result.get('result') is not None
+        assert result['cleanup_failed'] is True
+        assert len(failed_backups)==len(backups)==1
+        assert backups[0].read_bytes()==previous_snapshot
+        assert str(backups[0]) in result['message']
+        assert '结果已保存' in result['message']
+        assert state['original'].startswith('Mapperatorinator-')
+        assert (project/'files'/state['original']).is_file()
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 def test_archive_active_chart_removes_partial_snapshot_after_write_failure(tmp_path,monkeypatch):
     from manialab.chart_workspace import archive_active_chart, chart_workspace_snapshot_path
 

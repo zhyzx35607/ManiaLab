@@ -5,6 +5,18 @@
 
 ## 当前状态（先读）
 
+### Release 后工程验收（2026-11-22）
+
+`v0.1.0-alpha.6-dev.22` Core 预发布已发布并完成 tag 工件独立核验；音乐质量、Timing、6–10K/LN 真人手感及 Standard/Extended 许可和验证仍未完成。发布后通过合成故障注入复现并完成三项最小工程修复，均待独立复审和 PR 验证：
+
+- 快照事务：`engine-generate` 回滚恢复失败及提交后备份清理失败都会在任务消息中报告仍存在的 `.rollback` 路径；路由定向回归 `15 passed, 36 deselected`，`compileall` 与 `git diff --check` 通过。
+- 候选切换：请求携带 `candidate_id`，服务端在改状态前校验它仍对应所请求索引；旧页面的缺失、淘汰或错位 ID 被拒绝。7 个相关模块 `117 passed`，`node --check static/app.js` 及 `git diff --check` 通过。
+- LN/书签舍入：导入的参考标记与 OSU/OSZ 导出统一使用 half-up `floor(x + 0.5)`，修正半毫秒偏移时跨入口不一致；结构与导出定向测试 `53 passed`，`git diff --check` 通过。
+
+手动逐段表达控件到保存/候选切换/JSON 的浏览器端到端仍是覆盖空档，当前没有可复现行为缺陷证据；后续继续检查，不以工程检查替代真人音乐验收。
+
+下方原有`dev.22发布后工程验收（进行中）`条目记录的是本轮修复前的复现状态；当前进度以本节的修复与验证结果为准。
+
 + dev.22 Core 发布（2026-11-22，已发布）：PR #244 合并提交`8bde097c3859d30e04c4117ef216f312752b4059`；PR Windows run `44941813380`、合并后main run `44942788744`、精确annotated tag `v0.1.0-alpha.6-dev.22` Windows run `44943616517`均成功。tag run耗时9分59秒：pytest/API共`3746 tests`，其中`3590 passed, 156 skipped, 0 failures/errors`；Chromium `69 passed`；Core便携构建、离线Unicode路径EXE、媒体切换、关停与collector通过。精确tag artifact在`D:\ManiaLab-release-dev22-44943616517\`下载并独立复验；collector基于tag源码重跑后，validation JSON与SHA256SUMS均与原artifact逐字节一致；ZIP有`1228`个条目、无重复、CRC通过，manifest/Core payload/Basic Pitch身份/源码指纹/JUnit provenance及便携、媒体、关停报告绑定均通过。GitHub Pre-release：[ManiaLab 0.1.0-alpha.6-dev.22](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.22)。Windows Core ZIP为`111935670`字节，SHA-256 `411af2750941461c7ba49313c08e1a224c99c8d5d43442c74121012bc556b703`；validation JSON为`4128`字节，SHA-256 `d5822838df7e7d2f01af8ae4163711811672c4aa65949cbdc2e8e681bc3467e6`；SHA256SUMS为`248`字节，SHA-256 `0a8464c13e463ff285c3525d79bcd126b6385ce819f88c55ddf0a21d153a325b`。三项GitHub远端资产名称、大小、digest与本地完全匹配。仅发布Core；Standard/Extended未验证，Demucs checkpoint再分发许可未核实；真人音乐质量、Timing、6–10K/LN手感和osu!实玩仍未验收，CI不代表音乐质量通过。根工作区旧stage99未提交快照不纳入本版。
 + dev.22发布后工程验收（进行中）：在精确main提交`8bde097`上以纯合成Flask故障注入复现`engine-generate`旧工作区快照恢复rename失败：生成谱已回滚、旧快照留在随机`.rollback`，任务为`error/cleanup_failed`但任务消息没有备份路径；同事务的提交后备份unlink失败也已复现，结果仍为`done`且保留新谱，但消息同样不含遗留路径。现有4项发布/取消回归通过但没有覆盖这两个失败分支；下一步为两种状态分别增加`ManiaLab恢复提示`和故障注入回归，保持提交前后状态语义。候选陈旧页面问题已用合成API复现：8项候选被第9项裁剪后，旧页面`POST {index:0}`返回HTTP 200却选中另一candidate_id并持久化错误active候选；切换API/前端只使用列表索引，下一步改为候选ID校验并拒绝过期请求。段落书签`3201ms`配合`22.5ms`移位的半毫秒舍入差异仍是源码推导、待独立定向验证；手动逐段表达控件的浏览器端到端覆盖目前是测试空档，尚未发现行为缺陷。以上均为工程一致性检查，不是模型实验或真人音乐验收。
 + dev.21 Core 发布（2026-11-22，已发布）：PR #233 合并提交`5d478ae44bf0dc2e6e0b2ca467ae3b38619e11c5`；annotated tag `v0.1.0-alpha.6-dev.21`和GitHub Pre-release精确指向该提交。tag Windows run `44934569848`成功（6分20秒）：pytest/API `3587 passed, 156 skipped`，Chromium synthetic browser、Core EXE离线Unicode路径、媒体切换、关停和collector均通过；piano模型验证按Core profile条件跳过。用精确tag源码和run artifact独立核验1,227个无重复ZIP条目、CRC、manifest、源码指纹、JUnit与各报告摘要，`verify.py`通过。ZIP大小111,928,972字节，SHA-256 `8b57268c599250b2e79f95f169bd15a4759ffea7b9c7711e76be65e41721058a`；验证JSON SHA-256 `d5ddb30cc7a64b67fe142ca387f96bfa76eb0e13795cd5b6553b864ff7e9a1c8`；SHA256SUMS SHA-256 `1059e6a0d140e19d79380f38dafaead6221b1e416b9fdc6f48860d2cf498c584`。GitHub远端资产digest与本地一致。发布范围仅Windows Core；Standard/Extended未验证，真人音乐质量、Timing、6–10K/LN手感和osu!试打仍开放。
