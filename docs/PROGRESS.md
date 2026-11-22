@@ -5,6 +5,10 @@
 
 ## 当前状态（先读）
 
+### dev.24 Extended 试用预发布（准备中）
+
+用户要求将包含完整 Extended 能力的 Windows x64 便携包发布到 GitHub，供本人验证实际效果。新版本使用 `0.1.0-alpha.6-dev.24`，不改写已发布的 dev.23 Core Release。PR #255（head `cbb16d4051d25d91f60548add23b277c2192a4a6`）的首轮 Windows run `45020635742`通过：Python/API `3611 passed, 156 skipped, 1 warning`，浏览器 `73 passed`；该 workflow 仍固定验证 Core，不构建 Extended。PR head 上首次 Extended 构建 `extended-dev24-cbb16d4-20261122`完成：ZIP 1,310,973,747 字节，SHA-256 `770fdd0dfb325c37208f80bf1fa644cfd77664b963c4c5d198631063611321e4`；EXE SHA-256 `60524f2fd6c820770eb74ccc92b82fa3c60a52a3bd43e30617d544aa2cd9fcf1`，manifest SHA-256 `9809102226ed5666ca6f2a0bc9b3030bbdf5d2d6f03a44ad60af4b98b6e3d915`。实际 EXE 便携检查、4/6 声部、6–10K 导出、取消/坏音频恢复、钢琴/吉他/Tsumugi 合成专用烟测和 worker 关停均通过；ZIP 的7,722个文件/目录条目无重复，CRC、包内 manifest/payload、模型和许可清单检查通过。此包是 PR head 验证产物，最终会按合并后的精确 tag 源码重建并重新核验。真实音乐质量、Timing/游戏手感未验收；Demucs 权重再分发授权、Tsumugi 训练录音权利未核实。目标是新建 GitHub prerelease 并上传 Extended ZIP、SHA256SUMS 和经过路径清理的验证 JSON。
+
 ### dev.23 Core 发布（2026-11-22，已发布）
 
 GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.23](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.23) 已发布；annotated tag 指向 main 提交`4ba2a4b188e4c92b9d4c34595a9dd3d18a33c534`，包含 PR #246–#253（#253 为本次版本说明与元数据）。精确 tag Windows run `45000117786`成功：Python/API `3611 passed, 156 skipped, 1 warning`；Edge `73 passed`；Core便携包、干净 PATH 与 Unicode 路径离线 EXE、媒体播放/切换、关停和验证 evidence collector 全通过。报告记录3767项测试、0 failures/errors；15项 portable检查通过。下载的 CI artifacts 位于`D:\ManiaLab-release-dev23-45000117786\`。
