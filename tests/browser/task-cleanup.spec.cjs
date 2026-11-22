@@ -37,8 +37,12 @@ CircleSize:6
   await expect(page.locator('#message')).toContainText('结构检查通过');
   await expect(page.locator('#message')).toHaveClass(/error/);
   await expect(page.locator('#job')).toHaveClass(/hidden/);
-  await expect(page.locator('#exportOsu')).toHaveAttribute('href', /export[/]osu$/);
-  const exported = await page.request.get(await page.locator('#exportOsu').getAttribute('href'));
+  const candidateId = await page.evaluate(() => variant()?.candidate_id);
+  expect(candidateId).toMatch(/^[a-f0-9]{32}$/);
+  const exportUrl = new URL(await page.locator('#exportOsu').getAttribute('href'), page.url());
+  expect(exportUrl.pathname).toMatch(/\/export\/osu$/);
+  expect(exportUrl.searchParams.get('candidate_id')).toBe(candidateId);
+  const exported = await page.request.get(exportUrl.href);
   expect(exported.ok()).toBeTruthy();
   expect(await exported.text()).toContain('1000,128,0,2000:');
 

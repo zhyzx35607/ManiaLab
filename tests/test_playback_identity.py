@@ -226,6 +226,70 @@ def test_stale_candidate_source_requests_are_rejected_after_another_tab_switches
     assert stale_audition.status_code == 400
 
 
+def test_chart_audition_rejects_an_old_tabs_candidate_with_the_same_audio(tmp_path):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    projects = app.extensions["projects"]
+    try:
+        pid, folder = projects.create()
+        wavfile.write(folder / "preview.wav", 22050, np.zeros(22050 * 2, dtype=np.int16))
+        state = dict(id=pid, title="Stale chart audition", artist="Fixture", mode="audio",
+            audio="song.wav", active=0, variants=[
+                dict(mode="audio", notes=[dict(start=100, end=100)]),
+                dict(mode="audio", notes=[dict(start=500, end=700)]),
+            ])
+        projects.save(state)
+        old_id, new_id = [candidate["candidate_id"] for candidate in state["variants"]]
+        url = f"/api/projects/{pid}/audition"
+        payload = dict(mode="chart", voice="mix", audio="song.wav", duration_ms=1000)
+        stale_request = payload | dict(candidate_id=old_id)
+        first = client.post(url, json=stale_request, headers=headers)
+        assert first.status_code == 200, first.json
+        assert first.headers["X-ManiaLab-Audition-Events"] == "1"
+
+        state["active"] = 1
+        projects.save(state)
+        stale = client.post(url, json=stale_request, headers=headers)
+        assert stale.status_code == 400
+        assert "刷新" in stale.json["error"]
+        assert client.post(url, json=payload | dict(candidate_id=None), headers=headers).status_code == 400
+        fresh = client.post(url, json=payload | dict(candidate_id=new_id), headers=headers)
+        unbound = client.post(url, json=payload, headers=headers)
+        assert fresh.status_code == unbound.status_code == 200
+        assert fresh.headers["X-ManiaLab-Audition-Events"] == "2"
+        assert fresh.data == unbound.data
+    finally:
+        app.extensions["executor"].shutdown()
+
+
+def test_evidence_and_beat_audition_remain_available_without_a_candidate(tmp_path):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    projects = app.extensions["projects"]
+    try:
+        pid, folder = projects.create()
+        wavfile.write(folder / "preview.wav", 22050, np.zeros(22050 * 2, dtype=np.int16))
+        state = dict(id=pid, title="Analysis audition", artist="Fixture", mode="audio",
+            audio="song.wav", active=-1, variants=[],
+            analysis=dict(candidates=[dict(start=100, end=100)]))
+        projects.save(state)
+        url = f"/api/projects/{pid}/audition"
+        payload = dict(voice="mix", audio="song.wav", duration_ms=1000)
+        evidence = client.post(url, json=payload | dict(mode="evidence"), headers=headers)
+        beats = client.post(url, json=payload | dict(mode="beats", beat_clock="fixed",
+            bpm=120, offset=0, division=4, audio_shift_ms=0), headers=headers)
+        assert evidence.status_code == beats.status_code == 200
+        assert evidence.headers["X-ManiaLab-Audition-Events"] == "1"
+        assert beats.headers["X-ManiaLab-Audition-Meter"] == "4"
+        chart = client.post(url, json=payload | dict(mode="chart", candidate_id=None), headers=headers)
+        assert chart.status_code == 400
+        assert "先生成候选" in chart.json["error"]
+    finally:
+        app.extensions["executor"].shutdown()
+
+
 def test_stale_audio_range_requests_are_rejected_after_chart_audio_changes(tmp_path):
     app = create_app(ROOT, tmp_path)
     client = app.test_client()

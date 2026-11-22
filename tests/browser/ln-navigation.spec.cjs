@@ -31,6 +31,7 @@ async function assertAuditionStart(page, event) {
   const done=page.waitForResponse(response=>response.url().endsWith('/audition'));
   await page.locator('#auditionChart').click();
   expect((await sent).postDataJSON()).toMatchObject({mode:'chart',
+    candidate_id:await page.evaluate(()=>variant().candidate_id),
     start_ms:Number(Math.max(0,event.start_ms/1000-1).toFixed(1))*1000});
   expect((await done).ok()).toBeTruthy();
   await page.locator('#auditionAudio').evaluate(el=>el.pause());

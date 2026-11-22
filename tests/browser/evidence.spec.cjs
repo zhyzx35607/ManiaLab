@@ -73,6 +73,8 @@ test('audition buttons adopt the source of the requested review mode', async ({p
     const identity=await page.evaluate(mode=>mode==='chart'?
       variant().source_separation.identity:state.analysis.separation.playback_identity,mode);
     expect(payload.source_identity).toBe(identity);
+    expect(payload.candidate_id).toBe(mode==='chart'?
+      await page.evaluate(()=>variant().candidate_id):undefined);
     await expect(page.locator(mode==='chart'?'#chartView':'#evidenceView')).toHaveClass('active');
   }
 });
