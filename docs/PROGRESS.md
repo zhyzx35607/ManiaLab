@@ -5,9 +5,13 @@
 
 ## 当前状态（先读）
 
-### dev.23 发布准备（进行中）
+### dev.23 Core 发布（2026-11-22，已发布）
 
-`dev.22` 仍是最新已发布 Release。当前远端 `main` 为`239a593a9aa55276199f2441c5d53df1a0a6ba92`，已包含 PR #246–#252；源码版本准备升至`0.1.0-alpha.6-dev.23`。本版汇集快照事务恢复路径、段落书签半毫秒舍入、候选身份校验、声轨输入快照清理诊断、过期手动表达草稿保护、按候选身份绑定导出/试听，以及 recent 项目加载竞态保护；不改变采音或编谱算法。PR #252 的独立 Edge 全量`73 passed`、相关 Python/API`30 passed`，Windows run `44998326606`成功并已合入`239a593`；合并后 main run `44999124873`正在执行。dev.23 发布 PR 的 portable 检查、精确 tag 完整 Windows 构建、工件独立复核和 Release 发布仍待完成。Standard/Extended验证、权重再分发授权、真实音乐质量、Timing、6–10K/LN真人手感及osu!试打仍开放；不运行模型/研究实验，不把工程检查当作音乐验收。
+GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.23](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.23) 已发布；annotated tag 指向 main 提交`4ba2a4b188e4c92b9d4c34595a9dd3d18a33c534`，包含 PR #246–#253（#253 为本次版本说明与元数据）。精确 tag Windows run `45000117786`成功：Python/API `3611 passed, 156 skipped, 1 warning`；Edge `73 passed`；Core便携包、干净 PATH 与 Unicode 路径离线 EXE、媒体播放/切换、关停和验证 evidence collector 全通过。报告记录3767项测试、0 failures/errors；15项 portable检查通过。下载的 CI artifacts 位于`D:\ManiaLab-release-dev23-45000117786\`。
+
+Core Windows ZIP大小`111941233`字节，SHA-256 `4f4e794d0e28be1ba8185e8c8072736906459a1f24cc34f1db874d943e31b290`；validation JSON大小`4127`字节，SHA-256 `1db1497d26c111d329366d819d14f960800001de6b6b5bbb8195f440f4f53269`；SHA256SUMS大小`248`字节，SHA-256 `9c4c5a19f8090ff585e2a62d9820afcdbc1a3dc83c97b62ecba1bc7f58aa7e6c`。ZIP包含1229个无重复条目且 CRC 全通过。按精确 tag 源码重跑`collect_release_validation.py`后，validation JSON 与 SHA256SUMS 均和 CI artifact 逐字节一致；GitHub 三项资产的远端 digest 与本地文件匹配。
+
+发布范围仅有 Windows x64 Core profile。Standard/Extended验证、权重再分发授权、真实音乐质量、Timing、6–10K/LN真人手感及osu!试打仍开放；合成测试与便携验证不构成音乐验收。
 
 ### Release 后工程验收（2026-11-22）
 
