@@ -344,6 +344,8 @@ def main():
             analysis=dict(revision=3, duration=12,
                 audio_sha256=sha256(folder / 'files/synthetic.wav'), candidates=notes, timing_attacks=notes,
                 tempo=dict(bpm=120, offset=0, division=4, stable=True), waveform=[0]*100)))
+        timing_fixture(projects, 'UI project race generation')
+        evidence_fixture(projects, 'UI project race expression')
         timing_fixture(projects, 'UI timing clock')
         timing_fixture(projects, 'UI timing wave')
         timing_fixture(projects, 'UI timing saved')

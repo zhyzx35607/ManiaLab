@@ -7,10 +7,15 @@ test('audio candidate: generate, change keys, edit, reopen and export', async ({
   await expect(page.locator('#recent option')).toContainText(['打开已保存项目', 'UI synthetic']);
   await page.locator('#recent').selectOption({ label: 'UI synthetic' });
   await expect(page.locator('#projectTitle')).toHaveText('UI synthetic');
-  await expect(page.locator('#exportJson')).toHaveAttribute('href', /export\/json\?candidate_id=$/);
   await page.locator('#timingConfirmed').check();
   await page.locator('#generate').click();
   await expect(page.locator('#message')).toContainText('结构检查通过');
+  const generatedPid = await page.locator('#recent').inputValue();
+  const generatedProject = await (await page.request.get(`/api/projects/${generatedPid}`)).json();
+  const generatedCandidate = generatedProject.variants[generatedProject.active].candidate_id;
+  await expect(page.locator('#exportJson')).toHaveAttribute(
+    'href', `/api/projects/${generatedPid}/export/json?candidate_id=${generatedCandidate}`,
+  );
   await expect(page.locator('#exportOsz')).toHaveAttribute('href', /export\/osz\?candidate_id=[0-9a-f]{32}$/);
   await page.locator('[data-key="6"]').click();
   await expect(page.locator('#gridReport')).toContainText('当前预览仍是 10K');

@@ -2,10 +2,12 @@ const { test, expect } = require('@playwright/test');
 
 test('a pending recent load cannot replace a project while its candidate is generating', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('#recent option').filter({ hasText: 'UI project race generation' })).toHaveCount(1);
+  await expect(page.locator('#recent option').filter({ hasText: 'UI timing clock' })).toHaveCount(1);
   const projects = await page.locator('#recent option').evaluateAll(options =>
     options.map(option => ({ id: option.value, title: option.textContent.trim() })),
   );
-  const projectA = projects.find(project => project.title === 'UI synthetic');
+  const projectA = projects.find(project => project.title === 'UI project race generation');
   const projectB = projects.find(project => project.title === 'UI timing clock');
   expect(projectA).toBeTruthy();
   expect(projectB).toBeTruthy();
@@ -56,10 +58,12 @@ test('a pending recent load cannot replace a project while its candidate is gene
 
 test('a pending recent load cannot replace a project while its expression is saving', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('#recent option').filter({ hasText: 'UI project race expression' })).toHaveCount(1);
+  await expect(page.locator('#recent option').filter({ hasText: 'UI timing clock' })).toHaveCount(1);
   const projects = await page.locator('#recent option').evaluateAll(options =>
     options.map(option => ({ id: option.value, title: option.textContent.trim() })),
   );
-  const projectA = projects.find(project => project.title === 'UI evidence review');
+  const projectA = projects.find(project => project.title === 'UI project race expression');
   const projectB = projects.find(project => project.title === 'UI timing clock');
   expect(projectA).toBeTruthy();
   expect(projectB).toBeTruthy();
