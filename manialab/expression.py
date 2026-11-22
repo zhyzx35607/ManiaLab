@@ -175,7 +175,7 @@ def validate_expression(value, analysis):
 
 
 def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segment_preferences=(),
-                        candidate_evidence=None, phrase_evidence=None):
+                        candidate_evidence=None, phrase_evidence=None, onsets_only=False):
     """Apply an explicit source policy, without LN quotas or lane decisions."""
     validate_expression(plan, analysis)
     p = parameters(settings)
@@ -187,13 +187,18 @@ def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segme
     phrase_rows = analysis.get('phrase_candidates', []) if phrase_evidence is None else phrase_evidence
     phrases = sorted([note_from(n) for n in phrase_rows], key=lambda n: n.start)
     phrases = reconcile_phrase_sources(phrases, raw)
+
+    def effective_mode(section, voice, instrument_id):
+        mode = _expression_mode(section, voice, instrument_id)
+        return 'onsets' if onsets_only and mode != 'omit' else mode
+
     output, trace, metadata = [], {}, {}
     # Analyse the source's attack context once. Cutting chart sections through
     # a chord or run must not turn its last local object into a phrase ending.
     articulation = {}
     articulation_streams = {(n.voice, n.instrument_id) for section in plan['sections'] for n in raw
         if section['start_ms'] <= n.start < section['end_ms']
-        and _expression_mode(section, n.voice, n.instrument_id) == 'articulation'}
+        and effective_mode(section, n.voice, n.instrument_id) == 'articulation'}
     duration = analysis.get('duration')
     if articulation_streams and (isinstance(duration,bool) or not isinstance(duration,(int,float))
             or not math.isfinite(duration) or duration<=0):
@@ -219,7 +224,7 @@ def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segme
             anchor = by_id.get(phrase.id)
             phrase_settings = settings_at(p, phrase.start, segment_preferences)
             if (not _phrase_eligible(phrase, anchor, section, phrase_settings['min_ln']) or
-                    _expression_mode(section, anchor.voice, anchor.instrument_id) != 'phrase'):
+                    effective_mode(section, anchor.voice, anchor.instrument_id) != 'phrase'):
                 continue
             amount = section.get('phrase_ln', phrase_settings['phrase_ln'])
             phrase_groups[(anchor.voice, anchor.instrument_id, amount)].append(phrase)
@@ -239,7 +244,7 @@ def expression_evidence(analysis, plan, settings, *, stream_evidence=None, segme
                         covered[identity] = phrase.id
         for original in local:
             policy = section['voices'][original.voice]
-            mode = _expression_mode(section, original.voice, original.instrument_id)
+            mode = effective_mode(section, original.voice, original.instrument_id)
             base = dict(id=original.id, voice=original.voice, start=original.start, end=original.end,
                         instrument_id=original.instrument_id, section=index, mode=mode, role=policy['role'],
                         voice_mode=policy['mode'],

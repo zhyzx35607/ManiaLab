@@ -6,13 +6,13 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.24 · Extended profile · 公开试用预发布。** [下载 Windows 完整功能便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.24)。包内包含四／六声部分离、节拍模型、钢琴专用模型、吉他 FL、Tsumugi 贝斯／其他伴奏模型和 CPU 运行时；Mapperatorinator 权重按需单独下载。自动化 Windows 发布工作流目前仍只验证 Core，本 Extended 包另做了本地打包、实际 EXE 专用路径合成烟测及关停验证。合成输入只能证明组件加载、执行与身份匹配，不证明真实歌曲采音质量、Timing 或游戏手感；Demucs 权重的独立再分发授权及 Tsumugi 训练录音权利也未核实。完整范围和验证限制见[dev.24 说明](docs/releases/0.1.0-alpha.6-dev-24.md)与[第三方声明](THIRD_PARTY_NOTICES.md)。
+**0.1.0-alpha.6-dev.25 · Extended profile · 公开试用预发布。** [下载 Windows 完整功能便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.25)。包内包含四／六声部分离、节拍模型、钢琴专用模型、吉他 FL、Tsumugi 贝斯／其他伴奏模型和 CPU 运行时；Mapperatorinator 权重按需单独下载。本版增加均衡、纯起音（不写 LN）、持续音和节奏四种一键预设，并收起高级参数以简化主界面。Windows 自动发布工作流仍只验证 Core，Extended 包另行构建并做便携运行检查；合成输入只能证明组件加载、执行与身份匹配，不证明真实歌曲采音质量、Timing 或游戏手感。Demucs 权重的独立再分发授权及 Tsumugi 训练录音权利仍未核实。完整范围和验证限制见[dev.25 说明](docs/releases/0.1.0-alpha.6-dev-25.md)与[第三方声明](THIRD_PARTY_NOTICES.md)。
 
 当前稳定入口： [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
-Windows workflow 的自动发布门禁仍固定为 `core`。dev.24 的 Extended 便携包是供用户评估的公开试用预发布，不等于 Extended 已获正式支持；dev.23 Core 与历史 Release 的内容和说明保持不变。
+Windows workflow 的自动发布门禁仍固定为 `core`。dev.25 的 Extended 便携包是供用户评估的公开试用预发布，不等于 Extended 已获正式支持；dev.23 Core 与历史 Release 的内容和说明保持不变。
 
-dev.24 基于 dev.23 发布后的主线改进并将完整 Extended 能力打包供试用。发布源码与验证范围以本页版本及[dev.24 说明](docs/releases/0.1.0-alpha.6-dev-24.md)为准；完整工程与音乐验收状态见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。
+dev.25 基于 dev.24 增加制谱预设和精简界面，并继续提供完整 Extended 能力供试用。发布源码与验证范围以本页版本及[dev.25 说明](docs/releases/0.1.0-alpha.6-dev-25.md)为准；完整工程与音乐验收状态见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。
 
 2026-11-18 源码已核对真实多难度谱包的编辑与重开，并用两首外部歌曲运行了完整采音到导出流程。结果与试听、试打入口见[工程与音乐验收记录](docs/acceptance-20261118.md)。
 
@@ -26,11 +26,11 @@ dev.24 基于 dev.23 发布后的主线改进并将完整 Extended 能力打包�
 
 不熟悉 BPM / Offset、LN 比例和声部参数时，先看 [第一次使用](docs/quick-start.md)。
 
-dev.24 Extended 便携包自带 CPU 运行时、四／六声部分离、Beat This、钢琴、吉他与 Tsumugi 模型及 FFmpeg。日常功能不需要 Python、Docker 或 CUDA；首次使用可选 Mapperatorinator 后端时需要网络下载模型。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
+dev.25 Extended 便携包自带 CPU 运行时、四／六声部分离、Beat This、钢琴、吉他与 Tsumugi 模型及 FFmpeg。日常功能不需要 Python、Docker 或 CUDA；首次使用可选 Mapperatorinator 后端时需要网络下载模型。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
 
 分析能力取决于便携包 profile；程序仅调用当前包内可用的模型，并可复用已完成的缓存结果。界面显示实际耗时和缓存状态。Release 中随 ZIP 提供的 `*-SHA256SUMS.txt` 是对应版本的校验文件，正常使用只需下载 ZIP。
 
-本版各专用模型默认关闭或需在对应采音选项中选择；具体能力以 ZIP 内 `release-manifest.json` 与[dev.24 验证说明](docs/releases/0.1.0-alpha.6-dev-24.md)为准。
+本版各专用模型默认关闭或需在对应采音选项中选择；具体能力以 ZIP 内 `release-manifest.json` 与[dev.25 验证说明](docs/releases/0.1.0-alpha.6-dev-25.md)为准。
 
 项目自动保存到 `%LOCALAPPDATA%\ManiaLab\projects`，日志在 `%LOCALAPPDATA%\ManiaLab\ManiaLab.log`。迁移项目可复制项目文件夹。
 
@@ -102,6 +102,6 @@ uv pip sync --python .venv-audio\Scripts\python.exe --extra-index-url https://do
 .venv\Scripts\python.exe scripts\build_windows.py --profile standard
 ```
 
-以上用于干净检出和本机工程验证；dev.24 的 Extended 包为公开试用版本，Windows 自动发布门禁仍固定验证 `core`。已有旧钢琴模型时先保留旧文件，按[模型与构建说明](docs/development.md)准备当前版本，构建会把选定模型规范为包内固定路径。
+以上用于干净检出和本机工程验证；dev.25 的 Extended 包为公开试用版本，Windows 自动发布门禁仍固定验证 `core`。已有旧钢琴模型时先保留旧文件，按[模型与构建说明](docs/development.md)准备当前版本，构建会把选定模型规范为包内固定路径。
 
 浏览器回归独立使用合成项目，不需要模型下载：`npm ci --ignore-scripts` → `npx playwright install chromium` → `npm run test:ui`。详见[开发与验证](docs/development.md)。验证范围、真实音频对照与不足见 [验证记录](docs/validation.md)。本地语料审计用 `scripts/audit_corpus.py`；采集与训练脚本见 [训练计划](docs/training-plan.md)。
