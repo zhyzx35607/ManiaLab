@@ -72,6 +72,11 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
             raise ValueError('局部重写不能混用不同或未知的声轨来源；请先重新生成整谱')
     started = time.perf_counter()
     segment_preferences=adjusted_segments(state.get('plan',{}),prefs)
+    onsets_only = mode == 'audio' and prefs['ln_ratio'] == 0
+    if onsets_only:
+        segment_preferences = [dict(segment, preferences={
+            **segment['preferences'], 'ln_ratio': 0, 'phrase_ln': 0,
+        }) for segment in segment_preferences]
     progress(15, "选择音乐物件 / 保留原始物件")
     if mode == "remap":
         if not state["input_notes"]:
@@ -98,7 +103,7 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
             validate_expression(expression, state['analysis'])
             evidence, expression_meta, decisions = expression_evidence(
                 state['analysis'], expression, prefs, segment_preferences=segment_preferences,
-                candidate_evidence=detected, phrase_evidence=phrases)
+                candidate_evidence=detected, phrase_evidence=phrases, onsets_only=onsets_only)
             phrase_report = dict(used=sum(n.phrase for n in evidence), explanation='由段落声部策略选择连续乐句表达')
             state['expression'] = expression
         else:

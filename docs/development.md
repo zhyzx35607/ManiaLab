@@ -24,7 +24,7 @@ git diff --check
 
 ## 模型与构建
 
-`scripts/build_windows.py --profile core` 仅包含固定 Basic Pitch ONNX、应用谱面配置及通用分析/制谱代码；不包含内置 Demucs 分离器、节拍模型、钢琴/吉他/Tsumugi 权重、uv 或原模型安装器。dev.23 Release 保持其 Core 范围。dev.24 另提供 Extended 公开试用包，含四/六声部分离、节拍、钢琴、吉他 FL、Tsumugi bass/other 及原模型安装器；这是面向用户试用的版本，GitHub Windows workflow 仍只自动验证 Core，dev.24 Extended 的本地构建与合成专用模型烟测不等于真实音乐验收。Demucs checkpoint 的单独再分发授权仍未核实，Tsumugi 训练录音权利也未核实；随包声明见 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)。`assets/model-manifest.json` 固定 Basic Pitch 来源及摘要；`scripts/package_assets.py` 按 profile 清单暂存资源，排除未声明组件。
+`scripts/build_windows.py --profile core` 仅包含固定 Basic Pitch ONNX、应用谱面配置及通用分析/制谱代码；不包含内置 Demucs 分离器、节拍模型、钢琴/吉他/Tsumugi 权重、uv 或原模型安装器。dev.23 Release 保持其 Core 范围。dev.24 起另提供 Extended 公开试用包，含四/六声部分离、节拍、钢琴、吉他 FL、Tsumugi bass/other 及原模型安装器；这是面向用户试用的版本，GitHub Windows workflow 仍只自动验证 Core，Extended 本地构建与合成专用模型烟测不等于真实音乐验收。dev.25 在此完整能力包中增加起音-only 等制谱预设与简化界面。Demucs checkpoint 的单独再分发授权仍未核实，Tsumugi 训练录音权利也未核实；随包声明见 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)。`assets/model-manifest.json` 固定 Basic Pitch 来源及摘要；`scripts/package_assets.py` 按 profile 清单暂存资源，排除未声明组件。
 
 包内 `release-manifest.json` 记录 profile、capabilities、模型身份与源码摘要；`开始使用.txt` 从同一能力声明生成。发布验证核对实际组件，不能仅凭文件存在称模型可用。开发时钢琴状态区分 missing、mismatched、verified 与文件读取异常；状态查询缓存至多 30 秒，推理前强制校验。
 

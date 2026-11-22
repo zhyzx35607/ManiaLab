@@ -7,6 +7,8 @@ async function openLNEvents(page, mode) {
   if(mode==='audio')await page.locator('#timingConfirmed').check();
   await page.locator('#generate').click();
   await expect(page.locator('#message')).toContainText('结构检查通过');
+  await expect(page.locator('#lnDesignPanel')).not.toHaveAttribute('open', '');
+  await page.locator('#lnDesignPanel summary').click();
   await page.locator('#lnEventFilter').selectOption('release_only_rows');
   await expect(page.locator('#lnDesignEvents button').first()).toBeVisible();
   return page.evaluate(()=>variant().report.ln_patterns.locations.find(x=>x.kind==='release_only_rows'));

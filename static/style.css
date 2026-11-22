@@ -15,3 +15,13 @@
 #providedStemsPanel{margin:14px 0;min-width:0;overflow-wrap:anywhere}#providedStemsPanel input[type=file]{width:100%;min-width:0;max-width:100%;font-size:11px}
 .structure-voice{min-width:0}.instrument-modes{padding:10px;margin:10px 0 0;overflow-wrap:anywhere}.instrument-modes select{max-width:100%;min-width:0}.instrument-modes .field{margin-top:10px}.instrument-modes summary{font-size:12px}
 @media(max-width:540px){.left{grid-template-columns:minmax(0,1fr)}.left section{min-width:0}}
+
+.right #musical{display:block}
+.right #preset{padding:10px;border-color:#547c74;font-size:13px}
+.right .advanced-settings{margin:13px 0 0;padding:11px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent}
+.right .advanced-settings>summary{padding:2px 0;color:#c7d4e4}
+.right .advanced-settings[open]>summary{margin-bottom:10px}
+.right #generate{margin-top:14px}
+.right #another{margin-top:4px}
+@media(max-width:1150px){.right section>.field{grid-column:span 2}.right #musical,.right #strictHint,.right #generate,.right #another,.right section>.advanced-settings{grid-column:1/-1}.right #musical{display:block}.right .advanced-settings{min-width:0}}
+@media(max-width:720px){.right section>.field,.right #strictHint,.right #generate,.right #another,.right section>.advanced-settings{grid-column:1/-1}.right #musical{grid-column:1/-1}}
