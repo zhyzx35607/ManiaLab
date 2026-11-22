@@ -27,6 +27,7 @@
 - [局部乐句边界保护](regional-phrase-boundary-results.md)：防止范围外新乐句错误代替范围内起音，含冻结候选对照与扩大范围后的导出检查。
 - [历史开发与研究导航](research-history.md)：从首页归档的版本与研究记录；不是当前包的功能清单。
 - [当前续接进度](PROGRESS.md)：已完成阶段、真实验证结果、产物位置和下一步。
+- [dev.24 发布说明](releases/0.1.0-alpha.6-dev-24.md)：完整 Extended profile 公开试用预发布的组件、合成烟测范围与第三方权利状态。
 - [dev.23 发布说明](releases/0.1.0-alpha.6-dev-23.md)：Core profile 快照事务恢复路径、书签舍入一致性、过期候选拒绝及验证边界。
 - [dev.22 发布说明](releases/0.1.0-alpha.6-dev-22.md)：Core profile 取消/快照清理错误恢复提示、区域来源回归及验证边界。
 - [dev.21 发布说明](releases/0.1.0-alpha.6-dev-21.md)：Core profile 外部计划失效、候选编辑、预览 WAV 写入、依赖锁指纹、发布包路径校验及验证边界。

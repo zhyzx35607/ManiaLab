@@ -5,6 +5,10 @@
 
 ## 当前状态（先读）
 
+### dev.24 Extended 试用预发布（准备中）
+
+用户要求将包含完整 Extended 能力的 Windows x64 便携包发布到 GitHub，供本人验证实际效果。新版本使用 `0.1.0-alpha.6-dev.24`，不改写已发布的 dev.23 Core Release。dev.24 发布说明、README 和版本号已进入 release PR；自动 Windows workflow 仍硬编码 Core，Extended 包需以合并后的精确 tag 源码本地构建并单独复验。发布证据将如实标记：完整包专用路径为合成输入 smoke，真实音乐质量/Timing/游戏手感未验收；Demucs 权重再分发授权、Tsumugi 训练录音权利未核实。目标是新建 GitHub prerelease 并上传 Extended ZIP、SHA256SUMS 和经过路径清理的验证 JSON。
+
 ### dev.23 Core 发布（2026-11-22，已发布）
 
 GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.23](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.23) 已发布；annotated tag 指向 main 提交`4ba2a4b188e4c92b9d4c34595a9dd3d18a33c534`，包含 PR #246–#253（#253 为本次版本说明与元数据）。精确 tag Windows run `45000117786`成功：Python/API `3611 passed, 156 skipped, 1 warning`；Edge `73 passed`；Core便携包、干净 PATH 与 Unicode 路径离线 EXE、媒体播放/切换、关停和验证 evidence collector 全通过。报告记录3767项测试、0 failures/errors；15项 portable检查通过。下载的 CI artifacts 位于`D:\ManiaLab-release-dev23-45000117786\`。
