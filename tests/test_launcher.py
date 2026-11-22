@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -63,13 +64,54 @@ def test_launcher_surfaces_shutdown_deadline_failure_without_hiding_server_error
             pass
 
     class TaskService:
+        lock = threading.RLock()
+
         def shutdown(self, *, wait, deadline):
             return False if wait else True
+
+        def has_active(self):
+            return True
 
     with pytest.raises(ChildProcessError, match="shutdown deadline") as error:
         _run_server(Server(), TaskService())
 
     assert isinstance(error.value.__context__, RuntimeError)
+
+
+def test_launcher_reports_idle_cleanup_failures_without_claiming_deadline_timeout(caplog):
+    from manialab.cancellation import CancellationContext
+
+    class Server:
+        task_dispatcher = None
+
+        def run(self):
+            pass
+
+        def close(self):
+            pass
+
+    class TaskService:
+        lock = threading.RLock()
+
+        def __init__(self):
+            self._shutdown_cancellation = CancellationContext()
+            self._shutdown_cancellation.report_cleanup_failure(
+                "Project task cleanup failed: synthetic prior job")
+
+        def shutdown(self, *, wait, deadline):
+            return not wait
+
+        def has_active(self):
+            return False
+
+    service = TaskService()
+    failures = service._shutdown_cancellation.cleanup_failures
+
+    _run_server(Server(), service)
+
+    assert service._shutdown_cancellation.cleanup_failures == failures
+    assert "Task service stopped with cleanup failures" in caplog.text
+    assert "shutdown deadline" not in caplog.text
 
 
 def test_launcher_survives_cp1252_output_and_unicode_data_directory(tmp_path):

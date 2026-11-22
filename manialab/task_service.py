@@ -146,15 +146,23 @@ class ProjectTasks:
                     outcome = dict(status="cancelled", message=str(error))
                     recovery_hints = _user_recovery_hints(error)
                     if recovery_hints:
+                        cancellation.report_cleanup_failure(
+                            f"Project task cleanup failed: project={project_id} job={job_id}")
                         outcome.update(
                             status="error",
                             cleanup_failed=True,
-                            message="取消后资源清理失败；" + "；".join(recovery_hints),
+                            message="；".join([str(error), "取消后资源清理失败", *recovery_hints]),
                         )
                 except BaseException as error:
                     self.logger.exception("Project task failed: project=%s job=%s", project_id, job_id)
                     message = str(error) if isinstance(error, ValueError) else "任务失败，请查看本地日志"
                     outcome = dict(status="error", message=message)
+                    recovery_hints = _user_recovery_hints(error)
+                    if recovery_hints:
+                        cancellation.report_cleanup_failure(
+                            f"Project task cleanup failed: project={project_id} job={job_id}")
+                        outcome.update(cleanup_failed=True,
+                                       message="；".join([message, "资源清理失败", *recovery_hints]))
                 finally:
                     if cleanup is not None:
                         try:
