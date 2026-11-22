@@ -6,7 +6,7 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.23 · Core profile · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.23)。本版补充快照清理失败的恢复提示，统一段落书签舍入，拒绝过期候选切换，并将表达草稿、导出与试听绑定到对应候选；不改变采音或编谱算法。发布包仅含 Core profile：包含固定 Basic Pitch，不含 Demucs checkpoint、Beat This 节拍模型、钢琴专用 ONNX、吉他/Tsumugi 模型或其它非 Core checkpoint；Standard 和 Extended profile 未由本版验证。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；随包模型的来源、许可与限制见[第三方声明](THIRD_PARTY_NOTICES.md)。Timing 与真实歌曲音乐质量尚未完成验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.23说明](docs/releases/0.1.0-alpha.6-dev-23.md)。
+**0.1.0-alpha.6-dev.23 · Core profile · 开发测试版。** [下载 Windows 便携包](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.23)。本版补充快照清理失败的恢复提示，统一段落书签舍入，拒绝过期候选切换，并将表达草稿、导出、试听和 recent 项目加载绑定到对应候选或项目；不改变采音或编谱算法。发布包仅含 Core profile：包含固定 Basic Pitch，不含 Demucs checkpoint、Beat This 节拍模型、钢琴专用 ONNX、吉他/Tsumugi 模型或其它非 Core checkpoint；Standard 和 Extended profile 未由本版验证。用户音频、参考谱、下载语料、本地研究权重和逐曲研究产物不进入源码提交或便携包；随包模型的来源、许可与限制见[第三方声明](THIRD_PARTY_NOTICES.md)。Timing 与真实歌曲音乐质量尚未完成验收。模型使用方式见[乐器采音选择](docs/instrument-choices.md)，本版范围见[dev.23说明](docs/releases/0.1.0-alpha.6-dev-23.md)。
 
 当前稳定入口： [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
