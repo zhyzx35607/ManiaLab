@@ -10,7 +10,7 @@
 - 新增纯起音预设，界面同时将全局 LN 比例和跨音高乐句 LN 比例设为0；音频生成将0比例作为硬约束，覆盖已有手动 phrase/sustain 表达和旧分段 LN 偏好，但保留用户明确设置的 `omit`。均衡、持续音和节奏预设均明确设置乐句 LN 比例，避免切换时残留旧值。
 - 收起采音/LN参数、键型与手感参数、LN设计报告；预设与生成按钮处于主要操作区。
 - 当前验证：全量 Python/API `3609 passed, 159 skipped, 1 warning`（352.76秒）；纯起音 API/表达定向组合 `35 passed`；Edge 浏览器预设与合成生成 `1 passed`；`compileall`、`node --check static/app.js`、`git diff --check`通过。视觉检查覆盖320/390/768/1440 px，页面无水平滚动且预设与生成控件未溢出。GitHub PR CI 尚未运行。
-- 工作树位于 `codex/onset-presets-ui-dev25-20261122`，基于当前 `origin/main`；本地验证已完成，提交/推送/PR 待执行。目标版本为 `0.1.0-alpha.6-dev.25`，dev.25 GitHub tag/Release 尚不存在。
+- PR #258 已推送提交 `1021dd8`。Windows run `45031806329` 的全量 Python/API 已通过；Chromium `72 passed, 2 failed`，两项旧 LN 导航用例未展开现在默认折叠的面板。已修正这两个用例，待本地全浏览器回归与 CI 重跑。目标版本为 `0.1.0-alpha.6-dev.25`，dev.25 GitHub tag/Release 尚不存在。
 - 本地 `test-data/` 已按用户此前要求清理；Extended strict collector 所需的真实吉他、Tsumugi bass/other 冻结音频输入因此缺失。不能声称这些真实音频专项通过，也不能复用 dev.24 EXE 的报告。将重新构建 dev.25 Extended 包并仅公布绑定本版 EXE 的实际验证范围；GitHub Windows workflow 默认 profile 仍是 Core。
 - Extended 包内含 Demucs 权重与 Tsumugi 模型的权利限制沿用 dev.24 声明，仍需明确披露；本版自动测试不代表真实歌曲采音、Timing 或游戏手感验收。
 
