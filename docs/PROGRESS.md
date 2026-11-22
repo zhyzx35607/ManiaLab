@@ -14,10 +14,10 @@
 - 参考标记舍入（PR #247，已合并）：书签/Kiai导入与OSU/OSZ书签导出采用与音符一致的`floor(x + 0.5)`。六项正负`22.5 ms`回归在旧`round()`上复现1 ms偏差，修复后定向测试`54 passed`。PR Windows run `44948423541`及合并后main run `44949301459`成功，merge SHA `fabf3c9cb081228c68c61dab8afe7637a5ed9feb`；Python/API均`3598 passed, 156 skipped, 1 warning`、Chromium`69 passed`。Core便携/EXE、媒体/关停及模型验证依普通CI条件跳过。
 - 候选导出/试听身份（本地已验证，PR待建）：三个格式导出链接按候选 ID 绑定，旧链接拒绝；chart试听请求也携带候选身份，evidence/beat试听仍可在无候选时使用。导出组`68 passed`及Chromium`3 passed`，试听组`40 passed`及Chromium`2 passed`。独立审查未发现新UI调用错误；保留省略ID的旧脚本/API兼容路径。尚未推送或创建PR。
 
-- 声轨输入快照清理（PR #249，已合并至`32c260fb4dcb3b27b1d6d82058c0ce44b7c924fb`）：取消、解码失败和准备完成后三种`.provided-inputs-*`删除失败均报告残留路径并保留原项目状态；shutdown将历史清理失败与活跃任务超时区分。PR Windows run `44952384392`成功，合并后main run `44991314496`待完成。
-- 手动逐段表达（PR #250，已重基、CI待跑）：Edge 合成端到端覆盖分段人声模式/LN、保存与候选切换后的 JSON；修复过期表达快照无效时仍可保存空方案的问题，保留旧候选历史并允许重新建议恢复。此前基于`b231f89`的定向 Python/API `45 passed`、Edge `16 passed`，JS语法、浏览器fixture编译和diff检查通过；本次重基已包含#249，待重跑验证。仅合成数据，不代表真实音乐验收。
+- 声轨输入快照清理（PR #249，已合并至`32c260fb4dcb3b27b1d6d82058c0ce44b7c924fb`）：取消、解码失败和准备完成后三种`.provided-inputs-*`删除失败均报告残留路径并保留原项目状态；shutdown将历史清理失败与活跃任务超时区分。PR Windows run `44952384392`及合并后main run `44991314496`均成功。
+- 手动逐段表达（PR #250，已重基并本地复验，Windows CI待完成）：Edge 合成端到端覆盖分段人声模式/LN、保存与候选切换后的 JSON；修复过期表达快照无效时仍可保存空方案的问题，保留旧候选历史并允许重新建议恢复。当前主线定向 Python/API `45 passed`、Edge `16 passed`；JS语法、浏览器fixture编译和`git diff --check`通过。仅合成数据，不代表真实音乐验收。
 
-仍开放的工程检查包括PR #250重基后的CI、上述尚未建PR的阶段，以及PR #252 recent项目延迟加载竞态修复的冲突解决与CI。真人音乐质量、Timing、6–10K/LN手感和osu!实际试打均未验收；工程/合成测试不替代这些验收。
+仍开放的工程检查包括PR #250 Windows CI、上述尚未建PR的阶段，以及PR #252 recent项目延迟加载竞态修复的冲突解决与CI。真人音乐质量、Timing、6–10K/LN手感和osu!实际试打均未验收；工程/合成测试不替代这些验收。
 
 下方原有`dev.22发布后工程验收（进行中）`条目记录的是本轮修复前的复现状态；当前进度以本节的修复与验证结果为准。
 
