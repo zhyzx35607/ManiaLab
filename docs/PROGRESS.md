@@ -13,6 +13,12 @@ GitHub 资产：`ManiaLab-0.1.0-alpha.6-dev.24-windows-x64-extended.zip`，1,310
 
 真实歌曲分析质量、Timing 和游戏手感尚未由用户验收，合成烟测不代表这些结论。Demucs checkpoint 再分发授权及 Tsumugi 训练录音权利尚未独立核实，相关限制已在 Release 说明披露。下一步由用户下载 GitHub Release 并实际试听/打图反馈问题；不因包已发布或工程检查通过而将音乐质量标记为完成。
 
+### GitHub 分支与 Release 盘点（2026-11-22）
+
+用户要求整理 GitHub 分支和 Releases。最初远端有39条非 `main` 分支、没有 open PR；确认29条分支 tip 已是 `main` 祖先，另9条 tip 与已合并 PR head 一致后，删除这38条远端分支引用，并运行 `git fetch --prune origin`。9条 squash/rebase 合并分支对应 PR #131、#132、#232、#246–#248、#203–#205；其合并提交均可在 `main` 历史中找到，GitHub 仍保留已合并 PR 的记录和 head 引用。远端现保留默认分支 `main` 及 `research/sequence-v5-full-chart-validation`；该分支对应已关闭但未合并的 PR #36，包含 `main` 未有的研究提交，因此保留。
+
+Release API 盘点为25个已发布 prerelease 和1个 dev.3 draft。dev.3 draft 的 `v0.1.0-alpha.6-dev.3` tag 不存在，页面使用 `untagged-9372ce419b5fbe665b3c`，含约1.18 GB ZIP、validation JSON 和 SHA256SUMS；ZIP 下载计数为32，draft 正文仍写“尚未公开发布”。远端另有 dev.5、dev.6、dev.14 tags，但没有对应 Release；公开 Release 标题格式也不统一。旧版权重审计记录16个公开 ZIP 含 Demucs checkpoint，其中 alpha.4、alpha.5、dev.1、dev.2、dev.4 的许可说明曾将权重标为 MIT，而具体 checkpoint 再分发权利未核实。该审计建议撤下这些历史 ZIP，但会中断旧下载链接；本轮没有修改历史 Release、tags 或资产。下一步需决定是否撤下16个旧 ZIP、如何处置 dev.3 draft，以及是否保留当前已发布的 dev.24 Extended 供用户实测。dev.24 Release 说明已披露相关权利边界。
+
 ### dev.23 Core 发布（2026-11-22，已发布）
 
 GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.23](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.23) 已发布；annotated tag 指向 main 提交`4ba2a4b188e4c92b9d4c34595a9dd3d18a33c534`，包含 PR #246–#253（#253 为本次版本说明与元数据）。精确 tag Windows run `45000117786`成功：Python/API `3611 passed, 156 skipped, 1 warning`；Edge `73 passed`；Core便携包、干净 PATH 与 Unicode 路径离线 EXE、媒体播放/切换、关停和验证 evidence collector 全通过。报告记录3767项测试、0 failures/errors；15项 portable检查通过。下载的 CI artifacts 位于`D:\ManiaLab-release-dev23-45000117786\`。
