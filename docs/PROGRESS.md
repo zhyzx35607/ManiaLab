@@ -5,9 +5,13 @@
 
 ## 当前状态（先读）
 
-### dev.24 Extended 试用预发布（准备中）
+### dev.24 Extended 完整功能试用版（2026-11-22，GitHub 已发布）
 
-用户要求将包含完整 Extended 能力的 Windows x64 便携包发布到 GitHub，供本人验证实际效果。新版本使用 `0.1.0-alpha.6-dev.24`，不改写已发布的 dev.23 Core Release。PR #255（head `cbb16d4051d25d91f60548add23b277c2192a4a6`）的首轮 Windows run `45020635742`通过：Python/API `3611 passed, 156 skipped, 1 warning`，浏览器 `73 passed`；该 workflow 仍固定验证 Core，不构建 Extended。PR head 上首次 Extended 构建 `extended-dev24-cbb16d4-20261122`完成：ZIP 1,310,973,747 字节，SHA-256 `770fdd0dfb325c37208f80bf1fa644cfd77664b963c4c5d198631063611321e4`；EXE SHA-256 `60524f2fd6c820770eb74ccc92b82fa3c60a52a3bd43e30617d544aa2cd9fcf1`，manifest SHA-256 `9809102226ed5666ca6f2a0bc9b3030bbdf5d2d6f03a44ad60af4b98b6e3d915`。实际 EXE 便携检查、4/6 声部、6–10K 导出、取消/坏音频恢复、钢琴/吉他/Tsumugi 合成专用烟测和 worker 关停均通过；ZIP 的7,722个文件/目录条目无重复，CRC、包内 manifest/payload、模型和许可清单检查通过。此包是 PR head 验证产物，最终会按合并后的精确 tag 源码重建并重新核验。真实音乐质量、Timing/游戏手感未验收；Demucs 权重再分发授权、Tsumugi 训练录音权利未核实。目标是新建 GitHub prerelease 并上传 Extended ZIP、SHA256SUMS 和经过路径清理的验证 JSON。
+GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.24 Extended trial](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.24) 已公开发布，供用户下载验证。Tag `v0.1.0-alpha.6-dev.24` 指向合并提交 `6ac8c83d9db28a61f65f67edaa736988f14a06b6`（PR #255），精确 tag Windows run `45023313867` 成功。包为 Windows x64 Extended 便携版，涵盖四/六声部分离、Beat This、钢琴、吉他 FL、Tsumugi bass/other 与 CPU 运行时；Mapperatorinator 权重按需下载。
+
+GitHub 资产：`ManiaLab-0.1.0-alpha.6-dev.24-windows-x64-extended.zip`，1,310,975,393 字节，SHA-256 `b052ed63f931744accf873a0f05812af4b2dde52f4b1ea5aa0c2943e9b4e52c3`；`ManiaLab-0.1.0-alpha.6-dev.24-windows-x64-extended-SHA256SUMS.txt`；`ManiaLab-0.1.0-alpha.6-dev.24-windows-x64-extended-validation.json`。三项资产均已上传，GitHub 远端摘要与构建产物记录相符。Release 的 Windows workflow 通过：Python/API `3611 passed, 156 skipped, 1 warning`，Chromium `73 passed`，Core 便携、媒体、关停与 collector 检查通过；Extended EXE 便携检查、4/6 声部、6–10K 导出、取消/坏音频恢复、钢琴/吉他/Tsumugi 合成烟测和 worker 关停通过。ZIP 的7,722个条目无重复，CRC、manifest、模型及许可清单检查通过。该 workflow 的标准 Windows 构建仍验证 Core；Extended 包另由精确 tag 源码构建并完成专项核验。
+
+真实歌曲分析质量、Timing 和游戏手感尚未由用户验收，合成烟测不代表这些结论。Demucs checkpoint 再分发授权及 Tsumugi 训练录音权利尚未独立核实，相关限制已在 Release 说明披露。下一步由用户下载 GitHub Release 并实际试听/打图反馈问题；不因包已发布或工程检查通过而将音乐质量标记为完成。
 
 ### dev.23 Core 发布（2026-11-22，已发布）
 
