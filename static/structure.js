@@ -197,8 +197,8 @@ sectionSave.onclick=guarded(()=>{
   return structureJob({action:'edit',boundaries});
 });
 async function saveExpression(payload){
-  if(busy||!state)return;setBusy(true);
-  try{preserveTimingLoad(await api(`/api/projects/${state.id}/expression`,payload));msg('已保存逐段声部方案；重新生成后生效。');}
+  if(busy||!state)return;const projectId=state.id;setBusy(true);
+  try{preserveTimingLoad(await api(`/api/projects/${projectId}/expression`,payload));msg('已保存逐段声部方案；重新生成后生效。');}
   finally{setBusy(false);}
 }
 expressionAuto.onclick=guarded(()=>saveExpression({action:'automatic',settings:settings()}));
