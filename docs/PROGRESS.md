@@ -10,7 +10,7 @@
 - 主界面已加入 2–5 首歌曲批量导入，最多并行处理 2 首；每首单独建项目、逐曲隔离失败、列表打开结果。导入时可取消且保留已导入项目；提交后的轮询遇到短暂请求失败会自动重试。
 - 进一步收敛界面：批量和高级采音、Timing 设置放入折叠面板，默认常用导入、分析和生成操作更突出；低频拍线细节仍默认收起。
 - 本地全量验证已完成：Python/API `3620 passed, 159 skipped, 1 warning`（384.20秒）；Playwright Chromium `79 passed`（约2.6分钟）；批量后端定向组合 `28 passed`；批量交互定向浏览器 `4 passed`；JS 语法检查通过。
-- 当前分支 `codex/manialab-batch-ux-dev26` 基于 dev.25 主线 `e6e56b4`，版本已改为 `0.1.0-alpha.6-dev.26`；代码评审、PR、CI、合并、tag 与 GitHub Release 仍待完成。
+- 当前分支 `codex/manialab-batch-ux-dev26` 基于 dev.25 主线 `e6e56b4`，版本已改为 `0.1.0-alpha.6-dev.26`；提交 `cd50036` 已推送并创建 PR #259，Windows CI 待完成，合并、精确 tag 与 GitHub Release 尚待执行。GitHub 当前公开版为 dev.25（2026-11-22 发布）。
 - Extended 缓存模型和运行环境可从保留的本地 `assets` / `.venv-audio` 复用；旧音频及 Tsumugi worker 与当前源码身份不匹配，必须由 dev.26 源码重建。D 盘模型目录未纳入 Git；清理后的 `test-data`、用户音频及逐曲研究数据未访问。永久失效任务 ID 会停止轮询并解锁界面；短暂轮询错误重试最多连续6次，且可恢复。
 - 真实吉他和 Tsumugi bass/other 冻结音频输入仍缺失；本版不得声明这些真实音频专项通过，也不得复用旧 EXE 的便携验证报告。GitHub Windows workflow 固定构建 Core；Extended 包需单独从精确版本构建，记录其实际随包能力检查。
 - Extended 的 Demucs checkpoint 再分发授权及 Tsumugi 训练录音权利仍未核实；音乐质量、真实 Timing、osu! 试打与 6–10K/LN 手感需用户实测。
