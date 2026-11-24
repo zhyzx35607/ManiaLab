@@ -1,6 +1,6 @@
 # ManiaLab 当前状态与重规划
 
-更新：2026-11-24。状态依据本地 `main`/精确 release tag、GitHub Release、随包验证说明和源码清单核对。没有运行模型，也没有读取 ignored 用户音频、谱面或逐曲研究数据。
+更新：2026-11-25。状态依据本地 `main`/精确 release tag、GitHub Release、随包验证说明和源码清单核对。本次只对生成的合成音运行便携/worker 校验，没有读取 ignored 用户音频、谱面或逐曲研究数据。
 
 ## 结论
 
@@ -29,7 +29,7 @@ ManiaLab 已经是可体验的 6–10K osu!mania 本地制谱工作台，不是�
 
 dev.26 组装 ZIP 为 `1,310,888,430` bytes，即 1.31 GB（十进制）或约 1.22 GiB；按 ZIP 目录统计，解压后约 `2,714,858,795` bytes（2.53 GiB）。组装期间，分片和临时 ZIP 会同时存在，约需 2.44 GiB 空间；保留 ZIP 并解压后，建议预留至少 4 GiB。
 
-本地已验证 ZIP 的压缩体积约 85.3% 来自随包 `assets`。最大的内容是 Demucs 高质量权重、钢琴 ONNX、吉他 FL、Beat This、Tsumugi 贝斯/其他伴奏权重和六声部模型。另有三个同名 `torch_cpu.dll`，大小和 CRC 均一致，各自约 75.6 MB（压缩后）；两个 worker 还分别携带相同大小/CRC 的 `llvmlite.dll`。这些是可审计的瘦身候选，不能未经启动隔离测试就删除。
+本地已验证 ZIP 的压缩体积约 85.3% 来自随包 `assets`。最大的内容是 Demucs 高质量权重、钢琴 ONNX、吉他 FL、Beat This、Tsumugi 贝斯/其他伴奏权重和六声部模型。2026-11-25 的隔离实验只移除了应用根目录多收集的一份 `torch_cpu.dll`，保留两个独立 worker 的副本；重算 manifest 后实际 EXE、四/六/four-piano 合成分离、导出、取消、Tsumugi 合成推理、关停、CRC 和 archive inventory 均通过。实验 ZIP 为 `1,235,315,631` bytes，节省 `75,572,799` bytes（5.765%），不改变已发布 dev.26 ZIP。构建脚本尚未吸收该优化；需要后续构建回归后用于新包。
 
 12 片 `.ps1` 下载器会同时启动 12 个隐藏的 `curl.exe`。窗口只显示完成了几片；某片中断后重试会删掉它的临时下载并从头下载。当前审计环境对一个分片的 HEAD 请求得到 HTTP 200，这只证明该环境能访问该分片，不能解释用户遇到的失败。失败的具体位置/报错还需要用户提供。
 
