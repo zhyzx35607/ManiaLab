@@ -134,6 +134,41 @@ def archive_payload_inventory(directory):
     }
 
 
+def remove_duplicate_parent_torch_cpu_dll(directory):
+    """Drop only PyInstaller's verified duplicate of the isolated audio-worker runtime."""
+    root = Path(directory)
+    if root.is_symlink() or root.is_junction() or not root.is_dir():
+        raise ValueError('Portable package directory must be a real directory')
+    root = root.resolve()
+    parent = root / '_internal/torch_cpu.dll'
+    worker = root / '_internal/assets/deep/ManiaLabAudio/_internal/torch/lib/torch_cpu.dll'
+    for path in (parent, worker):
+        if path.is_symlink() or path.is_junction():
+            raise ValueError(f'Portable runtime must not contain links: {path}')
+        if not path.resolve().is_relative_to(root):
+            raise ValueError(f'Portable runtime path escapes its root: {path}')
+
+    if not parent.exists():
+        return dict(removed=False, reason='parent_runtime_not_present')
+    if not parent.is_file():
+        raise ValueError('Portable app torch_cpu.dll is not a regular file')
+    if not worker.is_file():
+        return dict(removed=False, reason='audio_worker_runtime_not_present')
+
+    parent_size = parent.stat().st_size
+    worker_size = worker.stat().st_size
+    parent_sha256 = sha256(parent)
+    worker_sha256 = sha256(worker)
+    if parent_size != worker_size or parent_sha256 != worker_sha256:
+        return dict(removed=False, reason='runtime_identity_differs',
+                    parent_bytes=parent_size, parent_sha256=parent_sha256,
+                    worker_bytes=worker_size, worker_sha256=worker_sha256)
+
+    parent.unlink()
+    return dict(removed=True, reason='identical_audio_worker_runtime',
+                path='_internal/torch_cpu.dll', bytes=parent_size, sha256=parent_sha256)
+
+
 UV_RELEASE = {
     'version': '0.12.1',
     'target': 'x86_64-pc-windows-msvc',

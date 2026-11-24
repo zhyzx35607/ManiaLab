@@ -27,6 +27,7 @@ enabled=capabilities(profile)
 from build_provenance import (
     archive_payload_inventory,
     sha256,
+    remove_duplicate_parent_torch_cpu_dll,
     source_snapshot_paths,
     download_uv_binary,
     verify_worker,
@@ -185,6 +186,9 @@ if source_snapshot()!=build_sources:
 bundled_worker=verify_worker(ROOT,target/'_internal/assets/deep') if enabled['separation_four'] else None
 if bundled_worker!=worker_identity:
     raise SystemExit('Audio worker changed during the build; rebuild before publishing.')
+if enabled['separation_four']:
+    runtime_cleanup=remove_duplicate_parent_torch_cpu_dll(target)
+    print('Portable runtime deduplication: '+json.dumps(runtime_cleanup,sort_keys=True))
 bundled_core_model_identity=verify_core_model_files(target/'_internal/assets')
 if bundled_core_model_identity!=core_model_identity:
     raise SystemExit('Basic Pitch model identity changed during the build; rebuild before publishing.')
