@@ -44,16 +44,24 @@
           </div>
           <label class="drop" id="drop"
             ><span class="upload-icon">↥</span
-            ><strong>选择或拖入音频 / 谱面</strong
+            ><strong>选择或拖入一首歌曲 / 谱面</strong
             ><small
-              >MP3 · WAV · FLAC · OGG · .osu · .osz<br />可同时选择 .osu
-              与对应音频</small
+              >MP3 · WAV · FLAC · OGG · .osu · .osz<br />可同时选择 .osu 与对应音频；多首歌曲请使用批量分析</small
             ><input
               id="files"
               type="file"
               multiple
               accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac,.osu,.osz" /></label
-          ><select id="charts" class="hidden" aria-label="谱包难度"></select
+          >
+          <details class="batch-panel">
+            <summary>批量分析歌曲 <span>2–5 首 · 最多同时处理 2 首</span></summary>
+            <p class="muted compact">一次导入多首歌曲，分别创建项目并同时分析；每首结果可单独打开。</p>
+            <label class="batch-drop">选择 2–5 首音频<input id="batchFiles" type="file" multiple accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac"></label>
+            <p id="batchFileSummary" class="muted compact" aria-live="polite">尚未选择歌曲。</p>
+            <button id="batchAnalyze" class="secondary full" disabled>导入并开始批量分析</button>
+            <div id="batchStatus" class="batch-status" role="status" aria-live="polite"></div>
+          </details>
+          <select id="charts" class="hidden" aria-label="谱包难度"></select
           ><label class="field"
             >最近项目<select id="recent">
               <option value="">打开已保存项目…</option>
@@ -74,6 +82,9 @@
             </select></label
           >
           <p id="separationStatus" class="muted">检查四声部组件…</p>
+          <details class="analysis-advanced">
+            <summary>高级采音设置 <span>通常使用默认值</span></summary>
+            <div class="details-body">
           <label class="range-field"
             >起音门槛 <output id="onset_thresholdOut"></output
             ><input
@@ -96,6 +107,8 @@
           <p class="muted">
             低门槛保留更多弱音，也可能引入混响和误检。调整后重新分析即可复用模型结果。
           </p>
+            </div>
+          </details>
           <button id="analyze" class="primary full">分析音频</button>
           <div class="tempo">
             <label class="field"
@@ -124,6 +137,8 @@
             使用原始音频时间。正数将新谱提前，不改变音频。参考 Timing
             可直接粘贴，试听按实际导出时间播放。
           </p>
+          <details id="timingAdvanced" class="timing-extra">
+            <summary>拍线高级设置 <span>提前量、候选、细分与参考 Timing</span></summary>
           <label class="field"
             >BPM 候选<select id="tempoCandidates">
               <option value="">分析后显示候选</option>
@@ -147,13 +162,7 @@
             生成时完整量化短键和 LN
             起止；导出逐个检查落线。采音证据仍保留原始检测时间。
           </p>
-          <label class="check"
-            ><input
-              id="timingConfirmed"
-              type="checkbox"
-            />我已试听并确认当前拍线</label
-          ><button id="checkTiming" class="secondary full">检查整曲拍线</button
-          ><button id="refitTiming" class="quiet full">
+          <button id="refitTiming" class="quiet full">
             按当前 BPM 重新估计 Offset</button
           ><label class="field"
             >粘贴参考 Timing<textarea
@@ -164,6 +173,13 @@
           ><button id="applyTiming" class="secondary full">
             应用参考 BPM / Offset
           </button>
+          </details>
+          <label class="check"
+            ><input
+              id="timingConfirmed"
+              type="checkbox"
+            />我已试听并确认当前拍线</label
+          ><button id="checkTiming" class="secondary full">检查整曲拍线</button>
           <p id="tempoNote" class="muted">
             自动 Timing
             不可靠时需先校准。可粘贴分析Timing的结果；试听确认后生成。严格重定轨保留原始变速。
@@ -616,7 +632,7 @@
                   id="density"
                   type="range"
                   min="1"
-                  max="24"
+                  max="50"
                   step="1"
                   value="7" /></label
               ><label class="range-field"

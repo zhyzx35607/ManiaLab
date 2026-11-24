@@ -2,6 +2,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+import pytest
+
 from manialab import arrange, arrange_config
 
 
@@ -18,6 +20,13 @@ def test_parameters_returns_an_independent_defaults_copy():
 
     assert arrange_config.DEFAULTS == defaults
     assert configured is not arrange_config.DEFAULTS
+
+
+def test_density_ceiling_accepts_50_and_rejects_values_above_it():
+    assert arrange_config.BOUNDS["density"] == (1, 50)
+    assert arrange_config.parameters({"density": 50})["density"] == 50
+    with pytest.raises(ValueError, match="1–50"):
+        arrange_config.parameters({"density": 50.01})
 
 
 def test_arrange_config_import_does_not_load_solver_dependencies():

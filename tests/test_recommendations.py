@@ -56,6 +56,25 @@ def test_corpus_calibration_uses_current_key_only(tmp_path):
     assert not recommend(evidence(True),parameters({'keys':6}),tmp_path)['reference']['available']
 
 
+def test_recommendations_can_reach_density_50_without_truncating_segments(tmp_path):
+    (tmp_path/'assets').mkdir()
+    (tmp_path/'assets/arrangement-profiles.json').write_text(json.dumps(dict(revision=1,
+        manifest_sha256='fixture',keys={'10':dict(charts=100,songs=50,
+            active_nps95={'10':100,'50':100,'75':100})})))
+    notes=[dict(id=str(t),start=t,end=t+100,pitch=60,source='pitch',voice='vocals',strength=.8,lane=-1)
+        for t in range(0,15000,10)]
+    analysis=dict(revision=8,duration=30,candidates=notes,phrase_candidates=[],
+        tempo=dict(bpm=120,offset=0,stable=True,division=4),
+        segments=[dict(start_ms=0,end_ms=15000),dict(start_ms=15000,end_ms=30000)])
+
+    proposal=recommend(analysis,parameters({'keys':10}),tmp_path)
+
+    hybrid=proposal['options'][1]
+    assert hybrid['preferences']['density']==50
+    assert hybrid['segments'][0]['preferences']['density']==50
+    assert all(option['preferences']['density'] <= 50 for option in proposal['options'])
+
+
 def test_stale_audio_recommendation_is_rejected_and_current_plan_is_saved(tmp_path):
     store=Projects(tmp_path/'projects');pid,_=store.create()
     state=dict(id=pid,title='Recommendations',mode='audio',settings=parameters(),active=-1,variants=[])
@@ -103,6 +122,8 @@ def test_global_edits_scale_local_plan_without_filling_silence():
     segments=adjusted_segments(plan,parameters({'density':12,'ln_ratio':.75,'ln_coordination':.8}))
     assert segments[0]['preferences']==dict(density=8,ln_ratio=.6,ln_coordination=.7)
     assert segments[1]['preferences']['ln_ratio']==0
+    wider=adjusted_segments(plan,parameters({'density':50,'ln_ratio':.75,'ln_coordination':.8}))
+    assert wider[0]['preferences']['density']==34
     assert plan==original
 
 

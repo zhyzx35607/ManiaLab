@@ -1,5 +1,12 @@
 const { test, expect } = require('@playwright/test');
 
+async function openTimingAdvanced(page) {
+  const panel = page.locator('#timingAdvanced');
+  if (!(await panel.evaluate(element => element.open))) {
+    await panel.locator(':scope > summary').click();
+  }
+}
+
 for(const entry of [
   {bpm:123.456789,offset:-37.5,normalized:-38,shift:22.5},
   {bpm:123.456789,offset:-1.5,normalized:-2,shift:-50},
@@ -12,6 +19,7 @@ for(const entry of [
     await page.goto('/');
     await expect(page.locator('#recent option')).toContainText(['UI timing clock']);
     await page.locator('#recent').selectOption({label:'UI timing clock'});
+    await openTimingAdvanced(page);
     await expect(page.locator('#offset')).toHaveValue('93');
     await page.locator('#audioShift').fill(String(entry.shift));
     await page.locator('#audioShift').dispatchEvent('change');
@@ -39,6 +47,7 @@ test(`a mode ${returnBeforeResponse?'round trip':'change'} rejects an old refit 
   await page.goto('/');
   await expect(page.locator('#recent option')).toContainText(['UI LN navigation remap']);
   await page.locator('#recent').selectOption({label:'UI LN navigation remap'});
+  await openTimingAdvanced(page);
   await expect(page.locator('#projectTitle')).toHaveText('UI LN navigation remap');
   await page.locator('#mode').selectOption('audio');
   await page.locator('#bpm').fill('120');

@@ -5,6 +5,7 @@ import re
 
 import numpy as np
 
+from .arrange_config import MAX_DENSITY
 from .domain import validate
 
 
@@ -27,7 +28,7 @@ def describe_chart(parsed):
     counts = np.searchsorted(starts, checkpoints+1000, side='left')-np.searchsorted(starts, checkpoints, side='left')
     active = counts[counts > 0]
     chords = list(Counter(n.start for n in notes).values())
-    density = max(1, min(24, math.ceil(float(np.percentile(active, 95)))))
+    density = max(1, min(MAX_DENSITY, math.ceil(float(np.percentile(active, 95)))))
     minimum = min(2000, max(100, int(math.floor(float(np.percentile(lengths,10))/20)*20))) if lengths else 240
     preferences = dict(density=density, ln_ratio=round(report['ln']/len(notes), 3), min_ln=minimum,
                        chord_size=min(keys, max(1, math.ceil(float(np.percentile(chords,98))))),
@@ -38,8 +39,8 @@ def describe_chart(parsed):
     warnings = []
     if converted:
         warnings.append('标题或标签包含转换 / Inverse 标记：只参考数量分布，不把长条长度当作音乐持续音真值。')
-    if int(active.max()) > 24:
-        warnings.append('参考图局部密度超过当前 24 物件/秒上限，建议值已限制到支持范围。')
+    if int(active.max()) > MAX_DENSITY:
+        warnings.append(f'参考图局部密度超过当前 {MAX_DENSITY} 物件/秒上限，建议值已限制到支持范围。')
     return dict(title=metadata.get('Title','Untitled'), creator=metadata.get('Creator','Unknown'),
                 version=metadata.get('Version',''), keys=keys, objects=len(notes),
                 ln_ratio=report['ln_ratio'], max_held=report['max_held'],

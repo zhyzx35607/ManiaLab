@@ -10,6 +10,7 @@ test('onset-only preset sends zero LN ratios and generates only taps', async ({ 
 
   await page.locator('.right section > .advanced-settings').evaluate(node => { node.open = true; });
   await expect(page.locator('.ln-preferences')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#density')).toHaveAttribute('max', '50');
 
   await page.locator('#recent').selectOption({ label: 'UI synthetic' });
   await page.locator('#preset').selectOption('onset_only');
@@ -19,13 +20,18 @@ test('onset-only preset sends zero LN ratios and generates only taps', async ({ 
   await expect(page.locator('#ln_ratio')).toHaveValue('0.55');
   await expect(page.locator('#phrase_ln')).toHaveValue('0.65');
   await page.locator('#preset').selectOption('onset_only');
+  await page.locator('#density').evaluate(control => {
+    control.value = '50';
+    control.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(page.locator('#densityOut')).toHaveText('50');
   await page.locator('#timingConfirmed').check();
 
   const generation = page.waitForRequest(request =>
     request.url().endsWith('/generate') && request.method() === 'POST');
   await page.locator('#generate').click();
   const request = await generation;
-  expect(request.postDataJSON().settings).toMatchObject({ ln_ratio: 0, phrase_ln: 0 });
+  expect(request.postDataJSON().settings).toMatchObject({ density: 50, ln_ratio: 0, phrase_ln: 0 });
   await expect(page.locator('#message')).toContainText('结构检查通过');
 
   const projectId = await page.locator('#recent').inputValue();
