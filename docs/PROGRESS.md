@@ -7,11 +7,11 @@
 
 ### dev.26 Extended 功能整合与发布准备（进行中）
 
-- PR #259 已合并到 `main`，merge commit `5af1bca66237ab3a7ae8889291e92753a00aad81`；其中密度上限已提高到 50 物件/秒。当前集成分支 `codex/manialab-piano-keymap-batch10-20261124` 从该提交继续开发；dev.26 tag、Extended 包验证与 GitHub Release 均尚未完成。
+- PR #259 已合并到 `main`，merge commit `5af1bca66237ab3a7ae8889291e92753a00aad81`；其中密度上限已提高到 50 物件/秒。PR #260 于 2026-11-24 合并为 `d039b09646ada4eedc78051bf89c8a74d02cc2c5`；dev.26 精确 tag、Extended 包验证与 GitHub Release 尚未完成。
 - 批量分析已扩展为一次最多 10 首、最多并行处理 2 首；每首建立独立项目、失败隔离、支持取消并可打开结果。最终本地完整 Python/API 回归为 `3659 passed, 164 skipped`，Playwright Edge 为 `81 passed`；批量 API、键型配置及相关路由定向组为 `129 passed`。浏览器覆盖十首导入与并发上限。
 - 新增 `four-piano` 主声部配置：基于六源 HTDemucs 分离，只保留并分析鼓、钢琴、人声和其他伴奏；现有 `deep6` 完整六声部仍保留贝斯与吉他。源码、能力状态与便携验证器已接入该 profile；旧 worker manifest 仍只声明 `four,six`，需要从本版源码重建 worker 后才能通过 Extended 打包。
 - 参考 Torosu 的显式手型/手指映射做纯键型预设：6K `3+3`、7K `3+1+3`、8K 默认 `3+2+3`（另有 `4+4`）、9K `4+1+4`、10K `5+5`。LN 生成逻辑未改变；切换键数会选择对应默认键型，切换 8K 布局会使旧候选失效，重生成和 LN 报告均使用显式键型。配置合并缺陷与候选过期状态已由回归覆盖。
-- UI 将批量入口和高级采音/Timing 选项收起，突出导入、分析和生成。`node --check` 与 `git diff --check` 通过。当前完整源码回归不代表真实音频质量或游戏手感；GitHub Windows PR CI 尚待本次分支推送后运行。
+- UI 将批量入口和高级采音/Timing 选项收起，突出导入、分析和生成。`node --check` 与 `git diff --check` 通过。PR #260 Windows run `45354141337` 已通过，包含 Python/API、合成浏览器与 Core 便携验证；该工作流不代替 Extended 包验证。完整源码回归不代表真实音频质量或游戏手感。
 - Extended 模型与运行环境从专用 D 盘暂存目录构建；旧音频 worker 与当前源码身份不符，尚未覆盖旧资产，后续会先备份再以本版源码重建。模型目录未纳入 Git；清理后的 `test-data`、用户音频及逐曲研究数据未访问。
 - 六声部真实歌曲问题没有可复现样例，本轮没有据此声称问题已修复。真实吉他和 Tsumugi bass/other 冻结音频输入也已随 `test-data` 清理而不可用，不会复用旧 EXE 的便携验证报告。GitHub Windows workflow 固定构建 Core；Extended 包需从精确 tag 单独构建并验证实际包内能力。dev.26 尚未创建 tag 或 GitHub Release。
 - Extended 的 Demucs checkpoint 再分发授权及 Tsumugi 训练录音权利仍未核实；真实歌曲采音、Timing、osu! 试打与 6–10K/LN 手感需用户实测。
