@@ -122,6 +122,85 @@ def test_archive_payload_inventory_covers_final_tree_except_root_manifest(tmp_pa
     }
 
 
+def test_duplicate_parent_torch_runtime_removes_only_matching_parent_copy(tmp_path):
+    package = tmp_path / 'ManiaLab'
+    parent = package / '_internal/torch_cpu.dll'
+    worker = package / '_internal/assets/deep/ManiaLabAudio/_internal/torch/lib/torch_cpu.dll'
+    parent.parent.mkdir(parents=True)
+    worker.parent.mkdir(parents=True)
+    payload = b'identical isolated worker runtime'
+    parent.write_bytes(payload)
+    worker.write_bytes(payload)
+
+    result = build_provenance.remove_duplicate_parent_torch_cpu_dll(package)
+    inventory = build_provenance.archive_payload_inventory(package)
+
+    assert result == dict(removed=True, reason='identical_audio_worker_runtime',
+        path='_internal/torch_cpu.dll', bytes=len(payload),
+        sha256=hashlib.sha256(payload).hexdigest())
+    assert not parent.exists()
+    assert worker.read_bytes() == payload
+    assert 'ManiaLab/_internal/torch_cpu.dll' not in inventory['files']
+    assert 'ManiaLab/_internal/assets/deep/ManiaLabAudio/_internal/torch/lib/torch_cpu.dll' in inventory['files']
+
+
+def test_duplicate_parent_torch_runtime_keeps_parent_when_identity_differs(tmp_path):
+    package = tmp_path / 'ManiaLab'
+    parent = package / '_internal/torch_cpu.dll'
+    worker = package / '_internal/assets/deep/ManiaLabAudio/_internal/torch/lib/torch_cpu.dll'
+    parent.parent.mkdir(parents=True)
+    worker.parent.mkdir(parents=True)
+    parent.write_bytes(b'app runtime')
+    worker.write_bytes(b'worker runtime')
+
+    result = build_provenance.remove_duplicate_parent_torch_cpu_dll(package)
+
+    assert result['removed'] is False
+    assert result['reason'] == 'runtime_identity_differs'
+    assert parent.read_bytes() == b'app runtime'
+    assert worker.read_bytes() == b'worker runtime'
+
+
+def test_duplicate_parent_torch_runtime_keeps_parent_when_worker_copy_missing(tmp_path):
+    package = tmp_path / 'ManiaLab'
+    parent = package / '_internal/torch_cpu.dll'
+    parent.parent.mkdir(parents=True)
+    parent.write_bytes(b'app runtime')
+
+    result = build_provenance.remove_duplicate_parent_torch_cpu_dll(package)
+
+    assert result == dict(removed=False, reason='audio_worker_runtime_not_present')
+    assert parent.read_bytes() == b'app runtime'
+
+
+def test_duplicate_parent_torch_runtime_is_noop_when_parent_copy_missing(tmp_path):
+    package = tmp_path / 'ManiaLab'
+    package.mkdir()
+
+    result = build_provenance.remove_duplicate_parent_torch_cpu_dll(package)
+
+    assert result == dict(removed=False, reason='parent_runtime_not_present')
+
+
+def test_duplicate_parent_torch_runtime_rejects_linked_parent(tmp_path, monkeypatch):
+    package = tmp_path / 'ManiaLab'
+    parent = package / '_internal/torch_cpu.dll'
+    worker = package / '_internal/assets/deep/ManiaLabAudio/_internal/torch/lib/torch_cpu.dll'
+    parent.parent.mkdir(parents=True)
+    worker.parent.mkdir(parents=True)
+    parent.write_bytes(b'identical runtime')
+    worker.write_bytes(b'identical runtime')
+    original_is_symlink = Path.is_symlink
+
+    def mark_parent_link(path):
+        return path == parent or original_is_symlink(path)
+
+    monkeypatch.setattr(Path, 'is_symlink', mark_parent_link)
+    with pytest.raises(ValueError, match='must not contain links'):
+        build_provenance.remove_duplicate_parent_torch_cpu_dll(package)
+    assert parent.read_bytes() == worker.read_bytes()
+
+
 @pytest.mark.parametrize('escape', ['link', 'resolved_path'])
 def test_archive_payload_inventory_rejects_links_and_resolved_escapes(
     tmp_path, monkeypatch, escape
