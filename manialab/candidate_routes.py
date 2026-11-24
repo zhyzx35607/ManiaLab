@@ -52,9 +52,13 @@ def register_candidate_routes(app, *, submit, parameters, requested_tempo):
                 report["grid"] = grid_report(notes, old)
                 if report["grid"]["off_grid"]:
                     raise ValueError("修改后的音符未通过落线检查")
-            report["layout"] = layout_metrics(notes, prefs["keys"], beat, points)
-            report["review"] = review_chart(notes, prefs["keys"], beat, points)
-            report["ln_patterns"] = analyze_ln_patterns(notes, prefs["keys"], beat, points)
+            report["layout"] = layout_metrics(notes, prefs["keys"], beat, points,
+                                              key_layout=prefs["key_layout"])
+            report["review"] = review_chart(notes, prefs["keys"], beat, points,
+                                            key_layout=prefs["key_layout"])
+            report["ln_patterns"] = analyze_ln_patterns(
+                notes, prefs["keys"], beat, points, key_layout=prefs["key_layout"],
+            )
             variant = copy.deepcopy(old | {"selection": generation_context(old.get("selection", {}))})
             variant["generation_origin"] = resolve_generation_origin(old, state["variants"])
             variant.update(

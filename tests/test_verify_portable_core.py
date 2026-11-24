@@ -83,8 +83,9 @@ def test_core_runtime_capabilities_match_manifest():
         "separator": {
             "available": False,
             "profiles": {
-                "four": {"available": False},
-                "six": {"available": False},
+                "four": {"available": False, "voices": ["drums", "bass", "vocals", "other"]},
+                "six": {"available": False, "voices": ["drums", "bass", "vocals", "other", "guitar", "piano"]},
+                "four-piano": {"available": False, "voices": ["drums", "piano", "vocals", "other"]},
             },
         },
         "piano": {"available": False, "default": False},
@@ -95,7 +96,7 @@ def test_core_runtime_capabilities_match_manifest():
     }
 
     assert verify_portable.verify_runtime_capabilities(status, capabilities("core")) \
-        == {"four": False, "six": False}
+        == {"four": False, "six": False, "four-piano": False}
 
 
 def test_core_runtime_capabilities_reject_unexpected_model_availability():
@@ -103,8 +104,9 @@ def test_core_runtime_capabilities_reject_unexpected_model_availability():
         "separator": {
             "available": False,
             "profiles": {
-                "four": {"available": False},
-                "six": {"available": True},
+                "four": {"available": False, "voices": ["drums", "bass", "vocals", "other"]},
+                "six": {"available": True, "voices": ["drums", "bass", "vocals", "other", "guitar", "piano"]},
+                "four-piano": {"available": False, "voices": ["drums", "piano", "vocals", "other"]},
             },
         },
         "piano": {"available": False, "default": False},
@@ -124,8 +126,9 @@ def test_standard_runtime_capabilities_reject_non_boolean_availability(invalid):
         "separator": {
             "available": True,
             "profiles": {
-                "four": {"available": invalid},
-                "six": {"available": True},
+                "four": {"available": invalid, "voices": ["drums", "bass", "vocals", "other"]},
+                "six": {"available": True, "voices": ["drums", "bass", "vocals", "other", "guitar", "piano"]},
+                "four-piano": {"available": True, "voices": ["drums", "piano", "vocals", "other"]},
             },
         },
         "piano": {"available": True, "default": False},
@@ -144,8 +147,9 @@ def test_runtime_capabilities_reject_non_boolean_manifest_value():
         "separator": {
             "available": True,
             "profiles": {
-                "four": {"available": True},
-                "six": {"available": True},
+                "four": {"available": True, "voices": ["drums", "bass", "vocals", "other"]},
+                "six": {"available": True, "voices": ["drums", "bass", "vocals", "other", "guitar", "piano"]},
+                "four-piano": {"available": True, "voices": ["drums", "piano", "vocals", "other"]},
             },
         },
         "piano": {"available": True, "default": False},
@@ -178,8 +182,9 @@ def test_runtime_capabilities_reject_non_boolean_auxiliary_status(
         "separator": {
             "available": True,
             "profiles": {
-                "four": {"available": True},
-                "six": {"available": True},
+                "four": {"available": True, "voices": ["drums", "bass", "vocals", "other"]},
+                "six": {"available": True, "voices": ["drums", "bass", "vocals", "other", "guitar", "piano"]},
+                "four-piano": {"available": True, "voices": ["drums", "piano", "vocals", "other"]},
             },
         },
         "piano": {"available": True, "default": False},

@@ -10,7 +10,7 @@ from .cancellation import CancellationContext, remaining_until
 
 
 TERMINAL_STATUSES = ("done", "error", "cancelled")
-MAX_BATCH_SIZE = 5
+MAX_BATCH_SIZE = 10
 MAX_BATCH_PARALLELISM = 2
 _USER_RECOVERY_NOTE_PREFIX = "ManiaLab恢复提示："
 

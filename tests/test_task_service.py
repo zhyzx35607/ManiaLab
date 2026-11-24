@@ -495,7 +495,7 @@ def test_completed_job_history_is_bounded_without_pruning_active_job(task_store)
 
 def test_batch_tasks_run_with_bounded_parallelism_and_isolate_item_failures(task_store):
     projects, service = task_store
-    project_ids = [create_project(projects) for _ in range(5)]
+    project_ids = [create_project(projects) for _ in range(10)]
     gate = threading.Lock()
     active = 0
     peak = 0
@@ -528,16 +528,18 @@ def test_batch_tasks_run_with_bounded_parallelism_and_isolate_item_failures(task
 
     assert result["status"] == "error"
     assert result["progress"] == 100
-    assert result["result"] == {"done": 4, "error": 1, "cancelled": 0}
-    assert 2 <= peak <= 2
+    assert result["result"] == {"done": 9, "error": 1, "cancelled": 0}
+    assert peak == 2
     items = {item["project"]: item for item in result["items"]}
     assert [items[project_id]["status"] for project_id in project_ids] == [
-        "done", "done", "error", "done", "done",
+        "done", "done", "error", *(["done"] * 7),
     ]
     assert items[project_ids[2]]["message"] == "synthetic item failure"
     assert items[project_ids[0]]["result"] == {"index": 0}
+    assert items[project_ids[-1]]["result"] == {"index": 9}
     assert projects.load(project_ids[0])["value"] == "updated-0"
     assert projects.load(project_ids[2])["value"] == "original"
+    assert projects.load(project_ids[-1])["value"] == "updated-9"
     assert service._idle.is_set()
 
 

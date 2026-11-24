@@ -79,7 +79,9 @@ manifest = dict(model="Hybrid Demucs MUSDB+", model_sha256=expected,
     beat_model="Beat This! final0", beat_model_sha256=beat_expected,
     beat_model_url="https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/final0.ckpt",
     sources=["drums", "bass", "other", "vocals"], sample_rate=44100,
-    profiles=['four','six'],six_source_model_sha256=six_expected,
+    # The same HTDemucs payload serves both full six-stem analysis and the
+    # four-main-stem piano profile; no additional model/runtime is needed.
+    profiles=['four','six','four-piano'],six_source_model_sha256=six_expected,
     worker_sources=build_sources,worker_sha256=sha256(output/'ManiaLabAudio/ManiaLabAudio.exe'),
     worker_files=worker_inventory(output/'ManiaLabAudio'))
 (output / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")

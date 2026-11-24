@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from flask import jsonify, request
 
-from .arrange_config import DEFAULTS
+from .arrange_config import DEFAULTS, merge_parameters
 from .chart_workspace import select_chart
 from .domain import parse_osu
 from .meter import project_with_meter
@@ -155,7 +155,8 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             draft = json.loads(request.form.get("settings", "{}"))
             if not isinstance(draft, dict):
                 raise ValueError("当前偏好必须为参数对象")
-            prefs = parameters(parameters(state["settings"] | draft) | profile["preferences"])
+            merged = merge_parameters(state["settings"], draft)
+            prefs = parameters(merge_parameters(parameters(merged), profile["preferences"]))
             state["reference_style"] = profile
             # The current target key count remains the user's explicit choice.
             state["settings"] = prefs

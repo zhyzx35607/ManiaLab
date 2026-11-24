@@ -23,6 +23,16 @@ def test_release_only_rows_and_occupancy_are_counted_without_heads():
     assert report['peak_releases_per_second'] == 1
 
 
+def test_ln_pattern_analysis_validates_the_selected_key_layout():
+    note = Note(0, 1000, 0)
+
+    report = analyze_ln_patterns([note], 8, key_layout="8k_4_4")
+
+    assert report['counts']['releases'] == 1
+    with pytest.raises(ValueError, match="键型"):
+        analyze_ln_patterns([note], 8, key_layout="10k_5_5")
+
+
 def test_density_integrates_holds_across_empty_sections_and_locations_cover_ending():
     notes=[Note(0,40000,0)]+[Note(t,t,1) for t in range(1000,40000,500)]
     r=analyze_ln_patterns(notes,10)

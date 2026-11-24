@@ -13,17 +13,19 @@ from .timing import BeatClock
 from .preferences import row_settings, settings_at
 from .solver import solver_lock as _solver_lock, solve_binary as _solve_binary
 from .arrange_config import BOUNDS, DEFAULTS, INTEGER, parameters
+from .arrange_config import key_layout_profile
 from .candidate_selection import _choose_holds as _choose_candidate_holds
 from .candidate_selection import _select_notes as _select_candidate_notes
 
 
-def hand_weights(keys, lane):
-    if keys % 2 and lane == keys // 2:
+def hand_weights(keys, lane, key_layout=None):
+    hand, _ = key_layout_profile(keys, key_layout)[lane]
+    if hand == 2:
         return (.5, .5)
-    return (1., 0.) if lane < keys // 2 else (0., 1.)
+    return (1., 0.) if hand == 0 else (0., 1.)
 
 
-def layout_metrics(notes, keys, beat_ms=500, timing_points=()):
+def layout_metrics(notes, keys, beat_ms=500, timing_points=(), key_layout=None):
     """Comparable ergonomic costs, not a learned or player-validated quality grade."""
     last = [-100000] * keys
     released = [-100000] * keys
@@ -31,11 +33,12 @@ def layout_metrics(notes, keys, beat_ms=500, timing_points=()):
     previous_time = 0
     cost, jacks, releases, peak = 0., 0, 0, 0.
     clock = BeatClock(timing_points, beat_ms)
+    lane_hands = [hand_weights(keys, lane, key_layout) for lane in range(keys)]
     for n in sorted(notes, key=lambda n: (n.start, n.lane)):
         beat_ms = clock(n.start)
         decay = math.exp(-(n.start - previous_time) / max(250, beat_ms * 2))
         pressure = [v * decay for v in pressure]
-        hands = hand_weights(keys, n.lane)
+        hands = lane_hands[n.lane]
         delta = n.start - last[n.lane]
         gap = n.start - released[n.lane]
         if delta < beat_ms * .4:
@@ -45,7 +48,7 @@ def layout_metrics(notes, keys, beat_ms=500, timing_points=()):
             cost += 4 * (1 - max(0, gap) / 80)
             releases += 1
         for h in (0, 1):
-            held = sum(hand_weights(keys, k)[h] for k in range(keys) if released[k] > n.start)
+            held = sum(lane_hands[k][h] for k in range(keys) if released[k] > n.start)
             cost += hands[h] * (pressure[h] * .3 + held * .6)
             pressure[h] += hands[h]
         if keys >= 8 and n.lane in (0, keys - 1) and n.hold:
@@ -59,8 +62,11 @@ def layout_metrics(notes, keys, beat_ms=500, timing_points=()):
 
 def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None,
                  cancelled=lambda: False, segment_preferences=(), timing_points=(),
-                 sequence_prior=None, sequence_strength=.35):
+                 sequence_prior=None, sequence_strength=.35, key_layout=None):
     """Compare complete assignments against hand/LN-release costs."""
+    if key_layout is not None:
+        settings = dict(settings or {})
+        settings["key_layout"] = key_layout
     p = parameters(settings)
     if sequence_prior is not None and p["layout_engine"] != "beam":
         raise ValueError("sequence prior requires the beam layout engine")
@@ -91,7 +97,8 @@ def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None,
         except ValueError as error:
             failure = error
             continue
-        cost = layout_metrics(output, p["keys"], beat_ms, timing_points)["cost"]
+        cost = layout_metrics(output, p["keys"], beat_ms, timing_points,
+                              key_layout=p["key_layout"])["cost"]
         if cost < best_cost:
             best, best_cost = output, cost
         if progress:
@@ -113,6 +120,7 @@ def _assign_once(notes, settings=None, locked=(), beat_ms=500, cancelled=lambda:
         groups[n.start].append(n)
     occupied, last, load = [-1] * keys, [-100000] * keys, [0.0] * keys
     last_pitch = [None] * keys
+    lane_hands = [hand_weights(keys, lane, p["key_layout"]) for lane in range(keys)]
     fixed_by_lane = [[n for n in fixed if n.lane == lane] for lane in range(keys)]
     fixed_history = sorted(fixed, key=lambda n: n.start)
     fixed_index, previous_start = 0, 0
@@ -146,9 +154,9 @@ def _assign_once(notes, settings=None, locked=(), beat_ms=500, cancelled=lambda:
                        (f.start <= n.start < f.end) or (n.start <= f.start < n.end) for f in fixed_by_lane[lane]):
                     continue
                 elapsed = start - max(last[lane], occupied[lane])
-                hands = hand_weights(keys, lane)
-                hand_load = sum(hands[h] * sum(load[j] * hand_weights(keys, j)[h] for j in range(keys)) for h in (0, 1))
-                held_hand = sum(hands[h] * sum(hand_weights(keys, j)[h] for j in range(keys) if occupied[j] > start) for h in (0, 1))
+                hands = lane_hands[lane]
+                hand_load = sum(hands[h] * sum(load[j] * lane_hands[j][h] for j in range(keys)) for h in (0, 1))
+                held_hand = sum(hands[h] * sum(lane_hands[j][h] for j in range(keys) if occupied[j] > start) for h in (0, 1))
                 follow = abs(lane - preferred) / keys
                 if last_pitch[lane] == n.pitch and n.source == "pitch":
                     follow *= .35

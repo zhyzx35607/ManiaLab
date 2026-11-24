@@ -160,7 +160,8 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
     progress(45, "分配轨道并检查 LN 占轨")
     original_timing = state.get("input_timing", []) if mode == "remap" else []
     output = assign_lanes(selected, prefs, locked, beat_ms=60000 / tempo["bpm"], progress=progress, cancelled=cancelled,
-                          segment_preferences=segment_preferences, timing_points=original_timing)
+                          segment_preferences=segment_preferences, timing_points=original_timing,
+                          key_layout=prefs["key_layout"])
     progress(90, "校验谱面并保存候选")
     report = validate(output, prefs["keys"])
     if mode == "audio":
@@ -169,9 +170,14 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
         report["grid"] = grid_report(output, tempo)
         if report["grid"]["off_grid"]:
             raise ValueError("生成结果存在离线音符，未保存；请重新分析并生成整谱")
-    report["layout"] = layout_metrics(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
-    report["review"] = review_chart(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
-    report["ln_patterns"] = analyze_ln_patterns(output, prefs["keys"], 60000 / tempo["bpm"], original_timing)
+    report["layout"] = layout_metrics(output, prefs["keys"], 60000 / tempo["bpm"], original_timing,
+                                      key_layout=prefs["key_layout"])
+    report["review"] = review_chart(output, prefs["keys"], 60000 / tempo["bpm"], original_timing,
+                                    key_layout=prefs["key_layout"])
+    report["ln_patterns"] = analyze_ln_patterns(
+        output, prefs["keys"], 60000 / tempo["bpm"], original_timing,
+        key_layout=prefs["key_layout"],
+    )
     timing_diagnostics = analysis_timing_diagnostics(state.get('analysis', {}), tempo) if mode == 'audio' else None
     if region is not None:
         selection = regional_selection_report(selection, output, locked)

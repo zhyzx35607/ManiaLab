@@ -143,10 +143,22 @@ def verify_runtime_capabilities(status, declared):
     separator = status["separator"]
     profiles = separator["profiles"]
     actual = {}
-    for profile, capability in (("four", "separation_four"), ("six", "separation_six")):
+    expected_voices = {
+        "four": ["drums", "bass", "vocals", "other"],
+        "six": ["drums", "bass", "vocals", "other", "guitar", "piano"],
+        "four-piano": ["drums", "piano", "vocals", "other"],
+    }
+    for profile, capability in (
+        ("four", "separation_four"),
+        ("six", "separation_six"),
+        ("four-piano", "separation_six"),
+    ):
         assert profile in profiles, f"Portable status omitted separator profile {profile}"
         actual[profile] = _required_bool(
             profiles[profile]["available"], f"Runtime {profile} availability"
+        )
+        assert profiles[profile].get("voices") == expected_voices[profile], (
+            f"Runtime {profile} voices do not match the declared profile"
         )
         expected = _required_bool(declared[capability], f"Manifest {capability}")
         assert actual[profile] == expected, (
@@ -298,7 +310,9 @@ def verify_core_workflow(request, wait, start, stop, work, source, record):
         assert job["status"] == "error", job
         assert "分离组件未就绪" in job["message"], job
         unavailable[engine] = job["status"]
-    assert request("/api/status")["separator"]["profiles"]["six"]["available"] is False
+    unavailable_status = request("/api/status")["separator"]["profiles"]
+    assert unavailable_status["six"]["available"] is False
+    assert unavailable_status["four-piano"]["available"] is False
     record(dict(check="unavailable_engines", engines=unavailable,
                        reason="bundled separation assets are not included"))
 
@@ -503,6 +517,13 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert restored['variants'][restored['active']]['notes']==saved_notes
         assert restored['plan']['choice']=='layers'
         record(dict(check='restart',preserved=True,keys=10,unicode_audio=source.name))
+        # Packaged status must expose the piano-focused four-stem profile;
+        # it shares the already bundled six-source model and runtime.
+        four_piano_status = status['separator']['profiles']['four-piano']
+        assert four_piano_status['available'], status['separator']
+        assert four_piano_status['voices'] == ['drums','piano','vocals','other']
+        record(dict(check='four_piano_profile_status',
+                    available=four_piano_status['available'],voices=four_piano_status['voices']))
         # Both packaged separators must run with no Python or model downloads.
         assert status['separator']['profiles']['six']['available'],status['separator']
         job=wait(request(base+'/analyze',dict(engine='deep6',settings={})),timeout=360)

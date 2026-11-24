@@ -14,10 +14,10 @@ import numpy as np
 from .timing import BeatClock
 
 
-def hand_matrix(keys):
+def hand_matrix(keys, key_layout=None):
     from .layout import fingers
     return np.array([[.5, .5] if h == 2 else [1., 0.] if h == 0 else [0., 1.]
-                     for h, _ in fingers(keys)])
+                     for h, _ in fingers(keys, key_layout)])
 
 
 def ln_row_costs(choices, start, ends, previous_ends, previous_last, hands, beat_ms, prefs):
@@ -87,10 +87,10 @@ def ln_row_costs(choices, start, ends, previous_ends, previous_last, hands, beat
     return costs
 
 
-def analyze_ln_patterns(notes, keys, beat_ms=500., timing_points=()):
+def analyze_ln_patterns(notes, keys, beat_ms=500., timing_points=(), key_layout=None):
     """Complete endpoint sweep, with bounded location samples for the UI."""
     notes = sorted(notes, key=lambda n: (n.start, n.lane, n.end))
-    hands = hand_matrix(keys)
+    hands = hand_matrix(keys, key_layout)
     clock = BeatClock(timing_points, beat_ms)
     heads, tails = defaultdict(list), defaultdict(list)
     for n in notes:

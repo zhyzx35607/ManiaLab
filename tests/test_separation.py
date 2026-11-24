@@ -10,6 +10,39 @@ import pytest
 from scipy.io import wavfile
 
 from manialab import separation
+from scripts.separate_six import output_sources_for
+
+
+def test_htdemucs_profiles_select_named_source_outputs():
+    model_sources=('drums','bass','other','vocals','guitar','piano')
+    assert output_sources_for('six',model_sources)==('drums','bass','vocals','other','guitar','piano')
+    assert output_sources_for('four-piano',model_sources)==('drums','piano','vocals','other')
+    with pytest.raises(ValueError,match='inventory'):
+        output_sources_for('four-piano',('drums','bass','other','vocals','guitar'))
+
+
+def test_separator_status_reports_profile_voices_and_manifest_availability(tmp_path):
+    worker = tmp_path/'assets/deep/ManiaLabAudio'
+    worker.mkdir(parents=True)
+    (worker/'ManiaLabAudio.exe').write_bytes(b'worker')
+    deep = worker.parent
+    manifest = deep/'manifest.json'
+    manifest.write_text(json.dumps({'profiles':['four','six','four-piano']}), encoding='utf-8')
+    for spec in separation.PROFILES.values():
+        (deep/spec['filename']).touch()
+
+    status = separation.Separator(tmp_path).status()
+    assert status['profiles']['four-piano'] == {
+        'label': separation.PROFILES['four-piano']['label'],
+        'voices': ['drums', 'piano', 'vocals', 'other'],
+        'available': True,
+    }
+    assert status['profiles']['six']['voices'] == [
+        'drums', 'bass', 'vocals', 'other', 'guitar', 'piano'
+    ]
+
+    manifest.write_text(json.dumps({'profiles':['four','six']}), encoding='utf-8')
+    assert separation.Separator(tmp_path).status()['profiles']['four-piano']['available'] is False
 
 
 def test_separator_cleans_temporary_input_when_worker_cannot_start(tmp_path, monkeypatch):
@@ -38,7 +71,7 @@ def test_separator_cleans_temporary_input_when_worker_cannot_start(tmp_path, mon
     assert not wave.exists()
 
 
-@pytest.mark.parametrize('profile', ['four', 'six'])
+@pytest.mark.parametrize('profile', ['four', 'six', 'four-piano'])
 @pytest.mark.parametrize('worker_revision', [1, 2])
 def test_separator_rebuilds_stale_algorithm_revision(tmp_path, monkeypatch, profile, worker_revision):
     monkeypatch.setenv('MANIALAB_DEEP_PYTHON', sys.executable)
@@ -57,6 +90,7 @@ def test_separator_rebuilds_stale_algorithm_revision(tmp_path, monkeypatch, prof
         audio_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
         model_sha256=separator.spec['sha256'],
         profile=profile,
+        sources={voice:f'{voice}.npy' for voice in separator.spec['voices']},
         input_processing=dict(separation.INPUT_PROCESSING),
     )
     manifest.write_text(json.dumps(old_report), encoding="utf-8")
@@ -110,7 +144,7 @@ def test_model_separation_identity_includes_algorithm_revision():
     assert separation_identity(report) != separation_identity(report | {'algorithm_revision': 2})
 
 
-@pytest.mark.parametrize('profile', ['four', 'six'])
+@pytest.mark.parametrize('profile', ['four', 'six', 'four-piano'])
 def test_separator_preserves_float_input_and_rebuilds_legacy_cache(tmp_path, monkeypatch, profile):
     monkeypatch.setenv('MANIALAB_DEEP_PYTHON', sys.executable)
     monkeypatch.delenv('MANIALAB_DEEP_MODEL', raising=False)
@@ -125,7 +159,8 @@ def test_separator_preserves_float_input_and_rebuilds_legacy_cache(tmp_path, mon
     output.mkdir()
     manifest = output/'separation.json'
     old_report = dict(audio_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-                      model_sha256=separator.spec['sha256'])
+                      model_sha256=separator.spec['sha256'], profile=profile,
+                      sources={voice:f'{voice}.npy' for voice in separator.spec['voices']})
     manifest.write_text(json.dumps(old_report), encoding='utf-8')
     for voice in separator.spec['voices']:
         np.save(output/f'{voice}.npy', np.zeros(22050, dtype=np.float32))
@@ -152,6 +187,8 @@ def test_separator_preserves_float_input_and_rebuilds_legacy_cache(tmp_path, mon
             return real_popen(command, **kwargs)  # Run the real ffmpeg input conversion.
         assert command[command.index("--threads") + 1] == "2"
         assert command[command.index("--algorithm-revision") + 1] == str(separator.spec['algorithm_revision'])
+        if profile != 'four':
+            assert command[command.index('--profile') + 1] == profile
         assert all(kwargs["env"][name] == "2" for name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"))
         rate, data = wavfile.read(command[2])
         assert rate == 44100 and data.dtype == np.float32

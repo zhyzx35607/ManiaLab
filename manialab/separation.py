@@ -44,7 +44,8 @@ class Separator:
         if self.python and Path(self.python).is_file():supported.update(PROFILES)
         return dict(available=bool(runtime and self.profile in supported and self.model.is_file()),
                     model=self.spec['label'], profile=self.profile, voices=list(self.spec['voices']), cpu=True,
-                    profiles={key:{'label':spec['label'],'available':runtime and key in supported and (self.resources/'assets/deep'/spec['filename']).is_file()}
+                    profiles={key:{'label':spec['label'],'voices':list(spec['voices']),
+                                   'available':runtime and key in supported and (self.resources/'assets/deep'/spec['filename']).is_file()}
                               for key,spec in PROFILES.items()},
                     beat_model=self.beat_model.is_file())
 
@@ -61,8 +62,11 @@ class Separator:
                 cached = json.loads(manifest.read_text(encoding="utf-8"))
                 if (cached.get("audio_sha256") == digest
                         and cached.get("model_sha256") == self.spec['sha256']
+                        and cached.get('profile') == self.profile
                         and cached.get('input_processing') == INPUT_PROCESSING
                         and cached.get('algorithm_revision') == self.spec['algorithm_revision']
+                        and isinstance(cached.get('sources'), dict)
+                        and set(cached['sources']) == set(self.spec['voices'])
                         and all((output / f"{s}.npy").is_file() for s in self.spec['voices'])):
                     stems_cached = True
                     if not self.beat_model.is_file() or cached.get("beat_evidence", {}).get("model_sha256") == BEAT_MODEL_SHA256:

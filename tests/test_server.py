@@ -1306,7 +1306,7 @@ def test_original_model_cancel_during_postprocessing_stops_before_publication(tm
             ROOT/'vendor/mapperatorinator/template.osu'),encoding='utf-8')
         return target
 
-    def blocked_layout(*args):
+    def blocked_layout(*args, **kwargs):
         postprocessing.set()
         assert release.wait(5)
         return {}

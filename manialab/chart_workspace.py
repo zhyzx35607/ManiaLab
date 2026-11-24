@@ -6,6 +6,7 @@ import json
 from pathlib import Path, PurePosixPath
 
 from .domain import parse_osu
+from .arrange_config import DEFAULT_KEY_LAYOUTS
 from .storage import resolve_project_reference, safe_path
 
 
@@ -80,13 +81,17 @@ def _new_chart(project, state, relative):
     text = path.read_text(encoding="utf-8-sig")
     parsed = parse_osu(text)
     audio = _chart_audio(base, relative, parsed["general"].get("AudioFilename"))
+    target_keys = min(10, max(6, parsed["keys"]))
     chart = dict(
         mode="remap", original=relative, audio=audio,
         title=parsed["metadata"].get("Title", path.stem),
         artist=parsed["metadata"].get("Artist", "Unknown"), input_keys=parsed["keys"],
         input_notes=[note.data() for note in parsed["notes"]], input_timing=parsed["timing"],
         reference_marks=reference_marks(text), variants=[], active=-1,
-        settings=state["settings"] | {"keys": min(10, max(6, parsed["keys"]))},
+        settings=state["settings"] | {
+            "keys": target_keys,
+            "key_layout": DEFAULT_KEY_LAYOUTS[target_keys],
+        },
     )
     if "reference_style" in state:
         chart["reference_style"] = state["reference_style"]

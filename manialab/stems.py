@@ -16,6 +16,10 @@ PROFILES = {
         sha256='34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd',
         algorithm_revision=1, voices=('drums','bass','vocals','other','guitar','piano'),
         label='六声部 · HTDemucs'),
+    'four-piano': dict(directory='stems-four-piano', filename='htdemucs_6s.th',
+        sha256='34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd',
+        algorithm_revision=1, voices=('drums','piano','vocals','other'),
+        label='四主声部 · 鼓 / 钢琴 / 人声 / 伴奏 · HTDemucs'),
 }
 
 

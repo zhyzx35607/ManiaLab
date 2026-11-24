@@ -15,6 +15,7 @@ import math
 import numpy as np
 
 from .domain import invariant, validate
+from .arrange_config import key_layout_profile
 from .pattern_prior import preference_cost
 from .preferences import row_settings
 from .sequence_prior import (
@@ -34,17 +35,10 @@ from .ln_patterns import ln_row_costs
 SEQUENCE_SCORE_CANDIDATE_CAP = 1024
 
 
-@lru_cache(maxsize=5)
-def fingers(keys):
-    """(hand, digit), with digit 1=thumb .. 5=pinky; hand 2=shared thumb."""
-    profiles = {
-        6: ((0, 4), (0, 3), (0, 2), (1, 2), (1, 3), (1, 4)),
-        7: ((0, 4), (0, 3), (0, 2), (2, 1), (1, 2), (1, 3), (1, 4)),
-        8: ((0, 5), (0, 4), (0, 3), (0, 2), (1, 2), (1, 3), (1, 4), (1, 5)),
-        9: ((0, 5), (0, 4), (0, 3), (0, 2), (2, 1), (1, 2), (1, 3), (1, 4), (1, 5)),
-        10: ((0, 5), (0, 4), (0, 3), (0, 2), (0, 1), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5)),
-    }
-    return profiles[keys]
+@lru_cache(maxsize=20)
+def fingers(keys, key_layout=None):
+    """(hand, digit) per lane; digit 1=thumb .. 5=pinky, hand 2=shared."""
+    return key_layout_profile(keys, key_layout)
 
 
 @lru_cache(maxsize=50)
@@ -182,7 +176,7 @@ def search_layout(notes, settings, locked=(), beat_ms=500, width=8, progress=Non
         by_time[note.start].append(note)
     fixed = sorted(locked, key=lambda n: n.start)
     fixed_lanes = [[n for n in fixed if n.lane == lane] for lane in range(keys)]
-    profile = fingers(keys)
+    profile = fingers(keys, settings.get("key_layout"))
     hands = np.array([[.5, .5] if h == 2 else [1., 0.] if h == 0 else [0., 1.] for h, _ in profile])
     digits = np.array([d for _, d in profile])
     beam = [State(0., np.full(keys, -100000.), np.full(keys, -100000.),

@@ -44,6 +44,7 @@ def test_project_routes_keep_endpoints_and_chart_variant_state(tmp_path):
         assert selected.status_code == 200, selected.json
         assert selected.json["original"] == "b.osu"
         assert selected.json["input_keys"] == 7
+        assert selected.json["settings"]["key_layout"] == "7k_3_1_3"
         assert selected.json["audio"] == "other.wav"
         assert selected.json["variants"] == []
         assert selected.json["active"] == -1
