@@ -25,6 +25,8 @@
 
 源码 Edge / Playwright 三组脚本通过：`ui_grid_smoke.cjs`、`ui_timing_smoke.cjs`、`ui_smoke.cjs`。实际页面粘贴 210 / 91 后导出的 10 个端点全部通过，最大舍入误差 0.428572ms；137 BPM 显示为整数，重新估计 Offset 为 346ms（该合成音起点为 347ms）。LN 比例 100% / 0% / 60%、导出谱包、严格重定轨、候选状态和手机宽度通过，无页面脚本异常。
 
+其中 `scripts/ui_smoke.cjs` 是一次性历史 runner，已从源码退役；主流程由 `tests/browser/workflow.spec.cjs` 覆盖，窄屏无横向溢出检查已迁入当前浏览器测试。下方旧命令保留为历史记录，当前回归入口使用 `npm run test:ui`。
+
 PyInstaller 独立 EXE 使用独立数据目录、端口 8978，运行同样三组页面测试，结果一致；另外实际导出三连音并检查 `BeatDivisor: 3` 与每个端点。分析 JSON 可在未生成或重新分析清除活动候选后下载，用于反馈 Timing 候选、原始拟合值和起音时间，不包含音频文件。
 
 ### Offset 对比及未解决部分

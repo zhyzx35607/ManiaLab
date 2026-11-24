@@ -1,6 +1,6 @@
 # 第一次用 ManiaLab
 
-完整解压 Windows ZIP，双击 `ManiaLab.exe`。浏览器打开的是本机程序。保持控制台窗口开着，结束时关闭它即可。四／六声部模型和 CPU 运行时已经包含在完整包中。
+从 [GitHub Releases](https://github.com/zhyzx35607/ManiaLab/releases) 获取 Windows 包，不要下载 Tags 页面里的源码压缩包。dev.26 Extended 由 12 个分片组成：把附件中的 `*-download-and-join.cmd` 和对应 `.ps1` 放在同一文件夹，至少留出 4 GiB 空间，再运行 `.cmd`；脚本会下载、组装并校验 ZIP。完成后完整解压，双击 `ManiaLab.exe`。浏览器打开的是本机程序，保持控制台窗口开着，结束时关闭它即可。四／六声部模型和 CPU 运行时已经包含在完整包中。
 
 ## 已有多难度谱包
 

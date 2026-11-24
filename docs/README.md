@@ -12,6 +12,8 @@
 
 ## 项目状态
 
+- [当前状态与重规划（2026-11-24）](project-status-and-roadmap-2026-11-24.md)：已发布功能、真实验收缺口、下载体积与分阶段整理路线。
+- [dev.26 Extended 公开试用版](releases/0.1.0-alpha.6-dev-26.md)：精确 tag、发布包校验结果和未完成的真实音频专项。
 - [全项目验收计划](full-project-acceptance-plan-20261119.md)：工程、音乐、支持 profile、许可和最终停止条件。
 - [全项目验收问题账本](full-project-acceptance-ledger-20261119.md)：当前问题、覆盖缺口、外部依赖、证据和关闭条件。
 - [2026-11-18 工程与音乐验收记录](acceptance-20261118.md)：真实谱包往返、两首外部歌曲及真人试打入口。

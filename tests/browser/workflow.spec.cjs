@@ -85,3 +85,15 @@ test('switching to a chart with missing audio shows a recovery instruction', asy
   await expect(page.locator('#audioStatus')).toContainText('重新导入此 .osu 文件和对应音频');
   await expect(page.locator('#audio')).not.toHaveAttribute('src', /.+/);
 });
+
+test('workspace has no horizontal overflow at a narrow viewport', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#recent').selectOption({ label: 'UI synthetic' });
+  await expect(page.locator('#projectTitle')).toHaveText('UI synthetic');
+  await page.setViewportSize({ width: 390, height: 844 });
+  const width = await page.evaluate(() => ({
+    document: document.documentElement.scrollWidth,
+    viewport: window.innerWidth,
+  }));
+  expect(width.document).toBeLessThanOrEqual(width.viewport);
+});
