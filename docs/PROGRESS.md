@@ -1,18 +1,25 @@
 # 续接进度
 
-更新：2026-11-22，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
+更新：2026-11-24，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
 ## 当前状态（先读）
 
-### dev.25 Extended 预设与界面整理（进行中）
+### dev.26 Extended 界面精简与批量分析（进行中）
 
-- 新增纯起音预设，界面同时将全局 LN 比例和跨音高乐句 LN 比例设为0；音频生成将0比例作为硬约束，覆盖已有手动 phrase/sustain 表达和旧分段 LN 偏好，但保留用户明确设置的 `omit`。均衡、持续音和节奏预设均明确设置乐句 LN 比例，避免切换时残留旧值。
-- 收起采音/LN参数、键型与手感参数、LN设计报告；预设与生成按钮处于主要操作区。
-- 当前验证：全量 Python/API `3609 passed, 159 skipped, 1 warning`（352.76秒）；纯起音 API/表达定向组合 `35 passed`；Edge 浏览器预设与合成生成 `1 passed`；`compileall`、`node --check static/app.js`、`git diff --check`通过。视觉检查覆盖320/390/768/1440 px，页面无水平滚动且预设与生成控件未溢出。GitHub PR CI 尚未运行。
-- PR #258 已推送提交 `1021dd8`。Windows run `45031806329` 的全量 Python/API 已通过；Chromium `72 passed, 2 failed`，两项旧 LN 导航用例未展开现在默认折叠的面板。已修正这两个用例，待本地全浏览器回归与 CI 重跑。目标版本为 `0.1.0-alpha.6-dev.25`，dev.25 GitHub tag/Release 尚不存在。
-- 本地 `test-data/` 已按用户此前要求清理；Extended strict collector 所需的真实吉他、Tsumugi bass/other 冻结音频输入因此缺失。不能声称这些真实音频专项通过，也不能复用 dev.24 EXE 的报告。将重新构建 dev.25 Extended 包并仅公布绑定本版 EXE 的实际验证范围；GitHub Windows workflow 默认 profile 仍是 Core。
-- Extended 包内含 Demucs 权重与 Tsumugi 模型的权利限制沿用 dev.24 声明，仍需明确披露；本版自动测试不代表真实歌曲采音、Timing 或游戏手感验收。
+- 主界面已加入 2–5 首歌曲批量导入，最多并行处理 2 首；每首单独建项目、逐曲隔离失败、列表打开结果。导入时可取消且保留已导入项目；提交后的轮询遇到短暂请求失败会自动重试。
+- 进一步收敛界面：批量和高级采音、Timing 设置放入折叠面板，默认常用导入、分析和生成操作更突出；低频拍线细节仍默认收起。
+- 本地全量验证已完成：Python/API `3620 passed, 159 skipped, 1 warning`（384.20秒）；Playwright Chromium `79 passed`（约2.6分钟）；批量后端定向组合 `28 passed`；批量交互定向浏览器 `4 passed`；JS 语法检查通过。
+- 当前分支 `codex/manialab-batch-ux-dev26` 基于 dev.25 主线 `e6e56b4`，版本已改为 `0.1.0-alpha.6-dev.26`；代码评审、PR、CI、合并、tag 与 GitHub Release 仍待完成。
+- Extended 缓存模型和运行环境可从保留的本地 `assets` / `.venv-audio` 复用；旧音频及 Tsumugi worker 与当前源码身份不匹配，必须由 dev.26 源码重建。D 盘模型目录未纳入 Git；清理后的 `test-data`、用户音频及逐曲研究数据未访问。永久失效任务 ID 会停止轮询并解锁界面；短暂轮询错误重试最多连续6次，且可恢复。
+- 真实吉他和 Tsumugi bass/other 冻结音频输入仍缺失；本版不得声明这些真实音频专项通过，也不得复用旧 EXE 的便携验证报告。GitHub Windows workflow 固定构建 Core；Extended 包需单独从精确版本构建，记录其实际随包能力检查。
+- Extended 的 Demucs checkpoint 再分发授权及 Tsumugi 训练录音权利仍未核实；音乐质量、真实 Timing、osu! 试打与 6–10K/LN 手感需用户实测。
+
+### dev.25 Extended 预设与界面整理（2026-11-22，GitHub 已发布）
+
+GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.25 Extended Windows x64](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.25) 于 2026-11-22 发布，annotated tag 指向 `e6e56b4bc49febff7e3dec159527b9f016e36b0f`（PR #258）。Tag Windows run `45034679821` 成功。Extended ZIP 为 `1,310,460,595` 字节，SHA-256 `e5395666b2ab61193f883568886d090c73abeef635f3af8e1a164b996c1a4ad7`；validation JSON 与 SHA256SUMS 已上传并有 GitHub digest 记录。
+
+dev.25 包含均衡、纯起音、持续音和节奏四种预设及收起高级参数的 UI。音乐质量、真实 Timing、osu! 试打和真人 LN 手感仍需用户验收；发布验证不得替代真实歌曲检查。
 
 ### dev.24 Extended 完整功能试用版（2026-11-22，GitHub 已发布）
 

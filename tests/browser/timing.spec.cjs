@@ -4,9 +4,22 @@ async function openTiming(page, title = 'UI timing clock') {
   await page.goto('/');
   await expect(page.locator('#recent option')).toContainText([title]);
   await page.locator('#recent').selectOption({ label: title });
+  await openTimingAdvanced(page);
   await expect(page.locator('#offset')).toHaveValue('93');
   await expect(page.locator('#audioShift')).toHaveValue('22.5');
 }
+
+async function openTimingAdvanced(page) {
+  const panel = page.locator('#timingAdvanced');
+  if (!(await panel.evaluate(element => element.open))) {
+    await panel.locator(':scope > summary').click();
+  }
+}
+
+test('fine timing controls are collapsed until requested', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#timingAdvanced')).not.toHaveJSProperty('open', true);
+});
 
 test('a delayed timing result stays expired even after returning to the same clock', async ({ page }) => {
   await openTiming(page);
@@ -68,6 +81,7 @@ test('precision BPM candidate preserves its adjusted clock through confirmation,
   await page.goto('/');
   await expect(page.locator('#recent option')).toContainText(['UI timing precision']);
   await page.locator('#recent').selectOption({ label: 'UI timing precision' });
+  await openTimingAdvanced(page);
 
   const preciseOption = page.locator('#tempoCandidates option').filter({ hasText: '120.37 BPM' });
   await expect(preciseOption).toHaveCount(1);
@@ -120,6 +134,7 @@ test('automatic clock projection and manual offset input keep their rounding pol
   await page.goto('/');
   await expect(page.locator('#recent option')).toContainText(['UI timing offset rounding']);
   await page.locator('#recent').selectOption({ label: 'UI timing offset rounding' });
+  await openTimingAdvanced(page);
   await expect(page.locator('#offset')).toHaveValue('21');
 
   const candidate = page.locator('#tempoCandidates option').filter({ hasText: '120 BPM · 偏移 21 ms' });
@@ -141,6 +156,7 @@ test('automatic clock projection and manual offset input keep their rounding pol
 for (const edit of ['bpm', 'division', 'halfBpm', 'doubleBpm']) {
   test(`${edit} preserves the original offset anchor before changing the lead`, async ({ page }) => {
     await openTiming(page);
+    if (edit !== 'bpm') await openTimingAdvanced(page);
     if (edit === 'bpm') await page.locator('#bpm').fill('121');
     else if (edit === 'division') await page.locator('#division').selectOption('8');
     else await page.locator(`#${edit}`).click();
@@ -163,6 +179,7 @@ test('manual fractional offsets are visibly normalized before checking the same 
     await expect(page.locator('#message')).toContainText(`Offset 已取整为 ${expected} ms`);
   }
   await page.locator('#offset').fill('94.5');
+  await openTimingAdvanced(page);
   const refitted = page.waitForRequest('**/timing-refit');
   await page.locator('#refitTiming').click();
   expect((await refitted).postDataJSON().offset).toBe(94);

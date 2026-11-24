@@ -1,5 +1,12 @@
 const { test, expect } = require('@playwright/test');
 
+async function openTimingAdvanced(page) {
+  const panel = page.locator('#timingAdvanced');
+  if (!(await panel.evaluate(element => element.open))) {
+    await panel.locator(':scope > summary').click();
+  }
+}
+
 async function openProject(page, action) {
   await page.goto('/');
   await expect(page.locator('#recent option')).toContainText([`UI plan ${action}`]);
@@ -15,6 +22,7 @@ async function openProject(page, action) {
 async function draft(page) {
   await page.locator('#bpm').fill('137');await page.locator('#bpm').blur();
   await page.locator('#audioShift').fill('50');await page.locator('#audioShift').blur();
+  await openTimingAdvanced(page);
   await page.locator('#division').selectOption('8');
   await page.locator('.audition-panel').evaluate(el=>{el.open=true;});
   await page.locator('#auditionOffset').fill('27');
@@ -26,6 +34,7 @@ async function assertDraft(page) {
   await expect(page.locator('#bpm')).toHaveValue('137');
   await expect(page.locator('#audioShift')).toHaveValue('50');
   await expect(page.locator('#offset')).toHaveValue('-49');
+  await openTimingAdvanced(page);
   await expect(page.locator('#division')).toHaveValue('8');
   await expect(page.locator('#auditionOffset')).toHaveValue('27');
   await expect(page.locator('#analysisEngine')).toHaveValue('basic');

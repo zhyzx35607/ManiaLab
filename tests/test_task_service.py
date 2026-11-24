@@ -491,3 +491,144 @@ def test_completed_job_history_is_bounded_without_pruning_active_job(task_store)
     finally:
         release.set()
         service.shutdown()
+
+
+def test_batch_tasks_run_with_bounded_parallelism_and_isolate_item_failures(task_store):
+    projects, service = task_store
+    project_ids = [create_project(projects) for _ in range(5)]
+    gate = threading.Lock()
+    active = 0
+    peak = 0
+
+    def make_operation(index):
+        def operation(state, progress, cancelled):
+            nonlocal active, peak
+            with gate:
+                active += 1
+                peak = max(peak, active)
+            try:
+                state["value"] = f"updated-{index}"
+                progress(40, "分析中")
+                time.sleep(0.04)
+                if index == 2:
+                    raise ValueError("synthetic item failure")
+                return {"index": index}
+            finally:
+                with gate:
+                    active -= 1
+        return operation
+
+    entries = [
+        {"project": project_id, "title": f"song-{index}",
+         "operation": make_operation(index)}
+        for index, project_id in enumerate(project_ids)
+    ]
+    submitted = service.submit_batch(entries)
+    result = wait_for_job(service, submitted["id"])
+
+    assert result["status"] == "error"
+    assert result["progress"] == 100
+    assert result["result"] == {"done": 4, "error": 1, "cancelled": 0}
+    assert 2 <= peak <= 2
+    items = {item["project"]: item for item in result["items"]}
+    assert [items[project_id]["status"] for project_id in project_ids] == [
+        "done", "done", "error", "done", "done",
+    ]
+    assert items[project_ids[2]]["message"] == "synthetic item failure"
+    assert items[project_ids[0]]["result"] == {"index": 0}
+    assert projects.load(project_ids[0])["value"] == "updated-0"
+    assert projects.load(project_ids[2])["value"] == "original"
+    assert service._idle.is_set()
+
+
+def test_batch_project_members_are_locked_and_cancel_cancels_queued_items(task_store):
+    projects, service = task_store
+    project_ids = [create_project(projects) for _ in range(3)]
+    started, release = threading.Event(), threading.Event()
+
+    def operation(state, progress, cancelled):
+        started.set()
+        assert release.wait(5)
+        return {"cancelled": cancelled()}
+
+    submitted = service.submit_batch([
+        {"project": project_id, "operation": operation}
+        for project_id in project_ids
+    ], max_parallel=1)
+    assert started.wait(5)
+    with pytest.raises(ValueError, match="该项目已有任务运行"):
+        service.ensure_project_idle(project_ids[-1])
+    assert service.cancel(submitted["id"])
+    release.set()
+    result = wait_for_job(service, submitted["id"])
+
+    assert result["status"] == "cancelled"
+    assert result["result"] == {"done": 0, "error": 0, "cancelled": 3}
+    assert all(item["status"] == "cancelled" for item in result["items"])
+    assert all(projects.load(project_id)["value"] == "original" for project_id in project_ids)
+    assert service._idle.is_set()
+
+
+def test_batch_shutdown_deadline_cancels_nested_workers_and_finishes_after_release(task_store):
+    projects, service = task_store
+    project_ids = [create_project(projects) for _ in range(2)]
+    started = [threading.Event(), threading.Event()]
+    release = threading.Event()
+
+    def make_operation(index):
+        def operation(state, progress, cancelled):
+            started[index].set()
+            assert release.wait(5)
+            return {"cancelled": cancelled()}
+        return operation
+
+    submitted = service.submit_batch([
+        {"project": project_id, "operation": make_operation(index)}
+        for index, project_id in enumerate(project_ids)
+    ])
+    try:
+        assert all(event.wait(5) for event in started)
+        deadline = time.monotonic() + 0.05
+        began = time.monotonic()
+        assert service.shutdown(wait=True, deadline=deadline) is False
+        assert time.monotonic() - began < 0.5
+        assert service.get(submitted["id"])["cancel"] is True
+    finally:
+        release.set()
+        service.shutdown()
+
+    result = service.get(submitted["id"])
+    assert result["status"] == "cancelled"
+    assert all(item["status"] == "cancelled" for item in result["items"])
+    assert service._idle.is_set()
+
+
+@pytest.mark.parametrize("max_parallel", [0, 3, True])
+def test_batch_rejects_unbounded_or_invalid_parallelism(task_store, max_parallel):
+    projects, service = task_store
+    project_ids = [create_project(projects) for _ in range(2)]
+    with pytest.raises(ValueError, match="批量并行数"):
+        service.submit_batch([
+            {"project": project_id, "operation": lambda *args: {}}
+            for project_id in project_ids
+        ], max_parallel=max_parallel)
+
+
+def test_batch_worker_start_failure_marks_all_items_terminal(task_store, monkeypatch):
+    projects, service = task_store
+    project_ids = [create_project(projects) for _ in range(2)]
+
+    def fail_submit(operation):
+        raise RuntimeError("synthetic batch executor failure")
+
+    monkeypatch.setattr(service.executor, "submit", fail_submit)
+    result = service.submit_batch([
+        {"project": project_id, "operation": lambda *args: {}}
+        for project_id in project_ids
+    ])
+
+    assert result["status"] == "error"
+    assert result["progress"] == 100
+    assert all(item["status"] == "error" for item in result["items"])
+    assert service._idle.is_set()
+    assert service._closed
