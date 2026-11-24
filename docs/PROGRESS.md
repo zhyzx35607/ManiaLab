@@ -7,7 +7,7 @@
 
 ### dev.26 Extended 公开试用版（2026-11-24 已发布；体验验收继续开放）
 
-- 精确 tag `v0.1.0-alpha.6-dev.26` 指向 `70a52a40a16d254b9c1092c6607fd7c1f07c85ab`。GitHub Pre-release 已发布；组装 ZIP 为 `1,310,888,430` bytes，SHA-256 `53a940c3918d9e6bd45ff0959367b4f34042614bc4a4b8196a13942e1a25e4d2`。12 个分片的下载/组装脚本会核对体积和 SHA-256。本机验证过的 ZIP 位于 `D:\ManiaLab-release-dev26-20261124\build\portable\dev26-extended-tag-70a52a4-20261124-r1\release\ManiaLab-0.1.0-alpha.6-dev.26-windows-x64-extended.zip`。
+- 精确 tag `v0.1.0-alpha.6-dev.26` 指向 `70a52a40a16d254b9c1092c6607fd7c1f07c85ab`。GitHub Pre-release 已发布；组装 ZIP 为 `1,310,888,430` bytes，SHA-256 `53a940c3918d9e6bd45ff0959367b4f34042614bc4a4b8196a13942e1a25e4d2`。2026-11-24 新增完整 ZIP 单文件 Release 附件，并将其设为首选下载；原 12 片及下载器仍作为备用。本机验证过的 ZIP 位于 `D:\ManiaLab-release-dev26-20261124\build\portable\dev26-extended-tag-70a52a4-20261124-r1\release\ManiaLab-0.1.0-alpha.6-dev.26-windows-x64-extended.zip`。
 - 批量分析已扩展为一次最多 10 首、最多并行处理 2 首；每首建立独立项目、失败隔离、支持取消并可打开结果。最终本地完整 Python/API 回归为 `3659 passed, 164 skipped`，Playwright Edge 为 `81 passed`；批量 API、键型配置及相关路由定向组为 `129 passed`。浏览器覆盖十首导入与并发上限。
 - 新增 `four-piano` 主声部配置：基于六源 HTDemucs 分离，只保留并分析鼓、钢琴、人声和其他伴奏；现有 `deep6` 完整六声部仍保留贝斯与吉他。该 profile 已进入 dev.26 Extended 包，并通过本版 20 项便携 smoke 验证；合成验证不代表真实歌曲音乐质量。
 - 参考 Torosu 的显式手型/手指映射做纯键型预设：6K `3+3`、7K `3+1+3`、8K 默认 `3+2+3`（另有 `4+4`）、9K `4+1+4`、10K `5+5`。LN 生成逻辑未改变；切换键数会选择对应默认键型，切换 8K 布局会使旧候选失效，重生成和 LN 报告均使用显式键型。配置合并缺陷与候选过期状态已由回归覆盖。

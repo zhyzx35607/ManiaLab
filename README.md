@@ -6,7 +6,7 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.26 · Extended profile · Windows x64 公开试用预发布版。** 已于 2026-11-24 发布，可从 [GitHub Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载。当前 Extended ZIP 为 1,310,888,430 bytes（约 1.22 GiB），按 12 个分片提供，并附 `.cmd/.ps1` 组装与 SHA-256 校验脚本；组装后解压需约 2.53 GiB。包包含四／六声部分离、节拍模型、钢琴专用模型、吉他 FL、Tsumugi 贝斯／其他伴奏模型和 CPU 运行时；Mapperatorinator 权重按需单独下载。本版收敛了主界面，并可一次导入 2–10 首歌、最多同时分析 2 首；每首单独保存结果，失败互不影响。四种一键制谱预设继续保留。Windows 自动发布工作流仍只验证 Core，Extended 包另行构建并做便携运行检查；合成输入只能证明组件加载、执行与身份匹配，不证明真实歌曲采音质量、Timing 或游戏手感。Demucs 权重的独立再分发授权及 Tsumugi 训练录音权利仍未核实。完整范围和验证限制见[dev.26 说明](docs/releases/0.1.0-alpha.6-dev-26.md)与[第三方声明](THIRD_PARTY_NOTICES.md)。
+**0.1.0-alpha.6-dev.26 · Extended profile · Windows x64 公开试用预发布版。** 已于 2026-11-24 发布，可从 [GitHub Releases](https://github.com/zhyzx35607/ManiaLab/releases) 下载。当前 Extended ZIP 为 1,310,888,430 bytes（约 1.22 GiB），现可直接下载单文件；原 12 片 `.cmd/.ps1` 组装方式保留作备用。解压后约 2.53 GiB。包包含四／六声部分离、节拍模型、钢琴专用模型、吉他 FL、Tsumugi 贝斯／其他伴奏模型和 CPU 运行时；Mapperatorinator 权重按需单独下载。本版收敛了主界面，并可一次导入 2–10 首歌、最多同时分析 2 首；每首单独保存结果，失败互不影响。四种一键制谱预设继续保留。Windows 自动发布工作流仍只验证 Core，Extended 包另行构建并做便携运行检查；合成输入只能证明组件加载、执行与身份匹配，不证明真实歌曲采音质量、Timing 或游戏手感。Demucs 权重的独立再分发授权及 Tsumugi 训练录音权利仍未核实。完整范围和验证限制见[dev.26 说明](docs/releases/0.1.0-alpha.6-dev-26.md)与[第三方声明](THIRD_PARTY_NOTICES.md)。
 
 当前入口： [项目状态与重规划](docs/project-status-and-roadmap-2026-11-24.md) · [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
@@ -20,7 +20,7 @@ dev.26 基于 dev.25 收敛主界面并增加 2–10 首歌曲的批量分析，
 
 ## 下载即用
 
-1. 打开 [Releases](https://github.com/zhyzx35607/ManiaLab/releases)，不要从 Tags 页面下载源码包。dev.26 Extended 目前以 12 个分片发布：把附件中的 `*-download-and-join.cmd` 和对应 `.ps1` 放在同一文件夹，至少留出 4 GiB 空间，再双击 `.cmd` 下载、组装并校验 ZIP。
+1. 打开 [dev.26 Release](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.26)，直接下载 `ManiaLab-0.1.0-alpha.6-dev.26-windows-x64-extended.zip`；不要从 Tags 页面下载源码包。若单文件下载中断，再使用附件中的 `*-download-and-join.cmd` 与 `.ps1` 下载分片组装。下载并解压建议留出约 4 GiB 空间。
 2. 完整解压生成的 ZIP 后双击 `ManiaLab.exe`。程序打开本机浏览器界面，关闭控制台窗口退出。
 3. 导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 选择本曲编排建议或手调参数 → 生成候选 → 下载 `.osz` → 拖入 osu!。
 
