@@ -1,6 +1,6 @@
 # 续接进度
 
-更新：2026-11-24，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
+更新：2026-11-25，Asia/Shanghai。本文件用于中断或额度耗尽后恢复工作；
 先核对实际进程、Git 和产物，不能把这里记录的运行中状态当作已经完成。
 
 ## 当前状态（先读）
@@ -8,6 +8,7 @@
 ### dev.26 Extended 公开试用版（2026-11-24 已发布；体验验收继续开放）
 
 - 精确 tag `v0.1.0-alpha.6-dev.26` 指向 `70a52a40a16d254b9c1092c6607fd7c1f07c85ab`。GitHub Pre-release 已发布；组装 ZIP 为 `1,310,888,430` bytes，SHA-256 `53a940c3918d9e6bd45ff0959367b4f34042614bc4a4b8196a13942e1a25e4d2`。2026-11-24 新增完整 ZIP 单文件 Release 附件，并将其设为首选下载；原 12 片及下载器仍作为备用。本机验证过的 ZIP 位于 `D:\ManiaLab-release-dev26-20261124\build\portable\dev26-extended-tag-70a52a4-20261124-r1\release\ManiaLab-0.1.0-alpha.6-dev.26-windows-x64-extended.zip`。
+- 2026-11-25 从同一精确 tag 新建并实测 `core` 便携档：ZIP `112,068,248` bytes（比 Extended 单 ZIP 小约 91.45%），SHA-256 `3671c2ae62bfd5ca5d9da0265b31a818cc0f8286a3fb001a8c1e31314850ad0d`。它只提供混音/导入声轨通用采音与制谱，不含内置四/六声部分离、节拍、钢琴、吉他或 Tsumugi 专用能力；不是 Extended 替代品。实际 EXE 通过 `scripts/verify_portable.py` Core 离线合成流程，检查 manifest、Basic Pitch 身份、合成采音与导出、Unicode 路径、重启、取消/坏音频恢复；包清单无额外 ONNX、模型 checkpoint、worker 或安装器。运行报告位于 `D:\ManiaLab-release-dev26-core-vtag\build\portable\core-dev26-tag-70a52a4-20261124\portable-verification\report.json`，ZIP 位于同 run 的 `release/ManiaLab-0.1.0-alpha.6-dev.26-windows-x64-core.zip`。本地 `tests/test_package_assets.py tests/test_verify_portable_core.py` 为 `40 passed`。Core ZIP 未加入 Release：上传遇到 GitHub 408 后，已删除未完成的 `starter` 与配套附件；当前公开的直接下载包仍为 Extended ZIP。
 - 批量分析已扩展为一次最多 10 首、最多并行处理 2 首；每首建立独立项目、失败隔离、支持取消并可打开结果。最终本地完整 Python/API 回归为 `3659 passed, 164 skipped`，Playwright Edge 为 `81 passed`；批量 API、键型配置及相关路由定向组为 `129 passed`。浏览器覆盖十首导入与并发上限。
 - 新增 `four-piano` 主声部配置：基于六源 HTDemucs 分离，只保留并分析鼓、钢琴、人声和其他伴奏；现有 `deep6` 完整六声部仍保留贝斯与吉他。该 profile 已进入 dev.26 Extended 包，并通过本版 20 项便携 smoke 验证；合成验证不代表真实歌曲音乐质量。
 - 参考 Torosu 的显式手型/手指映射做纯键型预设：6K `3+3`、7K `3+1+3`、8K 默认 `3+2+3`（另有 `4+4`）、9K `4+1+4`、10K `5+5`。LN 生成逻辑未改变；切换键数会选择对应默认键型，切换 8K 布局会使旧候选失效，重生成和 LN 报告均使用显式键型。配置合并缺陷与候选过期状态已由回归覆盖。
@@ -15,6 +16,7 @@
 - Extended 包精确 tag 的 20 项便携检查、worker 关停检查、ZIP 7,624 项 CRC 检查和 12 片重组哈希检查通过；release 脚本已在本地分片上端到端验证。Python/API 为 `3659 passed, 164 skipped`，Edge Playwright 为 `81 passed`；Windows workflow 固定构建 Core，Extended 包单独构建和验证。
 - 用户反馈通过当前 12 片流程无法顺利下载。当前 `.ps1` 会并行启动 12 个隐藏 `curl.exe`，只显示已完成分片数；中断分片的 `.download` 会在重试时删除并重下。审计环境对一个分片的 HEAD 请求返回 HTTP 200，但这不能证明用户网络可下载。具体失败原因待用户提供终端末行或卡住状态；下一版下载器应显示字节级进度、保留并续传分片，并在下载前检查磁盘空间。
 - 本地 ZIP 元数据检查显示压缩包内容约 `85.3%` 位于随包 `assets`；多个大模型和三个同名、CRC/体积相同的 `torch_cpu.dll` 是可进一步缩包的对象，是否共享运行时须先验证独立 worker 的加载边界。模型目录未纳入 Git；本次未读取 ignored 音频、谱面或逐曲研究材料。
+- 静态 TOC 审计显示 Extended ZIP 有三份 `torch_cpu.dll`（各压缩后 `75,572,621` bytes、CRC 相同），分别位于应用根目录、音频 worker 和 Tsumugi worker。应用侧副本来自 PyInstaller 收集嵌套音频 worker 依赖，可能可省约 75.6 MB。两个 worker 内的 DLL 与其 manifest 身份绑定，继续保留。本轮没有在 Extended 变体删 DLL；需另建实验包验证 four/six/four-piano 音频 worker 启动、合成分离、取消和关停，之后再考虑是否将优化用于发布包。
 - 六声部真实歌曲问题没有可复现样例，本轮没有据此声称问题已修复。真实吉他和 Tsumugi bass/other 音频专项输入已缺失，本版未重跑对应 EXE 级检查，未生成完整聚合报告；不能复用旧 EXE 的便携验证报告。真实歌曲采音、Timing、osu! 试打、6–10K/LN 手感及 Demucs/Tsumugi 权利仍未闭环。
 
 ### dev.25 Extended 预设与界面整理（2026-11-22，GitHub 已发布）
