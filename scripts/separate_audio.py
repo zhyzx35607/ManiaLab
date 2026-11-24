@@ -149,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--beat-model", type=Path)
     parser.add_argument("--beats-only", action="store_true")
-    parser.add_argument('--profile',choices=('four','six'),default='four')
+    parser.add_argument('--profile',choices=('four','six','four-piano'),default='four')
     parser.add_argument('--algorithm-revision', type=int, default=1)
     args = parser.parse_args()
     if args.beats_only:
@@ -160,10 +160,10 @@ if __name__ == "__main__":
         report["beat_evidence"] = beat_evidence(args.input, args.beat_model, args.seconds)
         manifest.write_text(json.dumps(report, indent=2), encoding="utf-8")
         progress(100, "Beat structure complete")
-    elif args.profile=='six':
+    elif args.profile in ('six','four-piano'):
         from separate_six import separate_six
         separate_six(args.input,args.output,args.model,args.seconds,args.threads,args.beat_model,
-            progress,beat_evidence,algorithm_revision=args.algorithm_revision)
+            progress,beat_evidence,algorithm_revision=args.algorithm_revision,profile=args.profile)
     else:
         separate(args.input, args.output, args.model, args.seconds, args.threads, args.beat_model,
             algorithm_revision=args.algorithm_revision)

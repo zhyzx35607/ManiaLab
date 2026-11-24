@@ -34,6 +34,7 @@ PORTABLE_CHECK_NAMES = frozenset({
     "bundled_model",
     "bundled_arrangement_profiles",
     "startup",
+    "four_piano_profile_status",
     "core_capability_status",
     "basic_analysis",
     "generate_export",
@@ -74,6 +75,7 @@ PORTABLE_NON_CORE_CHECK_NAMES = frozenset({
     "deep_analysis",
     "local_recommendation",
     "stale_recommendation_rejected",
+    "four_piano_profile_status",
     "six_stem_analysis_export",
     "cancel_and_failure",
 })
@@ -439,11 +441,22 @@ def _validate_portable_check_payloads(portable, profile, manifest,
     separator = startup.get("separator")
     require(isinstance(separator, dict) and isinstance(separator.get("profiles"), dict), "startup.separator")
     profiles = separator["profiles"]
-    for profile_name, capability in (("four", "separation_four"), ("six", "separation_six")):
+    expected_voices = {
+        "four": ["drums", "bass", "vocals", "other"],
+        "six": ["drums", "bass", "vocals", "other", "guitar", "piano"],
+        "four-piano": ["drums", "piano", "vocals", "other"],
+    }
+    for profile_name, capability in (
+        ("four", "separation_four"),
+        ("six", "separation_six"),
+        ("four-piano", "separation_six"),
+    ):
         row = profiles.get(profile_name)
         require(isinstance(row, dict) and type(row.get("available")) is bool
                 and row["available"] is manifest["capabilities"][capability],
                 f"startup.separator.{profile_name}")
+        require(row.get("voices") == expected_voices[profile_name],
+                f"startup.separator.{profile_name}.voices")
     require(type(separator.get("available")) is bool
             and separator["available"] is manifest["capabilities"]["separation_four"],
             "startup.separator.available")
@@ -521,13 +534,17 @@ def _validate_portable_check_payloads(portable, profile, manifest,
             and deep["candidates"] == 5
             and _valid_elapsed(deep.get("seconds")), "deep_analysis")
     six = one("six_stem_analysis_export")
-    expected_voices = {"drums", "bass", "vocals", "other", "guitar", "piano"}
+    expected_six_voices = {"drums", "bass", "vocals", "other", "guitar", "piano"}
     voices = six.get("voices")
     require(isinstance(voices, list) and all(isinstance(voice, str) for voice in voices)
-            and set(voices) == expected_voices and len(voices) == len(expected_voices)
+            and set(voices) == expected_six_voices and len(voices) == len(expected_six_voices)
             and _valid_count(six.get("notes")) and six["notes"] == 5
             and _valid_count(six.get("off_grid")) and six["off_grid"] == 0
             and _valid_elapsed(six.get("seconds")), "six_stem_analysis_export")
+    four_piano_status = one("four_piano_profile_status")
+    require(four_piano_status.get("available") is manifest["capabilities"]["separation_six"]
+            and four_piano_status.get("voices") == expected_voices["four-piano"],
+            "four_piano_profile_status")
     cancelled = one("cancel_and_failure")
     require(cancelled.get("cancelled") == "cancelled"
             and cancelled.get("bad_audio") == "error"
@@ -1403,6 +1420,7 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *,
         required_checks.update({"basic_analysis", "provided_stem_analysis_export", "bad_audio_recovery"})
     else:
         required_checks.update({
+            "four_piano_profile_status",
             "piano_onnx_runtime",
             "deep_analysis",
             "six_stem_analysis_export",

@@ -185,8 +185,12 @@ def release_fixture(tmp_path, monkeypatch, request):
         dict(check='startup', version=__version__, separator={
             'available': declared['separation_four'],
             'profiles': {
-                'four': {'available': declared['separation_four']},
-                'six': {'available': declared['separation_six']},
+                'four': {'available': declared['separation_four'],
+                    'voices': ['drums', 'bass', 'vocals', 'other']},
+                'six': {'available': declared['separation_six'],
+                    'voices': ['drums', 'bass', 'vocals', 'other', 'guitar', 'piano']},
+                'four-piano': {'available': declared['separation_six'],
+                    'voices': ['drums', 'piano', 'vocals', 'other']},
             },
         }, prior={'available': declared['pattern_prior']},
             engine={'install_available': declared['mapperatorinator_install']}),
@@ -202,6 +206,9 @@ def release_fixture(tmp_path, monkeypatch, request):
             dict(check='bad_audio_recovery', analysis='error', service_alive=True),
         ]
     else:
+        checks.append(dict(check='four_piano_profile_status',
+            available=declared['separation_six'],
+            voices=['drums', 'piano', 'vocals', 'other']))
         checks += [dict(check='piano_onnx_runtime', sha256=piano_model['sha256'],
             bytes=piano_model['bytes'],
             providers=['CPUExecutionProvider'], output_shapes=[[1, 1001, 88]] * 4 + [[1, 1001, 1]] * 3,
@@ -599,7 +606,7 @@ def test_required_portable_row_identity_claims_must_match_current_run(release_fi
 
 PORTABLE_REQUIRED_CHECKS = [
     'startup', 'restart', 'generate_export', 'basic_analysis',
-    'provided_stem_analysis_export', 'bad_audio_recovery', 'piano_onnx_runtime',
+    'provided_stem_analysis_export', 'bad_audio_recovery', 'four_piano_profile_status', 'piano_onnx_runtime',
     'deep_analysis', 'six_stem_analysis_export', 'cancel_and_failure',
 ]
 PORTABLE_IDENTITY_FIELDS = [
@@ -663,6 +670,19 @@ def test_generate_export_requires_every_key_count(release_fixture):
         _collect(fixture)
 
 
+def test_startup_four_piano_profile_must_report_the_declared_voices(release_fixture):
+    fixture = release_fixture
+    checks = json.loads(fixture.portable.read_text(encoding='utf-8'))
+    startup = next(row for row in checks if row['check'] == 'startup')
+    startup['separator']['profiles']['four-piano']['voices'] = [
+        'drums', 'bass', 'vocals', 'other'
+    ]
+    fixture.portable.write_text(json.dumps(checks), encoding='utf-8')
+
+    with pytest.raises(SystemExit, match='startup.separator.four-piano.voices'):
+        _collect(fixture)
+
+
 @pytest.mark.parametrize(('check_name', 'invalid_payload'), [
     ('startup', {'separator': None}),
     ('restart', {'preserved': False}),
@@ -675,6 +695,8 @@ def test_generate_export_requires_every_key_count(release_fixture):
     ('piano_onnx_runtime', {'providers': None}),
     ('piano_onnx_runtime', {'output_shapes': []}),
     ('deep_analysis', {'seconds': float('inf')}),
+    ('four_piano_profile_status', {'voices': ['drums', 'bass', 'vocals', 'other']}),
+    ('four_piano_profile_status', {'available': False}),
     ('six_stem_analysis_export', {'voices': [{}]}),
     ('cancel_and_failure', {'service_alive': 1}),
 ])

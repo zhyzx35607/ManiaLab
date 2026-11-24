@@ -12,6 +12,14 @@ const timingLocations=document.createElement('div');timingLocations.id='timingLo
 let state = null, keys = 10, view = 'chart', busy = false, jobId = null, displayed = [], hitboxes = [], selected = null, manualTime = 0, audioContext = null, lastAudioTime = 0, projectLoadRequest = 0, auditionUrl = null, auditionRequest = 0, playbackSourceRequest = 0, playbackMetadataHandler = null;
 let batchJobId = null, batchImported = [], batchSnapshot = null;
 let batchImporting = false, batchCancelRequested = false;
+const KEY_LAYOUT_CHOICES={
+  6:[['6k_3_3','6K · 3+3']],
+  7:[['7k_3_1_3','7K · 3+1+3']],
+  8:[['8k_3_2_3','8K · 3+2+3'],['8k_4_4','8K · 4+4']],
+  9:[['9k_4_1_4','9K · 4+1+4']],
+  10:[['10k_5_5','10K · 5+5']],
+};
+const DEFAULT_KEY_LAYOUT={6:'6k_3_3',7:'7k_3_1_3',8:'8k_3_2_3',9:'9k_4_1_4',10:'10k_5_5'};
 const audio = $('audio');
 const msg = (text, error=false) => { $('message').textContent=text; $('message').classList.toggle('error',error); };
 async function api(path, data, form=false) {
@@ -19,10 +27,11 @@ async function api(path, data, form=false) {
   const result=await response.json().catch(()=>({})); if(!response.ok){const error=new Error(result.error||'请求失败');error.status=response.status;throw error;} return result;
 }
 const guarded=fn=>async(...args)=>{try{await fn(...args)}catch(e){msg(e.message,true)}};
-function settings(){const p={keys,focus:$('focus').value,layout_engine:$('layoutEngine').value};numbers.forEach(k=>p[k]=Number($(k).value));return p;}
+function settings(){const p={keys,key_layout:$('keyLayout').value,focus:$('focus').value,layout_engine:$('layoutEngine').value};numbers.forEach(k=>p[k]=Number($(k).value));return p;}
 function updateOutputs(){numbers.forEach(k=>{if($(k+'Out'))$(k+'Out').textContent=['ln_ratio','phrase_ln','pattern_prior','ln_coordination','ln_release','ln_inverse'].includes(k)?`${Math.round(Number($(k).value)*100)}%`:$(k).value;});}
-function setSettings(p){keys=p.keys;numbers.forEach(k=>{$(k).value=p[k]??$(k).defaultValue;});$('layoutEngine').value=p.layout_engine||'beam';$('focus').value=p.focus||'balanced';updateOutputs();updateKeys();}
-function updateKeys(){document.querySelectorAll('[data-key]').forEach(b=>b.classList.toggle('active',Number(b.dataset.key)===keys));$('keytag').replaceChildren(document.createTextNode(keys));const s=document.createElement('span');s.textContent='KEYS';$('keytag').append(s);draw();}
+function setSettings(p){keys=p.keys;numbers.forEach(k=>{$(k).value=p[k]??$(k).defaultValue;});$('layoutEngine').value=p.layout_engine||'beam';$('focus').value=p.focus||'balanced';updateOutputs();updateKeys(p.key_layout);}
+function updateKeyLayoutOptions(requested){const choices=KEY_LAYOUT_CHOICES[keys]||[];const previous=requested||$('keyLayout').value;options($('keyLayout'),choices);$('keyLayout').value=choices.some(([value])=>value===previous)?previous:(DEFAULT_KEY_LAYOUT[keys]||choices[0]?.[0]||'');}
+function updateKeys(keyLayout){document.querySelectorAll('[data-key]').forEach(b=>b.classList.toggle('active',Number(b.dataset.key)===keys));$('keytag').replaceChildren(document.createTextNode(keys));const s=document.createElement('span');s.textContent='KEYS';$('keytag').append(s);updateKeyLayoutOptions(keyLayout);draw();}
 function options(el,items){el.replaceChildren(...items.map(([value,text])=>{const o=document.createElement('option');o.value=value;o.textContent=text;return o;}));}
 function showTempoChoices(){options($('tempoCandidates'),[['','选择其他节拍解释…'],...tempoChoices.map((c,i)=>[i,`${c.precision_suggestion?'精确候选 · ':''}${c.bpm} BPM · 偏移 ${c.offset} ms · 匹配 ${(c.coverage*100).toFixed(0)}%${c.precision_suggestion?` · 取整漂移约 ${c.rounding_drift_ms}ms`:''}`])]);}
 function variant(){return state&&state.active>=0?state.variants[state.active]:null;}
@@ -50,7 +59,7 @@ function playbackVoices(separation,identity){
   if(!separation||!identity)return [];
   const voices=separation.source==='provided'?(separation.voices||[]):
     (separation.profile==='six'?['drums','bass','vocals','other','guitar','piano']:
-      ['drums','bass','vocals','other']);
+      separation.profile==='four-piano'?['drums','piano','vocals','other']:['drums','bass','vocals','other']);
   return voices.filter(voice=>separation.source==='provided'
     ?!!separation.decoded_files?.[voice]?.wav_sha256
     :separation.review_audio_identity===identity&&!!separation.review_audio_files?.[voice]);
@@ -184,7 +193,7 @@ function isCreatedKey(value){return typeof value==='string'||typeof value==='num
 function loadState(s){
   projectLoadRequest++;const changed=state?.id!==s.id||state?.original!==s.original;cancelAuditionPlayback();cueClock.reset();state=s;setSettings(s.settings);$('projectTitle').textContent=s.title;$('projectSub').textContent=s.mode==='remap'?`已导入 ${s.input_keys}K 原谱 · ${s.input_notes.length} 个物件`:'本地音频项目 · 先检查采音，再调整编排';
   $('mode').value=s.mode;options($('charts'),s.charts.map(c=>[c.path,c.label]));$('charts').classList.toggle('hidden',!s.charts.length);$('charts').value=s.original||'';
-  const v=variant();if(v)$('mode').value=v.mode;if(s.analysis)$('analysisEngine').value=s.analysis.separation?(s.analysis.separation.source==='provided'?'provided':s.analysis.separation.profile==='six'?'deep6':'deep'):'basic';updateVoiceOptions(true);
+  const v=variant();if(v)$('mode').value=v.mode;if(s.analysis)$('analysisEngine').value=s.analysis.separation?(s.analysis.separation.source==='provided'?'provided':s.analysis.separation.profile==='six'?'deep6':s.analysis.separation.profile==='four-piano'?'deep4piano':'deep'):'basic';updateVoiceOptions(true);
   lastClockShift=v?.audio_shift_ms??s.audio_shift_ms??(s.analysis?0:22.5);$('audioShift').value=lastClockShift;
   const tempo=v||s.analysis?.tempo;$('bpm').value=tempo?.bpm??120;$('offset').value=autoChartOffset((tempo?.offset??0)-(v||!s.analysis?0:clockShift()));
   clockAnchor=!v&&s.analysis?s.analysis.tempo.offset:Number($('offset').value)+clockShift();
@@ -204,16 +213,17 @@ function loadState(s){
 }
 function updateGridStatus(){
   const v=variant(),audioMode=v?.mode==='audio';
-  const keyMismatch=!!v&&keys!==v.settings.keys;
+  const candidateLayout=v?.settings.key_layout||DEFAULT_KEY_LAYOUT[v?.settings.keys];
+  const keyMismatch=!!v&&(keys!==v.settings.keys||$('keyLayout').value!==candidateLayout);
   const mismatch=audioMode&&(['bpm','offset','division'].some(k=>Number($(k).value)!==v[k])||clockShift()!==(v.audio_shift_ms||0));
   const stale=audioMode&&(v.timing_revision||0)<3;
   const g=v?.report?.grid;
   const diagnosis=$('exportJson'),hasDiagnosis=!!(v||state?.analysis);
   diagnosis.classList.toggle('disabled',!hasDiagnosis);if(hasDiagnosis)diagnosis.href=candidateExportUrl('json',v);else diagnosis.removeAttribute('href');
-  $('gridReport').textContent=keyMismatch?`目标为 ${keys}K，当前预览仍是 ${v.settings.keys}K 候选；请重新生成后导出。`:stale?'旧版候选：请重新分析并生成整谱，才能导出。':mismatch?'当前 BPM / Offset / 细分与预览候选不同，请重新生成后导出。':g?`落线检查：${g.endpoints-g.off_grid} / ${g.endpoints} 个短键起点与 LN 起止在网格上；最大舍入误差 ${g.max_error_ms} ms。落线检查不判断采音是否正确。`:'';
+  $('gridReport').textContent=keyMismatch?(keys!==v.settings.keys?`目标为 ${keys}K，当前预览仍是 ${v.settings.keys}K 候选`:`目标键型 ${$('keyLayout').value} 与当前预览键型 ${candidateLayout} 不同`)+'；请重新生成后导出。':stale?'旧版候选：请重新分析并生成整谱，才能导出。':mismatch?'当前 BPM / Offset / 细分与预览候选不同，请重新生成后导出。':g?`落线检查：${g.endpoints-g.off_grid} / ${g.endpoints} 个短键起点与 LN 起止在网格上；最大舍入误差 ${g.max_error_ms} ms。落线检查不判断采音是否正确。`:'';
   ['exportOsu','exportOsz'].forEach(id=>{const a=$(id),blocked=!v||v.report?.valid===false||stale||mismatch||keyMismatch||(id==='exportOsz'&&!state?.audio);a.classList.toggle('disabled',blocked);if(blocked)a.removeAttribute('href');else a.href=candidateExportUrl(id==='exportOsu'?'osu':'osz',v);});
 }
-async function refreshRecent(){const status=await api('/api/status');separatorAvailable=!!status.separator?.available;$('analysisEngine').querySelector('[value=deep]').disabled=!separatorAvailable;$('analysisEngine').querySelector('[value=deep6]').disabled=!status.separator?.profiles?.six?.available;$('separationStatus').textContent=separatorAvailable?'本机 CPU 分离，再逐声部采音；六声部增加吉他与钢琴，效果请与四声部对照':'当前包未包含四声部组件 · 可使用快速采音';if(!state)$('analysisEngine').value=separatorAvailable?'deep':'basic';window.updatePianoStatus?.(status.piano);window.updateInstrumentStatus?.(status.instruments);window.updateGuitarStatus?.(status.guitar);options($('recent'),[['','打开已保存项目…'],...status.projects.map(p=>[p.id,p.title])]);if(state)$('recent').value=state.id;mapperInstallAvailable=!!status.engine.install_available;mapperGenerateAvailable=!!status.engine.generate_available;$('engineInstall').disabled=busy||!mapperInstallAvailable;$('engineGenerate').disabled=busy||!mapperGenerateAvailable;$('engineStatus').textContent=status.engine.installed?`运行环境已就绪 · ${status.engine.model_downloaded?'模型权重已下载':'模型权重将在首次生成时下载'}`:mapperInstallAvailable?'原模型未安装 · 不影响基础采音与定轨':'当前便携配置不含原模型安装器 · 不影响基础采音与定轨';$('priorStatus').textContent=status.pattern_prior?.available?`通过验证的键数：${status.pattern_prior.keys.map(k=>k+'K').join(' / ')}。仅提供定轨软偏好；未通过的键数自动忽略。`:'当前未加载经过验证的键型先验。';}
+async function refreshRecent(){const status=await api('/api/status');const profiles=status.separator?.profiles||{};separatorAvailable=!!status.separator?.available;const pianoFourAvailable=!!profiles['four-piano']?.available;$('analysisEngine').querySelector('[value=deep]').disabled=!separatorAvailable;$('analysisEngine').querySelector('[value=deep4piano]').disabled=!pianoFourAvailable;$('analysisEngine').querySelector('[value=deep6]').disabled=!profiles.six?.available;$('separationStatus').textContent=pianoFourAvailable?'主声部使用鼓、钢琴、人声和其他伴奏；完整六声部另含贝斯与吉他。批量分析会沿用所选声部方案。':separatorAvailable?'当前包有兼容四声部（鼓、贝斯、人声、其他伴奏）；可使用快速采音':'当前包未包含分离组件 · 可使用快速采音';if(!state)$('analysisEngine').value=pianoFourAvailable?'deep4piano':separatorAvailable?'deep':'basic';window.updatePianoStatus?.(status.piano);window.updateInstrumentStatus?.(status.instruments);window.updateGuitarStatus?.(status.guitar);options($('recent'),[['','打开已保存项目…'],...status.projects.map(p=>[p.id,p.title])]);if(state)$('recent').value=state.id;mapperInstallAvailable=!!status.engine.install_available;mapperGenerateAvailable=!!status.engine.generate_available;$('engineInstall').disabled=busy||!mapperInstallAvailable;$('engineGenerate').disabled=busy||!mapperGenerateAvailable;$('engineStatus').textContent=status.engine.installed?`运行环境已就绪 · ${status.engine.model_downloaded?'模型权重已下载':'模型权重将在首次生成时下载'}`:mapperInstallAvailable?'原模型未安装 · 不影响基础采音与定轨':'当前便携配置不含原模型安装器 · 不影响基础采音与定轨';$('priorStatus').textContent=status.pattern_prior?.available?`通过验证的键数：${status.pattern_prior.keys.map(k=>k+'K').join(' / ')}。仅提供定轨软偏好；未通过的键数自动忽略。`:'当前未加载经过验证的键型先验。';}
 function setMode(){const remap=$('mode').value==='remap';$('musical').classList.toggle('hidden',remap);$('strictHint').classList.toggle('hidden',!remap);$('bpm').disabled=remap||busy;$('offset').disabled=remap||busy;['tempoCandidates','halfBpm','doubleBpm','division','timingConfirmed','checkTiming','refitTiming','referenceTiming','applyTiming','audioShift','waveAlign','auditionOffset','auditionB','auditionApply'].forEach(id=>$(id).disabled=remap||busy);$('auditionA').textContent=remap?'试听原谱拍线':'试听当前拍线 A';$('generate').firstChild.textContent=remap?'严格重新定轨 ':'生成候选谱面 ';}
 // A pending recent-project GET must not replace the project being acted on.
 function setBusy(value){
@@ -237,18 +247,18 @@ async function runJob(action,payload,form=false){
 }
 function analysisRequestOptions({batch=false}={}){
   const engine=$('analysisEngine').value;
-  if(batch&&!['basic','deep','deep6'].includes(engine))throw Error('批量分析仅支持快速、四声部或六声部音频分析。');
+  if(batch&&!['basic','deep','deep6','deep4piano'].includes(engine))throw Error('批量分析仅支持快速、四声部、主声部钢琴或完整六声部音频分析。');
   return {settings:settings(),engine,piano_engine:window.pianoSelection?.()||'general',...(window.instrumentSelection?.()||{instrument_engine:'general',allow_predicted_releases:false}),...(window.guitarSelection?.()||{guitar_engine:'general',allow_guitar_predicted_releases:false}),audio_shift_ms:clockShift()};
 }
 function updateBatchAvailability(){
   const input=$('batchFiles'),button=$('batchAnalyze'),summary=$('batchFileSummary');
   if(!input||!button||!summary)return;
   const files=[...input.files],count=files.length;
-  button.disabled=busy||count<2||count>5;
+  button.disabled=busy||count<2||count>10;
   if(count===0)summary.textContent='尚未选择歌曲。';
   else if(count===1)summary.textContent='已选择 1 首；批量分析至少需要 2 首。';
-  else if(count>5)summary.textContent='已选择 '+count+' 首；一次最多处理 5 首。';
-  else summary.textContent='已选择 '+count+' 首：'+files.map(file=>file.name).join('、');
+  else if(count>10)summary.textContent='已选择 '+count+' 首；最多处理 10 首，请减少选择。';
+  else summary.textContent='已选择 '+count+' 首 · '+(files.reduce((sum,file)=>sum+file.size,0)/1024/1024).toFixed(1)+' MB · 最多同时分析 2 首。';
 }
 function renderBatchStatus(snapshot){
   batchSnapshot=snapshot;
@@ -292,7 +302,7 @@ async function openBatchProject(projectId){
 }
 async function runBatchAnalysis(files){
   if(busy)return;
-  if(files.length<2||files.length>5)throw Error('批量分析请一次选择 2–5 首音频。');
+  if(files.length<2||files.length>10)throw Error('批量分析请一次选择 2–10 首音频。');
   if(files.some(file=>! /\.(mp3|wav|flac|ogg|m4a|opus|aac)$/i.test(file.name)))throw Error('批量分析仅支持 MP3、WAV、FLAC、OGG、M4A、OPUS、AAC 音频。');
   batchImported=[];batchImporting=true;batchCancelRequested=false;setBusy(true);$('jobText').textContent='正在逐首导入歌曲…';$('progress').value=0;
   const importedItems=[];
@@ -364,6 +374,7 @@ async function importFiles(files){if(!files.length||busy)return;setBusy(true);$(
 async function generate(region){$('offset').value=chartOffset(Number($('offset').value));await runJob('generate',{settings:settings(),mode:$('mode').value,bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),audio_shift_ms:clockShift(),snap:true,timing_confirmed:$('timingConfirmed').checked,...(region?{region}:{})});}
 numbers.forEach(k=>$(k).addEventListener('input',updateOutputs));
 document.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{keys=Number(b.dataset.key);updateKeys();updateGridStatus();window.updateEditorLocks?.();});
+$('keyLayout').addEventListener('change',updateGridStatus);
 $('referenceStyleFile').onchange=guarded(async e=>{
   const file=e.target.files[0];if(!file)return;if(!state)throw Error('请先导入要制谱的音频或项目');if(busy)return;
   const draft=captureTimingDraft(['analysisEngine']);

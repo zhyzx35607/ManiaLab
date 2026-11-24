@@ -5,16 +5,16 @@
 
 ## 当前状态（先读）
 
-### dev.26 Extended 界面精简与批量分析（进行中）
+### dev.26 Extended 功能整合与发布准备（进行中）
 
-- 主界面已加入 2–5 首歌曲批量导入，最多并行处理 2 首；每首单独建项目、逐曲隔离失败、列表打开结果。导入时可取消且保留已导入项目；提交后的轮询遇到短暂请求失败会自动重试。
-- 进一步收敛界面：批量和高级采音、Timing 设置放入折叠面板，默认常用导入、分析和生成操作更突出；低频拍线细节仍默认收起。
-- 密度上限已从 24 提高到 50 物件/秒，统一覆盖界面滑块、API 参数校验、编排助手参数说明、自动/分段建议及参考谱导入；超过50时拒绝手动参数或限制建议值并提示。生成器沿用现有动态容量计算。
-- 密度改动定向回归：Python `31 passed`，Playwright Edge `1 passed`（包括生成请求实际提交 `density: 50`），`compileall`、全部静态 JS `node --check`、`git diff --check`通过。完整 Python/API 本地运行 `3621 passed, 159 skipped, 1 deselected`，有1个 release provenance 测试因测试执行期间浏览器测试源文件被同步编辑、source digest 变化而失败；需以静态提交的新 Windows CI 复验为准。原密度改动前 Python/API `3620 passed, 159 skipped, 1 warning`、Chromium `79 passed`，批量定向后端 `28 passed`、浏览器 `4 passed`。
-- 当前分支 `codex/manialab-batch-ux-dev26` 基于 dev.25 主线 `e6e56b4`，版本为 `0.1.0-alpha.6-dev.26`；PR #259 已存在，先前 `854560d` Windows CI 成功；密度改动待提交推送并重新触发 CI，合并、精确 tag 与 GitHub Release 尚待执行。GitHub 当前公开版为 dev.25（2026-11-22 发布）。
-- Extended 缓存模型和运行环境可从保留的本地 `assets` / `.venv-audio` 复用；旧音频及 Tsumugi worker 与当前源码身份不匹配，必须由 dev.26 源码重建。D 盘模型目录未纳入 Git；清理后的 `test-data`、用户音频及逐曲研究数据未访问。永久失效任务 ID 会停止轮询并解锁界面；短暂轮询错误重试最多连续6次，且可恢复。
-- 真实吉他和 Tsumugi bass/other 冻结音频输入仍缺失；本版不得声明这些真实音频专项通过，也不得复用旧 EXE 的便携验证报告。GitHub Windows workflow 固定构建 Core；Extended 包需单独从精确版本构建，记录其实际随包能力检查。
-- Extended 的 Demucs checkpoint 再分发授权及 Tsumugi 训练录音权利仍未核实；音乐质量、真实 Timing、osu! 试打与 6–10K/LN 手感需用户实测。
+- PR #259 已合并到 `main`，merge commit `5af1bca66237ab3a7ae8889291e92753a00aad81`；其中密度上限已提高到 50 物件/秒。当前集成分支 `codex/manialab-piano-keymap-batch10-20261124` 从该提交继续开发；dev.26 tag、Extended 包验证与 GitHub Release 均尚未完成。
+- 批量分析已扩展为一次最多 10 首、最多并行处理 2 首；每首建立独立项目、失败隔离、支持取消并可打开结果。最终本地完整 Python/API 回归为 `3659 passed, 164 skipped`，Playwright Edge 为 `81 passed`；批量 API、键型配置及相关路由定向组为 `129 passed`。浏览器覆盖十首导入与并发上限。
+- 新增 `four-piano` 主声部配置：基于六源 HTDemucs 分离，只保留并分析鼓、钢琴、人声和其他伴奏；现有 `deep6` 完整六声部仍保留贝斯与吉他。源码、能力状态与便携验证器已接入该 profile；旧 worker manifest 仍只声明 `four,six`，需要从本版源码重建 worker 后才能通过 Extended 打包。
+- 参考 Torosu 的显式手型/手指映射做纯键型预设：6K `3+3`、7K `3+1+3`、8K 默认 `3+2+3`（另有 `4+4`）、9K `4+1+4`、10K `5+5`。LN 生成逻辑未改变；切换键数会选择对应默认键型，切换 8K 布局会使旧候选失效，重生成和 LN 报告均使用显式键型。配置合并缺陷与候选过期状态已由回归覆盖。
+- UI 将批量入口和高级采音/Timing 选项收起，突出导入、分析和生成。`node --check` 与 `git diff --check` 通过。当前完整源码回归不代表真实音频质量或游戏手感；GitHub Windows PR CI 尚待本次分支推送后运行。
+- Extended 模型与运行环境从专用 D 盘暂存目录构建；旧音频 worker 与当前源码身份不符，尚未覆盖旧资产，后续会先备份再以本版源码重建。模型目录未纳入 Git；清理后的 `test-data`、用户音频及逐曲研究数据未访问。
+- 六声部真实歌曲问题没有可复现样例，本轮没有据此声称问题已修复。真实吉他和 Tsumugi bass/other 冻结音频输入也已随 `test-data` 清理而不可用，不会复用旧 EXE 的便携验证报告。GitHub Windows workflow 固定构建 Core；Extended 包需从精确 tag 单独构建并验证实际包内能力。dev.26 尚未创建 tag 或 GitHub Release。
+- Extended 的 Demucs checkpoint 再分发授权及 Tsumugi 训练录音权利仍未核实；真实歌曲采音、Timing、osu! 试打与 6–10K/LN 手感需用户实测。
 
 ### dev.25 Extended 预设与界面整理（2026-11-22，GitHub 已发布）
 

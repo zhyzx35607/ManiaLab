@@ -54,9 +54,9 @@
               accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac,.osu,.osz" /></label
           >
           <details class="batch-panel">
-            <summary>批量分析歌曲 <span>2–5 首 · 最多同时处理 2 首</span></summary>
-            <p class="muted compact">一次导入多首歌曲，分别创建项目并同时分析；每首结果可单独打开。</p>
-            <label class="batch-drop">选择 2–5 首音频<input id="batchFiles" type="file" multiple accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac"></label>
+            <summary>批量分析歌曲 <span>2–10 首 · 最多同时处理 2 首</span></summary>
+            <p class="muted compact">每首歌单独建项目，最多同时分析 2 首，其余自动排队；结果可逐首打开。</p>
+            <label class="batch-drop">选择 2–10 首音频<input id="batchFiles" type="file" multiple accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac"></label>
             <p id="batchFileSummary" class="muted compact" aria-live="polite">尚未选择歌曲。</p>
             <button id="batchAnalyze" class="secondary full" disabled>导入并开始批量分析</button>
             <div id="batchStatus" class="batch-status" role="status" aria-live="polite"></div>
@@ -76,8 +76,9 @@
           </div>
           <label class="field"
             >分析方式<select id="analysisEngine">
-              <option value="deep">深度：四声部分离后采音</option>
-              <option value="deep6">六声部：增加吉他与钢琴</option>
+              <option value="deep4piano">主声部：鼓、钢琴、人声、其他伴奏</option>
+              <option value="deep6">完整六声部：鼓、贝斯、人声、其他、吉他、钢琴</option>
+              <option value="deep">兼容四声部：鼓、贝斯、人声、其他伴奏</option>
               <option value="basic" selected>快速：直接分析混音</option>
             </select></label
           >
@@ -615,6 +616,9 @@
               ><button data-key="10" class="active">10</button>
             </div></label
           >
+          <label class="field">键型预设<select id="keyLayout">
+            <option value="10k_5_5" selected>10K · 5+5 标准</option>
+          </select></label>
           <div id="musical">
             <label class="field"
               >一键预设<select id="preset">
@@ -770,7 +774,7 @@
           ><button id="another" class="quiet full">换一个布局 · 新种子</button>
           <hr />
           <details class="advanced-settings">
-            <summary>键型与手感 <span>定轨、LN 配合</span></summary>
+            <summary>高级定轨与 LN <span>纯键型预设在上方选择</span></summary>
             <label class="field"
               >定轨方式<select id="layoutEngine">
                 <option value="beam">连续键型搜索</option>

@@ -8,16 +8,35 @@ import time
 import numpy as np
 from scipy.io import wavfile
 from scipy.signal import resample_poly
-import torch
 
 MODEL_SHA256='34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd'
 MODEL_URL='https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th'
+SIX_SOURCE_VOICES=('drums','bass','vocals','other','guitar','piano')
+PROFILE_OUTPUT_VOICES={
+    'six':SIX_SOURCE_VOICES,
+    'four-piano':('drums','piano','vocals','other'),
+}
+
+
+def output_sources_for(profile, model_sources):
+    """Select the named outputs to persist for a pinned six-source model."""
+    requested=PROFILE_OUTPUT_VOICES.get(profile)
+    if requested is None:
+        raise ValueError('Unsupported HTDemucs output profile')
+    available=tuple(model_sources)
+    if len(available)!=len(SIX_SOURCE_VOICES) or set(available)!=set(SIX_SOURCE_VOICES):
+        raise ValueError('Unexpected six-source model inventory')
+    return tuple(name for name in requested if name in available)
 
 
 def separate_six(source,output,model_path,seconds,threads,beat_model,progress,beat_evidence,
-    algorithm_revision=1):
+    algorithm_revision=1,profile='six'):
+    import torch
+
     from demucs.htdemucs import HTDemucs
     from demucs.apply import apply_model
+    if profile not in PROFILE_OUTPUT_VOICES:
+        raise ValueError('Unsupported HTDemucs output profile')
     started=time.perf_counter()
     torch.set_num_threads(threads);torch.set_num_interop_threads(1)
     with model_path.open('rb') as stream:
@@ -27,6 +46,9 @@ def separate_six(source,output,model_path,seconds,threads,beat_model,progress,be
         package=torch.load(model_path,map_location='cpu',weights_only=True)
     model=HTDemucs(*package['args'],**package['kwargs'])
     model.load_state_dict(package['state']);model.eval();del package
+    model_sources=tuple(model.sources)
+    emitted_sources=output_sources_for(profile,model_sources)
+    emitted_set=set(emitted_sources)
     rate,data=wavfile.read(source)
     if rate!=44100 or data.ndim!=2 or data.shape[1]!=2:
         raise ValueError('Expected stereo 44100 Hz WAV')
@@ -39,7 +61,7 @@ def separate_six(source,output,model_path,seconds,threads,beat_model,progress,be
     mixture=torch.from_numpy(samples.T.copy())
     reference=mixture.mean(0);mean=reference.mean();scale=reference.std().clamp_min(1e-7)
     normalized=(mixture-mean)/scale
-    progress(5,'Separating six instruments with HTDemucs')
+    progress(5,f'Separating six HTDemucs sources; saving {len(emitted_sources)} selected stems')
     # Use upstream chunk padding, overlap-add and transformer segment limits.
     # No random shifts: repeats and cached results must be reproducible.
     with torch.inference_mode():
@@ -49,11 +71,13 @@ def separate_six(source,output,model_path,seconds,threads,beat_model,progress,be
     if result.shape!=(6,len(samples)) or not np.isfinite(result).all():
         raise ValueError('Invalid six-source output length or samples')
     output.mkdir(parents=True,exist_ok=True)
-    for name,stem in zip(model.sources,result):
-        np.save(output/f'{name}.npy',resample_poly(stem,1,2).astype(np.float32))
-    report=dict(revision=1,algorithm_revision=algorithm_revision,profile='six',
+    for name,stem in zip(model_sources,result):
+        if name in emitted_set:
+            np.save(output/f'{name}.npy',resample_poly(stem,1,2).astype(np.float32))
+    report=dict(revision=1,algorithm_revision=algorithm_revision,profile=profile,
         sample_rate=22050,frames=(len(samples)+1)//2,
-        sources={name:f'{name}.npy' for name in model.sources},model_sha256=MODEL_SHA256,
+        model_sources=list(model_sources),
+        sources={name:f'{name}.npy' for name in emitted_sources},model_sha256=MODEL_SHA256,
         model_url=MODEL_URL,elapsed_seconds=round(time.perf_counter()-started,2),
         reconstruction_rmse=float(np.sqrt(np.mean((result.sum(axis=0)-samples.mean(axis=1))**2))))
     if beat_model is not None:

@@ -36,6 +36,7 @@ DEEP_FILES = (
     'deep/manifest.json', 'deep/htdemucs_6s.th',
     'deep/hdemucs_high_trained.pt', 'deep/beat-this-final0.ckpt', 'deep/piano-regression.onnx',
 )
+AUDIO_WORKER_PROFILES = ('four', 'six', 'four-piano')
 BASE_FILES = CORE_FILES + MODEL_METADATA_FILES + MAPPER_INSTALLER_FILES + DEEP_FILES
 PUBLIC_PROFILE = 'core'
 PROFILES = {
@@ -163,6 +164,11 @@ def stage_assets(root, destination, profile, *, uv_path=None):
     inventories = {}
     for name in directories:
         manifest = json.loads((source / name).with_name('manifest.json').read_text(encoding='utf-8'))
+        if name == 'deep/ManiaLabAudio':
+            declared_profiles = manifest.get('profiles')
+            if (not isinstance(declared_profiles, list)
+                    or not all(profile in declared_profiles for profile in AUDIO_WORKER_PROFILES)):
+                raise ValueError('Audio worker manifest is missing a supported profile')
         inventories[name] = verify_worker_inventory(source / name, manifest.get('worker_files'))
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=False)

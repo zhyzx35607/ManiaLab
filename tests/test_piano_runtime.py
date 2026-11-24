@@ -224,6 +224,10 @@ def test_piano_api_requires_explicit_selection_and_an_isolated_piano_input(tmp_p
         return dict(candidates=[],duration=2,tempo=dict(bpm=120,offset=0),piano_engine='specialist' if calls[-1] else 'general')
     monkeypatch.setattr(server.PianoDetector,'status',lambda self:dict(available=True))
     app=server.create_app(Path(__file__).parents[1],tmp_path)
+    separator_profiles=[]
+    class ProfileSeparator:
+        def __init__(self,resources,profile):separator_profiles.append(profile)
+    monkeypatch.setattr(app.extensions['analysis_services'],'Separator',ProfileSeparator)
     monkeypatch.setattr(app.extensions['analysis_services'],'analyze_deep',analyze)
     client=app.test_client();headers={'X-ManiaLab-Token':app.config['TOKEN']}
     try:
@@ -234,11 +238,13 @@ def test_piano_api_requires_explicit_selection_and_an_isolated_piano_input(tmp_p
             assert response.status_code==400
         response=client.post(url,json=dict(engine='deep6',piano_engine='invalid'),headers=headers)
         assert response.status_code==400
-        response=client.post(url,json=dict(engine='deep6',piano_engine='specialist'),headers=headers)
-        assert wait_job(client,response.json)['status']=='done'
-        assert isinstance(calls[-1],server.PianoDetector)
-        response=client.post(url,json=dict(engine='deep6'),headers=headers)
-        assert wait_job(client,response.json)['status']=='done'
-        assert calls[-1] is None
+        for engine,profile in (('deep6','six'),('deep4piano','four-piano')):
+            response=client.post(url,json=dict(engine=engine,piano_engine='specialist'),headers=headers)
+            assert wait_job(client,response.json)['status']=='done'
+            assert isinstance(calls[-1],server.PianoDetector)
+            assert separator_profiles[-1]==profile
+            response=client.post(url,json=dict(engine=engine),headers=headers)
+            assert wait_job(client,response.json)['status']=='done'
+            assert calls[-1] is None and separator_profiles[-1]==profile
     finally:
         app.extensions['executor'].shutdown()

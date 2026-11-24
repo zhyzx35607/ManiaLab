@@ -140,6 +140,7 @@ def assets(root):
     (root / 'assets/deep/ManiaLabAudio').mkdir()
     (root / 'assets/deep/ManiaLabAudio/ManiaLabAudio.exe').write_bytes(b'worker')
     (root / 'assets/deep/manifest.json').write_text(json.dumps(dict(
+        profiles=['four','six','four-piano'],
         worker_files=worker_inventory(root / 'assets/deep/ManiaLabAudio'))), encoding='utf-8')
     return root / 'assets'
 
@@ -158,6 +159,18 @@ def test_standard_profile_excludes_undeclared_local_assets(tmp_path):
     guide = start_guide('test', enabled)
     assert '本包未包含：吉他 FL 专用模型、Tsumugi' in guide
     assert '可勾选贝斯' not in guide
+
+
+def test_audio_worker_manifest_must_declare_piano_focused_profile(tmp_path):
+    source = assets(tmp_path)
+    manifest_path = source / 'deep/manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    manifest['profiles'] = ['four', 'six']
+    manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+
+    with pytest.raises(ValueError, match='missing a supported profile'):
+        stage_assets(tmp_path, tmp_path / 'staged', 'standard')
+    assert not (tmp_path / 'staged').exists()
 
 
 def test_core_profile_excludes_weights_and_workers(tmp_path):

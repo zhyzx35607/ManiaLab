@@ -1,6 +1,7 @@
 import math
 
 from flask import jsonify, request
+from .arrange_config import merge_parameters
 from .chart_workspace import audio_work
 from .meter import project_with_meter
 from .recommendation_plan import adjusted_segments
@@ -28,7 +29,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
             if cancelled():
                 raise InterruptedError("已取消，原有谱面已保留")
             state["plan"] = result
-            state["settings"] = parameters(prefs | result["preferences"])
+            state["settings"] = parameters(merge_parameters(prefs, result["preferences"]))
             return result
 
         return submit(pid, operation)
@@ -49,7 +50,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
         payload = request.get_json() or {}
         with task_service.lock:
             state = projects.load(pid)
-            prefs = parameters(state["settings"] | payload.get("settings", {}))
+            prefs = parameters(merge_parameters(state["settings"], payload.get("settings", {})))
             result = recommend(state.get("analysis"), prefs, resources, payload.get("bpm"))
         return jsonify(result)
 
@@ -107,7 +108,8 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
             analysis["structure"] = structure
             analysis["segments"] = structure["segments"]
             state.pop("plan", None)
-            state["expression"] = propose_expression(analysis, parameters(state["settings"] | payload.get("settings", {})))
+            prefs = parameters(merge_parameters(state["settings"], payload.get("settings", {})))
+            state["expression"] = propose_expression(analysis, prefs)
             return dict(sections=len(structure["segments"]))
 
         return submit(pid, operation)
@@ -123,7 +125,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
             if not state.get("analysis", {}).get("structure"):
                 raise ValueError("请先检测音乐段落")
             if payload.get("action") == "automatic":
-                prefs = parameters(state["settings"] | payload.get("settings", {}))
+                prefs = parameters(merge_parameters(state["settings"], payload.get("settings", {})))
                 value = propose_expression(
                     state["analysis"], prefs,
                     segment_preferences=adjusted_segments(state.get("plan", {}), prefs),
@@ -143,7 +145,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
         with task_service.lock:
             task_service.ensure_project_idle(pid)
             state = projects.load(pid)
-            prefs = parameters(state["settings"] | payload.get("settings", {}))
+            prefs = parameters(merge_parameters(state["settings"], payload.get("settings", {})))
             result = recommend(state.get("analysis"), prefs, resources, payload.get("bpm"))
             if payload.get("evidence_signature") != result["evidence_signature"]:
                 raise ValueError("音频分析已经改变，请刷新建议后再选择")
@@ -152,7 +154,7 @@ def register_arrangement_routes(app, *, projects, task_service, resources, submi
             option = next((item for item in result["options"] if item["id"] == payload.get("choice")), None)
             if option is None:
                 raise ValueError("请选择已有的编排建议")
-            state["settings"] = parameters(prefs | option["preferences"])
+            state["settings"] = parameters(merge_parameters(prefs, option["preferences"]))
             state["plan"] = {key: option[key] for key in ("preferences", "segments", "explanation")}
             state["plan"].update(
                 source="local-audio-recommendation", choice=option["id"],

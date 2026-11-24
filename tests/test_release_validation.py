@@ -586,8 +586,12 @@ def make_release_fixture(root, profile='standard'):
             "separator": {
                 "available": manifest["capabilities"]["separation_four"],
                 "profiles": {
-                    "four": {"available": manifest["capabilities"]["separation_four"]},
-                    "six": {"available": manifest["capabilities"]["separation_six"]},
+                    "four": {"available": manifest["capabilities"]["separation_four"],
+                             "voices": ["drums", "bass", "vocals", "other"]},
+                    "six": {"available": manifest["capabilities"]["separation_six"],
+                            "voices": ["drums", "bass", "vocals", "other", "guitar", "piano"]},
+                    "four-piano": {"available": manifest["capabilities"]["separation_six"],
+                                   "voices": ["drums", "piano", "vocals", "other"]},
                 },
             },
             "prior": {"available": manifest["capabilities"]["pattern_prior"]},
@@ -608,6 +612,9 @@ def make_release_fixture(root, profile='standard'):
         ]
     else:
         portable_checks += [
+            {"check": "four_piano_profile_status",
+             "available": manifest["capabilities"]["separation_six"],
+             "voices": ["drums", "piano", "vocals", "other"]},
             {
                 "check": "piano_onnx_runtime",
                 "sha256": piano_model_identity["sha256"],

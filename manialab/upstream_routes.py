@@ -137,11 +137,16 @@ def register_upstream_routes(app, *, engine, projects, submit, current_audio, re
             report = validate(assigned, prefs["keys"])
             check_cancelled()
             beat = 60000 / tempo["bpm"] if tempo else 500
-            report["layout"] = layout_metrics(assigned, prefs["keys"], beat, parsed["timing"])
+            report["layout"] = layout_metrics(assigned, prefs["keys"], beat, parsed["timing"],
+                                              key_layout=prefs["key_layout"])
             check_cancelled()
-            report["review"] = review_chart(assigned, prefs["keys"], beat, parsed["timing"])
+            report["review"] = review_chart(assigned, prefs["keys"], beat, parsed["timing"],
+                                             key_layout=prefs["key_layout"])
             check_cancelled()
-            report["ln_patterns"] = analyze_ln_patterns(assigned, prefs["keys"], beat, parsed["timing"])
+            report["ln_patterns"] = analyze_ln_patterns(
+                assigned, prefs["keys"], beat, parsed["timing"],
+                key_layout=prefs["key_layout"],
+            )
             check_cancelled()
             if tempo:
                 report["grid"] = grid_report(assigned, tempo)

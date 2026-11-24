@@ -25,7 +25,7 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
         allow_guitar_releases = payload.get("allow_guitar_predicted_releases", False)
         instrument_engine = payload.get("instrument_engine", "general")
         allow_releases = payload.get("allow_predicted_releases", False)
-        if analysis_engine not in ("basic", "deep", "deep6", "provided"):
+        if analysis_engine not in ("basic", "deep", "deep6", "deep4piano", "provided"):
             raise ValueError("采音引擎无效")
         if piano_engine not in ("general", "specialist"):
             raise ValueError("钢琴采音方式无效")
@@ -62,7 +62,7 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
                     if "guitar" not in provided.get("voices", []):
                         raise ValueError("已导入声轨中没有吉他")
         if piano_engine == "specialist":
-            if analysis_engine not in ("deep6", "provided"):
+            if analysis_engine not in ("deep6", "deep4piano", "provided"):
                 raise ValueError("钢琴专用采音需要六声部分离或已导入的钢琴声轨")
             piano_status = piano_detector.status()
             if not piano_status["available"]:
@@ -70,11 +70,13 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
 
         def operation(state, progress, cancelled):
             work = audio_work(projects.path(pid), state)
-            if analysis_engine in ("deep", "deep6", "provided"):
+            if analysis_engine in ("deep", "deep6", "deep4piano", "provided"):
                 selected_separator = (
                     services.ProvidedStemSeparator(state.get("provided_stems"))
                     if analysis_engine == "provided"
-                    else services.Separator(resources, "six") if analysis_engine == "deep6" else separator
+                    else services.Separator(resources, "six") if analysis_engine == "deep6"
+                    else services.Separator(resources, "four-piano") if analysis_engine == "deep4piano"
+                    else separator
                 )
                 state["analysis"] = services.analyze_deep(
                     current_audio(state), work, resources / "assets/basic-pitch.onnx",
@@ -130,8 +132,8 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
         if not isinstance(payload, dict):
             raise ValueError("批量采音请求必须为对象")
         project_ids = payload.get("projects")
-        if not isinstance(project_ids, list) or not 2 <= len(project_ids) <= 5:
-            raise ValueError("批量采音需要选择 2–5 首歌曲")
+        if not isinstance(project_ids, list) or not 2 <= len(project_ids) <= 10:
+            raise ValueError("批量采音需要选择 2–10 首歌曲")
         if any(not isinstance(project_id, str) or not project_id for project_id in project_ids):
             raise ValueError("批量采音项目 ID 无效")
         if len(set(project_ids)) != len(project_ids):

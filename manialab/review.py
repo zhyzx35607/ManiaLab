@@ -5,14 +5,15 @@ from .arrange import hand_weights
 from .timing import BeatClock
 
 
-def review_chart(notes, keys, beat_ms=500, timing_points=()):
+def review_chart(notes, keys, beat_ms=500, timing_points=(), key_layout=None):
     rows = defaultdict(list)
     for note in sorted(notes, key=lambda n: (n.start, n.lane)):
         rows[note.start].append(note)
     previous = [None] * keys
     counts, events, sections = Counter(), [], defaultdict(Counter)
     last_location = {}
-    capacity = [sum(hand_weights(keys, lane)[hand] for lane in range(keys)) for hand in (0, 1)]
+    lane_hands = [hand_weights(keys, lane, key_layout) for lane in range(keys)]
+    capacity = [sum(lane_hands[lane][hand] for lane in range(keys)) for hand in (0, 1)]
     clock = BeatClock(timing_points, beat_ms)
 
     def add(kind, start, text, lane=None, hand=None, **details):
@@ -29,12 +30,12 @@ def review_chart(notes, keys, beat_ms=500, timing_points=()):
         beat_ms = clock(start)
         held = [n for n in previous if n is not None and n.end > start]
         for hand in (0, 1):
-            holding = sum(hand_weights(keys, n.lane)[hand] for n in held)
-            pressing = sum(hand_weights(keys, n.lane)[hand] for n in chord)
+            holding = sum(lane_hands[n.lane][hand] for n in held)
+            pressing = sum(lane_hands[n.lane][hand] for n in chord)
             if holding >= 2 and pressing >= 1 and holding + pressing >= capacity[hand] - .5:
                 add('held_hand_load', start, f"{'左' if hand == 0 else '右'}手多轨长按中接起音", hand=hand,
-                    held_columns=[n.lane for n in held if hand_weights(keys, n.lane)[hand]],
-                    attack_columns=[n.lane for n in chord if hand_weights(keys, n.lane)[hand]])
+                    held_columns=[n.lane for n in held if lane_hands[n.lane][hand]],
+                    attack_columns=[n.lane for n in chord if lane_hands[n.lane][hand]])
         for note in chord:
             old = previous[note.lane]
             if old:
