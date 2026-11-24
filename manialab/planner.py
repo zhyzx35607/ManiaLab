@@ -434,7 +434,7 @@ def plan(endpoint, model, key, instruction, segments, current, review=None, canc
     prompt = ("你是 osu!mania 6–10K 编排参数助手。你没有听到音频，只能参考下列检测统计。"
               "不能声称听到了具体乐器，不允许创造音符、时间或改键数。返回 JSON 对象，不要 Markdown。"
               "结构: {explanation:中文说明,preferences:{参数},segments:[{index:已知段落索引,preferences:{参数}}]}。"
-              "允许参数: density 1..24, ln_ratio 0..1, min_ln 100..2000毫秒, max_held 1..10, chord_size 1..10,"
+              "允许参数: density 1..50, ln_ratio 0..1, min_ln 100..2000毫秒, max_held 1..10, chord_size 1..10,"
               "focus balanced/pitched/transient, pitch_follow/balance/jack_avoid 0..1, release_gap 0..250毫秒。"
               "ln_coordination 0..1（低值分手配合，高值同手长按中打短键），ln_release 0..1（高值减少同手不同步放手），"
               "ln_inverse 0..1（在已有LN与下一音之间偏好短间隙接续；不延长音尾）。三项只用于连续定轨。"

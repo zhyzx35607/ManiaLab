@@ -7,6 +7,8 @@ import math
 
 import numpy as np
 
+from .arrange_config import MAX_DENSITY
+
 EVIDENCE_THRESHOLD = .35
 
 
@@ -44,7 +46,7 @@ def adjusted_segments(plan, current):
         for key in ('density','ln_ratio','ln_coordination'):
             if key not in local or key not in base:continue
             if key=='density':
-                local[key]=int(np.clip(math.ceil(local[key]*current[key]/max(1,base[key])),1,24))
+                local[key]=int(np.clip(math.ceil(local[key]*current[key]/max(1,base[key])),1,MAX_DENSITY))
             elif key=='ln_ratio':
                 # An evidence-empty section must not receive LN quota from a
                 # global edit. The selector still needs actual sustained notes.

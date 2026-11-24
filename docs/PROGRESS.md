@@ -9,8 +9,9 @@
 
 - 主界面已加入 2–5 首歌曲批量导入，最多并行处理 2 首；每首单独建项目、逐曲隔离失败、列表打开结果。导入时可取消且保留已导入项目；提交后的轮询遇到短暂请求失败会自动重试。
 - 进一步收敛界面：批量和高级采音、Timing 设置放入折叠面板，默认常用导入、分析和生成操作更突出；低频拍线细节仍默认收起。
-- 本地全量验证已完成：Python/API `3620 passed, 159 skipped, 1 warning`（384.20秒）；Playwright Chromium `79 passed`（约2.6分钟）；批量后端定向组合 `28 passed`；批量交互定向浏览器 `4 passed`；JS 语法检查通过。
-- 当前分支 `codex/manialab-batch-ux-dev26` 基于 dev.25 主线 `e6e56b4`，版本已改为 `0.1.0-alpha.6-dev.26`；提交 `cd50036` 已推送并创建 PR #259，Windows CI 待完成，合并、精确 tag 与 GitHub Release 尚待执行。GitHub 当前公开版为 dev.25（2026-11-22 发布）。
+- 密度上限已从 24 提高到 50 物件/秒，统一覆盖界面滑块、API 参数校验、编排助手参数说明、自动/分段建议及参考谱导入；超过50时拒绝手动参数或限制建议值并提示。生成器沿用现有动态容量计算。
+- 密度改动定向回归：Python `31 passed`，Playwright Edge `1 passed`（包括生成请求实际提交 `density: 50`），`compileall`、全部静态 JS `node --check`、`git diff --check`通过。完整 Python/API 本地运行 `3621 passed, 159 skipped, 1 deselected`，有1个 release provenance 测试因测试执行期间浏览器测试源文件被同步编辑、source digest 变化而失败；需以静态提交的新 Windows CI 复验为准。原密度改动前 Python/API `3620 passed, 159 skipped, 1 warning`、Chromium `79 passed`，批量定向后端 `28 passed`、浏览器 `4 passed`。
+- 当前分支 `codex/manialab-batch-ux-dev26` 基于 dev.25 主线 `e6e56b4`，版本为 `0.1.0-alpha.6-dev.26`；PR #259 已存在，先前 `854560d` Windows CI 成功；密度改动待提交推送并重新触发 CI，合并、精确 tag 与 GitHub Release 尚待执行。GitHub 当前公开版为 dev.25（2026-11-22 发布）。
 - Extended 缓存模型和运行环境可从保留的本地 `assets` / `.venv-audio` 复用；旧音频及 Tsumugi worker 与当前源码身份不匹配，必须由 dev.26 源码重建。D 盘模型目录未纳入 Git；清理后的 `test-data`、用户音频及逐曲研究数据未访问。永久失效任务 ID 会停止轮询并解锁界面；短暂轮询错误重试最多连续6次，且可恢复。
 - 真实吉他和 Tsumugi bass/other 冻结音频输入仍缺失；本版不得声明这些真实音频专项通过，也不得复用旧 EXE 的便携验证报告。GitHub Windows workflow 固定构建 Core；Extended 包需单独从精确版本构建，记录其实际随包能力检查。
 - Extended 的 Demucs checkpoint 再分发授权及 Tsumugi 训练录音权利仍未核实；音乐质量、真实 Timing、osu! 试打与 6–10K/LN 手感需用户实测。

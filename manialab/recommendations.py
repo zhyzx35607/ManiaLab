@@ -14,7 +14,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .arrange_config import parameters
+from .arrange_config import MAX_DENSITY, parameters
 from .domain import UNOBSERVED_RELEASES
 
 MODES = {
@@ -157,7 +157,7 @@ def recommend(analysis, current, resources, bpm=None):
             if ln_reference.get('songs',0)>=5:
                 reference_cap=min(reference_cap,float(ln_reference['active_nps95']['25']))
             reference_cap=min(reference_cap,float(keys))
-        density=int(np.clip(math.ceil(min(evidence_ceiling*fraction,reference_cap)),1,24))
+        density=int(np.clip(math.ceil(min(evidence_ceiling*fraction,reference_cap)),1,MAX_DENSITY))
         ln_ratio=round(min(ratio,summary['sustain_fraction']+.10),2) if summary['sustain_fraction'] else 0.
         settings=dict(density=density,ln_ratio=ln_ratio,min_ln=minimum,
             chord_size=min(keys,(2,3,5)[index]),max_held=min(keys-1,(2,3,5)[index]),
@@ -170,7 +170,7 @@ def recommend(analysis, current, resources, bpm=None):
         segments=[]
         descriptions=[]
         for a,b,local,opportunities in measured:
-            local_density=int(np.clip(math.ceil(min(reference_cap,local['layer_nps95']*fraction)),1,24))
+            local_density=int(np.clip(math.ceil(min(reference_cap,local['layer_nps95']*fraction)),1,MAX_DENSITY))
             sustainable=local['sustain_fraction']
             local_ratio=round(min(ratio,sustainable+.10),2) if sustainable else 0.
             if sustainable>=.6 and local['attacks_per_second']<=5:
