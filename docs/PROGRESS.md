@@ -12,11 +12,12 @@
 - 最终验证：PR Windows run `45555797382` 全量 Python/API `3675 passed, 161 skipped, 1 warning`，完整 Edge Playwright `87 passed`。后端定向组 `65 passed`；批量/预设/分析浏览器定向组 `10 passed`，与 Timing spec 合跑 `18 passed`。首次 PR 全量浏览器 CI 的 4 个 Offset 锚点用例暴露了批量测试写入共享 Timing fixture 的顺序依赖；改用独立合成项目后，本地完整 Playwright 与 Windows CI 均 `87 passed`。批量 ZIP 预检后只保留最小候选信息，并将内外 ZIP 临时文件都写入项目数据盘。`node --check` 与 `git diff --check` 通过。
 - 本功能尚未进入 dev.27 Release，也没有更新任何已发布安装包。合成与工程测试不代表真实歌曲音乐质量、Timing 听审或 osu! 实战验收。
 
-### dev.28 Extended 发布准备（2026-11-25）
+### dev.28 Extended 公开试用版已发布（2026-11-25）
 
-- PR #274 已合入 `main`，merge commit `1fb0145b4ac0b1bc7e7792248f0f5a6091e42b1f`；Windows CI run `45555797382` 全量 Python/API `3675 passed, 161 skipped, 1 warning`，Edge Playwright `87 passed`。新版本源码版本号为 `0.1.0-alpha.6-dev.28`，发布 tag 与 Extended 包尚未创建。
-- D 盘剩余约 50.83 GiB，保留用户要求的 50 GiB 安全线；历史 Extended 验证目录和 Release 资产也被文档引用，不清理。新增 `.github/workflows/extended-release.yml`：只从 dev.27 单 ZIP SHA-256 固定恢复已验证资源和 Tsumugi worker，在 GitHub Windows runner 构建 Extended、运行便携/关停检查、验证 ZIP CRC/manifest/SHA，并发布单个 ZIP 直链 Release。`workflow_dispatch` 仅生成短期预演 artifact，不发布 Release。
-- dev.28 发布说明明确记录未重跑真实吉他探针及 Tsumugi EXE 级真实音频专项、音乐验收未完成和第三方权利未确认。下一步先合并发布准备 PR，在 main 上运行 workflow_dispatch 预演；检查预演 ZIP、身份和验证报告后打精确 tag `v0.1.0-alpha.6-dev.28`，由 tag workflow 上传并发布正式 Release。
+- PR #274 的批量制谱功能已合入；PR #275 增加了 GitHub-hosted Extended 构建与发布流程，PR #276 修复重复验证附件名。精确 tag `v0.1.0-alpha.6-dev.28` 指向 `e598ddb475ca53d9a49458eec7e33748cf4d7fd8`；原 dev.26/dev.27 Release 及附件保持不变。
+- GitHub Release [ManiaLab 0.1.0-alpha.6-dev.28 Extended Windows x64](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.28) 已发布，提供单文件 ZIP 直链。ZIP `1,235,291,459` bytes，SHA-256 `cb423a12f22256d7ad4465cca89c1ef5e649761336c8895d275bea0d1433a3d4`；Release 另附 `SHA256SUMS.txt`、验证摘要、portable 和 shutdown 报告。直接下载地址见[快速开始](quick-start.md)和[dev.28 发布说明](releases/0.1.0-alpha.6-dev-28.md)。
+- 发布 workflow run `45570112526` 成功：Python/API `3675 passed, 161 skipped, 1 warning`，Edge Playwright `87 passed`，从 pinned dev.27 包恢复并校验 Extended/Tsumugi 资源，构建 Extended 包、运行 EXE portable/worker shutdown 检查，并验证 ZIP CRC、release manifest、archive payload 和 SHA256SUMS。workflow_dispatch 预演 `45563895366` 也成功；预演 artifact 保留于 GitHub Actions。
+- 发布附件远端 digest、下载的 `SHA256SUMS.txt` 与 verification JSON 的大小/SHA 相互一致；ZIP 直链 HEAD 返回 HTTP 200。D 盘保留在约 50.81 GiB，无本机 Extended 构建或清理。真实吉他音频探针及 Tsumugi EXE 级真实音频接口专项未运行，音乐质量、Timing 听审、osu! 试打与相关权利仍未闭环；合成便携验证不等于真实音乐验收。
 
 ### 浏览器验证入口收敛（2026-11-25）
 

@@ -4,7 +4,7 @@
 
 ## 结论
 
-ManiaLab 已经是可体验的 6–10K osu!mania 本地制谱工作台，不是尚未成形的原型。最新的 `0.1.0-alpha.6-dev.27` Extended Windows x64 预发布包已于 2026-11-25 发布，提供单个 ZIP 直接下载；dev.26 Release 与资产保持不变。工程主流程和便携启动检查覆盖较完整；真实音乐质量、跨机器安装体验和扩展模型权利仍未闭环，所以目前应称为“公开试用、等待真实反馈”，不能称为稳定完成。
+ManiaLab 已经是可体验的 6–10K osu!mania 本地制谱工作台，不是尚未成形的原型。最新的 `0.1.0-alpha.6-dev.28` Extended Windows x64 预发布包已于 2026-11-25 发布，提供单个 ZIP 直接下载，包含统一批量制谱、逐首/整批下载及纯起音候选提示；dev.26/dev.27 Release 与资产保持不变。工程主流程和便携启动检查覆盖较完整；真实音乐质量、跨机器安装体验和扩展模型权利仍未闭环，所以目前应称为“公开试用、等待真实反馈”，不能称为稳定完成。
 
 当前重点是收回真实听审/试打结果、确认扩展模型权利，并在另一台干净 Windows 电脑验证直接下载和首次启动。dev.27 的单 ZIP 已免去 dev.26 下载器的 12 片组装步骤；完整 Extended 包仍约 1.15 GiB，清理测试文件数量不会显著缩小它。
 
@@ -18,12 +18,13 @@ ManiaLab 已经是可体验的 6–10K osu!mania 本地制谱工作台，不是�
 
 | 范围 | 状态 | 真实边界 |
 | --- | --- | --- |
-| dev.27 发布 | 已发布 Extended 公开试用预发布版 | tag `v0.1.0-alpha.6-dev.27` 指向 `32368e685a102e7aaf334e8bd6d1808200aa30ee`；ZIP `1,235,335,195` bytes，SHA-256 `dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc`；不是正式稳定版。 |
-| 统一批量制谱 | 源码已实现批量统一预设、逐首/整批 ZIP 导出；纯起音候选提示也已修正 | PR #274 Windows CI：Python/API `3675 passed, 161 skipped, 1 warning`，Edge Playwright `87 passed`。功能未进入 dev.27，工程回归不代表真实音乐验收。 |
+| dev.28 发布 | 已发布 Extended 公开试用预发布版及单 ZIP 直链 | tag `v0.1.0-alpha.6-dev.28` 指向 `e598ddb475ca53d9a49458eec7e33748cf4d7fd8`；ZIP `1,235,291,459` bytes，SHA-256 `cb423a12f22256d7ad4465cca89c1ef5e649761336c8895d275bea0d1433a3d4`；不是正式稳定版。 |
+| 工程回归 | dev.28 精确 tag 的 Windows release run：Python/API `3675 passed, 161 skipped, 1 warning`，Edge Playwright `87 passed`；Extended EXE 便携、关停及 ZIP manifest/inventory 校验通过 | 合成/工程检查不证明真实歌曲音乐质量或游戏手感；真实吉他和 Tsumugi EXE 音频专项未运行。 |
+| 统一批量制谱 | 已在 dev.28 Extended 源码和便携包中提供批量统一预设、逐首/整批 ZIP 导出；纯起音候选提示已修正 | 每首使用自身 Timing，失败歌曲隔离，候选 ID 绑定下载。工程回归不代表真实音乐验收。 |
 | 工程回归 | dev.27 精确 tag 的 Python/API `3667 passed, 161 skipped, 1 warning`；Edge Playwright `82 passed` | Windows 自动工作流默认只构建 Core；合成测试不能证明音乐质量。 |
 | Extended EXE | 20 项便携检查、worker 关停检查通过 | 缺少吉他和 Tsumugi 的冻结音频样本，因此没有重跑对应 EXE 真实音频专项，也没有完整聚合报告。 |
 | 真实音乐 | 未验收 | 84 段钢琴起音盲听、6–10K/LN 实际试打、Sweet Waltz 与 Choice 独立歌曲复听仍待真人结果。 |
-| 发布下载 | dev.27 提供 ZIP 直链 | dev.27 Release 单文件直链已返回 HTTP 200；仍需在另一台干净 Windows 电脑实测下载、解压和首次启动。dev.26 的 12 片附件保留作历史资产。 |
+| 发布下载 | dev.28 提供 ZIP 直链 | dev.28 Release 单文件直链已返回 HTTP 200，下载的 SHA256SUMS/verification JSON 与远端资产 digest、大小相符；仍需在另一台干净 Windows 电脑实测下载、解压和首次启动。dev.26 分片及 dev.27 单 ZIP 保留作历史资产。 |
 | 模型权利 | 未闭环 | Demucs checkpoint 再分发权利、Tsumugi 训练录音权利尚未独立确认。 |
 
 ## 体积从哪里来
