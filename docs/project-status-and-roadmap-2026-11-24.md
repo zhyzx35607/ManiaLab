@@ -4,9 +4,9 @@
 
 ## 结论
 
-ManiaLab 已经是可体验的 6–10K osu!mania 本地制谱工作台，不是尚未成形的原型。`0.1.0-alpha.6-dev.26` Extended Windows x64 预发布包已于 2026-11-24 发布。工程主流程和便携启动检查覆盖较完整；真实音乐质量、下载体验、扩展模型权利和多机安装体验仍未闭环，所以目前应称为“公开试用、等待真实反馈”，不能称为稳定完成。
+ManiaLab 已经是可体验的 6–10K osu!mania 本地制谱工作台，不是尚未成形的原型。最新的 `0.1.0-alpha.6-dev.27` Extended Windows x64 预发布包已于 2026-11-25 发布，提供单个 ZIP 直接下载；dev.26 Release 与资产保持不变。工程主流程和便携启动检查覆盖较完整；真实音乐质量、跨机器安装体验和扩展模型权利仍未闭环，所以目前应称为“公开试用、等待真实反馈”，不能称为稳定完成。
 
-最优先的问题有两个：普通用户必须处理 12 个分片才能拿到 1.22 GiB 的包；包内模型和隔离 worker 运行时占了绝大部分体积。其次是收回真实听审/试打结果。清理测试文件数量不能解决这三个问题。
+当前重点是收回真实听审/试打结果、确认扩展模型权利，并在另一台干净 Windows 电脑验证直接下载和首次启动。dev.27 的单 ZIP 已免去 dev.26 下载器的 12 片组装步骤；完整 Extended 包仍约 1.15 GiB，清理测试文件数量不会显著缩小它。
 
 ## 目前已经具备的产品流程
 
@@ -18,20 +18,20 @@ ManiaLab 已经是可体验的 6–10K osu!mania 本地制谱工作台，不是�
 
 | 范围 | 状态 | 真实边界 |
 | --- | --- | --- |
-| dev.26 发布 | 已发布 Extended 公开试用预发布版 | tag `v0.1.0-alpha.6-dev.26` 指向 `70a52a40a16d254b9c1092c6607fd7c1f07c85ab`；不是正式稳定版。 |
-| 工程回归 | 精确 tag 的 Python/API `3659 passed, 164 skipped`；Edge Playwright `81 passed` | Windows 自动工作流默认只构建 Core；合成测试不能证明音乐质量。 |
+| dev.27 发布 | 已发布 Extended 公开试用预发布版 | tag `v0.1.0-alpha.6-dev.27` 指向 `32368e685a102e7aaf334e8bd6d1808200aa30ee`；ZIP `1,235,335,195` bytes，SHA-256 `dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc`；不是正式稳定版。 |
+| 工程回归 | dev.27 精确 tag 的 Python/API `3667 passed, 161 skipped, 1 warning`；Edge Playwright `82 passed` | Windows 自动工作流默认只构建 Core；合成测试不能证明音乐质量。 |
 | Extended EXE | 20 项便携检查、worker 关停检查通过 | 缺少吉他和 Tsumugi 的冻结音频样本，因此没有重跑对应 EXE 真实音频专项，也没有完整聚合报告。 |
 | 真实音乐 | 未验收 | 84 段钢琴起音盲听、6–10K/LN 实际试打、Sweet Waltz 与 Choice 独立歌曲复听仍待真人结果。 |
-| 发布下载 | 有校验脚本，但用户反馈下载不顺 | 12 个分片并行下载；当前脚本只显示完成分片数，不显示字节速度，也不续传未完成的 `.download` 文件。 |
+| 发布下载 | dev.27 提供 ZIP 直链 | dev.27 Release 单文件直链已返回 HTTP 200；仍需在另一台干净 Windows 电脑实测下载、解压和首次启动。dev.26 的 12 片附件保留作历史资产。 |
 | 模型权利 | 未闭环 | Demucs checkpoint 再分发权利、Tsumugi 训练录音权利尚未独立确认。 |
 
 ## 体积从哪里来
 
 dev.26 组装 ZIP 为 `1,310,888,430` bytes，即 1.31 GB（十进制）或约 1.22 GiB；按 ZIP 目录统计，解压后约 `2,714,858,795` bytes（2.53 GiB）。组装期间，分片和临时 ZIP 会同时存在，约需 2.44 GiB 空间；保留 ZIP 并解压后，建议预留至少 4 GiB。
 
-本地已验证 ZIP 的压缩体积约 85.3% 来自随包 `assets`。最大的内容是 Demucs 高质量权重、钢琴 ONNX、吉他 FL、Beat This、Tsumugi 贝斯/其他伴奏权重和六声部模型。2026-11-25 已在构建器加入安全去重：只有 app 根目录的 `torch_cpu.dll` 与音频 worker 内副本大小及 SHA-256 完全相同时，才从新构建 app 目录删除根副本；隔离 worker DLL 保留，Core profile 为 no-op。单元测试覆盖匹配删除、不匹配保留、worker 缺失保留、根 DLL 缺失 no-op、链接拒绝。新构建器生成的 Extended 包完成 portable verifier、four-piano 合成分析/导出、worker 关停、CRC 和 archive manifest 清单校验。新构建 ZIP 为 `1,235,330,669` bytes；相对未去重 dev.26 包减少 `75,557,761` bytes（5.764%）。这属于基于 `main` 源码重新构建的验证产物，不是已发布 dev.26 ZIP；新功能须随未来版本 tag 发布。
+本地已验证 ZIP 的压缩体积约 85.3% 来自随包 `assets`。最大的内容是 Demucs 高质量权重、钢琴 ONNX、吉他 FL、Beat This、Tsumugi 贝斯/其他伴奏权重和六声部模型。2026-11-25 已在构建器加入安全去重：只有 app 根目录的 `torch_cpu.dll` 与音频 worker 内副本大小及 SHA-256 完全相同时，才从新构建 app 目录删除根副本；隔离 worker 保留，Core profile 为 no-op。匹配删除、不匹配保留、worker 缺失保留、根 DLL 缺失 no-op 和链接拒绝均有回归测试。该改动已随 dev.27 精确 tag 发布；Extended 包完成 portable verifier、four-piano 合成分析/导出、worker 关停、CRC 和 archive manifest 清单校验。dev.27 ZIP 为 `1,235,335,195` bytes，SHA-256 `dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc`；相对 dev.26 已发布 ZIP 减少 `75,553,235` bytes（5.764%）。dev.26 ZIP 未被替换。
 
-12 片 `.ps1` 下载器会同时启动 12 个隐藏的 `curl.exe`。窗口只显示完成了几片；某片中断后重试会删掉它的临时下载并从头下载。当前审计环境对一个分片的 HEAD 请求得到 HTTP 200，这只证明该环境能访问该分片，不能解释用户遇到的失败。失败的具体位置/报错还需要用户提供。
+dev.26 的 `.ps1` 下载器会同时启动 12 个隐藏的 `curl.exe`，窗口只显示已完成分片数，未完成的 `.download` 文件不能续传。dev.27 已提供一个 ZIP 的直链，不需要分片组装；本机对该 ZIP 直链的 HEAD 返回 HTTP 200，但这不等于另一台电脑已完成下载，仍要做实际跨机器验证。
 
 ## 项目“臃肿”的实际构成
 
@@ -49,15 +49,15 @@ dev.26 组装 ZIP 为 `1,310,888,430` bytes，即 1.31 GB（十进制）或约 1
 
 ## 重规划顺序
 
-### 1. 先让用户拿得到包
+### 1. 验证直接下载与首次启动
 
-为下一次发布更新下载器：最多 1–2 路并发、显示每片字节进度/速度、支持断点续传、保留已下载临时片、失败时指明哪个 URL/分片、组装前预检磁盘空间并逐片校验哈希。发布验证要在一台干净 Windows 机器上从 Release 页面开始完整跑一次，并记录首个失败点和可恢复性。若 GitHub 允许，优先提供直接下载 ZIP 的入口；分片版保留作网络不稳定时的备选。
+dev.27 已通过 Release 页面提供单 ZIP 直链，免去分片下载和组装。下一步在另一台干净 Windows 电脑从该链接完整下载、校验、解压并首次启动，记录实际网络、磁盘占用和首个失败点。若直链在特定网络仍不稳定，再决定是否为 dev.26 分片下载器增加低并发、续传、字节进度和磁盘预检；先用真实失败证据确定需求。
 
 ### 2. 把首次下载缩到轻量 Core
 
-项目已经有 `core`、`standard`、`extended` 三种打包 profile，资源由 `scripts/package_assets.py` 按清单挑选。Core 主要提供 Basic Pitch；Standard 增加分离、节拍、钢琴及 Mapperatorinator 安装组件；Extended 再加入吉他和 Tsumugi。第一步应从 dev.26 精确 tag 构建并验证 Core，再把它作为轻量下载入口与 Extended 并列提供；dev.23 Core ZIP 约 112 MB，可作基线，新包体积需以实际构建测量。另保留完整离线 Extended 包供愿意一次下载所有资源的用户。
+项目已经有 `core`、`standard`、`extended` 三种打包 profile，资源由 `scripts/package_assets.py` 按清单挑选。Core 主要提供 Basic Pitch；Standard 增加分离、节拍、钢琴及 Mapperatorinator 安装组件；Extended 再加入吉他和 Tsumugi。dev.26 精确 tag 的 Core 包已在本地构建验证，但 GitHub 上传曾遇到 HTTP 408，未发布；评估其作为轻量下载入口时需重新准备独立 Release 附件并验证下载。继续保留完整离线 Extended 包供愿意一次下载所有资源的用户。
 
-打包优化先验证依赖树和子进程隔离。dev.26 ZIP 中三个同名 `torch_cpu.dll` 大小和 CRC 一致；构建 TOC 显示最外层副本来自冻结音频 worker 依赖，适合优先测试是否可去掉这一份，潜在减少约 75.6 MB 压缩体积。两个 worker 内的重复运行时与 `llvmlite.dll` 可能是隔离设计的一部分，不能直接删除。同步审计没有进入本次 profile 的文件，绝不从全局 `assets` 直接粗暴删模型。第三方权利未核实的权重先设为发布门槛，不把“包能构建”当作再分发授权。
+dev.27 已验证并发布只移除 app 根目录与音频 worker 内大小和 SHA-256 完全相同的 `torch_cpu.dll`；两个隔离 worker 的运行时继续保留，Core profile 不执行去重。同步审计没有进入当前 profile 的文件，绝不从全局 `assets` 直接删除模型。第三方权利未核实的权重仍是后续正式发布门槛，不把“包能构建”当作再分发授权。
 
 ### 3. 冻结新增模型功能，回收真实音乐证据
 
@@ -81,6 +81,7 @@ dev.26 组装 ZIP 为 `1,310,888,430` bytes，即 1.31 GB（十进制）或约 1
 
 ## 关联文档
 
+- [dev.27 发布说明](releases/0.1.0-alpha.6-dev-27.md)
 - [dev.26 发布说明](releases/0.1.0-alpha.6-dev-26.md)
 - [全项目验收计划](full-project-acceptance-plan-20261119.md)
 - [全项目验收问题账本](full-project-acceptance-ledger-20261119.md)

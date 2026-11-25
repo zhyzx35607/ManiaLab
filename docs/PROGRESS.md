@@ -5,11 +5,14 @@
 
 ## 当前状态（先读）
 
-### dev.27 Extended 去重构建（准备发布）
+### dev.27 Extended 去重版（2026-11-25 已发布）
 
-- 基于 main 的安全 runtime 去重已通过 PR #267 与合并后 Windows CI。精确版本升级为 `0.1.0-alpha.6-dev.27`，发布 tag 和最终附件待完成。
-- 完整 Extended fresh build 已在 D 盘隔离目录通过便携、four-piano 合成分析/导出、关停、CRC 与 archive inventory 检查。当前候选 ZIP `1,235,330,669` bytes；最终精确 tag 需要重新构建并复核大小、SHA-256 和 validation report。
-- dev.26 GitHub Release 与单文件 Extended ZIP 保持不变。dev.27 发布为新 tag/新 Release，直接 ZIP 下载；模型授权、真实歌曲音乐验收、Timing 与 osu! 试打仍未闭环。
+- GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.27 Extended Windows x64](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.27) 已发布。精确 tag `v0.1.0-alpha.6-dev.27` 指向 `32368e685a102e7aaf334e8bd6d1808200aa30ee`，与当前 `main` 一致；发布准备 PR #268 已合并。tag Windows workflow run `45521432476` 成功：Python/API `3667 passed, 161 skipped, 1 warning`，Edge Playwright `82 passed`，Core 便携验证通过。
+- Release 提供可直接下载的单个 ZIP：`ManiaLab-0.1.0-alpha.6-dev.27-windows-x64-extended.zip`，大小 `1,235,335,195` bytes，SHA-256 `dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc`。HTTP HEAD 返回 200；与 dev.26 ZIP 相比减少 `75,553,235` bytes（5.764%）。Release 另附 SHA256SUMS 与验证 JSON。dev.26 Release、ZIP、12 个分片和组装脚本保持不变。
+- 构建器只在 worker manifest/源码身份通过，且 app 根目录 `_internal/torch_cpu.dll` 与音频 worker 副本的大小和 SHA-256 完全匹配时，才从本次 Extended 构建删除根副本；隔离的音频/Tsumugi worker runtime 保留，Core profile 不执行去重。缺失或不匹配时保留应用副本。
+- 精确 tag Extended EXE 的 20 项 portable verifier、four/six 声部分析与导出、独立 four-piano 合成分析/制谱/导出、取消/错误恢复、worker 关停、ZIP CRC 与 archive inventory 均通过。Windows tag workflow 的 Python/API、合成浏览器和 Core EXE 检查通过；这些合成/工程检查不代表音乐验收。
+- 本机精确 tag 构建与证据保留在 `D:\ManiaLab-dev27-release-tag-20261125\build\portable\extended-dev27-tag-32368e6-20261125\`，其中 `release/` 保存最终 ZIP、SHA256SUMS 和 verification JSON，`portable-verification/report.json`、`shutdown-verification/report.json` 与 `four-piano-export-smoke/report.json` 保存对应的运行记录。
+- 本版没有重跑真实吉他音频探针或 Tsumugi EXE 级真实音频接口检查，因冻结样例已缺失；复用 worker 的既有 parity 记录不等于新检查，完整聚合验证报告未生成。真实歌曲采音、Timing、osu! 试打、6–10K/LN 真人手感以及 Demucs/Tsumugi 权利仍未闭环。
 
 ### dev.26 Extended 公开试用版（2026-11-24 已发布；体验验收继续开放）
 
