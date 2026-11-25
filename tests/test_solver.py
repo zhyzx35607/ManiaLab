@@ -3,8 +3,7 @@ import warnings
 
 from scipy.optimize import OptimizeWarning
 
-from manialab import arrange, gesture_flow, solver
-from manialab.anchor_gestures import _solve_binary as anchor_solve_binary
+from manialab import arrange, solver
 from manialab.expression import _solve_binary as expression_solve_binary
 
 
@@ -128,8 +127,6 @@ def test_binary_and_linear_solver_calls_share_the_native_scheduler_lock(monkeypa
     assert errors == []
 
 
-def test_solver_users_share_the_same_boundary_and_preserve_expression_patch_point():
+def test_product_solver_users_share_the_same_boundary_and_expression_patch_point():
     assert arrange._solver_lock is solver.solver_lock
-    assert gesture_flow.solve_linear is solver.solve_linear
     assert expression_solve_binary is solver.solve_binary
-    assert anchor_solve_binary is solver.solve_binary

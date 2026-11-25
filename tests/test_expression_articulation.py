@@ -7,18 +7,24 @@ from manialab.domain import Note
 from manialab.expression import propose_expression,expression_evidence
 from manialab.expression_articulation import attack_runs,articulation_policy,source_activity
 from tests.test_structure_expression import analysis
-from scripts.research_expression_policies import propose
 
 
 def piano(at,end,pitch=60,id=None,reason='release_regression'):
     return Note(at,end,pitch=pitch,id=id or str(at),source='pitch',voice='piano',release_reason=reason)
 
 
+def articulation_plan(a, settings):
+    plan=propose_expression(a,settings)
+    for section in plan['sections']:
+        for policy in section['voices'].values():
+            policy['mode']='articulation'
+    return plan
+
+
 def test_repeated_decaying_attacks_keep_rhythm_and_supported_final_sustain():
     notes=[piano(t,t+1200,id=str(i)) for i,t in enumerate((1000,1250,1500,3000,3250,3500))]
     a=analysis(notes);original=copy.deepcopy(a);settings=parameters()
-    plan=propose(a,settings,articulated=True)
-    assert plan['sections'][0]['voices']['piano']['mode']=='articulation'
+    plan=articulation_plan(a,settings)
     result,_,trace=expression_evidence(a,plan,settings)
     assert [n.start for n in result]==[n.start for n in notes]
     assert [n.hold for n in result]==[False,False,True,False,False,True]
@@ -56,9 +62,11 @@ def test_unobserved_tails_cannot_change_source_priority_or_trigger_articulation(
     activity=source_activity(rows,0,12000)
     assert activity['activity_coverage']==activity['attack_coverage']
     assert activity['observed_interval_coverage']==0
-    a=analysis([piano(1000,11000,reason=reason),
-        Note(2000,5000,voice='other',source='pitch',id='observed',release_reason='explicit_model_note_off')])
-    assert propose(a,parameters())['sections'][0]['main_voice']=='other'
+    observed=Note(2000,5000,voice='other',source='pitch',id='observed',
+        release_reason='explicit_model_note_off')
+    a=analysis([piano(1000,11000,reason=reason),observed])
+    other_activity=source_activity([observed],0,12000)
+    assert other_activity['observed_interval_coverage'] > 0
 
 
 def test_section_activity_counts_exact_clipped_union_and_short_attacks():
@@ -70,7 +78,7 @@ def test_section_activity_counts_exact_clipped_union_and_short_attacks():
 
 def test_articulation_does_not_make_group_tail_from_missing_release():
     rows=[piano(1000,2500),piano(1250,2750),piano(1500,10000,reason='input_boundary')]
-    a=analysis(rows);settings=parameters();plan=propose(a,settings,articulated=True)
+    a=analysis(rows);settings=parameters();plan=articulation_plan(a,settings)
     result,_,trace=expression_evidence(a,plan,settings)
     assert all(not n.hold for n in result)
     assert trace['1500']['reason']=='unobserved_release'

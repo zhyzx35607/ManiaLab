@@ -1,1 +1,0 @@
-issue_id,reviewer_session_id,song,reviewed_at_utc,review_mode,source_audio_sha256,analysis_sha256,candidate_sha256,reference_sha256,export_sha256,identity_note,key_count,bookmark_or_section,time_ms,voice_or_part,checked_tracks,category,assessment,audibility,observation,decision,decision_reason,decision_session_id,decision_at_utc,fix_ref,retest_at_utc,retest_result
