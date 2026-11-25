@@ -5,6 +5,12 @@
 
 ## 当前状态（先读）
 
+### dev.27 Extended 去重构建（准备发布）
+
+- 基于 main 的安全 runtime 去重已通过 PR #267 与合并后 Windows CI。精确版本升级为 `0.1.0-alpha.6-dev.27`，发布 tag 和最终附件待完成。
+- 完整 Extended fresh build 已在 D 盘隔离目录通过便携、four-piano 合成分析/导出、关停、CRC 与 archive inventory 检查。当前候选 ZIP `1,235,330,669` bytes；最终精确 tag 需要重新构建并复核大小、SHA-256 和 validation report。
+- dev.26 GitHub Release 与单文件 Extended ZIP 保持不变。dev.27 发布为新 tag/新 Release，直接 ZIP 下载；模型授权、真实歌曲音乐验收、Timing 与 osu! 试打仍未闭环。
+
 ### dev.26 Extended 公开试用版（2026-11-24 已发布；体验验收继续开放）
 
 - 精确 tag `v0.1.0-alpha.6-dev.26` 指向 `70a52a40a16d254b9c1092c6607fd7c1f07c85ab`。GitHub Pre-release 已发布；组装 ZIP 为 `1,310,888,430` bytes，SHA-256 `53a940c3918d9e6bd45ff0959367b4f34042614bc4a4b8196a13942e1a25e4d2`。2026-11-24 新增完整 ZIP 单文件 Release 附件，并将其设为首选下载；原 12 片及下载器仍作为备用。本机验证过的 ZIP 位于 `D:\ManiaLab-release-dev26-20261124\build\portable\dev26-extended-tag-70a52a4-20261124-r1\release\ManiaLab-0.1.0-alpha.6-dev.26-windows-x64-extended.zip`。
