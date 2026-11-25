@@ -37,15 +37,15 @@ dev.26 的 `.ps1` 下载器会同时启动 12 个隐藏的 `curl.exe`，窗口�
 
 | 内容 | 数量/大小 | 判断 |
 | --- | ---: | --- |
-| Git 跟踪 `tests/` | 当前主线 264 个文件（238 个 Python、21 个 CJS、5 个 PEM 夹具） | 没有证据支持按数量删除 pytest；CI 会运行 Python 与浏览器回归。本轮只迁移一个有效断言并移除旧 runner。 |
-| Git 跟踪 `scripts/` | 当前主线 422 个文件（395 个 Python、23 个 CJS） | 研究、数据准备和报告工具混在一起；脚本索引明确要求保留历史路径，暂不批量移动/删除。 |
-| Git 跟踪 `docs/` | 当前主线 380 个文件（299 个 Markdown、77 个 JSON） | 研究证据有价值，但导航入口太多。`docs/PROGRESS.md` 约 365 KB / 2,204 行，把当前状态与长期历史混在一页；它只占 docs 体积约 2.3%，主要是阅读负担。 |
+| Git 跟踪 `tests/` | 瘦身前最新 main：264 个文件（238 个 Python、21 个 CJS、5 个 PEM 夹具） | 没有按文件数删除 pytest；把一个旧 Timing 导航 runner 的有效断言迁入现有 Playwright spec，测试总文件数不变。 |
+| Git 跟踪 `scripts/` | 瘦身前最新 main：421 个文件（395 个 Python、22 个 CJS、1 个 C#、1 个 csproj、2 个 Markdown）；本次退役后 420 个文件，CJS 为 21 个 | 研究、数据准备和报告工具混在一起；本次只移除已有替代覆盖且无调用方的单个旧浏览器 runner，不批量移动或删除其他脚本。 |
+| Git 跟踪 `docs/` | 瘦身前最新 main：382 个文件（301 个 Markdown、77 个 JSON） | 研究证据有价值，但导航入口太多。`docs/PROGRESS.md` 约 365 KB / 2,204 行，把当前状态与长期历史混在一页；它只占 docs 体积约 2.3%，主要是阅读负担。 |
 | 本地 ignored `build/` | 8,687 个文件，约 7.68 GB | 主要是不同 run 的构建、发布 ZIP、检查报告和缓存；需按 run/保留策略盘点，不能整目录清空。 |
 | 本地 ignored `assets/` | 4,993 个文件，约 2.20 GB | 模型和运行资源；不能按缓存清理。 |
 
-以上文件数是本轮改动前的 `70a52a4` 主线基线；本轮增加 1 个状态路线图、移除 1 个旧 runner，最终将为 docs 381、scripts 421、tests 264。
+以上文件数依据本轮开始时的最新 `origin/main` `17381f9` 重新统计；该基线已包含此前增加的状态路线图及 `scripts/ui_smoke.cjs` 退役。当前本轮只移除 `scripts/ui_timing_navigation_smoke.cjs`，并在已存在的浏览器测试与 fixture server 中迁入其唯一行为覆盖，因此合并后预期为 docs 382、scripts 420、tests 264。
 
-本轮测试清理只移除了无法在干净 checkout 运行、依赖 ignored Playwright/素材、且主流程已有 CI 浏览器覆盖的旧通用 runner `scripts/ui_smoke.cjs`。它唯一有用的窄屏横向溢出检查已迁到 `tests/browser/workflow.spec.cjs`。没有删除 pytest 用例；`ui_grid_smoke.cjs`、`ui_timing_smoke.cjs` 和其他带独有场景/历史复现价值的 smoke 工具暂时保留。
+2026-11-25 本次测试工具收敛将旧 `scripts/ui_timing_navigation_smoke.cjs` 的 Timing 可疑区间跳转、试听 A、Offset 改动后诊断失效、结尾定位行为迁到 `tests/browser/timing.spec.cjs`，并在 `tests/browser/fixture_server.py` 添加 30 秒 disposable synthetic fixture。旧 runner 不能在干净 checkout 运行，依赖 ignored Playwright、固定 Edge 路径、外部 server 与未跟踪 WAV；其窄屏检查原已由 `tests/browser/workflow.spec.cjs` 覆盖。没有删除 pytest 用例；`ui_grid_smoke.cjs`、`ui_timing_smoke.cjs`、`ui_waveform_smoke.cjs` 和其他有独有场景的 runner 保留。Windows workflow 中 Python/API、浏览器、Core EXE、媒体/来源切换、关停与 release evidence collector 分属不同验证层，本次未合并或移除。
 
 ## 重规划顺序
 

@@ -5,6 +5,13 @@
 
 ## 当前状态（先读）
 
+### 浏览器验证入口收敛（2026-11-25）
+
+- 从最新 `main` `17381f9af90b1c0388067cfb2c148cea86bccb84` 开始，将未纳入 CI 的旧 `scripts/ui_timing_navigation_smoke.cjs` 中 Timing 可疑区间导航、试听 A、Offset 编辑后清除旧诊断和结尾定位断言迁入 `tests/browser/timing.spec.cjs`，再退役旧 runner。旧脚本依赖 ignored Playwright、硬编码 Edge 路径、外部 server 与未跟踪 WAV；其窄屏检查已有 `tests/browser/workflow.spec.cjs` 覆盖。
+- 新用例使用 `tests/browser/fixture_server.py` 的 30 秒 disposable synthetic project 和确定性 `/timing-check` 响应，并核对请求使用已检查的 BPM/Offset/细分/音频提前量、定位到 2 秒、试听 API 成功并生成 blob URL、偏移变化后诊断失效、结尾定位到 18 秒及 390px 无横向溢出。
+- 已运行 `npm run test:ui -- tests/browser/timing.spec.cjs`（14 passed）及 `npm run test:ui -- tests/browser/workflow.spec.cjs`（4 passed）；`node --check tests/browser/timing.spec.cjs`、fixture Python AST 解析及 `git diff --check` 通过。完整 Windows CI 待 PR 验证。
+- CI 中 pytest、合成浏览器、Core EXE、媒体/来源切换、worker 关停和 release evidence collector 分别覆盖不同边界，本次未合并或删除这些门禁。`tests/test_core_media_probe.cjs` 有独有 Node 断言但尚未接入 CI，先保留待单独整合；`scripts/packaged_smoke.cjs` 有可选 Mapperatorinator 端到端生成覆盖，也保留。
+
 ### dev.27 Extended 去重版（2026-11-25 已发布）
 
 - GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.27 Extended Windows x64](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.27) 已发布。精确 tag `v0.1.0-alpha.6-dev.27` 指向 `32368e685a102e7aaf334e8bd6d1808200aa30ee`，即发布准备 PR #268 的合并提交；发布记录 PR #269 随后合入 `main`。tag Windows workflow run `45521432476` 成功：Python/API `3667 passed, 161 skipped, 1 warning`，Edge Playwright `82 passed`，Core 便携验证通过。
