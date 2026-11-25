@@ -9,7 +9,7 @@
 
 - 已实现批量生成流程：完成批量分析后，一次选择键数、键型、制谱预设和密度，即可为分析成功的歌曲统一生成候选；用户可逐首下载 `.osz`，也可下载包含成功项目的整批 ZIP。每首歌仍使用自己的 BPM、Offset 和提前量；拍线不稳定时要求明确确认，单首失败不会阻断其余歌曲。
 - “纯起音”后端生成在 LN 比例为 0 时强制不生成 LN。旧候选在切换预设后仍可能保留；界面现提示当前预设只作用于下一次生成，并显示当前候选实际 LN 数与占比，设置不匹配时禁用旧候选导出并提示重新生成。回归覆盖旧候选保留、纯起音重新生成无 LN、`.osu`/`.osz` 均无 LN，以及严格重定轨时保留原谱 LN。
-- 本地验证：此前完整 Python/API 为 `3672 passed, 164 skipped, 1 warning`；合入发布前资源/输入校验修正后，相关后端定向组 `65 passed`。批量生成、预设、批量分析浏览器定向组 `10 passed`，并与 Timing spec 合跑 `18 passed`。首次 PR 全量浏览器 CI 的 4 个 Offset 锚点用例暴露了批量测试写入共享 Timing fixture 的顺序依赖；改用独立合成项目后，本地完整 Playwright `87 passed`。批量 ZIP 预检后只保留最小候选信息，并将内外 ZIP 临时文件都写入项目数据盘。`node --check` 与 `git diff --check` 通过；修复后 Windows CI 待重跑。
+- 最终验证：PR Windows run `45555797382` 全量 Python/API `3675 passed, 161 skipped, 1 warning`，完整 Edge Playwright `87 passed`。后端定向组 `65 passed`；批量/预设/分析浏览器定向组 `10 passed`，与 Timing spec 合跑 `18 passed`。首次 PR 全量浏览器 CI 的 4 个 Offset 锚点用例暴露了批量测试写入共享 Timing fixture 的顺序依赖；改用独立合成项目后，本地完整 Playwright 与 Windows CI 均 `87 passed`。批量 ZIP 预检后只保留最小候选信息，并将内外 ZIP 临时文件都写入项目数据盘。`node --check` 与 `git diff --check` 通过。
 - 本功能尚未进入 dev.27 Release，也没有更新任何已发布安装包。合成与工程测试不代表真实歌曲音乐质量、Timing 听审或 osu! 实战验收。
 
 ### 浏览器验证入口收敛（2026-11-25）

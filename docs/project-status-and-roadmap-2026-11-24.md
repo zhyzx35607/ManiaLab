@@ -19,7 +19,7 @@ ManiaLab 已经是可体验的 6–10K osu!mania 本地制谱工作台，不是�
 | 范围 | 状态 | 真实边界 |
 | --- | --- | --- |
 | dev.27 发布 | 已发布 Extended 公开试用预发布版 | tag `v0.1.0-alpha.6-dev.27` 指向 `32368e685a102e7aaf334e8bd6d1808200aa30ee`；ZIP `1,235,335,195` bytes，SHA-256 `dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc`；不是正式稳定版。 |
-| 统一批量制谱 | 源码已实现批量统一预设、逐首/整批 ZIP 导出；纯起音候选提示也已修正 | 本地 Python/API 与定向浏览器回归通过；Windows CI 待本次 PR 验证。功能未进入 dev.27，工程回归不代表真实音乐验收。 |
+| 统一批量制谱 | 源码已实现批量统一预设、逐首/整批 ZIP 导出；纯起音候选提示也已修正 | PR #274 Windows CI：Python/API `3675 passed, 161 skipped, 1 warning`，Edge Playwright `87 passed`。功能未进入 dev.27，工程回归不代表真实音乐验收。 |
 | 工程回归 | dev.27 精确 tag 的 Python/API `3667 passed, 161 skipped, 1 warning`；Edge Playwright `82 passed` | Windows 自动工作流默认只构建 Core；合成测试不能证明音乐质量。 |
 | Extended EXE | 20 项便携检查、worker 关停检查通过 | 缺少吉他和 Tsumugi 的冻结音频样本，因此没有重跑对应 EXE 真实音频专项，也没有完整聚合报告。 |
 | 真实音乐 | 未验收 | 84 段钢琴起音盲听、6–10K/LN 实际试打、Sweet Waltz 与 Choice 独立歌曲复听仍待真人结果。 |
