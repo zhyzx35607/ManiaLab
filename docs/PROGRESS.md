@@ -5,6 +5,13 @@
 
 ## 当前状态（先读）
 
+### 统一批量制谱与纯起音候选提示（2026-11-25，本地验证）
+
+- 已实现批量生成流程：完成批量分析后，一次选择键数、键型、制谱预设和密度，即可为分析成功的歌曲统一生成候选；用户可逐首下载 `.osz`，也可下载包含成功项目的整批 ZIP。每首歌仍使用自己的 BPM、Offset 和提前量；拍线不稳定时要求明确确认，单首失败不会阻断其余歌曲。
+- “纯起音”后端生成在 LN 比例为 0 时强制不生成 LN。旧候选在切换预设后仍可能保留；界面现提示当前预设只作用于下一次生成，并显示当前候选实际 LN 数与占比，设置不匹配时禁用旧候选导出并提示重新生成。回归覆盖旧候选保留、纯起音重新生成无 LN、`.osu`/`.osz` 均无 LN，以及严格重定轨时保留原谱 LN。
+- 本地验证：此前完整 Python/API 为 `3672 passed, 164 skipped, 1 warning`；合入发布前资源/输入校验修正后，相关后端定向组 `65 passed`。批量生成、预设、批量分析浏览器定向组现为 `10 passed`；Timing 与播放相关定向组此前为 `24 passed`。完整 Playwright 曾有 5 项失败（4 项 Timing 锚点、1 项 buffering），随后相关定向组通过，需由本次 Windows CI 复核。批量 ZIP 预检后只保留最小候选信息，并将内外 ZIP 临时文件都写入项目数据盘。`node --check` 与 `git diff --check` 通过；Windows CI 尚待本次 PR 运行。
+- 本功能尚未进入 dev.27 Release，也没有更新任何已发布安装包。合成与工程测试不代表真实歌曲音乐质量、Timing 听审或 osu! 实战验收。
+
 ### 浏览器验证入口收敛（2026-11-25）
 
 - 从最新 `main` `17381f9af90b1c0388067cfb2c148cea86bccb84` 开始，将未纳入 CI 的旧 `scripts/ui_timing_navigation_smoke.cjs` 中 Timing 可疑区间导航、试听 A、Offset 编辑后清除旧诊断和结尾定位断言迁入 `tests/browser/timing.spec.cjs`，再退役旧 runner。旧脚本依赖 ignored Playwright、硬编码 Edge 路径、外部 server 与未跟踪 WAV；其窄屏检查已有 `tests/browser/workflow.spec.cjs` 覆盖。
