@@ -6,13 +6,13 @@
 
 质量目标是对音清楚、段落和声部表达连贯、LN安排合理；参考谱用于学习思路和定位差异，不要求逐音符复刻，见[音乐质量目标](docs/music-quality-target.md)。
 
-**0.1.0-alpha.6-dev.27 · Extended profile · Windows x64 公开试用预发布版，已于 2026-11-25 发布。** [直接下载 Extended ZIP（1,235,335,195 bytes，约 1.15 GiB）](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.1.0-alpha.6-dev.27/ManiaLab-0.1.0-alpha.6-dev.27-windows-x64-extended.zip)，SHA-256：`dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc`。本版在 dev.26 功能基础上移除主程序重复携带的一份 CPU 运行库，压缩包减少 `75,553,235` bytes（5.764%）；四/六/four-piano 音频 worker 与 Tsumugi worker 保持各自隔离运行时。包含四／六声部分离、节拍模型、钢琴专用模型、吉他 FL、Tsumugi 贝斯／其他伴奏模型和 CPU 运行时；Mapperatorinator 权重按需单独下载。本版继续支持一次导入 2–10 首歌、最多同时分析 2 首，以及四种一键制谱预设。Windows 自动发布工作流仍只验证 Core，Extended 包另行构建并做便携运行检查；合成输入只能证明组件加载、执行与身份匹配，不证明真实歌曲采音质量、Timing 或游戏手感。Demucs 权重的独立再分发授权及 Tsumugi 训练录音权利仍未核实。完整范围和验证限制见[dev.27 说明](docs/releases/0.1.0-alpha.6-dev-27.md)与[第三方声明](THIRD_PARTY_NOTICES.md)。
+**0.1.0-alpha.6-dev.28 · Extended profile · Windows x64 公开试用预发布版。** [直接下载 Extended ZIP](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.1.0-alpha.6-dev.28/ManiaLab-0.1.0-alpha.6-dev.28-windows-x64-extended.zip)，校验值见 Release 附件中的 `SHA256SUMS.txt`。包含四／六声部分离、节拍模型、钢琴专用模型、吉他 FL、Tsumugi 贝斯／其他伴奏模型和 CPU 运行时；Mapperatorinator 权重按需单独下载。批量分析成功后，可统一选择键数、键型、制谱预设和密度，一次生成全部成功歌曲，再逐首下载 OSZ 或下载整批 ZIP。纯起音生成不会写 LN，切换预设时旧候选会显示实际 LN 并要求重生成后才能导出。Windows 自动发布工作流仍只验证 Core；Extended 发布流程会在 Windows runner 上独立构建并验证。合成输入只能证明组件加载、执行与身份匹配，不证明真实歌曲采音质量、Timing 或游戏手感。Demucs 权重的独立再分发授权及 Tsumugi 训练录音权利仍未核实。完整范围和验证限制见[dev.28 说明](docs/releases/0.1.0-alpha.6-dev-28.md)与[第三方声明](THIRD_PARTY_NOTICES.md)。
 
 当前入口： [项目状态与重规划](docs/project-status-and-roadmap-2026-11-24.md) · [快速开始](docs/quick-start.md) · [组件范围](docs/instrument-choices.md) · [架构与开发](docs/architecture.md) · [续接进度](docs/PROGRESS.md)。历次模型比较、未采用权重与旧版本入口集中在[研究历史](docs/research-history.md)。
 
-Windows workflow 的自动发布门禁仍固定为 `core`。dev.27 Extended 是公开试用版，不等于 Extended 已获正式支持；dev.23 Core 与历史 Release 的内容和说明保持不变。
+Windows validation workflow 的便携门禁仍固定为 `core`。dev.28 Extended 使用单独的精确 tag 发布流程，不等于 Extended 已获正式稳定支持；dev.23 Core 与历史 Release 的内容和说明保持不变。
 
-dev.27 基于 dev.26 减少便携 Extended 包的重复运行时占用，并保留独立 worker 隔离。发布源码与验证范围以本页版本及[dev.27 说明](docs/releases/0.1.0-alpha.6-dev-27.md)为准；完整工程与音乐验收状态见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。
+dev.28 在 dev.27 的便携能力上增加统一批量制谱和整批 OSZ ZIP 下载，并澄清纯起音预设与旧候选的关系。发布源码与验证范围以本页版本及[dev.28 说明](docs/releases/0.1.0-alpha.6-dev-28.md)为准；完整工程与音乐验收状态见[检查与优化记录](docs/project-review-20261117.md)、[工程与音乐验收](docs/acceptance-20261118.md)、[评审回收流程](docs/human-review-integrity.md)及[续接进度](docs/PROGRESS.md)。
 
 2026-11-18 源码已核对真实多难度谱包的编辑与重开，并用两首外部歌曲运行了完整采音到导出流程。结果与试听、试打入口见[工程与音乐验收记录](docs/acceptance-20261118.md)。
 
@@ -20,17 +20,17 @@ dev.27 基于 dev.26 减少便携 Extended 包的重复运行时占用，并保�
 
 ## 下载即用
 
-1. [直接下载 dev.27 Extended ZIP](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.1.0-alpha.6-dev.27/ManiaLab-0.1.0-alpha.6-dev.27-windows-x64-extended.zip)；也可先看 [Release 说明](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.27)。不要从 Tags 页面下载源码包。ZIP 为 1.15 GiB，下载和解压建议留出约 4 GiB 空间。
+1. [直接下载 dev.28 Extended ZIP](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.1.0-alpha.6-dev.28/ManiaLab-0.1.0-alpha.6-dev.28-windows-x64-extended.zip)；也可先看 [Release 说明](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.28)。不要从 Tags 页面下载源码包。下载和解压建议留出约 4 GiB 空间。
 2. 完整解压生成的 ZIP 后双击 `ManiaLab.exe`。程序打开本机浏览器界面，关闭控制台窗口退出。
 3. 导入音频 → 深度分析 → 检查 BPM / Offset 并试听 → 选择本曲编排建议或手调参数 → 生成候选 → 下载 `.osz` → 拖入 osu!。
 
 不熟悉 BPM / Offset、LN 比例和声部参数时，先看 [第一次使用](docs/quick-start.md)。
 
-dev.27 Extended 便携包自带 CPU 运行时、四／六声部分离、Beat This、钢琴、吉他与 Tsumugi 模型及 FFmpeg。日常功能不需要 Python、Docker 或 CUDA；首次使用可选 Mapperatorinator 后端时需要网络下载模型。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
+dev.28 Extended 便携包自带 CPU 运行时、四／六声部分离、Beat This、钢琴、吉他与 Tsumugi 模型及 FFmpeg。日常功能不需要 Python、Docker 或 CUDA；首次使用可选 Mapperatorinator 后端时需要网络下载模型。面向 Windows 10/11 x64；本机 Windows 10 已验证，另一台电脑仍需实际测试。
 
 分析能力取决于便携包 profile；程序仅调用当前包内可用的模型，并可复用已完成的缓存结果。界面显示实际耗时和缓存状态。Release 中的 `*-SHA256SUMS.txt` 是对应版本的校验文件，可用于核对下载的 ZIP。
 
-本版各专用模型默认关闭或需在对应采音选项中选择；具体能力以 ZIP 内 `release-manifest.json` 与[dev.27 验证说明](docs/releases/0.1.0-alpha.6-dev-27.md)为准。
+本版各专用模型默认关闭或需在对应采音选项中选择；具体能力以 ZIP 内 `release-manifest.json` 与[dev.28 验证说明](docs/releases/0.1.0-alpha.6-dev-28.md)为准。
 
 项目自动保存到 `%LOCALAPPDATA%\ManiaLab\projects`，日志在 `%LOCALAPPDATA%\ManiaLab\ManiaLab.log`。迁移项目可复制项目文件夹。
 

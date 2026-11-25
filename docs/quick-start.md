@@ -1,6 +1,6 @@
 # 第一次用 ManiaLab
 
-从 [dev.27 Extended ZIP 直链](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.1.0-alpha.6-dev.27/ManiaLab-0.1.0-alpha.6-dev.27-windows-x64-extended.zip) 下载 1.15 GiB 单文件；也可查看 [GitHub Release](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.27)。不要下载 Tags 页面里的源码压缩包。下载、解压建议留出约 4 GiB 空间；SHA-256 为 `dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc`。完整解压后双击 `ManiaLab.exe`。浏览器打开的是本机程序，保持控制台窗口开着，结束时关闭它即可。四／六声部模型和 CPU 运行时已经包含在完整包中。
+从 [dev.28 Extended ZIP 直链](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.1.0-alpha.6-dev.28/ManiaLab-0.1.0-alpha.6-dev.28-windows-x64-extended.zip) 下载单文件；也可查看 [GitHub Release](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.28)。不要下载 Tags 页面里的源码压缩包。下载、解压建议留出约 4 GiB 空间；SHA-256 见同一 Release 附件中的 `SHA256SUMS.txt`。完整解压后双击 `ManiaLab.exe`。浏览器打开的是本机程序，保持控制台窗口开着，结束时关闭它即可。四／六声部模型和 CPU 运行时已经包含在完整包中。
 
 ## 已有多难度谱包
 
@@ -10,7 +10,7 @@
 
 ## 先得到一份可以检查的谱
 
-要一次处理多首歌，展开左侧「批量分析歌曲」，选择 2–5 个 MP3、WAV、FLAC、OGG、M4A、OPUS 或 AAC 文件，再开始批量分析。程序最多并行计算两首，以免把 CPU 和内存同时压满；每首歌都会建立独立项目，单曲失败不会中断其它歌曲。可在批次列表里逐首打开结果；导入时取消会保留已创建的项目。
+要一次处理多首歌，展开左侧「批量分析歌曲」，选择 2–10 个 MP3、WAV、FLAC、OGG、M4A、OPUS 或 AAC 文件，再开始批量分析。程序最多并行计算两首，以免把 CPU 和内存同时压满；每首歌都会建立独立项目，单曲失败不会中断其它歌曲。分析完成后，为成功歌曲统一设置键数、键型和制谱预设，一次生成全部结果，再逐首下载 `.osz` 或打包下载 ZIP。每首歌沿用自己的 BPM / Offset；不稳定的拍线需要明确确认。可在批次列表里逐首打开结果；导入时取消会保留已创建的项目。
 
 1. 导入歌曲，选择「深度：四声部分离后采音」，点击分析。需要单独检查吉他或钢琴时，可改选六声部；分离类别更多不保证更准，建议对同一段比较试听。第一次会实际运行模型；再次调整检测门槛时可复用缓存。
 2. 先处理左侧 BPM / Offset。打开「对音实验室」，在歌曲开头、中间、结尾分别播放拍线提示。若已用其他工具对好，直接粘贴参考 Timing，再试听确认。

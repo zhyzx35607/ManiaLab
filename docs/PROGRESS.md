@@ -12,6 +12,12 @@
 - 最终验证：PR Windows run `45555797382` 全量 Python/API `3675 passed, 161 skipped, 1 warning`，完整 Edge Playwright `87 passed`。后端定向组 `65 passed`；批量/预设/分析浏览器定向组 `10 passed`，与 Timing spec 合跑 `18 passed`。首次 PR 全量浏览器 CI 的 4 个 Offset 锚点用例暴露了批量测试写入共享 Timing fixture 的顺序依赖；改用独立合成项目后，本地完整 Playwright 与 Windows CI 均 `87 passed`。批量 ZIP 预检后只保留最小候选信息，并将内外 ZIP 临时文件都写入项目数据盘。`node --check` 与 `git diff --check` 通过。
 - 本功能尚未进入 dev.27 Release，也没有更新任何已发布安装包。合成与工程测试不代表真实歌曲音乐质量、Timing 听审或 osu! 实战验收。
 
+### dev.28 Extended 发布准备（2026-11-25）
+
+- PR #274 已合入 `main`，merge commit `1fb0145b4ac0b1bc7e7792248f0f5a6091e42b1f`；Windows CI run `45555797382` 全量 Python/API `3675 passed, 161 skipped, 1 warning`，Edge Playwright `87 passed`。新版本源码版本号为 `0.1.0-alpha.6-dev.28`，发布 tag 与 Extended 包尚未创建。
+- D 盘剩余约 50.83 GiB，保留用户要求的 50 GiB 安全线；历史 Extended 验证目录和 Release 资产也被文档引用，不清理。新增 `.github/workflows/extended-release.yml`：只从 dev.27 单 ZIP SHA-256 固定恢复已验证资源和 Tsumugi worker，在 GitHub Windows runner 构建 Extended、运行便携/关停检查、验证 ZIP CRC/manifest/SHA，并发布单个 ZIP 直链 Release。`workflow_dispatch` 仅生成短期预演 artifact，不发布 Release。
+- dev.28 发布说明明确记录未重跑真实吉他探针及 Tsumugi EXE 级真实音频专项、音乐验收未完成和第三方权利未确认。下一步先合并发布准备 PR，在 main 上运行 workflow_dispatch 预演；检查预演 ZIP、身份和验证报告后打精确 tag `v0.1.0-alpha.6-dev.28`，由 tag workflow 上传并发布正式 Release。
+
 ### 浏览器验证入口收敛（2026-11-25）
 
 - 从最新 `main` `17381f9af90b1c0388067cfb2c148cea86bccb84` 开始，将未纳入 CI 的旧 `scripts/ui_timing_navigation_smoke.cjs` 中 Timing 可疑区间导航、试听 A、Offset 编辑后清除旧诊断和结尾定位断言迁入 `tests/browser/timing.spec.cjs`，再退役旧 runner。旧脚本依赖 ignored Playwright、硬编码 Edge 路径、外部 server 与未跟踪 WAV；其窄屏检查已有 `tests/browser/workflow.spec.cjs` 覆盖。
