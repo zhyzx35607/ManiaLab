@@ -6,7 +6,6 @@ import pytest
 
 from manialab import guitar
 from manialab.domain import UNOBSERVED_RELEASES
-from scripts.research_hf_instrument import stitch_windows, physical_heads
 
 
 def heads(frames):
@@ -36,11 +35,23 @@ def test_guitar_overlap_uses_original_integer_clock_and_preserves_full_gain(samp
     pcm = np.full(samples, 1.3, dtype=np.float32)
     result = guitar.infer(pcm, 16000, Clock())
     assert observed[0][0, 0] == np.float32(1.3)
-    original = {key: np.stack(value) for key, value in windows.items()}
-    expected, _, mask = physical_heads(stitch_windows(original), samples, 16000)
+    expected_windows = []
+    for index, values in enumerate(windows[guitar.OUTPUTS[0]]):
+        if len(windows[guitar.OUTPUTS[0]]) == 1:
+            left, right = 0, 1001
+        elif index == 0:
+            left, right = 0, 750
+        elif index == len(windows[guitar.OUTPUTS[0]]) - 1:
+            left, right = 250, 1000
+        else:
+            left, right = 250, 750
+        expected_windows.append(values[left:right, 0])
+    expected_values = np.concatenate(expected_windows)
+    valid_frames = (samples * 100 + 15999) // 16000
+    expected_values = expected_values[:valid_frames]
     for key in guitar.OUTPUTS:
-        np.testing.assert_array_equal(result[key], expected[key])
-        assert len(result[key]) == int(mask.sum())
+        np.testing.assert_array_equal(result[key][:, 0], expected_values)
+        assert len(result[key]) == valid_frames
 
 
 def test_guitar_does_not_normalize_or_quantize_float_during_resampling():

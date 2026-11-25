@@ -10,25 +10,24 @@ from manialab.expression import propose_expression, expression_evidence, select_
 from manialab.expression_articulation import articulation_policy
 from manialab.layout import source_key
 from manialab.structure import edit_boundaries
-from scripts.instrument_candidate_adapter import accompaniment_candidates
 from tests.test_structure_expression import analysis
 
 
-def candidate(program, start, end):
-    return dict(program=program,pitch=60,onset=start,offset=end,is_drum=False)
-
-
-def bridge(events):
-    provenance=[dict(note_index=i,endpoint_evidence=['explicit_model_note_off']) for i in range(len(events))]
-    return accompaniment_candidates(events,provenance,10000)[0]
+def instrument_note(identifier, start, end, *, instrument_id, pitch=60, strength=1.):
+    if instrument_id.startswith('program:'):
+        instrument_id = 'yourmt3:' + instrument_id
+    return Note(start, end, pitch=pitch, voice='other', source='pitch', id=identifier,
+                instrument_id=instrument_id, strength=strength)
 
 
 @pytest.mark.parametrize('reverse',[False,True])
 @pytest.mark.parametrize('keys',range(6,11))
 @pytest.mark.parametrize('engine',['beam','classic'])
 def test_two_instrument_unison_keeps_both_tails_through_selection_and_layout(reverse,keys,engine):
-    events=[candidate(0,1.,1.4),candidate(48,1.,3.)]
-    notes=bridge(events[::-1] if reverse else events)
+    notes=[instrument_note('short',1000,1400,instrument_id='program:0'),
+           instrument_note('long',1000,3000,instrument_id='program:48')]
+    if reverse:
+        notes.reverse()
     a=analysis(notes)
     p=parameters(dict(keys=keys,density=24,chord_size=10,max_held=keys,ln_ratio=1,layout_engine=engine))
     evidence,meta,trace=expression_evidence(a,propose_expression(a,p),p)
@@ -45,7 +44,9 @@ def test_two_instrument_unison_keeps_both_tails_through_selection_and_layout(rev
 
 
 def test_other_instrument_attacks_cannot_turn_a_sustained_string_into_tap():
-    notes=bridge([candidate(48,1,3),candidate(24,1.25,1.35),candidate(24,1.5,1.6)])
+    notes=[instrument_note('sustain',1000,3000,instrument_id='program:48'),
+           instrument_note('attack-1',1250,1350,instrument_id='program:24'),
+           instrument_note('attack-2',1500,1600,instrument_id='program:24')]
     a=analysis(notes);p=parameters()
     plan=propose_expression(a,p)
     plan['sections'][0]['voices']['other']['mode']='articulation'
@@ -100,7 +101,8 @@ def test_chord_depth_only_receives_evidence_for_layers_actually_selected(room_fo
 
 
 def test_same_program_duplicates_remain_duplicates_and_unknown_is_not_guessed():
-    notes=bridge([candidate(48,1,3),candidate(48,1,3)])
+    notes=[instrument_note('first',1000,3000,instrument_id='program:48'),
+           instrument_note('second',1000,3000,instrument_id='program:48')]
     a=analysis(notes);p=parameters(dict(ln_ratio=1,density=24))
     evidence,meta,trace=expression_evidence(a,propose_expression(a,p),p)
     selected,report=select_expression(evidence,meta,trace,p,500)
@@ -113,7 +115,9 @@ def test_same_program_duplicates_remain_duplicates_and_unknown_is_not_guessed():
 
 
 def test_phrase_cannot_claim_another_instruments_interior_attack():
-    notes=bridge([candidate(48,1,2),candidate(24,1.5,1.8),candidate(48,1.7,1.9)])
+    notes=[instrument_note('phrase',1000,2000,instrument_id='program:48'),
+           instrument_note('interior',1500,1800,instrument_id='program:24'),
+           instrument_note('late',1700,1900,instrument_id='program:48')]
     a=analysis(notes)
     a['phrase_candidates']=[replace(notes[0],end=3000,phrase=True,
         support=tuple(n.id for n in notes),support_coverage=1.).data()]
@@ -139,7 +143,8 @@ def test_proposed_instrument_controls_are_local_and_default_to_inherit():
 
 @pytest.mark.parametrize('representation',['missing','empty','voice_empty','inherit'])
 def test_old_and_empty_instrument_controls_inherit_identical_voice_expression(representation):
-    notes=bridge([candidate(48,1,3),candidate(24,1.5,2.5)])
+    notes=[instrument_note('long',1000,3000,instrument_id='program:48'),
+           instrument_note('middle',1500,2500,instrument_id='program:24')]
     a=analysis(notes);p=parameters(dict(ln_ratio=1))
     plan=propose_expression(a,p)
     expected=expression_evidence(a,plan,p)
@@ -150,7 +155,9 @@ def test_old_and_empty_instrument_controls_inherit_identical_voice_expression(re
 
 
 def test_instruments_can_choose_distinct_modes_while_inheriting_voice_roles():
-    notes=bridge([candidate(48,1,3),candidate(24,1,2),candidate(88,1,2)])
+    notes=[instrument_note('long',1000,3000,instrument_id='yourmt3:program:48'),
+           instrument_note('short',1000,2000,instrument_id='yourmt3:program:24'),
+           instrument_note('omit',1000,2000,instrument_id='yourmt3:program:88')]
     notes.append(Note(1000,2000,voice='other',source='pitch',id='unknown'))
     a=analysis(notes);p=parameters(dict(ln_ratio=1))
     plan=propose_expression(a,p);section=plan['sections'][0]
@@ -169,7 +176,8 @@ def test_instruments_can_choose_distinct_modes_while_inheriting_voice_roles():
 
 @pytest.mark.parametrize('weight',[0,1])
 def test_explicit_instrument_mode_can_open_omitted_voice_but_not_global_mute(weight):
-    notes=bridge([candidate(48,1,3),candidate(24,1.5,2.5)])
+    notes=[instrument_note('long',1000,3000,instrument_id='yourmt3:program:48'),
+           instrument_note('middle',1500,2500,instrument_id='yourmt3:program:24')]
     a=analysis(notes);p=parameters(dict(ln_ratio=1,other_weight=weight))
     plan=propose_expression(a,p);section=plan['sections'][0]
     section['voices']['other']['mode']='omit'
@@ -181,7 +189,10 @@ def test_explicit_instrument_mode_can_open_omitted_voice_but_not_global_mute(wei
 
 
 def test_instrument_articulation_override_uses_full_song_context_and_keeps_other_stream():
-    notes=bridge([candidate(0,1,2.5),candidate(0,1.3,2.7),candidate(0,1.6,3),candidate(48,1,3)])
+    notes=[instrument_note('a',1000,2500,instrument_id='yourmt3:program:0'),
+           instrument_note('b',1300,2700,instrument_id='yourmt3:program:0'),
+           instrument_note('c',1600,3000,instrument_id='yourmt3:program:0'),
+           instrument_note('sustain',1000,3000,instrument_id='yourmt3:program:48')]
     a=analysis(notes);a['structure']=edit_boundaries(a['structure'],[1500],a)
     p=parameters(dict(ln_ratio=1));plan=propose_expression(a,p)
     for section in plan['sections']:section['voices']['other']['mode']='sustain'
@@ -198,7 +209,9 @@ def test_instrument_articulation_override_uses_full_song_context_and_keeps_other
 
 
 def test_instrument_phrase_override_covers_only_its_own_supported_attacks():
-    notes=bridge([candidate(48,1,1.5),candidate(48,1.5,2),candidate(24,1.5,2)])
+    notes=[instrument_note('a',1000,1500,instrument_id='program:48'),
+           instrument_note('b',1500,2000,instrument_id='program:48'),
+           instrument_note('c',1500,2000,instrument_id='program:24')]
     a=analysis(notes)
     a['phrase_candidates']=[replace(notes[0],end=2000,phrase=True,
         support=tuple(n.id for n in notes),support_coverage=1.).data()]
@@ -254,11 +267,6 @@ def test_instrument_override_cannot_create_two_active_primary_voices():
     assert validate_expression(plan,a)==plan
     section['instrument_modes']['other']['known']='sustain'
     with pytest.raises(ValueError,match='主声部'):validate_expression(plan,a)
-
-
-@pytest.mark.parametrize('value',[True,48.5])
-def test_bridge_rejects_noninteger_program(value):
-    with pytest.raises(ValueError):bridge([candidate(value,1,2)])
 
 
 @pytest.mark.parametrize('value',[True,48,None,'bad\nidentifier','a'*129])

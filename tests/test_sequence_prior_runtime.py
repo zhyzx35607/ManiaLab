@@ -350,23 +350,6 @@ def test_sequence_prior_loader_accepts_explicit_ln_interaction_schema(tmp_path):
     assert prior.layers[0]["weight"].shape == (1, feature_count)
 
 
-def test_sequence_timing_guard_is_shared_with_training():
-    from scripts.train_sequence_prior import _sequence_beat_clock
-
-    points = [
-        "0,500,4,2,0,70,1,0",
-        "1000,10001,4,2,0,70,1,0",
-        "1500,250,4,2,0,70,0,0",
-    ]
-    runtime_clock, runtime_ignored = sequence_beat_clock(points)
-    training_clock, training_ignored = _sequence_beat_clock(points)
-
-    assert runtime_ignored == training_ignored == 1
-    assert [runtime_clock(t) for t in (0, 1200, 1800)] == [
-        training_clock(t) for t in (0, 1200, 1800)
-    ]
-
-
 def test_sequence_beat_positions_integrate_valid_redlines_and_ignore_bad_lines():
     points = [
         "0,500,4,2,0,70,1,0",

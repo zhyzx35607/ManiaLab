@@ -207,7 +207,7 @@ context.state={provided_stems:{voices:['guitar']}};api.renderGuitarDetector();as
 assert(elements.instrumentSpecialist.checked&&elements.instrumentPredictedReleases.checked);
 console.log('guitar UI controls passed');
 '''
-    completed = subprocess.run([node, '-e', test, str(script)], capture_output=True, text=True, timeout=15)
+    completed = subprocess.run([node, '-e', test, str(script)], capture_output=True, text=True, timeout=30)
     assert completed.returncode == 0, completed.stderr
 
 

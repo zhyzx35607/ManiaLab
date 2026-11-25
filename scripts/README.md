@@ -1,70 +1,42 @@
 # 脚本索引
 
-脚本保留在 `scripts/` 根目录，避免改变历史研究命令和续接记录中引用的路径。不要将本地音频、下载语料、模型权重或实验产物加入提交。
+`scripts/` 只保留当前构建、worker、发布证据和人工验收所需入口。历史研究代码可从 `archive/research-202611` 恢复；不要将音频、谱包、权重、缓存或逐音结果加入源码提交。
 
-## 构建与便携验证
+## 构建与运行时
 
-- `fetch_audio_models.py`：获取并校验打包需要的模型资源。
-- `fetch_piano_model.py`：从固定上游权重与源码重新导出并校验可选钢琴模型。
-- `build_audio_worker.py`：构建便携音频工作进程。
-- `build_windows.py --profile standard`：按明确组件清单构建隔离的 Windows 本地验证包，产物位于 `build/portable/<run-id>/`。当前公开支持 profile 是 `core`，Windows workflow 只验证该 profile；`standard`/`extended` 的本机构建不表示公开支持，`extended` 的专项门禁也不等于完整便携运行验收。
-- `package_assets.py`：维护构建范围、暂存资源和随包使用说明，避免夹带历史模型及研究文件。
-- `worker_inventory.py`：记录并核对 worker 全部运行文件；暂存按清单复制，拒绝额外文件、修改和链接。
-- `verify_portable.py`：用干净 PATH 和离线数据目录验证实际 EXE。
-- `verify_chart_workspaces.py` 使用指定 SHA-256 的多难度 `.osz` 走导入、逐难度编辑、重开、双格式导出。用 `--out` 指定新的本地目录，保存项目和逐难度校验结果。
-- `verify_independent_audio.py prepare <新目录>` 固定两首外部音乐的来源、哈希和前 24 秒窗口，`verify <同目录>` 串行运行真实音频分析及 6K–10K 生成、导出和重导入。需本机四声部模型及 `gh`。
-- `verify_official_decoder/`：用固定版本的 ppy Mania ruleset 独立解码 `.osz`，再逐物件、逐端点和逐 Timing 点与项目读取器对照。复现命令与整数毫秒限制见该目录 README。
-- `verify_shutdown.py`：验证关闭应用时音频子进程结束。
-- `collect_release_validation.py`：核对 ZIP、测试报告和实际 EXE，并生成去除音频/逐音数据的发布验证摘要。
-- `pytest.ini` 启用的 `pytest_provenance.py` hook：pytest 输出 JUnit 时自动保存同名 `.provenance.json` sidecar，绑定当前 Git commit、选择的源码/测试输入摘要、JUnit 字节摘要与测试退出状态；release collector 会强制校验 sidecar。它是同源完整性检查，不是签名或恶意 runner 的防护。
-- `check_blind_review_scores.py`：校验钢琴盲听和定轨试打 CSV 的冻结身份与完成度，并可在不读取解盲表的情况下保存原始评分和哈希回执。
-- `check_music_issue_ledger.py`：校验逐问题的听审/试打记录与处置字段，在新的 ignored `test-data/`目录锁定原始CSV及摘要回执；它不证明真实参与、完整覆盖或音乐验收通过。用`--help`查看模板复制、枚举及格式约束。
-- `refresh_piano_blind_review.py`：从现有的盲听片段和模板刷新离线评审网页；不解码源音频、不运行模型。
+- `fetch_audio_models.py`、`fetch_piano_model.py`：获取并校验构建所需模型。
+- `build_audio_worker.py`、`build_instrument_worker.py`：生成独立 Windows 音频 worker。
+- `build_windows.py --profile core`：构建 Windows 便携包；其他 profile 的本地构建不等于公开支持。
+- `package_assets.py`、`worker_inventory.py`、`build_provenance.py`：按能力清单暂存、盘点并绑定源码、模型和运行文件身份。
+- `separate_audio.py`、`separate_six.py`、`transcribe_instruments.py`、`worker_lifetime.py`：worker 运行入口和进程生命周期。
+- `research_tsumugi_transcription.py`、`tsumugi_candidate_adapter.py`、`audit_tsumugi_releases.py`、`recover_tsumugi_attacks.py`、`evaluate_guitar_vocal_benchmark.py`、`evaluate_instrument_benchmark.py`、`probe_mapper_adapter.py`：Extended worker 的固定来源身份闭包。虽然名称含研究/评价字样，仍是打包运行文件，不得单独删除。
 
-Windows Release CI 的正式入口为 `.github/workflows/windows.yml`；完整流程及版本状态见 [`docs/README.md`](../docs/README.md) 和 [`docs/PROGRESS.md`](../docs/PROGRESS.md)。
+## 自动化与便携验证
 
-## 研究脚本命名
+- `pytest_provenance.py`：pytest JUnit 报告的源码与输入身份 sidecar。
+- `verify_portable.py`、`verify_portable_guitar.py`、`verify_portable_instruments.py`：便携包合成流程和 profile 能力验证。
+- `verify_shutdown.py`、`verify_core_media.cjs`：worker 关停与 Core 浏览器媒体检查。
+- `collect_release_validation.py`：核对 ZIP、manifest、测试与便携报告的身份链。
+- `verify_official_decoder/`：固定版本 osu!mania 官方规则集，对照导出谱面对象、Timing 和音频引用。
+- `replay_frozen_generation.py`：对固定来源的忽略目录分析和计划执行真实生成/导出回读，用于定位代码变化影响；不重跑模型，输入与逐音产物不进入 Git。
 
-- `check_*.py`、`review_*.py`、`analyze_*.py`：固定输入核查、人工复核辅助或报告生成。
-- `prepare_*.py`、`train_*.py`、`evaluate_*.py`：数据准备、训练或评价流程。
-- 运行前阅读对应的 `docs/*-protocol.md`、`docs/PROGRESS.md` 和脚本参数；测试通过不等于音乐质量验收。
-
-## 《樱花草》候选差异听审
-
-- `build_chord_evidence_audio_review.py`：从冻结候选生成本地原混音听审包；不会运行模型或读取 Reference。
-- `summarize_chord_evidence_audio_review.py`：校验导出标签并汇总覆盖，不计算准确率或音乐质量。
-- 输入身份、固定播放范围和人工复核边界见 [`docs/chord-evidence-audio-review-protocol.md`](../docs/chord-evidence-audio-review-protocol.md)。
-
-## 钢琴采音到谱面对照
-
-- `check_piano_transcription_chart_ab.py`：复用本地缓存，对比 Kong、Transkun 官方及起音保留候选经过相同表达/选音/定轨后的 6K–10K 谱面；不运行模型、不读取 Reference，输出目录须使用新路径。
-- 受控条件、实际变化和验收限制见 [`docs/piano-transcription-chart-ab-2026-11-18.md`](../docs/piano-transcription-chart-ab-2026-11-18.md)。
-- `build_layout_playtest.py` 从指定谱包的一张谱生成 6K–10K 的同音符定轨盲测包和评分表。用 `--sha256` 指定源包哈希、`--chart` 选择原谱、`--out` 指定新目录。玩家流程见[同音符定轨试打](../docs/layout-playtest.md)。
-
-## 《樱花草》表达取舍静态审计
-
-- `summarize_expression_tradeoffs.py`：从冻结的分析与选择 JSON 定位省略的持续音资格候选；不运行模型或选择器，不读音频或 Reference。
-- 输入哈希、候选折叠、区间重叠语义和验收限制见 [`docs/expression-tradeoff-audit-protocol.md`](../docs/expression-tradeoff-audit-protocol.md)。
-
-## 《樱花草》Timing 候选静态诊断
-
-- `diagnose_sakura_timing_ambiguity.py`：复用冻结分析里已保存的 74/148/296 BPM 候选，在同一批起音上对比固定网格覆盖、候选相位和 12 秒窗口；不重估 Timing、不读音频或 Reference。
-- 输入哈希、折返相位及拍点/细分覆盖语义见 [`docs/sakura-timing-ambiguity-protocol.md`](../docs/sakura-timing-ambiguity-protocol.md)。
-
-## 常用验证
-
-`replay_frozen_generation.py` 读取固定SHA的分析和计划，通过真实生成、导出回读核对行为；
-`--baseline`比较同计划的ID、起止、轨道及证据字段。输入与逐音产物保留在ignored目录，
-不运行神经模型。范围见[协议](../docs/frozen-generation-regression-protocol.md)。
-完整歌曲的默认/无人声6–10K计划、音尾来源与位移字段见[LN复核结果](../docs/ln-evidence-review-results.md)。
+Windows CI 入口为 `.github/workflows/windows.yml` 和 `.github/workflows/extended-release.yml`。本地常用命令：
 
 ```powershell
+.\.venv\Scripts\python.exe -m compileall -q manialab launcher.py
 .\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe -m compileall -q manialab scripts tests
-node --check static/structure.js
+npm run test:ui
 git diff --check
 ```
 
-研究推理按项目续接规则串行执行，CPU 算子线程数设为 2；不要重复已完成队列，也不要修改正在运行或排队的研究脚本。
+## 人工音乐验收
 
-可重复的浏览器回归使用 `npm run test:ui`，隔离服务与合成夹具位于 `tests/browser/`；准备命令及边界见 [开发与验证](../docs/development.md)。
+- `verify_independent_audio.py`：在新目录用指定真实音频执行分析、6–10K 生成与导出往返。
+- `verify_chart_workspaces.py`：以固定哈希 `.osz` 检查多难度导入、编辑、重开和导出。
+- `build_layout_playtest.py`：从指定谱包生成 6–10K 同音符定轨盲测包和评分表。
+- `build_chord_evidence_audio_review.py`、`summarize_chord_evidence_audio_review.py`：生成并校验原混音差异听审包。
+- `build_piano_onset_blind_review.py`、`refresh_piano_blind_review.py`：构建及刷新钢琴起音盲听材料。
+- `build_vocal_phrase_review.py`、`summarize_vocal_phrase_review.py`：生成人声长条候选听审材料并校验回收标签。
+- `check_blind_review_scores.py`、`check_music_issue_ledger.py`：校验盲听/试打结果及逐问题处置记录。它们不证明参与者身份、完整覆盖或音乐验收通过。
+
+运行真实音频流程前使用新的 ignored `workspace_exp/` 子目录，并确认输入文件身份；真实 `.osz`、音频和评分材料不得提交。

@@ -14,6 +14,8 @@ scripts/reference-*.py
 test-data/
 .env
 *.key
+workspace_exp/
+GPT_PLAN.md
 assets/runtime/
 assets/deep/
 assets/instruments/
