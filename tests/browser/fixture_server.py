@@ -347,6 +347,8 @@ def main():
         timing_fixture(projects, 'UI project race generation')
         evidence_fixture(projects, 'UI project race expression')
         timing_fixture(projects, 'UI timing clock')
+        timing_fixture(projects, 'UI onset stale')
+        timing_fixture(projects, 'UI acquisition settings')
         timing_fixture(projects, 'UI timing navigation', duration_seconds=30)
         timing_fixture(projects, 'UI timing wave')
         timing_fixture(projects, 'UI timing saved')

@@ -118,8 +118,8 @@ test('batch-wide onset preset requires timing acknowledgement, generates ready s
 
 test('changing to onset-only shows the existing candidate as stale and blocks chart export', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#recent option')).toContainText(['UI timing clock']);
-  await page.locator('#recent').selectOption({label:'UI timing clock'});
+  await expect(page.locator('#recent option')).toContainText(['UI onset stale']);
+  await page.locator('#recent').selectOption({label:'UI onset stale'});
   await page.locator('#timingConfirmed').check();
   await page.locator('#generate').click();
   await expect(page.locator('#message')).toContainText('结构检查通过');
@@ -145,8 +145,8 @@ test('changing to onset-only shows the existing candidate as stale and blocks ch
 
 test('changing acquisition thresholds leaves the existing candidate exportable', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#recent option')).toContainText(['UI timing clock']);
-  await page.locator('#recent').selectOption({label:'UI timing clock'});
+  await expect(page.locator('#recent option')).toContainText(['UI acquisition settings']);
+  await page.locator('#recent').selectOption({label:'UI acquisition settings'});
   await page.locator('#timingConfirmed').check();
   await page.locator('#generate').click();
   await expect(page.locator('#message')).toContainText('结构检查通过');
