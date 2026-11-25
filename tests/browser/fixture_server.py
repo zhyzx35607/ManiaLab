@@ -29,18 +29,18 @@ def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def timing_fixture(projects, title):
+def timing_fixture(projects, title, duration_seconds=12):
     pid, folder = projects.create()
     with wave.open(str(folder / 'files/synthetic.wav'), 'wb') as output:
         output.setnchannels(1)
         output.setsampwidth(2)
         output.setframerate(22050)
-        output.writeframes(b'\0\0' * 22050 * 12)
+        output.writeframes(b'\0\0' * 22050 * duration_seconds)
     shutil.copyfile(folder / 'files/synthetic.wav', folder / 'preview.wav')
     notes = [Note(1115+i*500, 1865+i*500, pitch=60+i%8, source='pitch', id=f'timing{i}') for i in range(20)]
     projects.save(dict(id=pid, title=title, artist='Fixture', mode='audio', settings=parameters({'ln_ratio':1}),
         variants=[], active=-1, charts=[], audio='synthetic.wav', original=None, input_notes=[], audio_shift_ms=22.5,
-        analysis=dict(revision=3, duration=12, audio_sha256=sha256(folder / 'files/synthetic.wav'),
+        analysis=dict(revision=3, duration=duration_seconds, audio_sha256=sha256(folder / 'files/synthetic.wav'),
             candidates=[n.data() for n in notes],
             timing_attacks=[n.data() for n in notes], waveform=[0]*100,
             tempo=dict(bpm=120, offset=115, division=4, stable=True,
@@ -347,6 +347,7 @@ def main():
         timing_fixture(projects, 'UI project race generation')
         evidence_fixture(projects, 'UI project race expression')
         timing_fixture(projects, 'UI timing clock')
+        timing_fixture(projects, 'UI timing navigation', duration_seconds=30)
         timing_fixture(projects, 'UI timing wave')
         timing_fixture(projects, 'UI timing saved')
         timing_fixture(projects, 'UI timing style')

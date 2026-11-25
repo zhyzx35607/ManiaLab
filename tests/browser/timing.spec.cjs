@@ -46,6 +46,69 @@ test('a delayed timing result stays expired even after returning to the same clo
   await expect(page.locator('#timingReport')).not.toContainText('0 段可能错位');
 });
 
+test('suspect timing navigation auditions, expires after an offset edit, and keeps the end locator', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.locator('#recent option')).toContainText(['UI timing navigation']);
+  await page.locator('#recent').selectOption({ label: 'UI timing navigation' });
+  await openTimingAdvanced(page);
+
+  const originalOffset = Number(await page.locator('#offset').inputValue());
+  const editedOffset = originalOffset + 55;
+  let checkedClock;
+  await page.route('**/timing-check', async route => {
+    checkedClock = route.request().postDataJSON();
+    await route.fulfill({ json: {
+      sections: [{ start_ms:2000, end_ms:4000, attacks:8, suspect:true,
+        phase_error_ms:55, coverage:.75, fallback:true }],
+      suspect:1, status:'available', insufficient_windows:[], clock:checkedClock,
+      window_clock:'audio',
+    } });
+  });
+  await page.locator('#offset').fill(String(editedOffset));
+  const checkResponse = page.waitForResponse(response => response.url().endsWith('/timing-check'));
+  await page.locator('#checkTiming').click();
+  expect((await checkResponse).status()).toBe(200);
+  expect(checkedClock).toMatchObject({
+    bpm:120, offset:editedOffset, division:4, audio_shift_ms:22.5,
+  });
+  await expect(page.locator('#timingReport')).toContainText('1 段可能错位');
+
+  const suspect = page.locator('#timingLocations button');
+  await expect(suspect).toHaveCount(1);
+  await expect(suspect).toHaveText('2–4s');
+  await suspect.click();
+  await expect(page.locator('#auditionStart')).toHaveValue('2.0');
+  await expect(page.locator('.audition-panel')).toHaveJSProperty('open', true);
+  await expect(page.locator('#auditionNote')).toContainText('已定位 2.0 秒');
+
+  const auditionRequest = page.waitForRequest(request =>
+    request.url().endsWith('/audition') && request.method() === 'POST');
+  const auditionResponse = page.waitForResponse(response => response.url().endsWith('/audition'));
+  await page.locator('#auditionA').click();
+  const request = await auditionRequest;
+  expect(request.postDataJSON()).toMatchObject({
+    mode:'beats', start_ms:2000, bpm:120, offset:editedOffset,
+  });
+  expect((await auditionResponse).status()).toBe(200);
+  await page.waitForFunction(() =>
+    document.querySelector('#auditionAudio').src.startsWith('blob:'));
+  await page.locator('#auditionAudio').evaluate(audio => audio.pause());
+
+  await page.locator('#offset').fill(String(originalOffset));
+  await expect(page.locator('#timingReport')).toContainText('当前拍线尚未检查');
+  await expect(page.locator('#timingReport')).not.toContainText('段可能错位');
+  await expect(page.locator('#timingLocations button').filter({ hasText:'结尾' })).toHaveCount(1);
+  await page.locator('#timingLocations button').filter({ hasText:'结尾' }).click();
+  await expect(page.locator('#auditionStart')).toHaveValue('18.0');
+
+  await page.setViewportSize({ width:390, height:844 });
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  expect(overflow).toBe(false);
+  expect(errors).toEqual([]);
+});
+
 test('saved diagnostics return only for the candidate clock and legacy projects remain readable', async ({ page }) => {
   await openTiming(page, 'UI timing saved');
   await page.locator('#timingConfirmed').check();
