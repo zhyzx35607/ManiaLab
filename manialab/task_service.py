@@ -209,10 +209,13 @@ class ProjectTasks:
             return dict(job)
 
     def submit_batch(self, entries, *, max_parallel=MAX_BATCH_PARALLELISM,
-                     identity=None):
-        """Analyze several independent projects under one bounded batch job."""
-        if not isinstance(entries, (list, tuple)) or not 2 <= len(entries) <= MAX_BATCH_SIZE:
-            raise ValueError(f"批量采音需要 2–{MAX_BATCH_SIZE} 首歌曲")
+                     identity=None, min_items=2):
+        """Run independent project operations under one bounded batch job."""
+        if type(min_items) is not int or not 1 <= min_items <= MAX_BATCH_SIZE:
+            raise ValueError("批量任务最少项目数无效")
+        if (not isinstance(entries, (list, tuple))
+                or not min_items <= len(entries) <= MAX_BATCH_SIZE):
+            raise ValueError(f"批量任务需要 {min_items}–{MAX_BATCH_SIZE} 首歌曲")
         if type(max_parallel) is not int or not 1 <= max_parallel <= MAX_BATCH_PARALLELISM:
             raise ValueError(f"批量并行数必须是 1–{MAX_BATCH_PARALLELISM}")
         normalized = []

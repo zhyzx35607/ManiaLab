@@ -55,11 +55,40 @@
           >
           <details class="batch-panel">
             <summary>批量分析歌曲 <span>2–10 首 · 最多同时处理 2 首</span></summary>
-            <p class="muted compact">每首歌单独建项目，最多同时分析 2 首，其余自动排队；结果可逐首打开。</p>
+            <p class="muted compact">每首歌单独建项目，最多同时分析 2 首，其余自动排队。分析后统一选择键型和预设，生成成功的歌曲可逐首下载或打包下载。</p>
             <label class="batch-drop">选择 2–10 首音频<input id="batchFiles" type="file" multiple accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac"></label>
             <p id="batchFileSummary" class="muted compact" aria-live="polite">尚未选择歌曲。</p>
             <button id="batchAnalyze" class="secondary full" disabled>导入并开始批量分析</button>
             <div id="batchStatus" class="batch-status" role="status" aria-live="polite"></div>
+            <div id="batchGenerateControls" class="batch-generate hidden">
+              <p class="batch-subheading">统一生成设置</p>
+              <div class="batch-options">
+                <label class="field">键数<select id="batchKeys">
+                  <option value="6">6K</option><option value="7">7K</option><option value="8">8K</option>
+                  <option value="9">9K</option><option value="10" selected>10K</option>
+                </select></label>
+                <label class="field">键型预设<select id="batchKeyLayout">
+                  <option value="10k_5_5">10K · 5+5</option>
+                </select></label>
+              </div>
+              <label class="field">一键预设<select id="batchPreset">
+                <option value="balanced">均衡起步</option>
+                <option value="onset_only">纯起音（不写 LN）</option>
+                <option value="sustain">偏持续音</option>
+                <option value="rhythm">节奏清晰</option>
+              </select></label>
+              <label class="range-field">密度上限 / 秒 <output id="batchDensityOut">7</output>
+                <input id="batchDensity" type="range" min="1" max="50" step="1" value="7" />
+              </label>
+              <label class="check batch-timing-confirm">
+                <input id="batchTimingConfirmed" type="checkbox" />
+                对拍线不稳定的歌曲也使用自动估计继续生成
+              </label>
+              <p class="muted compact">每首歌使用自己的 BPM / Offset；勾选只代表允许未稳定拍线继续，不代表已完成试听校准。</p>
+              <button id="batchGenerate" class="primary full" disabled>统一预设并生成全部</button>
+              <a id="batchDownloadAll" class="button secondary full hidden disabled" aria-disabled="true">下载全部 OSZ（ZIP）</a>
+              <div id="batchGeneratedDownloads" class="batch-downloads"></div>
+            </div>
           </details>
           <select id="charts" class="hidden" aria-label="谱包难度"></select
           ><label class="field"
@@ -499,6 +528,7 @@
           <div><strong>—</strong><small>最大同时 LN</small></div>
           <div><strong>—</strong><small>最长 LN</small></div>
         </div>
+        <p id="candidateDraftStatus" class="candidate-draft-status hidden" role="status"></p>
         <details id="lnDesignPanel" class="review-panel">
           <summary>实际 LN 键型 <span>包含没有新起音的放手时刻</span></summary>
           <p id="lnDesignSummary" class="muted">
@@ -626,6 +656,7 @@
                 <option value="onset_only">纯起音（不写 LN）</option>
                 <option value="sustain">偏持续音</option>
                 <option value="rhythm">节奏清晰</option>
+              <option value="custom">自定义</option>
               </select></label
             >
             <details class="advanced-settings">
