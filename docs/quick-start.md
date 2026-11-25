@@ -1,6 +1,6 @@
 # 第一次用 ManiaLab
 
-从 [dev.27 GitHub Release](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.27) 直接下载 Extended ZIP；不要下载 Tags 页面里的源码压缩包。下载、解压建议留出约 4 GiB 空间。完整解压后双击 `ManiaLab.exe`。浏览器打开的是本机程序，保持控制台窗口开着，结束时关闭它即可。四／六声部模型和 CPU 运行时已经包含在完整包中。
+从 [dev.27 Extended ZIP 直链](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.1.0-alpha.6-dev.27/ManiaLab-0.1.0-alpha.6-dev.27-windows-x64-extended.zip) 下载 1.15 GiB 单文件；也可查看 [GitHub Release](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.27)。不要下载 Tags 页面里的源码压缩包。下载、解压建议留出约 4 GiB 空间；SHA-256 为 `dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc`。完整解压后双击 `ManiaLab.exe`。浏览器打开的是本机程序，保持控制台窗口开着，结束时关闭它即可。四／六声部模型和 CPU 运行时已经包含在完整包中。
 
 ## 已有多难度谱包
 
