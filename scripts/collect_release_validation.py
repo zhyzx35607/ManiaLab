@@ -33,6 +33,7 @@ PORTABLE_CHECK_NAMES = frozenset({
     "core_model",
     "bundled_model",
     "bundled_arrangement_profiles",
+    "torosu_cli_smoke",
     "startup",
     "four_piano_profile_status",
     "core_capability_status",
@@ -59,6 +60,7 @@ PORTABLE_COMMON_CHECK_NAMES = frozenset({
     "release_manifest",
     "core_model",
     "bundled_arrangement_profiles",
+    "torosu_cli_smoke",
     "startup",
     "generate_export",
     "restart",
@@ -1416,6 +1418,8 @@ def collect(build_root, pytest_report, portable_report, shutdown_report, *,
 
     portable = json.loads(Path(portable_report).read_text(encoding="utf-8"))
     required_checks = {"release_manifest", "startup", "restart", "generate_export"}
+    if manifest.get("torosu_cli") is not None:
+        required_checks.add("torosu_cli_smoke")
     if profile == "core":
         required_checks.update({"basic_analysis", "provided_stem_analysis_export", "bad_audio_recovery"})
     else:

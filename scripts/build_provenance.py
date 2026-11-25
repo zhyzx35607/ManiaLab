@@ -2,6 +2,7 @@
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 from pathlib import PurePosixPath
 import subprocess
@@ -69,6 +70,14 @@ def source_snapshot_paths(root, enabled):
         root / 'assets/guitar-model.json', root / 'assets/deep-models.json',
         root / 'manialab/tsumugi-source.json', *license_inputs,
     ]
+    engine_root = root / 'engines' / 'torosu_cli'
+    if engine_root.is_dir():
+        files.extend(
+            engine_root / name
+            for name in ('Cargo.toml', 'Cargo.lock', 'LICENSE', 'README.md', 'UPSTREAM.md')
+            if (engine_root / name).is_file()
+        )
+        files.extend(_source_tree_files(root, 'engines/torosu_cli/src'))
     if enabled['separation_four']:
         files.append(root / 'requirements-deep-lock.txt')
     if enabled['mapperatorinator_install']:
@@ -85,6 +94,31 @@ def source_snapshot_paths(root, enabled):
             unique_files.append(path)
             seen_keys.add(key)
     return tuple(unique_files)
+
+
+def torosu_cli_binary(root, *, environment=None):
+    """Locate the already built native CLI selected for the portable bundle."""
+    root = Path(root).resolve()
+    environment = os.environ if environment is None else environment
+    configured = environment.get('MANIALAB_TOROSU_CLI')
+    if configured:
+        candidates = [Path(configured)]
+    else:
+        target_root = Path(environment.get(
+            'CARGO_TARGET_DIR', root / 'engines' / 'torosu_cli' / 'target'
+        ))
+        candidates = [
+            target_root / triple / 'release' / 'torosu-cli.exe'
+            for triple in ('x86_64-pc-windows-msvc', 'x86_64-pc-windows-gnu')
+        ]
+        candidates.append(target_root / 'release' / 'torosu-cli.exe')
+    for path in candidates:
+        if path.is_file():
+            return path.resolve()
+    raise FileNotFoundError(
+        'Built Torosu CLI was not found. Build engines/torosu_cli in release mode '
+        'or set MANIALAB_TOROSU_CLI to its executable.'
+    )
 
 
 def sha256(path):

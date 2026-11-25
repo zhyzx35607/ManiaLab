@@ -13,6 +13,7 @@ import re
 import struct
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 from urllib.parse import urlencode
@@ -132,6 +133,89 @@ def verify_manifest_components(manifest, declared, bundle_root, source_root=ROOT
             source_root, bundle_root / "_internal/assets/instruments"
         ) == manifest["instrument_worker"]
     return worker, piano_identity
+
+
+def verify_torosu_cli(bundle_root, identity, work_root):
+    bundle_root = Path(bundle_root)
+    relative = "_internal/engines/torosu_cli/torosu-cli.exe"
+    if identity.get("path") != relative:
+        raise AssertionError("Torosu CLI path differs from the native runtime contract")
+    binary = bundle_root / relative
+    if not binary.is_file():
+        raise AssertionError("Packaged Torosu CLI is missing")
+    if identity.get("bytes") != binary.stat().st_size:
+        raise AssertionError("Packaged Torosu CLI size differs from the release manifest")
+    if identity.get("sha256") != hashlib.sha256(binary.read_bytes()).hexdigest():
+        raise AssertionError("Packaged Torosu CLI hash differs from the release manifest")
+    work_root = Path(work_root)
+    work_root.mkdir(parents=True, exist_ok=True)
+    smoke_root = work_root / "isolated"
+    smoke_root.mkdir(exist_ok=True)
+    environment = {
+        key: value for key, value in os.environ.items()
+        if key not in ("PYTHONHOME", "PYTHONPATH", "VIRTUAL_ENV")
+    }
+    environment["PATH"] = str(Path(os.environ["SystemRoot"]) / "System32")
+    environment["TEMP"] = str(smoke_root)
+    environment["TMP"] = str(smoke_root)
+    chart = """osu file format v14
+
+[General]
+AudioFilename: smoke.ogg
+Mode: 3
+
+[Metadata]
+Title: Torosu CLI smoke
+Artist: ManiaLab
+Creator: ManiaLab
+Version: Smoke
+BeatmapSetID: 24
+
+[Difficulty]
+CircleSize:7
+
+[TimingPoints]
+0,500,4,1,0,70,1,0
+
+[HitObjects]
+36,192,0,1,8,0:0:0:0:
+109,192,250,128,0,1000:0:0:0:0:
+183,192,500,1,0,0:0:0:0:
+256,192,750,1,0,0:0:0:0:
+329,192,1000,1,0,0:0:0:0:
+402,192,1250,1,0,0:0:0:0:
+475,192,1500,1,0,0:0:0:0:
+"""
+    with tempfile.TemporaryDirectory(prefix="torosu-cli-smoke-", dir=smoke_root) as scratch:
+        scratch = Path(scratch)
+        source = scratch / "source.osu"
+        output = scratch / "converted.osu"
+        source.write_text(chart, encoding="utf-8")
+        converted = subprocess.run(
+            [
+                str(binary), "convert", "--input", str(source), "--output", str(output),
+                "--keys", "10", "--density", "none", "--strict",
+            ],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=20, env=environment, cwd=scratch,
+        )
+        if converted.returncode:
+            raise AssertionError(
+                f"Packaged Torosu convert smoke failed: {converted.stderr[-2000:]}"
+            )
+        analysis = subprocess.run(
+            [str(binary), "analyze", "--input", str(output), "--json"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=20, env=environment, cwd=scratch,
+        )
+        if analysis.returncode:
+            raise AssertionError(
+                f"Packaged Torosu analyze smoke failed: {analysis.stderr[-2000:]}"
+            )
+        result = json.loads(analysis.stdout)
+        if result.get("keys") != 10 or result.get("objects") != 7 or result.get("ln") != 1:
+            raise AssertionError("Packaged Torosu CLI returned incorrect smoke analysis")
+    return identity
 
 
 def _required_bool(value, label):
@@ -405,6 +489,10 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         release_manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
         assert release_manifest['version']==__version__
         assert release_manifest['executable_sha256']==hashlib.sha256(executable.read_bytes()).hexdigest()
+        torosu_identity=release_manifest.get('torosu_cli')
+        has_torosu_sources='engines/torosu_cli/Cargo.toml' in release_manifest['sources']
+        if has_torosu_sources:
+            assert torosu_identity is not None, 'Native Torosu source has no packaged CLI identity'
         for name,digest in release_manifest['sources'].items():
             assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, f'Packaged source is stale: {name}'
         declared=capabilities(release_manifest['build_profile'])
@@ -437,6 +525,13 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         expected_profiles=hashlib.sha256((ROOT/'assets/arrangement-profiles.json').read_bytes()).hexdigest()
         assert hashlib.sha256((executable.parent/'_internal/assets/arrangement-profiles.json').read_bytes()).hexdigest()==expected_profiles
         record(dict(check='bundled_arrangement_profiles',sha256=expected_profiles))
+        if has_torosu_sources:
+            torosu_smoke=verify_torosu_cli(
+                executable.parent,torosu_identity,work/'torosu-cli-smoke'
+            )
+            record(dict(check='torosu_cli_smoke',
+                path=torosu_smoke['path'],bytes=torosu_smoke['bytes'],
+                sha256=torosu_smoke['sha256'],commands=['convert','analyze']))
         start();status=request('/api/status')
         assert status['version']==__version__,status
         separator_status=verify_runtime_capabilities(status,declared)
