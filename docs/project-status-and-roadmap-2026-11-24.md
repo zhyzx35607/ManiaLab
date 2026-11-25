@@ -43,7 +43,7 @@ dev.26 的 `.ps1` 下载器会同时启动 12 个隐藏的 `curl.exe`，窗口�
 | 本地 ignored `build/` | 8,687 个文件，约 7.68 GB | 主要是不同 run 的构建、发布 ZIP、检查报告和缓存；需按 run/保留策略盘点，不能整目录清空。 |
 | 本地 ignored `assets/` | 4,993 个文件，约 2.20 GB | 模型和运行资源；不能按缓存清理。 |
 
-以上文件数依据本轮开始时的最新 `origin/main` `17381f9` 重新统计；该基线已包含此前增加的状态路线图及 `scripts/ui_smoke.cjs` 退役。当前本轮只移除 `scripts/ui_timing_navigation_smoke.cjs`，并在已存在的浏览器测试与 fixture server 中迁入其唯一行为覆盖，因此合并后预期为 docs 382、scripts 420、tests 264。
+以上文件数依据本轮开始时的最新 `origin/main` `17381f9` 重新统计；该基线已包含此前增加的状态路线图及 `scripts/ui_smoke.cjs` 退役。PR #271 移除 `scripts/ui_timing_navigation_smoke.cjs`，并在已存在的浏览器测试与 fixture server 中迁入其唯一行为覆盖；合并后的 `main` 现有 docs 382、scripts 420、tests 264 个跟踪文件。
 
 2026-11-25 本次测试工具收敛将旧 `scripts/ui_timing_navigation_smoke.cjs` 的 Timing 可疑区间跳转、试听 A、Offset 改动后诊断失效、结尾定位行为迁到 `tests/browser/timing.spec.cjs`，并在 `tests/browser/fixture_server.py` 添加 30 秒 disposable synthetic fixture。旧 runner 不能在干净 checkout 运行，依赖 ignored Playwright、固定 Edge 路径、外部 server 与未跟踪 WAV；其窄屏检查原已由 `tests/browser/workflow.spec.cjs` 覆盖。没有删除 pytest 用例；`ui_grid_smoke.cjs`、`ui_timing_smoke.cjs`、`ui_waveform_smoke.cjs` 和其他有独有场景的 runner 保留。Windows workflow 中 Python/API、浏览器、Core EXE、媒体/来源切换、关停与 release evidence collector 分属不同验证层，本次未合并或移除。
 
