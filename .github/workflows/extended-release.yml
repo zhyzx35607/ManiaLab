@@ -172,6 +172,10 @@ jobs:
           if ($LASTEXITCODE) { throw "Release ZIP validation failed." }
           $packageHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
           $package = Get-Item -LiteralPath $zipPath
+          $portableAsset = Join-Path $releaseDirectory "$stem-portable-verification.json"
+          $shutdownAsset = Join-Path $releaseDirectory "$stem-shutdown-verification.json"
+          Copy-Item -LiteralPath $portablePath -Destination $portableAsset
+          Copy-Item -LiteralPath $shutdownPath -Destination $shutdownAsset
           $manifest = Get-Content -LiteralPath "build/portable/$env:MANIALAB_BUILD_ID/dist/ManiaLab/release-manifest.json" -Raw | ConvertFrom-Json
           $portable = Get-Content -LiteralPath $portablePath -Raw | ConvertFrom-Json
           $shutdown = Get-Content -LiteralPath $shutdownPath -Raw | ConvertFrom-Json
@@ -230,14 +234,20 @@ jobs:
             (Join-Path $releaseDirectory "$stem.zip"),
             (Join-Path $releaseDirectory "$stem-SHA256SUMS.txt"),
             (Join-Path $releaseDirectory "$stem-verification.json"),
-            "test-data/portable-extended/report.json",
-            "test-data/shutdown-extended/report.json"
+            (Join-Path $releaseDirectory "$stem-portable-verification.json"),
+            (Join-Path $releaseDirectory "$stem-shutdown-verification.json")
           )
           $existingDraft = gh release view $tag --repo $env:GITHUB_REPOSITORY --json isDraft --jq .isDraft 2>$null
           $viewExitCode = $LASTEXITCODE
           if ($viewExitCode -eq 0) {
             if ($existingDraft.Trim() -ne "true") {
               throw "Release $tag already exists and is public; refusing to replace it."
+            }
+            $existingAssetNames = @(gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name')
+            if ($LASTEXITCODE) { throw "Could not inspect the existing draft Release assets." }
+            if ($existingAssetNames -contains "report.json") {
+              gh release delete-asset $tag report.json --repo $env:GITHUB_REPOSITORY --yes
+              if ($LASTEXITCODE) { throw "Could not remove the ambiguous report.json draft asset." }
             }
             gh release upload $tag @assets --repo $env:GITHUB_REPOSITORY --clobber
             if ($LASTEXITCODE) { throw "Could not finish uploading the verified draft Release." }
