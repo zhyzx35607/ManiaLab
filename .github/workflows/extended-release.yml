@@ -243,6 +243,12 @@ jobs:
             if ($existingDraft.Trim() -ne "true") {
               throw "Release $tag already exists and is public; refusing to replace it."
             }
+            $existingAssetNames = @(gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name')
+            if ($LASTEXITCODE) { throw "Could not inspect the existing draft Release assets." }
+            if ($existingAssetNames -contains "report.json") {
+              gh release delete-asset $tag report.json --repo $env:GITHUB_REPOSITORY --yes
+              if ($LASTEXITCODE) { throw "Could not remove the ambiguous report.json draft asset." }
+            }
             gh release upload $tag @assets --repo $env:GITHUB_REPOSITORY --clobber
             if ($LASTEXITCODE) { throw "Could not finish uploading the verified draft Release." }
           } else {
