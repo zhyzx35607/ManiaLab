@@ -27,6 +27,13 @@ DEFAULT_KEY_LAYOUTS = {
     9: "9k_4_1_4",
     10: "10k_5_5",
 }
+TOROSU_PLAYSTYLES = {
+    "6k_3_3": "3+3",
+    "7k_3_1_3": "3+1+3",
+    "8k_3_2_3": "3+2+3",
+    "9k_4_1_4": "4+1+4",
+    "10k_5_5": "5+5",
+}
 
 
 def merge_parameters(base=None, updates=None):
@@ -85,7 +92,7 @@ def parameters(raw=None):
                 raise ValueError("采音侧重无效")
             result[k] = v
         elif k == "layout_engine":
-            if v not in ("beam", "classic"):
+            if v not in ("beam", "classic", "torosu"):
                 raise ValueError("定轨引擎无效")
             result[k] = v
         elif k == "key_layout":
@@ -100,6 +107,8 @@ def parameters(raw=None):
     if key_layout is None:
         key_layout = DEFAULT_KEY_LAYOUTS[result["keys"]]
     key_layout_profile(result["keys"], key_layout)
+    if result["layout_engine"] == "torosu" and key_layout not in TOROSU_PLAYSTYLES:
+        raise ValueError("Torosu 不支持 8K 4+4 键型；请切换到 8K 3+2+3 键型")
     result["key_layout"] = key_layout
     result["max_held"] = min(result["keys"], result["max_held"])
     result["chord_size"] = min(result["keys"], result["chord_size"])

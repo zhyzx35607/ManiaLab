@@ -1,6 +1,6 @@
 # ManiaLab 2.0 续接进度
 
-更新：2026-11-25（Asia/Shanghai）。当前任务仅执行 `GPT_PLAN.md` 的阶段 #01；完成后停止，不进入阶段 #02。
+更新：2026-11-25（Asia/Shanghai）。当前任务仅执行 `GPT_PLAN.md` 的阶段 #02；完工后停止，不进入阶段 #03。
 
 ## 当前基线
 
@@ -33,6 +33,9 @@
 
 ## 验收边界
 
-- 本阶段不改算法行为、不新增产品功能、不发布 Release、不打版本 tag。
-- 自动化测试仅证明工程行为，不代表真实歌曲采音、声部表达、Timing、6–10K/LN 手感或 osu! 实打验收通过。
-- 目标若与活动构建、用户数据或真实音乐验收保护冲突，保留保护项并在完工汇报中明确记录冲突；不进入下一阶段。
+- 阶段 #02 使用独立 Rust CLI，复用 `D:\project\Torosu` 固定提交的 MIT 源码；Torosu 工作树保持只读。主仓库保留单一 `feat/phase1-torosu-engine` 分支与一个 worktree。
+- 严格桥接保留源物件字段、起止和 LN 类型；Torosu 密度扩展只增加物件。原始 6–10K 满宽谱按 Torosu 原生规则严格转换；无轨音频候选先生成较小源型，必要时扩至目标宽度，超过目标和弦容量时明确失败。局部重写不回退到旧引擎。
+- 真实本机歌曲 `Qian Ying A_ - Tan Gu Zhi` 的 7K 谱（1366 物件 / 582 LN）已导出 10K A/B `.osz`：严格 Torosu 约 133 ms；Dense 约 140 ms，1925 物件 / 760 LN。包位于忽略目录 `workspace_exp/ab_torosu/`，内部解析与结构校验通过；仍需用户在 osu! 内实打验收。
+- Rust CLI 使用 D 盘 `stable-x86_64-pc-windows-gnu` 与 self-contained linker 编译；CARGO_HOME / RUSTUP_HOME / 临时目录均在 D 盘，未安装 Visual Studio。Windows CI 使用 MSVC runner toolchain 构建、测试并打包 CLI；portable verifier 以干净 PATH 实际运行包内 convert/analyze。
+- 本机完整验收：`.venv\Scripts\python.exe -m pytest -q` 为 2410 passed / 75 skipped / 1 warning（241.33 秒）；`npm run test:ui` 为 87 passed；GNU CLI `cargo check`、15 个核心测试 + 7 个 CLI 集成测试、Release 构建均通过。
+- Windows GitHub CI、单一阶段 PR 合入 `main` 与删除临时分支仍待完成；全部结束后立即停在阶段 #02，不进入阶段 #03，不发布 Release 或版本 tag。

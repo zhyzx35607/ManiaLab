@@ -16,6 +16,8 @@ test-data/
 *.key
 workspace_exp/
 GPT_PLAN.md
+engines/torosu_cli/target/
+engines/torosu_cli/.tmp/
 assets/runtime/
 assets/deep/
 assets/instruments/

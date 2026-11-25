@@ -48,6 +48,42 @@ def test_source_snapshot_paths_includes_docs_and_rejects_links(tmp_path, monkeyp
         build_provenance.source_snapshot_paths(tmp_path, capabilities('core'))
 
 
+def test_source_snapshot_includes_native_torosu_sources_and_cargo_lock(tmp_path):
+    crate = tmp_path / 'engines' / 'torosu_cli'
+    source = crate / 'src' / 'main.rs'
+    source.parent.mkdir(parents=True)
+    source.write_text('fn main() {}', encoding='utf-8')
+    (crate / 'Cargo.toml').write_text('[package]', encoding='utf-8')
+    (crate / 'Cargo.lock').write_text('# locked', encoding='utf-8')
+    (crate / 'LICENSE').write_text('MIT', encoding='utf-8')
+    (crate / 'UPSTREAM.md').write_text('provenance', encoding='utf-8')
+
+    paths = build_provenance.source_snapshot_paths(tmp_path, capabilities('core'))
+
+    assert {path.relative_to(tmp_path).as_posix() for path in paths} >= {
+        'engines/torosu_cli/Cargo.toml',
+        'engines/torosu_cli/Cargo.lock',
+        'engines/torosu_cli/LICENSE',
+        'engines/torosu_cli/UPSTREAM.md',
+        'engines/torosu_cli/src/main.rs',
+    }
+
+
+def test_torosu_cli_binary_lookup_honors_target_and_explicit_path(tmp_path):
+    root = tmp_path / 'repo'
+    target = tmp_path / 'cargo-target'
+    binary = target / 'x86_64-pc-windows-gnu' / 'release' / 'torosu-cli.exe'
+    binary.parent.mkdir(parents=True)
+    binary.write_bytes(b'torosu')
+
+    assert build_provenance.torosu_cli_binary(
+        root, environment={'CARGO_TARGET_DIR': str(target)},
+    ) == binary.resolve()
+    assert build_provenance.torosu_cli_binary(
+        root, environment={'MANIALAB_TOROSU_CLI': str(binary)},
+    ) == binary.resolve()
+
+
 @pytest.mark.parametrize(('profile', 'includes_deep_lock'), (
     ('core', False),
     ('standard', True),

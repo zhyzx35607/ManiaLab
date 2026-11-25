@@ -12,7 +12,7 @@ from .domain import UNOBSERVED_RELEASES, Note, invariant, validate
 from .timing import BeatClock
 from .preferences import row_settings, settings_at
 from .solver import solver_lock as _solver_lock, solve_binary as _solve_binary
-from .arrange_config import BOUNDS, DEFAULTS, INTEGER, parameters
+from .arrange_config import BOUNDS, DEFAULTS, INTEGER, TOROSU_PLAYSTYLES, parameters
 from .arrange_config import key_layout_profile
 from .candidate_selection import _choose_holds as _choose_candidate_holds
 from .candidate_selection import _select_notes as _select_candidate_notes
@@ -62,8 +62,9 @@ def layout_metrics(notes, keys, beat_ms=500, timing_points=(), key_layout=None):
 
 def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None,
                  cancelled=lambda: False, segment_preferences=(), timing_points=(),
-                 sequence_prior=None, sequence_strength=.35, key_layout=None):
-    """Compare complete assignments against hand/LN-release costs."""
+                 sequence_prior=None, sequence_strength=.35, key_layout=None, *,
+                 source_keys=None, offset_ms=0, meter=4):
+    """Assign lanes without changing note identity, type, or timing."""
     if key_layout is not None:
         settings = dict(settings or {})
         settings["key_layout"] = key_layout
@@ -71,6 +72,23 @@ def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None,
     if sequence_prior is not None and p["layout_engine"] != "beam":
         raise ValueError("sequence prior requires the beam layout engine")
     notes, locked = list(notes), list(locked)
+    if p["layout_engine"] == "torosu":
+        if locked:
+            raise ValueError("Torosu 不支持带锁定音符的局部重写；请重新生成整谱")
+        if cancelled():
+            raise InterruptedError("已取消定轨搜索")
+        from .torosu_bridge import convert_notes
+
+        if progress:
+            progress(50, "Torosu 定轨 · 保留所有物件及 LN 起止")
+        output = convert_notes(
+            notes, p["keys"], source_keys=source_keys, timing_points=timing_points,
+            beat_ms=beat_ms, offset_ms=offset_ms, meter=meter,
+            playstyle=TOROSU_PLAYSTYLES[p["key_layout"]], cancelled=cancelled, strict=True,
+        )
+        if cancelled():
+            raise InterruptedError("已取消定轨搜索")
+        return output
     if p["layout_engine"] == "beam":
         from .layout import search_layout
         try:

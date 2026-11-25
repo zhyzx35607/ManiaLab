@@ -27,6 +27,7 @@ enabled=capabilities(profile)
 from build_provenance import (
     archive_payload_inventory,
     sha256,
+    torosu_cli_binary,
     remove_duplicate_parent_torch_cpu_dll,
     source_snapshot_paths,
     download_uv_binary,
@@ -38,6 +39,11 @@ from build_provenance import (
 )
 os.chdir(ROOT)
 if os.name!='nt':raise SystemExit('Build the Windows distribution on Windows.')
+try:
+    torosu_cli=torosu_cli_binary(ROOT)
+except FileNotFoundError as error:
+    raise SystemExit(str(error)) from error
+torosu_cli_identity=dict(bytes=torosu_cli.stat().st_size,sha256=sha256(torosu_cli))
 
 def stage_license_inputs(source, destination, enabled=None):
     source = Path(source)
@@ -173,6 +179,7 @@ args=[sys.executable,'-m','PyInstaller','--noconfirm','--name','ManiaLab','--con
       '--add-data',f'{ROOT / "static"};static',
       '--add-data',f'{staged_assets};assets',
       '--add-data',f'{license_stage};licenses',
+      '--add-binary',f'{torosu_cli};engines/torosu_cli',
       '--add-data',f'{ROOT / "manialab/tsumugi-source.json"};manialab',
       '--add-data',f'{ROOT / "vendor/mapperatorinator/template.osu"};vendor/mapperatorinator',
       '--copy-metadata','numpy','--copy-metadata','scipy','--copy-metadata','onnxruntime',
@@ -183,6 +190,11 @@ subprocess.run(args,check=True)
 target=distpath/'ManiaLab'
 if source_snapshot()!=build_sources:
     raise SystemExit('Application sources changed during the build; rebuild before publishing.')
+bundled_torosu_cli=target/'_internal/engines/torosu_cli/torosu-cli.exe'
+if (not bundled_torosu_cli.is_file()
+        or bundled_torosu_cli.stat().st_size!=torosu_cli_identity['bytes']
+        or sha256(bundled_torosu_cli)!=torosu_cli_identity['sha256']):
+    raise SystemExit('Bundled Torosu CLI differs from the verified native build input.')
 bundled_worker=verify_worker(ROOT,target/'_internal/assets/deep') if enabled['separation_four'] else None
 if bundled_worker!=worker_identity:
     raise SystemExit('Audio worker changed during the build; rebuild before publishing.')
@@ -219,6 +231,7 @@ if source_snapshot()!=build_sources:
 archive_payload=archive_payload_inventory(target)
 release_manifest=dict(version=__version__,sources=build_sources,build_profile=profile,capabilities=enabled,
     executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
+    torosu_cli=dict(path='_internal/engines/torosu_cli/torosu-cli.exe',**torosu_cli_identity),
     core_models=bundled_core_model_identity,
     uv_runtime=bundled_uv_identity,
     worker_sha256=bundled_worker.get('worker_sha256') if bundled_worker else None,

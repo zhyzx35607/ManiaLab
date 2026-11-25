@@ -46,6 +46,9 @@ def _candidate_audio_identity(variant):
 def generate_variant(state, payload, prefs, tempo, progress, cancelled):
     mode = payload.get("mode", "audio")
     region = payload.get("region")
+    use_torosu = prefs["layout_engine"] == "torosu"
+    if use_torosu and region is not None:
+        raise ValueError("Torosu 不支持局部重写；请重新生成整谱或选用其他定轨引擎")
     if region is not None and mode == 'audio' and state.get('active', -1) >= 0:
         previous = state['variants'][state['active']]
         previous_audio_identity = _candidate_audio_identity(previous)
@@ -82,8 +85,9 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
         if not state["input_notes"]:
             raise ValueError("请先导入原生 mania 谱面")
         selected = [note_from(n) for n in state["input_notes"]]
-        # Scale the imported column prior when changing keycount.
-        selected = [replace(n, lane=min(prefs["keys"] - 1, int((n.lane + .5) * prefs["keys"] / state["input_keys"]))) for n in selected]
+        # Torosu uses the real source layout to recognize patterns before conversion.
+        if not use_torosu:
+            selected = [replace(n, lane=min(prefs["keys"] - 1, int((n.lane + .5) * prefs["keys"] / state["input_keys"]))) for n in selected]
         selection = {"message": "严格保留音符数量、起止时间、物件类型、音效和原始变速。"}
     else:
         if not state.get("analysis"):
@@ -159,9 +163,17 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
             raise ValueError('局部采音与保留物件的标识冲突；请重新生成整谱，避免混用不同分析的音符')
     progress(45, "分配轨道并检查 LN 占轨")
     original_timing = state.get("input_timing", []) if mode == "remap" else []
+    audio_meter = None
+    if mode == "audio":
+        audio_meter = previous_meter if region is not None else (
+            tempo["meter"] if "meter" in tempo else meter_for_clock(state["analysis"], tempo))
+    source_layout = dict(
+        source_keys=state["input_keys"] if mode == "remap" else None,
+        offset_ms=tempo["offset"], meter=audio_meter if mode == "audio" else 4,
+    ) if use_torosu else {}
     output = assign_lanes(selected, prefs, locked, beat_ms=60000 / tempo["bpm"], progress=progress, cancelled=cancelled,
                           segment_preferences=segment_preferences, timing_points=original_timing,
-                          key_layout=prefs["key_layout"])
+                          key_layout=prefs["key_layout"], **source_layout)
     progress(90, "校验谱面并保存候选")
     report = validate(output, prefs["keys"])
     if mode == "audio":
@@ -202,8 +214,7 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
                     or previous_audio_identity != source_audio_identity):
                 source_audio_identity = None
         variant['source_audio_sha256'] = source_audio_identity
-        variant["meter"] = previous_meter if region is not None else (
-            tempo["meter"] if "meter" in tempo else meter_for_clock(state["analysis"], tempo))
+        variant["meter"] = audio_meter
         variant['source_evidence'] = capture_source_evidence(state['analysis'], evidence, output,
             locked=locked, previous=previous_evidence)
         separation = state['analysis'].get('separation')

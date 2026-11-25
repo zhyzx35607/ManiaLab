@@ -21,6 +21,7 @@ jobs:
       PYTHONUTF8: '1'
       PYTHONIOENCODING: utf-8
       MANIALAB_BUILD_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+      CARGO_TARGET_DIR: ${{ github.workspace }}\build\torosu-cli-target
       PORTABLE_PROFILE: core
       # Core EXE checks run on tags, manual runs, and explicit portable requests.
       BUILD_PORTABLE: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[portable]') || (github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[portable]')) }}
@@ -38,6 +39,12 @@ jobs:
           uv venv .venv --python 3.12.10
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           uv pip sync --python .venv/Scripts/python.exe requirements-lock.txt
+      - name: Install native Rust toolchain
+        run: rustup toolchain install stable-x86_64-pc-windows-msvc --profile minimal
+      - name: Check and test Torosu native CLI
+        run: |
+          rustup run stable-x86_64-pc-windows-msvc cargo test --locked --manifest-path engines/torosu_cli/Cargo.toml
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Verify release tag matches source version
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -98,7 +105,10 @@ jobs:
         run: .venv-audio/Scripts/python.exe scripts/build_audio_worker.py
       - name: Build declared Windows profile
         if: env.BUILD_PORTABLE == 'true'
-        run: .venv/Scripts/python.exe scripts/build_windows.py --profile $env:PORTABLE_PROFILE
+        run: |
+          rustup run stable-x86_64-pc-windows-msvc cargo build --release --locked --manifest-path engines/torosu_cli/Cargo.toml
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          .venv/Scripts/python.exe scripts/build_windows.py --profile $env:PORTABLE_PROFILE
       - name: Verify actual EXE offline with clean PATH and Unicode data paths
         if: env.BUILD_PORTABLE == 'true'
         run: |

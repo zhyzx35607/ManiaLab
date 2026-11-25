@@ -42,6 +42,39 @@ def test_core_manifest_skips_worker_and_piano_identity_checks(tmp_path, monkeypa
     ) == (None, None)
 
 
+def test_portable_manifest_verifies_and_smokes_bundled_torosu_cli_identity(
+    tmp_path, monkeypatch,
+):
+    binary = tmp_path / "_internal/engines/torosu_cli/torosu-cli.exe"
+    binary.parent.mkdir(parents=True)
+    binary.write_bytes(b"native Torosu CLI")
+    identity = {
+        "path": "_internal/engines/torosu_cli/torosu-cli.exe",
+        "bytes": binary.stat().st_size,
+        "sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+    }
+
+    calls = []
+
+    def run(args, **kwargs):
+        calls.append(args[1])
+        if args[1] == "analyze":
+            return type("Result", (), {
+                "returncode": 0, "stderr": "", "stdout": '{"keys":10,"objects":7,"ln":1}',
+            })()
+        return type("Result", (), {"returncode": 0, "stderr": "", "stdout": ""})()
+
+    monkeypatch.setattr(verify_portable.subprocess, "run", run)
+    assert verify_portable.verify_torosu_cli(
+        tmp_path, identity, tmp_path / "smoke",
+    ) == identity
+    assert calls == ["convert", "analyze"]
+
+    binary.write_bytes(b"changed")
+    with pytest.raises(AssertionError, match="size differs"):
+        verify_portable.verify_torosu_cli(tmp_path, identity, tmp_path / "smoke")
+
+
 def test_standard_manifest_keeps_worker_and_piano_checks(tmp_path, monkeypatch):
     bundle = tmp_path / "bundle"
     worker_path = bundle / "_internal/assets/deep/ManiaLabAudio/ManiaLabAudio.exe"
