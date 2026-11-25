@@ -1,0 +1,260 @@
+name: Extended Windows release
+
+on:
+  push:
+    tags:
+      - "v0.1.0-alpha.6-dev.28"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: extended-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-alpha.6-dev.28') }}
+    runs-on: windows-2022
+    timeout-minutes: 100
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: utf-8
+      MANIALAB_BUILD_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+      BASE_RELEASE_TAG: v0.1.0-alpha.6-dev.27
+      BASE_RELEASE_ZIP: ManiaLab-0.1.0-alpha.6-dev.27-windows-x64-extended.zip
+      BASE_RELEASE_SHA256: dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.1"
+          enable-cache: true
+
+      - name: Install locked application environment
+        run: |
+          uv venv .venv --python 3.12.10
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          uv pip sync --python .venv/Scripts/python.exe requirements-lock.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Verify release tag matches source version
+        if: github.event_name == 'push'
+        run: |
+          $version = .venv/Scripts/python.exe -c "from manialab import __version__; print(__version__)"
+          if ($LASTEXITCODE) { throw "Could not read the source version." }
+          if ($env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Tag $env:GITHUB_REF_NAME does not match source version $version."
+          }
+
+      - name: Test Python and API
+        run: |
+          New-Item -ItemType Directory -Force test-data/release-ci | Out-Null
+          $log = "test-data/release-ci/pytest.log"
+          .venv/Scripts/python.exe -m pytest -q --junitxml=test-data/release-ci/junit.xml *> $log
+          $exitCode = $LASTEXITCODE
+          Get-Content $log
+          if ($exitCode) { exit $exitCode }
+          $summary = Select-String -Path $log -Pattern '(\d+) passed(?:, (\d+) skipped)?(?:, (\d+) warnings?)?'
+          if (-not $summary) { throw "Could not read the pytest summary." }
+          $match = [regex]::Match($summary[-1].Line, '(\d+) passed(?:, (\d+) skipped)?(?:, (\d+) warnings?)?')
+          if (-not $match.Success) { throw "Could not parse the pytest summary." }
+          $skipped = 0
+          $warnings = 0
+          if ($match.Groups[2].Success) { $skipped = [int]$match.Groups[2].Value }
+          if ($match.Groups[3].Success) { $warnings = [int]$match.Groups[3].Value }
+          $pytest = [ordered]@{
+            passed = [int]$match.Groups[1].Value
+            skipped = $skipped
+            warnings = $warnings
+          }
+          $pytest | ConvertTo-Json | Set-Content -LiteralPath test-data/release-ci/pytest-summary.json -Encoding utf8
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install locked browser checks
+        run: |
+          npm ci --ignore-scripts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npx playwright install chromium
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Test synthetic browser workflows
+        run: |
+          New-Item -ItemType Directory -Force test-data/release-ci | Out-Null
+          $log = "test-data/release-ci/browser.log"
+          npm run test:ui *> $log
+          $exitCode = $LASTEXITCODE
+          Get-Content $log
+          if ($exitCode) { exit $exitCode }
+          $summary = Select-String -Path $log -Pattern '^\s*(\d+) passed(?:\s|\()'
+          if (-not $summary) { throw "Could not read the Playwright summary." }
+          $match = [regex]::Match($summary[-1].Line, '^\s*(\d+) passed')
+          if (-not $match.Success) { throw "Could not parse the Playwright summary." }
+          @{ passed = [int]$match.Groups[1].Value } |
+            ConvertTo-Json | Set-Content -LiteralPath test-data/release-ci/browser-summary.json -Encoding utf8
+
+      - name: Restore pinned Extended runtime from dev.27
+        run: |
+          $inputRoot = Join-Path (Get-Location) "build/release-base-$env:MANIALAB_BUILD_ID"
+          $baseZip = Join-Path $inputRoot $env:BASE_RELEASE_ZIP
+          $extractRoot = Join-Path $inputRoot "expanded"
+          New-Item -ItemType Directory -Force $inputRoot | Out-Null
+          $url = "https://github.com/zhyzx35607/ManiaLab/releases/download/$env:BASE_RELEASE_TAG/$env:BASE_RELEASE_ZIP"
+          curl.exe --fail --location --retry 4 --retry-all-errors --output $baseZip $url
+          if ($LASTEXITCODE) { throw "Could not download the pinned Extended base package." }
+          $actual = (Get-FileHash -LiteralPath $baseZip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $env:BASE_RELEASE_SHA256) {
+            throw "The pinned Extended base package has an unexpected SHA-256: $actual"
+          }
+          Expand-Archive -LiteralPath $baseZip -DestinationPath $extractRoot
+          $basePackage = Join-Path $extractRoot "ManiaLab"
+          $baseAssets = Join-Path $basePackage "_internal/assets"
+          if (-not (Test-Path -LiteralPath (Join-Path $baseAssets "instruments/ManiaLabInstrument/ManiaLabInstrument.exe"))) {
+            throw "The base package is missing its verified Tsumugi worker."
+          }
+          foreach ($name in @("assets", "licenses/deep-runtime", "licenses/instrument-runtime")) {
+            $source = Join-Path $basePackage ("_internal/" + $name)
+            $destination = Join-Path (Get-Location) $name
+            if (-not (Test-Path -LiteralPath $source)) {
+              throw "The base package is missing _internal/$name."
+            }
+            $destinationParent = Split-Path -Parent $destination
+            New-Item -ItemType Directory -Force $destinationParent | Out-Null
+            robocopy.exe $source $destination /E /COPY:DAT /R:1 /W:1 /NFL /NDL /NJH /NJS | Out-Null
+            if ($LASTEXITCODE -gt 7) { throw "Could not restore _internal/$name from the verified base package." }
+          }
+          .venv/Scripts/python.exe -c "from manialab.instrument_bundle import verify_model, verify_source; from pathlib import Path; root=Path('assets/instruments'); verify_source(root/'source'); [verify_model(root/'checkpoints', name) for name in ('bass_v2','other_v1_5')]; print('Pinned Tsumugi source and checkpoints verified.')"
+          if ($LASTEXITCODE) { throw "The restored Tsumugi source or checkpoints failed identity checks." }
+          Remove-Item -LiteralPath $inputRoot -Recurse -Force
+
+      - name: Build Extended Windows package
+        run: |
+          .venv/Scripts/python.exe scripts/build_windows.py --profile extended
+          if ($LASTEXITCODE) { throw "Extended Windows package build failed." }
+
+      - name: Verify packaged Extended EXE
+        run: |
+          $exe = "build/portable/$env:MANIALAB_BUILD_ID/dist/ManiaLab/ManiaLab.exe"
+          .venv/Scripts/python.exe scripts/verify_portable.py $exe --work test-data/portable-extended
+          if ($LASTEXITCODE) { throw "Extended portable verification failed." }
+          .venv/Scripts/python.exe scripts/verify_shutdown.py $exe --work test-data/shutdown-extended
+          if ($LASTEXITCODE) { throw "Extended process and worker shutdown verification failed." }
+
+      - name: Verify ZIP inventory and create release validation JSON
+        run: |
+          $releaseDirectory = "build/portable/$env:MANIALAB_BUILD_ID/release"
+          $version = .venv/Scripts/python.exe -c "from manialab import __version__; print(__version__)"
+          if ($LASTEXITCODE) { throw "Could not read the source version." }
+          $stem = "ManiaLab-$version-windows-x64-extended"
+          $zipPath = Join-Path $releaseDirectory "$stem.zip"
+          $sumsPath = Join-Path $releaseDirectory "$stem-SHA256SUMS.txt"
+          $portablePath = "test-data/portable-extended/report.json"
+          $shutdownPath = "test-data/shutdown-extended/report.json"
+          if (-not (Test-Path -LiteralPath $zipPath) -or
+              -not (Test-Path -LiteralPath $sumsPath) -or
+              -not (Test-Path -LiteralPath $portablePath) -or
+              -not (Test-Path -LiteralPath $shutdownPath)) {
+            throw "The build is missing a required package or verification report."
+          }
+          $validationCode = "import json,sys,zipfile; from scripts.collect_release_validation import _require_archive_payload_inventory,_require_archive_path_tree; z=zipfile.ZipFile(sys.argv[1]); assert z.testzip() is None, 'ZIP CRC failure'; manifest=json.loads(z.read('ManiaLab/release-manifest.json')); assert manifest.get('version')==sys.argv[2] and manifest.get('build_profile')=='extended'; _require_archive_path_tree(z.infolist()); _require_archive_payload_inventory(z,manifest); print('ZIP CRC, release manifest, and archive payload inventory passed.')"
+          .venv/Scripts/python.exe -c $validationCode $zipPath $version
+          if ($LASTEXITCODE) { throw "Release ZIP validation failed." }
+          $packageHash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $package = Get-Item -LiteralPath $zipPath
+          $manifest = Get-Content -LiteralPath "build/portable/$env:MANIALAB_BUILD_ID/dist/ManiaLab/release-manifest.json" -Raw | ConvertFrom-Json
+          $portable = Get-Content -LiteralPath $portablePath -Raw | ConvertFrom-Json
+          $shutdown = Get-Content -LiteralPath $shutdownPath -Raw | ConvertFrom-Json
+          $manifestPath = "build/portable/$env:MANIALAB_BUILD_ID/dist/ManiaLab/release-manifest.json"
+          $manifestHash = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if (-not $shutdown.passed -or
+              $shutdown.executable_sha256 -ne $manifest.executable_sha256 -or
+              $shutdown.release_manifest_sha256 -ne $manifestHash) {
+            throw "Shutdown report does not match the packaged executable and release manifest."
+          }
+          $sumsText = (Get-Content -LiteralPath $sumsPath -Raw).Trim()
+          if ($sumsText -ne "$packageHash  $($package.Name)") {
+            throw "SHA256SUMS does not match the Extended ZIP."
+          }
+          $pytest = Get-Content -LiteralPath test-data/release-ci/pytest-summary.json -Raw | ConvertFrom-Json
+          $browser = Get-Content -LiteralPath test-data/release-ci/browser-summary.json -Raw | ConvertFrom-Json
+          $checks = @($portable | ForEach-Object { $_.check })
+          $validation = [ordered]@{
+            version = $version
+            tag = "v$version"
+            source_commit = (git rev-parse HEAD).Trim()
+            github_run_id = $env:GITHUB_RUN_ID
+            build_profile = "extended"
+            package = [ordered]@{ name = $package.Name; bytes = $package.Length; sha256 = $packageHash }
+            executable_sha256 = $manifest.executable_sha256
+            release_manifest_sha256 = $manifestHash
+            python_api = $pytest
+            synthetic_browser = $browser
+            portable_verification = [ordered]@{ passed = $true; checks = $checks }
+            shutdown = [ordered]@{ passed = $shutdown.passed; worker_expected = $shutdown.worker_expected; worker_stopped_on_parent_exit = $shutdown.worker_stopped_on_parent_exit }
+            archive_validation = [ordered]@{ zip_crc = "passed"; archive_payload_inventory = "passed"; sha256sums = "passed" }
+            not_run = @(
+              "No frozen guitar real-audio probe was available for this release run.",
+              "No frozen Tsumugi real-audio interface fixtures were available for this release run."
+            )
+            musical_acceptance = $false
+            notices = @(
+              "Synthetic/package checks do not certify real-song musical quality, Timing listening, or osu! gameplay.",
+              "Demucs checkpoint redistribution and Tsumugi training-recording rights remain under review."
+            )
+          }
+          $validationPath = Join-Path $releaseDirectory "$stem-verification.json"
+          $validation | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $validationPath -Encoding utf8
+
+      - name: Publish direct-download GitHub Release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $version = .venv/Scripts/python.exe -c "from manialab import __version__; print(__version__)"
+          if ($LASTEXITCODE) { throw "Could not read the source version." }
+          $stem = "ManiaLab-$version-windows-x64-extended"
+          $releaseDirectory = "build/portable/$env:MANIALAB_BUILD_ID/release"
+          $assets = @(
+            (Join-Path $releaseDirectory "$stem.zip"),
+            (Join-Path $releaseDirectory "$stem-SHA256SUMS.txt"),
+            (Join-Path $releaseDirectory "$stem-verification.json"),
+            "test-data/portable-extended/report.json",
+            "test-data/shutdown-extended/report.json"
+          )
+          $existingDraft = gh release view $tag --repo $env:GITHUB_REPOSITORY --json isDraft --jq .isDraft 2>$null
+          $viewExitCode = $LASTEXITCODE
+          if ($viewExitCode -eq 0) {
+            if ($existingDraft.Trim() -ne "true") {
+              throw "Release $tag already exists and is public; refusing to replace it."
+            }
+            gh release upload $tag @assets --repo $env:GITHUB_REPOSITORY --clobber
+            if ($LASTEXITCODE) { throw "Could not finish uploading the verified draft Release." }
+          } else {
+            gh release create $tag @assets --repo $env:GITHUB_REPOSITORY --title "ManiaLab $version Extended Windows x64" --notes-file "docs/releases/0.1.0-alpha.6-dev-28.md" --prerelease --draft --verify-tag
+            if ($LASTEXITCODE) { throw "Could not create the verified draft Release." }
+          }
+          gh release edit $tag --repo $env:GITHUB_REPOSITORY --draft=false
+          if ($LASTEXITCODE) { throw "All assets were uploaded, but the Release could not be published." }
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: ManiaLab-Extended-preview-${{ github.run_id }}
+          path: |
+            build/portable/${{ github.run_id }}-${{ github.run_attempt }}/release/*
+            test-data/portable-extended/report.json
+            test-data/shutdown-extended/report.json
+          retention-days: 3
+          if-no-files-found: error
