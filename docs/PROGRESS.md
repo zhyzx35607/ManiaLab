@@ -7,7 +7,7 @@
 
 ### dev.27 Extended 去重版（2026-11-25 已发布）
 
-- GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.27 Extended Windows x64](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.27) 已发布。精确 tag `v0.1.0-alpha.6-dev.27` 指向 `32368e685a102e7aaf334e8bd6d1808200aa30ee`，与当前 `main` 一致；发布准备 PR #268 已合并。tag Windows workflow run `45521432476` 成功：Python/API `3667 passed, 161 skipped, 1 warning`，Edge Playwright `82 passed`，Core 便携验证通过。
+- GitHub Pre-release [ManiaLab 0.1.0-alpha.6-dev.27 Extended Windows x64](https://github.com/zhyzx35607/ManiaLab/releases/tag/v0.1.0-alpha.6-dev.27) 已发布。精确 tag `v0.1.0-alpha.6-dev.27` 指向 `32368e685a102e7aaf334e8bd6d1808200aa30ee`，即发布准备 PR #268 的合并提交；发布记录 PR #269 随后合入 `main`。tag Windows workflow run `45521432476` 成功：Python/API `3667 passed, 161 skipped, 1 warning`，Edge Playwright `82 passed`，Core 便携验证通过。
 - Release 提供可直接下载的单个 ZIP：`ManiaLab-0.1.0-alpha.6-dev.27-windows-x64-extended.zip`，大小 `1,235,335,195` bytes，SHA-256 `dec6206c7b35c29c7345bbdd9179d3db14012ecc0eef80d13771ba5c08afe3bc`。HTTP HEAD 返回 200；与 dev.26 ZIP 相比减少 `75,553,235` bytes（5.764%）。Release 另附 SHA256SUMS 与验证 JSON。dev.26 Release、ZIP、12 个分片和组装脚本保持不变。
 - 构建器只在 worker manifest/源码身份通过，且 app 根目录 `_internal/torch_cpu.dll` 与音频 worker 副本的大小和 SHA-256 完全匹配时，才从本次 Extended 构建删除根副本；隔离的音频/Tsumugi worker runtime 保留，Core profile 不执行去重。缺失或不匹配时保留应用副本。
 - 精确 tag Extended EXE 的 20 项 portable verifier、four/six 声部分析与导出、独立 four-piano 合成分析/制谱/导出、取消/错误恢复、worker 关停、ZIP CRC 与 archive inventory 均通过。Windows tag workflow 的 Python/API、合成浏览器和 Core EXE 检查通过；这些合成/工程检查不代表音乐验收。
