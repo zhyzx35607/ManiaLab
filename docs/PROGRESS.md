@@ -1,6 +1,6 @@
 # ManiaLab 2.0 续接进度
 
-更新：2026-11-26（Asia/Shanghai）。阶段 #02 已由用户验收通过；阶段 #03 自动验收已完成，等待用户 osu! 实打，不进入阶段 #04。
+更新：2026-11-26（Asia/Shanghai）。阶段 #02、#03 已由用户验收；阶段 #03 实打冠军为 FullMix → v32-mini 7K → Torosu dense 10K。本轮仅执行阶段 #04。
 
 ## 当前基线
 
@@ -51,3 +51,16 @@
 - Torosu 统计：旧版 0 minijack/0 pill/手均衡0.856；原生10K 8/29/0.962；FullMix dense 21/42/0.911；NoVocal dense 6/34/0.909。原生10K一处冲突只重排轨道、不增删物件；v32-mini 一个零时长LN保留起音并降为tap。
 - 30秒单模型测速输出与各路耗时/峰值、Torosu键型统计及LN裁切记录在忽略目录 `workspace_exp/ab_v32/`。相关测试 `tests/test_chimera_v32.py`、`tests/test_separation.py`、`tests/test_torosu_bridge.py` 为 46 passed；全量 `.venv\Scripts\python.exe -m pytest -q` 为 2426 passed / 75 skipped / 1 warning（483.28s）。所有实验音频、模型输出和 `.osz` 均未入库。
 - 本阶段通过唯一特性分支快进合入 `main` 并删除临时分支；`git worktree list` 保持仅主目录。未发布 Release/tag，未进入阶段 #04。
+
+## 阶段 #04（Phase 2A+）执行记录
+
+- 唯一特性分支 `feat/phase2-v32-gpu-engine` 从阶段 #03 提交 `582dd33` 起步；工作区仍只有 `D:\project\ManiaLab` 一个 worktree。远端 `main` 当前为 `39208a8`；计划以同一 PR 合并阶段 #03 与 #04，不拆分文档 PR。
+- 重构已将 `manialab/chimera_v32.py` 从 1967 行收敛为 34 行兼容入口；音频、拍格/LN/键型处理与谱包实现分别位于 `v32_audio.py`、`v32_charts.py`、`v32_packaging.py`。旧去人声四路 runner、固定盘符默认值和 mini 下载流程已退役。
+- 新增可移植 `v32_device.py`、`v32_process.py`、`v32_engine.py`、`v32_runtime.py` 与 `/api/projects/<pid>/v32-generate`、`v32-install`；首启用发行包固定源码 SHA 校验、独立 Python 3.10.20 和 uv 安装 CPU/CUDA PyTorch；NVIDIA 机器选 CUDA wheel、无卡回退 CPU。HF/Torch/Python/TMP 缓存遵循环境变量或应用数据目录。V32/V32-mini 共用固定 revision、自动 BF16/FP16 + 6 GB 安全 batch=1、CPU FP32 回退、LoRA 原生传递、取消及状态 API。路由复用六声部分轨 RMS 和原始全混音输入，生成候选绑定音频 SHA 并复用现有导出。
+- 完整版权重仅缓存 `gamemode=3/*` 于 D 盘：`OliBomby/Mapperatorinator-v32` revision `74f22583400d259bf424819e11027c17933efe54`，四个必要文件共 870,880,343 字节，SHA-256 清单验证通过；`v32-mini` 固定 revision `7807f0dc70cab671be012e1f5ddf945b0b8b7278`，四文件共 228,108,558 字节。
+- Full 真实歌曲 30 秒 CPU FP32 测速：293.75 秒、峰值 RSS 1,623.96 MiB、379 物件 / 266 LN；整曲 201.6 秒线性估算 1,974 秒（32分54秒），因此未运行整曲。
+- 同一 `Tan Gu Zhi` 114000–159000ms 全混音片段输出四难度至 `workspace_exp/ab_v32_full/tan_gu_zhi_v32_full_comparison.osz`：mini 冠军 491/264；Full 7K→dense 668/197；Full 原生 10K LN55 457/316；Full 7K→more-dense 693/196（物件/LN）。四谱结构、媒体引用、统一播放音频与 ZIP CRC 检查通过。
+- 首次 Windows CI 发现冻结包优先选择 `CARGO_TARGET_DIR` 中测试二进制的阶段 #03 回归；已修复为显式 CLI 覆盖优先、冻结包内 CLI 次之，并补回归测试。另已为发行包增加首启运行时安装入口。
+- 冻结代码后的最终全量 `.venv\Scripts\python.exe -m pytest -q`：`2473 passed, 75 skipped, 1 warning`；`npm run test:ui`：`90 passed`。Windows workflow 重跑中。
+- 4050 首次启用需使用包含 Mapperatorinator 安装器的 `standard` / `extended` Windows 包；磁盘空间有限时，启动前把 `MANIALAB_V32_RUNTIME_ROOT` 与 `MANIALAB_CACHE_ROOT` 指向大容量盘，再点 UI「准备 V32 运行环境」。本机无 CUDA，真实 4050 性能仍待目标机实测。
+- 本机没有 CUDA GPU；RTX 4050 的 BF16 / fast decoder / batch=1 由 mock 设备测试覆盖，需在目标机实际确认运行表现。未发布 Release/tag，未进入阶段 #05。

@@ -338,6 +338,21 @@ def test_frozen_cli_is_loaded_from_internal_bundle(monkeypatch, tmp_path):
     assert torosu_bridge._cli_path() == binary.resolve()
 
 
+def test_frozen_cli_prefers_internal_bundle_over_build_target(monkeypatch, tmp_path):
+    bundled = tmp_path / "engines" / "torosu_cli" / "torosu-cli.exe"
+    target = tmp_path / "build" / "debug" / "torosu-cli.exe"
+    bundled.parent.mkdir(parents=True)
+    target.parent.mkdir(parents=True)
+    bundled.write_bytes(b"bundled")
+    target.write_bytes(b"build")
+    monkeypatch.delenv("MANIALAB_TOROSU_CLI", raising=False)
+    monkeypatch.setenv("CARGO_TARGET_DIR", str(tmp_path / "build"))
+    monkeypatch.setattr(torosu_bridge.sys, "_MEIPASS", str(tmp_path), raising=False)
+    monkeypatch.setattr(torosu_bridge.sys, "frozen", True, raising=False)
+
+    assert torosu_bridge._cli_path() == bundled.resolve()
+
+
 def test_cli_is_found_in_external_cargo_target_directory(monkeypatch, tmp_path):
     target = tmp_path / "cargo-target"
     binary = target / "x86_64-pc-windows-gnu" / "release" / "torosu-cli.exe"

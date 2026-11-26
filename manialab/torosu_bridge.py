@@ -43,12 +43,16 @@ def _cli_path() -> Path:
         frozen_root / "engines" / "torosu_cli" / "torosu-cli.exe",
         frozen_root / "engines" / "torosu_cli" / "torosu-cli",
     ]
-    candidates = (
-        [Path(configured)]
-        if configured else (
+    if configured:
+        candidates = [Path(configured)]
+    elif getattr(sys, "frozen", False):
+        candidates = bundled_candidates + (
+            root_candidates(Path(configured_target)) if configured_target else []
+        )
+    else:
+        candidates = (
             root_candidates(Path(configured_target)) if configured_target else []
         ) + bundled_candidates + root_candidates(_ENGINE_DIR / "target")
-    )
     for candidate in candidates:
         if candidate.is_file():
             return candidate.resolve()
