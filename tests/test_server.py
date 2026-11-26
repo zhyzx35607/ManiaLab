@@ -109,7 +109,8 @@ def test_optional_mapper_routes_reject_profiles_without_installer(tmp_path, monk
         app.extensions['executor'].shutdown()
 
 
-def test_status_exposes_portable_v32_runtime_without_loading_models(tmp_path):
+def test_status_exposes_portable_v32_runtime_without_loading_models(tmp_path, monkeypatch):
+    monkeypatch.setenv("MANIALAB_V32_MODEL_CACHE", str(tmp_path / "isolated-model-cache"))
     app = create_app(ROOT, tmp_path)
     try:
         response = app.test_client().get('/api/status')

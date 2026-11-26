@@ -346,6 +346,9 @@ def test_torch_cache_follows_huggingface_cache_when_only_hf_home_is_set(tmp_path
     cache_root = tmp_path / "large-cache"
     temp_root = cache_root / "tmp"
     monkeypatch.delenv("MANIALAB_CACHE_ROOT", raising=False)
+    monkeypatch.delenv("TORCH_HOME", raising=False)
+    monkeypatch.delenv("PIP_CACHE_DIR", raising=False)
+    monkeypatch.delenv("UV_CACHE_DIR", raising=False)
     monkeypatch.setenv("HF_HOME", str(cache_root / "huggingface"))
     monkeypatch.setenv("MANIALAB_TEMP_ROOT", str(temp_root))
     engine = V32Engine(
