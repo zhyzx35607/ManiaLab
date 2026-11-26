@@ -4,6 +4,7 @@ const token = document.querySelector('meta[name="manialab-token"]').content;
 const numbers = ['density','ln_ratio','min_ln','max_held','release_gap','chord_size','pitch_follow','balance','jack_avoid','seed','onset_threshold','frame_threshold','phrase_ln','pattern_prior','drums_weight','bass_weight','vocals_weight','other_weight','guitar_weight','piano_weight','ln_coordination','ln_release','ln_inverse'];
 let timingSections=[], tempoChoices=[], lastScheduledBeat=-Infinity,separatorAvailable=false;
 let mapperInstallAvailable=false,mapperGenerateAvailable=false;
+let v32GenerateAvailable=false,v32EngineStatus=null;
 let timingDiagnostics=null,timingRequest=0;
 let lastClockShift=22.5;
 let clockAnchor=22.5;
@@ -253,14 +254,48 @@ function updateGridStatus(){
   $('gridReport').textContent=keyMismatch?(keys!==v.settings.keys?`目标为 ${keys}K，当前预览仍是 ${v.settings.keys}K 候选`:`目标键型 ${$('keyLayout').value} 与当前预览键型 ${candidateLayout} 不同`)+'；请重新生成后导出。':settingsMismatch?'生成预设或参数与当前候选不同；当前候选未自动修改。请重新生成后导出。':stale?'旧版候选：请重新分析并生成整谱，才能导出。':mismatch?'当前 BPM / Offset / 细分与预览候选不同，请重新生成后导出。':g?`落线检查：${g.endpoints-g.off_grid} / ${g.endpoints} 个短键起点与 LN 起止在网格上；最大舍入误差 ${g.max_error_ms} ms。落线检查不判断采音是否正确。`:'';
   ['exportOsu','exportOsz'].forEach(id=>{const a=$(id),blocked=!v||v.report?.valid===false||stale||mismatch||keyMismatch||settingsMismatch||(id==='exportOsz'&&!state?.audio);a.classList.toggle('disabled',blocked);if(blocked)a.removeAttribute('href');else a.href=candidateExportUrl(id==='exportOsz'?'osz':'osu',v);});
 }
-async function refreshRecent(){const status=await api('/api/status');const profiles=status.separator?.profiles||{};separatorAvailable=!!status.separator?.available;const pianoFourAvailable=!!profiles['four-piano']?.available;$('analysisEngine').querySelector('[value=deep]').disabled=!separatorAvailable;$('analysisEngine').querySelector('[value=deep4piano]').disabled=!pianoFourAvailable;$('analysisEngine').querySelector('[value=deep6]').disabled=!profiles.six?.available;$('separationStatus').textContent=pianoFourAvailable?'主声部使用鼓、钢琴、人声和其他伴奏；完整六声部另含贝斯与吉他。批量分析会沿用所选声部方案。':separatorAvailable?'当前包有兼容四声部（鼓、贝斯、人声、其他伴奏）；可使用快速采音':'当前包未包含分离组件 · 可使用快速采音';if(!state)$('analysisEngine').value=pianoFourAvailable?'deep4piano':separatorAvailable?'deep':'basic';window.updatePianoStatus?.(status.piano);window.updateInstrumentStatus?.(status.instruments);window.updateGuitarStatus?.(status.guitar);options($('recent'),[['','打开已保存项目…'],...status.projects.map(p=>[p.id,p.title])]);if(state)$('recent').value=state.id;mapperInstallAvailable=!!status.engine.install_available;mapperGenerateAvailable=!!status.engine.generate_available;$('engineInstall').disabled=busy||!mapperInstallAvailable;$('engineGenerate').disabled=busy||!mapperGenerateAvailable;$('engineStatus').textContent=status.engine.installed?`运行环境已就绪 · ${status.engine.model_downloaded?'模型权重已下载':'模型权重将在首次生成时下载'}`:mapperInstallAvailable?'原模型未安装 · 不影响基础采音与定轨':'当前便携配置不含原模型安装器 · 不影响基础采音与定轨';$('priorStatus').textContent=status.pattern_prior?.available?`通过验证的键数：${status.pattern_prior.keys.map(k=>k+'K').join(' / ')}。仅提供定轨软偏好；未通过的键数自动忽略。`:'当前未加载经过验证的键型先验。';}
-function setMode(){const remap=$('mode').value==='remap';$('musical').classList.toggle('hidden',remap);$('strictHint').classList.toggle('hidden',!remap);$('bpm').disabled=remap||busy;$('offset').disabled=remap||busy;['tempoCandidates','halfBpm','doubleBpm','division','timingConfirmed','checkTiming','refitTiming','referenceTiming','applyTiming','audioShift','waveAlign','auditionOffset','auditionB','auditionApply'].forEach(id=>$(id).disabled=remap||busy);$('auditionA').textContent=remap?'试听原谱拍线':'试听当前拍线 A';$('generate').firstChild.textContent=remap?'严格重新定轨 ':'生成候选谱面 ';}
+function v32StatusText(engine){
+  if(!engine)return 'V32 引擎状态尚未报告。';
+  if(typeof engine==='string')return engine;
+  const device=engine.device||{},deviceType=typeof device==='string'?device:device.type||'未知';
+  const deviceParts=[deviceType.toUpperCase()];
+  if(device.name)deviceParts.push(device.name);
+  if(device.memory_gib!==undefined&&device.memory_gib!==null&&Number.isFinite(Number(device.memory_gib)))deviceParts.push(`${Number(device.memory_gib)} GiB`);
+  if(device.precision)deviceParts.push(device.precision);
+  if(device.fast_decoder_loop)deviceParts.push('fast decoder');
+  const modelText=key=>{
+    const model=engine.models?.[key];
+    if(!model)return '未报告';
+    const ready=typeof model==='object'?model.ready:model;
+    const revision=typeof model==='object'&&model.revision?` · ${String(model.revision).slice(0,12)}`:'';
+    return `${ready?'已就绪':'待下载'}${revision}`;
+  };
+  const lora=engine.lora||{};
+  const loraText=lora.loaded?`已加载${lora.path?` · ${lora.path}`:''}`:'未加载';
+  return [
+    `设备：${deviceParts.filter(Boolean).join(' · ')}`,
+    `引擎：${engine.available?'可用':'不可用'} · 源码 ${engine.source_available?'就绪':'缺失'} · 运行时 ${engine.runtime_available?'就绪':'缺失'}${engine.device_override_error?` · ${engine.device_override_error}`:''}`,
+    `权重：V32 ${modelText('v32')} · V32-mini ${modelText('v32-mini')}`,
+    `六声部分轨：${engine.separation_available===false?'不可用':'可用'}`,
+    `LoRA：${loraText}`,
+  ].join('\n');
+}
+function updateV32Outputs(){
+  $('v32HoldRatioOut').textContent=`${Math.round(Number($('v32HoldRatio').value)*100)}%`;
+  $('v32TemperatureOut').textContent=Number($('v32Temperature').value).toFixed(1);
+}
+async function refreshRecent(){const status=await api('/api/status');const profiles=status.separator?.profiles||{};separatorAvailable=!!status.separator?.available;const pianoFourAvailable=!!profiles['four-piano']?.available;$('analysisEngine').querySelector('[value=deep]').disabled=!separatorAvailable;$('analysisEngine').querySelector('[value=deep4piano]').disabled=!pianoFourAvailable;$('analysisEngine').querySelector('[value=deep6]').disabled=!profiles.six?.available;$('separationStatus').textContent=pianoFourAvailable?'主声部使用鼓、钢琴、人声、其他伴奏；完整六声部另含贝斯与吉他。批量分析会沿用所选声部方案。':separatorAvailable?'当前包有兼容四声部（鼓、贝斯、人声、其他伴奏）；可使用快速采音':'当前包未包含分离组件 · 可使用快速采音';if(!state)$('analysisEngine').value=pianoFourAvailable?'deep4piano':separatorAvailable?'deep':'basic';window.updatePianoStatus?.(status.piano);window.updateInstrumentStatus?.(status.instruments);window.updateGuitarStatus?.(status.guitar);options($('recent'),[['','打开已保存项目…'],...(status.projects||[]).map(p=>[p.id,p.title])]);if(state)$('recent').value=state.id;mapperInstallAvailable=!!status.engine?.install_available;mapperGenerateAvailable=!!status.engine?.generate_available;$('engineInstall').disabled=busy||!mapperInstallAvailable;$('engineGenerate').disabled=busy||!mapperGenerateAvailable;$('engineStatus').textContent=status.engine?.installed?`运行环境已就绪 · ${status.engine.model_downloaded?'模型权重已下载':'模型权重将在首次生成时下载'}`:mapperInstallAvailable?'原模型未安装 · 不影响基础采音与定轨':'当前便携配置不含原模型安装器 · 不影响基础采音与定轨';v32EngineStatus=status.engine?.v32_engine??status.v32_engine??null;v32GenerateAvailable=!!v32EngineStatus?.available&&v32EngineStatus?.separation_available!==false;$('v32Status').textContent=v32StatusText(v32EngineStatus);const v32CanInstall=!!v32EngineStatus?.install_available&&(!v32EngineStatus?.runtime_available||v32EngineStatus?.runtime_needs_cuda);$('v32Install').classList.toggle('hidden',!v32CanInstall);$('v32Install').textContent=v32EngineStatus?.runtime_needs_cuda?'配置 NVIDIA CUDA 环境':'准备 V32 运行环境';$('v32Install').disabled=busy||!state||!v32CanInstall;$('v32Generate').disabled=busy||!state||$('mode').value==='remap'||!v32GenerateAvailable;$('priorStatus').textContent=status.pattern_prior?.available?`通过验证的键数：${status.pattern_prior.keys.map(k=>k+'K').join(' / ')}。仅提供定轨软偏好；未通过的键数自动忽略。`:'当前未加载经过验证的键型先验。';}
+function setMode(){const remap=$('mode').value==='remap';$('musical').classList.toggle('hidden',remap);$('strictHint').classList.toggle('hidden',!remap);$('bpm').disabled=remap||busy;$('offset').disabled=remap||busy;['tempoCandidates','halfBpm','doubleBpm','division','timingConfirmed','checkTiming','refitTiming','referenceTiming','applyTiming','audioShift','waveAlign','auditionOffset','auditionB','auditionApply'].forEach(id=>$(id).disabled=remap||busy);$('auditionA').textContent=remap?'试听原谱拍线':'试听当前拍线 A';$('generate').firstChild.textContent=remap?'严格重新定轨 ':'生成候选谱面 ';$('v32Generate').disabled=busy||!state||remap||!v32GenerateAvailable;}
 // A pending recent-project GET must not replace the project being acted on.
 function setBusy(value){
   if(value)projectLoadRequest++;
   busy=value;
-  ['analyze','generate','another','regenerate','plan','charts','variants','recent','files','batchFiles','batchAnalyze','batchKeys','batchKeyLayout','batchPreset','batchDensity','batchTimingConfirmed','batchGenerate','batchDownloadAll','clearPlan','engineInstall','engineGenerate','referenceStyleFile','mode','preset','lnPreset','focus','layoutEngine','analysisEngine',...numbers].forEach(id=>{const control=$(id);if(control)control.disabled=value;});
+  ['analyze','generate','another','regenerate','plan','charts','variants','recent','files','batchFiles','batchAnalyze','batchKeys','batchKeyLayout','batchPreset','batchDensity','batchTimingConfirmed','batchGenerate','batchDownloadAll','clearPlan','engineInstall','engineGenerate','v32Install','v32Model','v32Strategy','v32Density','v32Difficulty','v32HoldRatio','v32Temperature','v32LoraPath','v32Generate','referenceStyleFile','mode','preset','lnPreset','focus','layoutEngine','analysisEngine',...numbers].forEach(id=>{const control=$(id);if(control)control.disabled=value;});
   $('engineInstall').disabled=value||!mapperInstallAvailable;$('engineGenerate').disabled=value||!mapperGenerateAvailable;
+  $('v32Install').disabled=value||!state||!v32EngineStatus?.install_available||(
+    !!v32EngineStatus?.runtime_available&&!v32EngineStatus?.runtime_needs_cuda
+  );
+  $('v32Generate').disabled=value||!state||$('mode').value==='remap'||!v32GenerateAvailable;
   document.querySelectorAll('[data-key]').forEach(button=>button.disabled=value);
   $('job').classList.toggle('hidden',!value);setMode();window.updateEditorLocks?.();window.lockStructure?.();window.lockProvidedStems?.();window.lockPianoDetector?.();window.lockInstrumentDetector?.();window.lockGuitarDetector?.();
   document.querySelectorAll('[data-recommendation],#recommendationRefresh').forEach(button=>button.disabled=value||!state?.analysis);
@@ -270,7 +305,7 @@ async function runJob(action,payload,form=false){
   if(!state)throw Error('请先导入素材');if(busy)return;const projectId=state.id;setBusy(true);
   try{const job=await api(`/api/projects/${projectId}/${action}`,payload,form);jobId=job.id;
     while(true){const j=await api('/api/jobs/'+jobId);$('progress').value=j.progress;$('jobText').textContent=j.message;
-      if(['done','error','cancelled'].includes(j.status)){if(j.status==='error')throw Error(j.message);if(j.status==='done'){loadState(await api('/api/projects/'+projectId));const v=variant();msg(action==='provided-stems'?'独立声轨已保存。点击分析音频，逐乐器检查采音与音乐分段。':action==='analyze'?`已提取 ${state.analysis.candidates.length} 个采音候选。切换「采音证据」试听检查。`:action==='structure'?`已划分 ${state.analysis.structure.segments.length} 个音乐段落，请检查声部表达方案。`:action==='plan'?'编排建议已应用，点击生成即可试谱。':action==='engine-install'?'原模型运行环境已安装。首次生成将自动下载 mania 权重。':`${v.report.notes} 个物件，${v.report.ln} 个 LN；${v.report.valid?'结构检查通过':`发现 ${v.report.issue_count} 项结构冲突，请先检查`}。${v.selection.message||''}\n编排耗时 ${j.elapsed_seconds??v.elapsed_seconds??'未知'} 秒。${v.selection.feasible_ln_ratio!==undefined?` 可达 LN 比例${v.selection.maximum_proven?'上限':'（已求得）'} ${(v.selection.feasible_ln_ratio*100).toFixed(1)}%。`:''}`);if(j.cleanup_failed)msg($('message').textContent+' '+j.message,true);}else msg(j.message);return j.status;}
+      if(['done','error','cancelled'].includes(j.status)){if(j.status==='error')throw Error(j.message);if(j.status==='done'){loadState(await api('/api/projects/'+projectId));const v=variant();msg(action==='provided-stems'?'独立声轨已保存。点击分析音频，逐乐器检查采音与音乐分段。':action==='analyze'?`已提取 ${state.analysis.candidates.length} 个采音候选。切换「采音证据」试听检查。`:action==='structure'?`已划分 ${state.analysis.structure.segments.length} 个音乐段落，请检查声部表达方案。`:action==='plan'?'编排建议已应用，点击生成即可试谱。':action==='engine-install'?'原模型运行环境已安装。首次生成将自动下载 mania 权重。':action==='v32-install'?'V32 独立运行环境已准备完成；已自动选择 CUDA 或 CPU。':action==='v32-generate'?v?`V32 候选已保存到项目历史（${v.settings?.keys??10}K · ${v.report?.notes??v.notes?.length??0} 个物件）。请检查当前候选并使用 .osu/.osz 导出。`:'V32 任务完成，项目已刷新。':`${v.report.notes} 个物件，${v.report.ln} 个 LN；${v.report.valid?'结构检查通过':`发现 ${v.report.issue_count} 项结构冲突，请先检查`}。${v.selection.message||''}\n编排耗时 ${j.elapsed_seconds??v.elapsed_seconds??'未知'} 秒。${v.selection.feasible_ln_ratio!==undefined?` 可达 LN 比例${v.selection.maximum_proven?'上限':'（已求得）'} ${(v.selection.feasible_ln_ratio*100).toFixed(1)}%。`:''}`);if(j.cleanup_failed)msg($('message').textContent+' '+j.message,true);}else msg(j.message);return j.status;}
       await new Promise(r=>setTimeout(r,550));
     }
   }finally{jobId=null;setBusy(false);}
@@ -600,6 +635,25 @@ $('clearPlan').onclick=guarded(async()=>{
 });
 $('engineInstall').onclick=guarded(()=>runJob('engine-install',{}));
 $('engineGenerate').onclick=guarded(()=>runJob('engine-generate',{settings:settings(),seconds:Number($('engineSeconds').value),use_timing:$('engineUseTiming').checked,bpm:Number($('bpm').value),offset:Number($('offset').value),division:Number($('division').value),audio_shift_ms:clockShift(),timing_confirmed:$('timingConfirmed').checked}));
+$('v32Install').onclick=guarded(()=>runJob('v32-install',{}));
+$('v32HoldRatio').oninput=updateV32Outputs;$('v32Temperature').oninput=updateV32Outputs;
+$('v32Generate').onclick=guarded(()=>{
+  if(!state)throw Error('请先导入音频项目');
+  if($('mode').value==='remap')throw Error('V32 生成仅支持音频项目');
+  const difficulty=Number($('v32Difficulty').value),holdNoteRatio=Number($('v32HoldRatio').value);
+  if(!Number.isFinite(difficulty)||difficulty<0||difficulty>10)throw Error('目标难度必须在 0–10 星之间');
+  if(!Number.isFinite(holdNoteRatio)||holdNoteRatio<0||holdNoteRatio>.85)throw Error('LN 比例必须在 0–0.85 之间');
+  return runJob('v32-generate',{
+    model_variant:$('v32Model').value,
+    generation_strategy:$('v32Strategy').value,
+    torosu_density:$('v32Density').value,
+    difficulty,
+    hold_note_ratio:holdNoteRatio,
+    mania_column_temperature:Number($('v32Temperature').value),
+    lora_path:$('v32LoraPath').value.trim(),
+    timing_confirmed:$('timingConfirmed').checked,
+  });
+});
 $('preset').onchange=()=>{const preset=GENERATION_PRESETS[$('preset').value];if(preset)setSettings({...settings(),...preset});updateGridStatus();};
 function setView(v){const changed=view!==v;cueClock.reset();cancelAuditionPlayback();view=v;selected=null;updateVoiceOptions();setPlaybackSource();updateAudioStatus();if(changed)window.resetWaveDetail?.();window.renderNoteEditor?.();$('chartView').classList.toggle('active',v==='chart');$('evidenceView').classList.toggle('active',v==='evidence');draw();}
 function chooseView(v){setView(v);if($('waveDetailPanel').open&&state?.analysis)guarded(()=>loadWaveDetail())();}
@@ -750,4 +804,4 @@ async function audition(mode,compare=false){
 $('auditionA').onclick=guarded(()=>audition('beats'));$('auditionB').onclick=guarded(()=>audition('beats',true));
 $('auditionChart').onclick=guarded(()=>audition('chart'));$('auditionEvidence').onclick=guarded(()=>audition('evidence'));
 audio.addEventListener('play',()=>{$('auditionAudio').pause();});
-updateOutputs();window.addEventListener('DOMContentLoaded',guarded(refreshRecent),{once:true});draw();requestAnimationFrame(tick);
+updateOutputs();updateV32Outputs();window.addEventListener('DOMContentLoaded',guarded(refreshRecent),{once:true});draw();requestAnimationFrame(tick);

@@ -49,7 +49,12 @@ class Separator:
                               for key,spec in PROFILES.items()},
                     beat_model=self.beat_model.is_file())
 
-    def separate(self, path, work, progress=lambda p, s: None, cancelled=lambda: False):
+    def separate(
+        self, path, work, progress=lambda p, s: None, cancelled=lambda: False,
+        *, include_beats=True,
+    ):
+        if type(include_beats) is not bool:
+            raise ValueError("是否执行节拍分析必须为布尔值")
         if not self.status()["available"]:
             raise ValueError("所选声部分离组件未就绪，请使用完整 Windows 包，或选择其他分离方案")
         work = Path(work)
@@ -69,7 +74,8 @@ class Separator:
                         and set(cached['sources']) == set(self.spec['voices'])
                         and all((output / f"{s}.npy").is_file() for s in self.spec['voices'])):
                     stems_cached = True
-                    if not self.beat_model.is_file() or cached.get("beat_evidence", {}).get("model_sha256") == BEAT_MODEL_SHA256:
+                    if (not include_beats or not self.beat_model.is_file()
+                            or cached.get("beat_evidence", {}).get("model_sha256") == BEAT_MODEL_SHA256):
                         progress(30, "复用所选声部与节拍分析结果")
                         return output, cached | {"cached": True, 'profile':self.profile}
             except (ValueError, OSError):
@@ -96,7 +102,7 @@ class Separator:
                     "--algorithm-revision", str(self.spec['algorithm_revision'])]
         if self.profile != 'four':
             command += ['--profile', self.profile]
-        if self.beat_model.is_file():
+        if include_beats and self.beat_model.is_file():
             command += ["--beat-model", str(self.beat_model)]
             if stems_cached:
                 command += ["--beats-only"]
@@ -143,7 +149,8 @@ class Separator:
         report = json.loads(manifest.read_text(encoding="utf-8"))
         if report.get("algorithm_revision") != self.spec['algorithm_revision']:
             raise ValueError("声部分离算法版本与应用不匹配，请更新分离 worker")
-        if self.beat_model.is_file() and report.get("beat_evidence", {}).get("model_sha256") != BEAT_MODEL_SHA256:
+        if (include_beats and self.beat_model.is_file()
+                and report.get("beat_evidence", {}).get("model_sha256") != BEAT_MODEL_SHA256):
             raise ValueError("节拍模型没有完成分析，请重新分析或检查本地日志")
         report["audio_sha256"] = digest
         report['profile'] = self.profile

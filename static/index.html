@@ -800,6 +800,35 @@
           <div id="strictHint" class="strict hidden">
             保持数量、起止时间、类型、音效和变速。只重新分配轨道；轨道不够时停止并报告。
           </div>
+          <details class="v32-panel" open>
+            <summary>Mapperatorinator V32 <span>自动 GPU / CPU</span></summary>
+            <p id="v32Status" class="v32-status" role="status">检查 V32 引擎状态…</p>
+            <button id="v32Install" class="secondary full hidden" disabled>准备 V32 运行环境</button>
+            <div class="v32-options">
+              <label class="field">模型<select id="v32Model">
+                <option value="v32" selected>V32 旗舰版</option>
+                <option value="v32-mini">V32-mini 快速版</option>
+              </select></label>
+              <label class="field">生成路线<select id="v32Strategy">
+                <option value="7k_to_torosu_10k" selected>7K → Torosu 10K</option>
+                <option value="native_10k">原生 10K</option>
+              </select></label>
+              <label class="field">Torosu 密度<select id="v32Density">
+                <option value="dense" selected>dense</option>
+                <option value="none">不调整</option>
+                <option value="more-dense">more-dense</option>
+              </select></label>
+              <label class="field">目标难度 / 星<input id="v32Difficulty" type="number" min="0" max="10" step=".1" value="5.5" /></label>
+            </div>
+            <label class="range-field">LN 比例 <output id="v32HoldRatioOut">55%</output>
+              <input id="v32HoldRatio" type="range" min="0" max=".85" step=".05" value=".55" />
+            </label>
+            <label class="range-field">轨道温度 <output id="v32TemperatureOut">1.0</output>
+              <input id="v32Temperature" type="range" min=".1" max="2" step=".1" value="1" />
+            </label>
+            <label class="field">LoRA 路径（可选）<input id="v32LoraPath" type="text" autocomplete="off" placeholder="本机权重目录，可留空" /></label>
+            <button id="v32Generate" class="primary full" disabled>生成 V32 候选</button>
+          </details>
           <button id="generate" class="primary full large">
             生成候选谱面 <span>↗</span></button
           ><button id="another" class="quiet full">换一个布局 · 新种子</button>

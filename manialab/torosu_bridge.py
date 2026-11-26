@@ -25,22 +25,34 @@ class TorosuBridgeError(ValueError):
 def _cli_path() -> Path:
     configured = os.environ.get("MANIALAB_TOROSU_CLI")
     frozen_root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
-    target_root = Path(os.environ.get("CARGO_TARGET_DIR", _ENGINE_DIR / "target"))
-    candidates = [Path(configured)] if configured else [
-        frozen_root / "engines" / "torosu_cli" / "torosu-cli.exe",
-        frozen_root / "engines" / "torosu_cli" / "torosu-cli",
-        *[
-            target_root / triple / profile / executable
+    configured_target = os.environ.get("CARGO_TARGET_DIR")
+
+    def root_candidates(root: Path) -> list[Path]:
+        return [
+            root / triple / profile / executable
             for triple in ("x86_64-pc-windows-msvc", "x86_64-pc-windows-gnu")
             for profile in ("release", "debug")
             for executable in ("torosu-cli.exe", "torosu-cli")
-        ],
-        *[
-            target_root / profile / executable
+        ] + [
+            root / profile / executable
             for profile in ("release", "debug")
             for executable in ("torosu-cli.exe", "torosu-cli")
-        ],
+        ]
+
+    bundled_candidates = [
+        frozen_root / "engines" / "torosu_cli" / "torosu-cli.exe",
+        frozen_root / "engines" / "torosu_cli" / "torosu-cli",
     ]
+    if configured:
+        candidates = [Path(configured)]
+    elif getattr(sys, "frozen", False):
+        candidates = bundled_candidates + (
+            root_candidates(Path(configured_target)) if configured_target else []
+        )
+    else:
+        candidates = (
+            root_candidates(Path(configured_target)) if configured_target else []
+        ) + bundled_candidates + root_candidates(_ENGINE_DIR / "target")
     for candidate in candidates:
         if candidate.is_file():
             return candidate.resolve()

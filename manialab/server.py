@@ -33,6 +33,8 @@ from .project_routes import register_project_routes
 from .arrangement_routes import register_arrangement_routes
 from .timing_routes import register_timing_routes
 from .upstream_routes import register_upstream_routes
+from .v32_engine import V32Engine
+from .v32_routes import register_v32_routes
 from .storage import MAX_IMPORT_BYTES, Projects, safe_path
 from .task_service import ProjectTasks
 from .upstream import MapperEngine
@@ -49,6 +51,7 @@ def create_app(resources, data_root):
     projects = Projects(Path(data_root) / "projects")
     task_service = ProjectTasks(projects, logger)
     engine = MapperEngine(data_root, resources)
+    v32_engine = V32Engine(data_root, resources)
     separator = Separator(resources)
     piano_detector = PianoDetector(resources)
     guitar_detector = GuitarDetector(resources)
@@ -63,7 +66,8 @@ def create_app(resources, data_root):
         provided_stem_identity=provided_stem_identity,
     )
     app.extensions.update(projects=projects, jobs=task_service.jobs, executor=task_service.executor,
-                          task_service=task_service, analysis_services=analysis_services)
+                          task_service=task_service, analysis_services=analysis_services,
+                          v32_engine=v32_engine)
     register_project_routes(app, projects, task_service, parameters=parameters, describe_chart=describe_chart)
 
     @app.before_request
@@ -98,10 +102,17 @@ def create_app(resources, data_root):
 
     @app.get("/api/status")
     def status():
+        separator_status = separator.status()
+        v32_status = v32_engine.status()
+        v32_status["separation_available"] = bool(
+            separator_status.get("profiles", {}).get("six", {}).get("available")
+        )
         return jsonify(version=__version__, defaults=DEFAULTS, projects=projects.recent(),
-                       capabilities={"audio": True, "remap": True, "api_planner": True, "trained_10k": False},
-                       engine=engine.status(), separator=separator.status(), piano=piano_detector.status(),
-                       guitar=guitar_detector.status(), instruments=instrument_detector.status(), pattern_prior=prior_status())
+                       capabilities={"audio": True, "remap": True, "api_planner": True,
+                                     "trained_10k": False, "v32": True},
+                       engine=engine.status(), separator=separator_status, piano=piano_detector.status(),
+                       guitar=guitar_detector.status(), instruments=instrument_detector.status(),
+                       pattern_prior=prior_status(), v32_engine=v32_status)
 
     def current_audio(state):
         if state.get("audio"):
@@ -180,6 +191,15 @@ def create_app(resources, data_root):
         submit=submit,
         current_audio=current_audio,
         requested_tempo=requested_tempo,
+    )
+    register_v32_routes(
+        app,
+        engine=v32_engine,
+        projects=projects,
+        submit=submit,
+        current_audio=current_audio,
+        requested_tempo=requested_tempo,
+        resources=resources,
     )
     register_export_routes(app, projects=projects, resources=resources, current_audio=current_audio)
     register_playback_routes(

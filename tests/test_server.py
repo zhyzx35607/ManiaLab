@@ -109,6 +109,26 @@ def test_optional_mapper_routes_reject_profiles_without_installer(tmp_path, monk
         app.extensions['executor'].shutdown()
 
 
+def test_status_exposes_portable_v32_runtime_without_loading_models(tmp_path):
+    app = create_app(ROOT, tmp_path)
+    try:
+        response = app.test_client().get('/api/status')
+        assert response.status_code == 200
+        status = response.json['v32_engine']
+        assert status['available'] is False
+        assert status['source_available'] is False
+        assert status['runtime_available'] is False
+        assert status['device']['type'] == 'cpu'
+        assert status['models']['v32']['ready'] is False
+        assert status['models']['v32-mini']['ready'] is False
+        assert status['lora'] == {'loaded': False, 'path': None}
+        assert isinstance(status['separation_available'], bool)
+        assert not (tmp_path / 'mapperatorinator').exists()
+        assert not (tmp_path / 'models').exists()
+    finally:
+        app.extensions['executor'].shutdown()
+
+
 def test_full_remap_export(tmp_path):
     app=create_app(ROOT,tmp_path); client=app.test_client(); headers={'X-ManiaLab-Token':app.config['TOKEN']}
     original=export_osu([Note(1000,4000,0),Note(1000,5000,3),Note(2000,2000,8)],10,ROOT/'vendor/mapperatorinator/template.osu',audio='song.wav')
