@@ -1,10 +1,10 @@
 # ManiaLab 2.0 续接进度
 
-更新：2026-11-26（Asia/Shanghai）。阶段 #02、#03 已由用户验收；阶段 #04 已经单一 PR #280 合入 `main`。当前对比 `.osz` 等待用户 osu! 实打，本轮不进入阶段 #05。
+更新：2026-11-27（Asia/Shanghai）。阶段 #02–#04 已由用户验收，阶段 #03/#04 经单一 PR #280 合入 `main`。当前仅执行阶段 #05（Phase 2B）；不发 Release/tag，不进入阶段 #06。
 
 ## 当前基线
 
-- `main` / `origin/main`：`f8d2331c77f67be2099044806a9b817994520be7`。唯一 worktree 为 `D:\project\ManiaLab`，仅保留本地 `main` 分支。
+- `main` / `origin/main` 基线：`dda07ed`。阶段 #05 唯一分支 `feat/phase2b-10k-lora-kit`，唯一 worktree 为 `D:\project\ManiaLab`。
 - PR #280 于 2026-11-26 合并，一并包含阶段 #03 提交 `582dd337` 与阶段 #04 提交 `438850a0`；特性分支已删除。未发布 Release/tag。
 - 阶段 #03 用户实打冠军：FullMix → v32-mini 7K → Torosu dense 10K；去人声不再作为主推理输入。
 - C 盘当前约 6.95 GiB 可用，D 盘约 118.2 GiB 可用；模型、运行时与实验缓存可通过环境变量指向大容量盘。
@@ -71,3 +71,13 @@
 - 最终 Windows CI：pytest `2476 passed, 72 skipped, 1 warning`；Playwright `90 passed`。本地全量 pytest 曾以 `2473 passed, 75 skipped, 1 warning` 通过；本地 Playwright `90 passed`。
 - 4050 首次启用需使用包含 Mapperatorinator 安装器的 `standard` / `extended` Windows 包；磁盘空间有限时，启动前把 `MANIALAB_V32_RUNTIME_ROOT` 与 `MANIALAB_CACHE_ROOT` 指向大容量盘，再点 UI「准备 V32 运行环境」。本机无 CUDA，真实 4050 性能仍待目标机实测。
 - 本机没有 CUDA GPU；RTX 4050 的 BF16 / fast decoder / batch=1 由 mock 设备测试覆盖，需在目标机实际确认运行表现。未发布 Release/tag，未进入阶段 #05。
+
+## 阶段 #05（Phase 2B）执行记录
+
+- 本阶段下载、数据构造、训练、pytest 与 Playwright 的 `TMP`/`TEMP`/`TMPDIR`、HF/Torch/pip/uv 缓存均钉在 D 盘。清理 131 个旧 Playwright profile（30,031,035 bytes）及 36 个由 `tests/browser/fixture_server.py` 创建、含合成 WAV/状态/谱面的过期 `manialab-ui-*` 目录（2,021,845,108 bytes）；未碰用户音频或其他程序临时目录。C 盘用户报告起始约6.95 GiB，本轮清理前实测 7,131,627,520 bytes，最终 9,151,496,192 bytes；D 盘最终 119,756,091,392 bytes。
+- 单一分支 `feat/phase2b-10k-lora-kit`，只读复用 `D:\project\Mapperatorinator` 固定 commit `5884d1bcb57494f09fe3d74f3a6b58ca0d2960aa`。
+- 新增 Sayobot API/无视频 OSZ 构造器，按 embedded `BeatmapID` 索引谱面，严格复核 Mania/CS/TIMING/LN、完整解码音频，并按 mapset/曲名/音频 SHA 连通组划分。最终忽略数据集 `workspace_exp/lora_10k_kit/dataset/`：34 Ranked/Loved 10K mapset + 2 个精选 7K LN 辅助 mapset，173 charts / 36 leakage groups / 247,569,055 bytes（0.231 GiB）；10K 167（LN≥45% 15、Hybrid 22、Rice 130），辅助 7K LN 6。Train/Val 31/5 组，86.11%/13.89%（整数分组下最接近85/15）；音频 SHA 与歌曲组均零泄露。跨窗口活动 LN 547 个窗口边界，至少一条跨窗状态的谱面 173 张。
+- 训练器默认 V32-mini，支持 V32；LoRA `r=16/alpha=32`、micro-batch 1、默认梯度累积16、bf16、gradient checkpointing、可选8-bit AdamW、checkpoint resume。难度与 hold 比例保留真实值；采样权重 LN 4x、Hybrid 2x、Rice 0.25x、辅助 LN 1x。针对底座 tokenizer 的非负时间移位词表，仅注入窗口边界时间0的活动 LN 前缀；Windows worker 会重装该 patch 和随包 FFmpeg。
+- 纯 CPU 真实端到端 smoke 使用 Sayobot 音频和 v32-mini 固定 revision `7807f0dc70cab671be012e1f5ddf945b0b8b7278`：冷启动 step1 保存完整模型/optimizer/scheduler/RNG/tokenizer checkpoint，续训 step2 后导出 LoRA，并由 `manialab/v32_engine.py` 实际加载生成合法 10K 谱、调用 Torosu `analyze`。更新后的验证抽样实测选中两个不同歌曲组：10K LN（目标 LN 70.6%，推理 35.6 秒）与 10K Hybrid（目标 LN 29.0%，推理 101.3 秒）；两谱均合法、LoRA 已加载、无 incomplete-LN 警告。两步 smoke 尚未学出 LN（实际均为 0%），只验证链路，不代表训练质量。
+- 训练器默认 V32-mini（约 228 MB），支持 V32；LoRA `r=16/alpha=32`、bf16、gradient checkpointing、micro-batch 1、默认梯度累积16、可选8-bit AdamW、断点续训及逐轮 NLL/hold/LN/Torosu 指标。CPU 实测约17.35秒/optimizer step，peak RSS 报告约932 MiB。没有本机 CUDA/RTX 4050，不能给出可信的 4050 实测训练时长；脚本会在目标机首轮按实际 step 与评测耗时生成预计总时长。
+- 最终本地全量 `pytest -q`：`2498 passed, 75 skipped, 1 warning`（238.44秒）；Playwright `90 passed`。跨窗LN、泄露组去重抽样、CUDA配置、LoRA加载等专项测试通过；PowerShell解析、Python编译与 `git diff --check` 通过。单一 PR / Windows CI / 合并推送及临时分支删除待完成；`docs/PROGRESS.md` 当前少于150行。验收后立即停止，不进入阶段 #06。
