@@ -322,6 +322,7 @@ def test_cli_missing_is_reported_without_falling_back(monkeypatch, tmp_path):
     monkeypatch.delenv("MANIALAB_TOROSU_CLI", raising=False)
     monkeypatch.delenv("CARGO_TARGET_DIR", raising=False)
     monkeypatch.setattr(torosu_bridge, "_ENGINE_DIR", tmp_path / "engine")
+    monkeypatch.setattr(torosu_bridge.sys, "_MEIPASS", str(tmp_path / "bundle"), raising=False)
     with pytest.raises(torosu_bridge.TorosuBridgeError, match="尚未构建"):
         torosu_bridge._cli_path()
 

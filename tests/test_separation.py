@@ -220,3 +220,8 @@ def test_separator_preserves_float_input_and_rebuilds_legacy_cache(tmp_path, mon
     _, report = separator.separate(source, tmp_path)
     assert len(launches) == 3 and '--beats-only' not in launches[-1]
     assert not report['cached']
+    monkeypatch.setattr(separation, 'INPUT_PROCESSING', separation.INPUT_PROCESSING | {'revision': 4})
+    _, report = separator.separate(source, tmp_path, include_beats=False)
+    assert len(launches) == 4
+    assert "--beat-model" not in launches[-1]
+    assert not report['cached']
