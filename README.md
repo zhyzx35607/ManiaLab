@@ -2,6 +2,10 @@
 
 ManiaLab 是面向 osu!mania 6–10K 的本地智能制谱工作台，以 10K 为核心。V32 Full 为旗舰，`v32-mini` 为默认快速版；NVIDIA GPU 自动使用 CUDA，无 GPU 时回退 CPU。谱面结构与自动指标用于检查工程结果，最终质量仍需试听并在 osu! 中实打。
 
+## 当前公开试用版
+
+[下载 ManiaLab 2.0 Workbench Beta 1（Windows x64）](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.2.0-beta.1/ManiaLab-0.2.0-beta.1-windows-x64-workbench.zip)（单文件 ZIP，首次使用 V32 时在界面点击「准备 V32 运行环境」）。
+
 ## 工作流程
 
 1. 导入一首歌曲或已有 `.osu/.osz`；也可一次选择最多 20 首歌曲。

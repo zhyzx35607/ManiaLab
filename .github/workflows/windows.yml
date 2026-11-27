@@ -22,9 +22,8 @@ jobs:
       PYTHONIOENCODING: utf-8
       MANIALAB_BUILD_ID: ${{ github.run_id }}-${{ github.run_attempt }}
       CARGO_TARGET_DIR: ${{ github.workspace }}\build\torosu-cli-target
-      # Marked PRs exercise the lightweight workbench bundle; other explicit
-      # portable runs keep the public Core profile.
-      PORTABLE_PROFILE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[portable]') && 'workbench' || 'core' }}
+      # v0.2 tags and marked PRs exercise the lightweight Workbench release.
+      PORTABLE_PROFILE: ${{ (startsWith(github.ref, 'refs/tags/v0.2.') || (github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[portable]'))) && 'workbench' || 'core' }}
       BUILD_PORTABLE: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[portable]') || (github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[portable]')) }}
     defaults:
       run:
