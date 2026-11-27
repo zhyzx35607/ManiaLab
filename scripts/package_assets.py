@@ -23,6 +23,10 @@ MAPPER_INSTALLER_FILES = (
     'download_mapper.py', 'run_mapper.py', 'mapper_sketch_context.py',
     'mania_event_constraints.py', 'mapperatorinator-requirements.txt',
     'mapperatorinator-source.zip', 'runtime/uv.exe',
+    'huggingface/models--openai--whisper-base/refs/main',
+    'huggingface/models--openai--whisper-base/snapshots/e37978b90ca9030d5170a5c07aadb050351a65bb/config.json',
+    'huggingface/models--openai--whisper-small/refs/main',
+    'huggingface/models--openai--whisper-small/snapshots/973afd24965f72e36ca33b3055d56a652f456b4d/config.json',
 )
 NON_CORE_PAYLOAD_NAMES = {
     'uv.exe',

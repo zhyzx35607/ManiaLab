@@ -41,6 +41,7 @@ from .v32_charts import (
     sections,
     sanitize_zero_length_model_holds,
     snap_chart_to_grid,
+    clean_snapped_model_collisions,
     trim_air_ln_tails,
 )
 from .separation import Separator
@@ -443,10 +444,14 @@ def build_v32_operation(
         # Mapperatorinator's slider parser requires a HitObjects section and at
         # least one object even when only TIMING is supplied as context.
         placeholder_time = max(0, round(tempo["offset"]))
+        song_duration_ms = max(
+            placeholder_time,
+            round(len(decoded_samples) * 1000 / 22050),
+        )
         reference = export_osu(
             [Note(
-                placeholder_time,
-                placeholder_time,
+                song_duration_ms,
+                song_duration_ms,
                 0,
                 id="timing-context-placeholder",
             )],
@@ -528,6 +533,10 @@ def build_v32_operation(
             bpm=tempo["bpm"],
             offset_ms=tempo["offset"],
             division=tempo["division"],
+        )
+        snapped, collision_cleanup = clean_snapped_model_collisions(
+            snapped,
+            model_keys=model_keys,
         )
         progress(93, "按六声部 RMS 检查空气 LN 尾部")
         trimmed, trim_report = trim_air_ln_tails(
@@ -634,6 +643,7 @@ def build_v32_operation(
             "peak_rss_bytes": inference.get("peak_rss_bytes"),
             "hold_repair": hold_repair,
             "grid_snap": grid_snap,
+            "collision_cleanup": collision_cleanup,
             "energy_trim": trim_report,
             "energy_source": energy_source,
             "separation": {
@@ -734,9 +744,21 @@ def register_v32_routes(
             raise ValueError("当前发行包不含 V32 自动安装组件；请配置固定 Mapperatorinator 源码与运行环境")
         if task_service is None:
             raise ValueError("当前服务不支持全局后台任务")
+        payload = request.get_json(silent=True)
+        if payload is None:
+            payload = {}
+        if not isinstance(payload, dict) or set(payload) - {"use_mirrors"}:
+            raise ValueError("V32 安装请求必须只包含国内镜像选项")
+        use_mirrors = payload.get("use_mirrors", False)
+        if type(use_mirrors) is not bool:
+            raise ValueError("国内镜像选项必须为布尔值")
 
         def operation(_state, progress, cancelled):
-            result = engine.install_runtime(progress=progress, cancelled=cancelled)
+            result = engine.install_runtime(
+                progress=progress,
+                cancelled=cancelled,
+                use_mirrors=use_mirrors,
+            )
             progress(100, "V32 推理环境已就绪")
             return result
 

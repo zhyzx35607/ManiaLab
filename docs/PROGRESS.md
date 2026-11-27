@@ -1,18 +1,20 @@
 # ManiaLab 2.0 续接进度
 
-更新：2026-11-27（Asia/Shanghai）。阶段 #01–#06 已由用户验收；当前仅准备阶段 #06 的公开试用版 `v0.2.0-beta.1`，不进入阶段 #07。
+更新：2026-11-28（Asia/Shanghai）。阶段 #01–#06 已验收，`v0.2.0-beta.1` 已发布；当前仅执行 beta.2 热修，阶段 #07 暂停，不进入阶段 #08。
 
 ## 当前基线
 
-- `main` / `origin/main` 基线：`6586936`（PR #282）。当前单一发布配置分支 `release/v0.2.0-beta.1`，唯一 worktree 为 `D:\project\ManiaLab`。
-- PR #280 于 2026-11-26 合并，一并包含阶段 #03 提交 `582dd337` 与阶段 #04 提交 `438850a0`；特性分支已删除。未发布 Release/tag。
+- `main` / `origin/main` 基线：`4b57dcf`（PR #283，tag `v0.2.0-beta.1`）。当前唯一分支为 `fix/v0.2.0-beta.2-hotfix`，唯一 worktree 为 `D:\project\ManiaLab`。
+- 阶段 #07 未提交的 8 个文件已放入本地 stash `preserve-phase07-before-beta2-hotfix`；未带入本热修分支。`workspace_exp/` 实验产物保留原位。
 - 阶段 #03 用户实打冠军：FullMix → v32-mini 7K → Torosu dense 10K；去人声不再作为主推理输入。
-- C 盘阶段 #06 起始可用约 7,754,723,328 bytes；测试、PyTorch/V32 运行时、模型权重、缓存和临时目录均置于 D 盘。
+- 热修期间 pytest basetemp、TMP/TEMP 与 HF/Torch/pip/uv 缓存均指向 D 盘。复核时 C 盘可用 `10,526,060,544` bytes（9.80 GiB），低于用户给定 10.09 GiB 基线；D 盘可用 `98,809,004,032` bytes（92.02 GiB）。未清理归属不明的 C 盘文件。
 
-## Workbench Beta 发布准备
+## Workbench Beta 发布与热修
 
-- 用户授权基于已验收的阶段 #06 发布 `v0.2.0-beta.1`。本 PR 仅调整应用版本、README 当前下载入口及 Windows 发布 profile；`v0.2.*` tag 与标记 `[portable]` 的 PR 均构建/校验 `workbench`，旧 Core/Standard/Extended profile 策略保留。
-- 目标单 ZIP：`ManiaLab-0.2.0-beta.1-windows-x64-workbench.zip`，校验文件为 `SHA256SUMS.txt`。发布后只以精确 tag 的 Windows CI 构建产物创建 Pre-Release；在 tag CI 通过前不发布。
+- `v0.2.0-beta.1` 已作为公开 Workbench 预发布版发布；`v0.2.*` 精确 tag 与标记 `[portable]` 的 PR 均构建/校验 `workbench`，旧 Core/Standard/Extended profile 策略保留。
+- 当前 beta.2 热修只处理五项用户报告：全曲 Timing 上下文、V32 吸附后 AI 同刻碰撞清理、Whisper 配置离线缓存、2 小时可配置安装超时与镜像选项、安全任务错误摘要及批量权重故障提前停止。
+- 真实离线检查在 `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1` 下从 ManiaLab 隔离配置缓存加载 `openai/whisper-base` 与 `openai/whisper-small` 成功；既有共享 HF 缓存保持不变。全量 pytest `2643 passed, 76 skipped, 1 warning`；Playwright `103 passed`，V32 安装专项 `5 passed`。
+- 热修目标包：`ManiaLab-0.2.0-beta.2-windows-x64-workbench.zip` + `SHA256SUMS.txt`；先经单一 `[portable]` PR 与 Windows CI 合入，再由精确 tag CI 产物发布。完成 beta.2 后停止，不自动继续阶段 #07。
 
 ## 阶段 #01 历史基线
 

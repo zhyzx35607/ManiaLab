@@ -13,6 +13,7 @@ import time
 import zipfile
 
 from .cancellation import stop_process
+from .task_errors import UserVisibleTaskError, UserVisibleTimeoutError
 from .worker_process import start_worker
 
 
@@ -20,6 +21,8 @@ SOURCE_PYTHON = "3.10.20"
 TORCH_VERSION = "2.9.1"
 TORCH_CPU_INDEX = "https://download.pytorch.org/whl/cpu"
 TORCH_CUDA_INDEX = "https://download.pytorch.org/whl/cu128"
+TORCH_CUDA_MIRROR_INDEX = "https://mirror.nju.edu.cn/pytorch/whl/cu128/"
+PYPI_MIRROR_INDEX = "https://mirrors.aliyun.com/pypi/simple/"
 
 
 def sha256_file(path: Path) -> str:
@@ -197,6 +200,21 @@ class V32Runtime:
         return env
 
     @staticmethod
+    def _install_timeout_seconds() -> float:
+        raw = os.environ.get("MANIALAB_V32_INSTALL_TIMEOUT_SECONDS", "7200")
+        try:
+            timeout = float(raw)
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "MANIALAB_V32_INSTALL_TIMEOUT_SECONDS 必须为 1–86400 秒"
+            ) from error
+        if not 1 <= timeout <= 86400:
+            raise ValueError(
+                "MANIALAB_V32_INSTALL_TIMEOUT_SECONDS 必须为 1–86400 秒"
+            )
+        return timeout
+
+    @staticmethod
     def _safe_extract(source_zip: Path, destination: Path) -> None:
         root = destination.resolve()
         with zipfile.ZipFile(source_zip) as archive:
@@ -276,16 +294,49 @@ class V32Runtime:
             if staging.exists():
                 shutil.rmtree(staging)
 
-    def install(self, *, progress, cancelled, run_command) -> dict:
+    def install(self, *, progress, cancelled, run_command, use_mirrors=False) -> dict:
         uv = self.uv
         if uv is None:
             raise ValueError("发行包缺少 uv；请安装支持 V32 的完整 Windows 包")
+        if type(use_mirrors) is not bool:
+            raise ValueError("国内镜像选项必须为布尔值")
         if self._python_override is not None and self._python_override != self._default_python:
             raise ValueError("已显式配置外部 Mapperatorinator Python，拒绝自动替换该环境")
         self._prepare_source()
         env = self._install_environment(create=True)
+        if use_mirrors:
+            if not env.get("MANIALAB_TORCH_INDEX_URL") and self._cuda_expected():
+                env["MANIALAB_TORCH_INDEX_URL"] = TORCH_CUDA_MIRROR_INDEX
+            if not env.get("MANIALAB_PYPI_INDEX_URL"):
+                env["MANIALAB_PYPI_INDEX_URL"] = PYPI_MIRROR_INDEX
+
+        def run_install_step(command, *, message, timeout_seconds, **kwargs):
+            try:
+                return run_command(
+                    command,
+                    message=message,
+                    timeout_seconds=timeout_seconds,
+                    **kwargs,
+                )
+            except (UserVisibleTaskError, UserVisibleTimeoutError) as error:
+                mirror_hint = (
+                    "；可勾选“使用国内镜像加速”，或设置 "
+                    "MANIALAB_TORCH_INDEX_URL / MANIALAB_PYPI_INDEX_URL"
+                    "（南大 CUDA 与阿里云 PyPI）"
+                )
+                error_type = (
+                    UserVisibleTimeoutError
+                    if isinstance(error, UserVisibleTimeoutError)
+                    else UserVisibleTaskError
+                )
+                raise error_type(
+                    f"{error.user_message}{mirror_hint}",
+                    log_path=error.log_path,
+                    global_failure=error.global_failure,
+                ) from error
+
         if not self._default_python.is_file():
-            run_command(
+            run_install_step(
                 [
                     str(uv), "python", "install", SOURCE_PYTHON,
                     "--install-dir", env["UV_PYTHON_INSTALL_DIR"],
@@ -298,7 +349,7 @@ class V32Runtime:
                 cwd=self.root,
                 timeout_seconds=900,
             )
-            run_command(
+            run_install_step(
                 [
                     str(uv), "venv", "--managed-python", "--python", SOURCE_PYTHON,
                     str(self._default_python.parent.parent),
@@ -312,32 +363,46 @@ class V32Runtime:
         if not python.is_file():
             raise FileNotFoundError(f"uv 未创建 V32 Python 环境：{python}")
         cuda = self._cuda_expected()
-        index = TORCH_CUDA_INDEX if cuda else TORCH_CPU_INDEX
-        run_command(
-            [
-                str(uv), "pip", "install", "--python", str(python),
-                "--index-url", index,
-                f"torch=={TORCH_VERSION}", f"torchaudio=={TORCH_VERSION}",
-            ],
+        index = env.get("MANIALAB_TORCH_INDEX_URL") or (
+            TORCH_CUDA_INDEX if cuda else TORCH_CPU_INDEX
+        )
+        install_timeout = self._install_timeout_seconds()
+        torch_command = [
+            str(uv), "pip", "install", "--python", str(python),
+            "--index-url", index,
+        ]
+        pypi_index = env.get("MANIALAB_PYPI_INDEX_URL")
+        if pypi_index and pypi_index != index:
+            torch_command.extend(("--extra-index-url", pypi_index))
+        torch_command.extend((
+            f"torch=={TORCH_VERSION}", f"torchaudio=={TORCH_VERSION}",
+        ))
+        run_install_step(
+            torch_command,
             message=(
                 "安装 CUDA PyTorch（RTX/NVIDIA）"
                 if cuda else "安装 CPU PyTorch"
             ),
             env=env,
             cwd=self.source,
-            timeout_seconds=1800,
+            timeout_seconds=install_timeout,
         )
-        run_command(
-            [
-                str(uv), "pip", "install", "--python", str(python),
-                "-r", str(self.resources / "assets" / "mapperatorinator-requirements.txt"),
-            ],
+        dependency_command = [
+            str(uv), "pip", "install", "--python", str(python),
+        ]
+        if pypi_index:
+            dependency_command.extend(("--index-url", pypi_index))
+        dependency_command.extend((
+            "-r", str(self.resources / "assets" / "mapperatorinator-requirements.txt"),
+        ))
+        run_install_step(
+            dependency_command,
             message="安装 Mapperatorinator 固定依赖",
             env=env,
             cwd=self.source,
-            timeout_seconds=1800,
+            timeout_seconds=install_timeout,
         )
-        verification = run_command(
+        verification = run_install_step(
             [
                 str(python), "-c",
                 "import json,torch; from pathlib import Path; "
@@ -354,7 +419,10 @@ class V32Runtime:
         try:
             result = json.loads(verification["log"].splitlines()[-1])
         except (KeyError, IndexError, json.JSONDecodeError) as error:
-            raise RuntimeError("V32 环境验证没有返回有效设备信息") from error
+            raise UserVisibleTaskError(
+                "V32 环境验证没有返回有效设备信息",
+                log_path=verification.get("log_path"),
+            ) from error
         progress(100, "V32 推理环境已就绪")
         return {
             "source_commit": self._manifest()["commit"],

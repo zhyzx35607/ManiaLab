@@ -116,6 +116,9 @@ def release_fixture(tmp_path, monkeypatch, request):
             'mapperatorinator-requirements.txt': b'# synthetic requirements fixture',
             'mapperatorinator-source.zip': b'synthetic mapper source archive fixture',
         }
+        for relative in package_assets.MAPPER_INSTALLER_FILES:
+            if relative != 'runtime/uv.exe':
+                metadata.setdefault(relative, b'synthetic Mapperatorinator cache fixture')
         for relative, content in metadata.items():
             add_source_asset(relative, content)
         asset_payloads.update({

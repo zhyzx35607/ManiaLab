@@ -155,8 +155,9 @@ test('V32 first-run setup runs through the shared cancellable task queue', async
       message: 'V32 推理环境已就绪',
     },
   }));
+  await page.locator('#v32UseMirrors').check();
   await page.locator('#v32Install').click();
-  await expect.poll(() => submitted).toEqual({});
+  await expect.poll(() => submitted).toEqual({ use_mirrors: true });
   await expect(page.locator('#job')).toHaveClass(/hidden/);
 });
 

@@ -1,7 +1,7 @@
 """V32 chart cleanup, timing alignment, and validation."""
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import replace
 import math
 
@@ -235,6 +235,94 @@ def snap_chart_to_grid(
         ),
         "adjustments": moved,
     }
+
+
+def clean_snapped_model_collisions(
+    osu_text: str,
+    *,
+    model_keys: int,
+) -> tuple[str, dict]:
+    """Drop duplicate same-lane attacks introduced by snapping model output."""
+    if type(model_keys) is not int or model_keys not in range(6, 11):
+        raise ValueError("模型键数必须为 6–10")
+    parsed = parse_osu(osu_text)
+    if parsed["keys"] != model_keys:
+        raise ValueError(
+            f"V32 原始谱面应为 {model_keys}K，实际为 {parsed['keys']}K"
+        )
+
+    by_time = defaultdict(list)
+    for index, note in enumerate(parsed["notes"]):
+        by_time[note.start].append((index, note))
+
+    kept = []
+    collided_chords = []
+    collided_chord_count = 0
+    duplicate_track_objects = 0
+    capacity_objects = 0
+    overfull_chords = 0
+    for start, chord in sorted(by_time.items()):
+        by_lane = defaultdict(list)
+        for row in chord:
+            by_lane[row[1].lane].append(row)
+
+        def priority(row):
+            index, note = row
+            return (
+                0 if note.hold else 1,
+                -(note.end - note.start),
+                note.lane,
+                index,
+            )
+
+        unique_lanes = [min(rows, key=priority) for rows in by_lane.values()]
+        selected = sorted(unique_lanes, key=priority)[:model_keys]
+        duplicate_removed = len(chord) - len(unique_lanes)
+        capacity_removed = len(unique_lanes) - len(selected)
+        if duplicate_removed or capacity_removed:
+            collided_chord_count += 1
+            if len(collided_chords) < 100:
+                collided_chords.append({
+                    "start_ms": start,
+                    "objects_before": len(chord),
+                    "objects_after": len(selected),
+                    "duplicate_track_objects_removed": duplicate_removed,
+                    "capacity_objects_removed": capacity_removed,
+                })
+        duplicate_track_objects += duplicate_removed
+        capacity_objects += capacity_removed
+        overfull_chords += len(chord) > model_keys
+        kept.extend(selected)
+
+    removed = len(parsed["notes"]) - len(kept)
+    report = {
+        "model_keys": model_keys,
+        "objects_before": len(parsed["notes"]),
+        "objects_after": len(kept),
+        "removed_objects": removed,
+        "duplicate_track_objects_removed": duplicate_track_objects,
+        "capacity_objects_removed": capacity_objects,
+        "collided_chords": collided_chord_count,
+        "overfull_chords": overfull_chords,
+        "details": collided_chords,
+        "details_truncated": collided_chord_count > len(collided_chords),
+    }
+    if not removed:
+        return osu_text, report
+
+    content = sections(osu_text)
+    content["HitObjects"] = [
+        note.raw
+        for _, note in sorted(
+            kept,
+            key=lambda row: (row[1].start, row[1].lane, row[1].end, row[0]),
+        )
+    ]
+    result = _format_sections(content)
+    verified = parse_osu(result)
+    if len(verified["notes"]) != len(kept):
+        raise ValueError("V32 拍格碰撞清理意外改变物件数")
+    return result, report
 
 
 def repair_native_10k_collisions(osu_text: str) -> tuple[str, dict]:

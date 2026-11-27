@@ -358,6 +358,8 @@ async function refreshRecent(){
   $('v32Install').classList.toggle('hidden',!v32CanInstall);
   $('v32Install').textContent=v32EngineStatus?.runtime_needs_cuda?'配置 NVIDIA CUDA 环境':'准备 V32 运行环境';
   $('v32Install').disabled=busy||!v32CanInstall;
+  $('v32MirrorOption').classList.toggle('hidden',!v32CanInstall);
+  $('v32UseMirrors').disabled=busy||!v32CanInstall;
   $('headerV32Install').classList.toggle('hidden',!v32CanInstall);
   $('headerV32Install').disabled=busy||!v32CanInstall;
   $('v32Generate').disabled=busy||!state||$('mode').value==='remap'||!v32GenerateAvailable;
@@ -373,7 +375,7 @@ function setMode(){const remap=$('mode').value==='remap';$('musical').classList.
 function setBusy(value){
   if(value)projectLoadRequest++;
   busy=value;
-  ['analyze','generate','another','regenerate','plan','charts','variants','recent','files','batchFiles','batchAnalyze','batchKeys','batchKeyLayout','batchPreset','batchTorosuDensity','batchTorosuLnMode','batchDensity','batchEngine','batchDifficulty','batchHoldRatio','batchLora','batchLoraPath','batchScribe','batchVersionSuffix','batchTimingConfirmed','batchGenerate','batchDownloadAll','clearPlan','engineInstall','engineGenerate','v32Install','v32Model','v32Strategy','v32Density','v32Difficulty','v32HoldRatio','v32Temperature','v32LnMode','v32LoraSelect','v32LoraPath','v32Generate','headerV32Install','singleEngine','singleScribe','singleVersionSuffix','referenceStyleFile','mode','preset','lnPreset','focus','layoutEngine','analysisEngine',...numbers].forEach(id=>{const control=$(id);if(control)control.disabled=value;});
+  ['analyze','generate','another','regenerate','plan','charts','variants','recent','files','batchFiles','batchAnalyze','batchKeys','batchKeyLayout','batchPreset','batchTorosuDensity','batchTorosuLnMode','batchDensity','batchEngine','batchDifficulty','batchHoldRatio','batchLora','batchLoraPath','batchScribe','batchVersionSuffix','batchTimingConfirmed','batchGenerate','batchDownloadAll','clearPlan','engineInstall','engineGenerate','v32Install','v32UseMirrors','v32Model','v32Strategy','v32Density','v32Difficulty','v32HoldRatio','v32Temperature','v32LnMode','v32LoraSelect','v32LoraPath','v32Generate','headerV32Install','singleEngine','singleScribe','singleVersionSuffix','referenceStyleFile','mode','preset','lnPreset','focus','layoutEngine','analysisEngine',...numbers].forEach(id=>{const control=$(id);if(control)control.disabled=value;});
   $('engineInstall').disabled=value||!mapperInstallAvailable;$('engineGenerate').disabled=value||!mapperGenerateAvailable;
   $('v32Install').disabled=value||!v32EngineStatus?.install_available||(
     !!v32EngineStatus?.runtime_available&&!v32EngineStatus?.runtime_needs_cuda
@@ -401,7 +403,7 @@ async function runGlobalV32Install(){
   if(!v32EngineStatus?.install_available)throw Error('V32 运行环境当前无需安装。');
   setBusy(true);$('jobText').textContent='正在准备 V32 全局运行环境…';$('progress').value=0;
   try{
-    const job=await api('/api/v32/install',{});
+    const job=await api('/api/v32/install',{use_mirrors:$('v32UseMirrors').checked});
     jobId=job.id;
     while(true){
       const current=await api('/api/jobs/'+encodeURIComponent(jobId));

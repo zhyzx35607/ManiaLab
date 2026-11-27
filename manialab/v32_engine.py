@@ -14,6 +14,7 @@ import time
 from .v32_device import DevicePlan, select_device_plan
 from .v32_process import run_owned_command
 from .v32_runtime import V32Runtime
+from .task_errors import UserVisibleTaskError
 
 
 MODEL_SPECS = {
@@ -34,6 +35,10 @@ _REQUIRED_MODEL_FILES = (
     "model.safetensors",
     "tokenizer.json",
 )
+_WHISPER_CONFIGS = {
+    "models--openai--whisper-base": "e37978b90ca9030d5170a5c07aadb050351a65bb",
+    "models--openai--whisper-small": "973afd24965f72e36ca33b3055d56a652f456b4d",
+}
 
 
 def _path_from_env(name: str, fallback: Path) -> Path:
@@ -145,6 +150,72 @@ class V32Engine:
             HF_HUB_DISABLE_SYMLINKS_WARNING="1",
         )
         return env
+
+    def _seed_whisper_config_cache(self, env: dict[str, str]) -> None:
+        bundled_root = self.resources / "assets" / "huggingface"
+        config_cache = (
+            Path(env["HF_HOME"]).expanduser().resolve()
+            / "manialab-whisper-config-cache"
+        )
+        env["HF_HUB_CACHE"] = str(config_cache)
+        env["TRANSFORMERS_CACHE"] = str(config_cache)
+        for cache_name, bundled_revision in _WHISPER_CONFIGS.items():
+            bundled_repo = bundled_root / cache_name
+            bundled_config = (
+                bundled_repo / "snapshots" / bundled_revision / "config.json"
+            )
+            bundled_ref = bundled_repo / "refs" / "main"
+            if not bundled_config.is_file() or not bundled_ref.is_file():
+                raise UserVisibleTaskError(
+                    f"发行包缺少离线 Whisper 配置：{cache_name}",
+                    global_failure=True,
+                )
+            config_bytes = bundled_config.read_bytes()
+            try:
+                config = json.loads(config_bytes.decode("utf-8"))
+                revision = bundled_ref.read_text(encoding="utf-8").strip()
+            except (UnicodeError, json.JSONDecodeError, OSError) as error:
+                raise UserVisibleTaskError(
+                    f"发行包 Whisper 配置无效：{cache_name}",
+                    global_failure=True,
+                ) from error
+            if not isinstance(config, dict) or revision != bundled_revision:
+                raise UserVisibleTaskError(
+                    f"发行包 Whisper 配置 revision 无效：{cache_name}",
+                    global_failure=True,
+                )
+            repo_cache = config_cache / cache_name
+            ref_path = repo_cache / "refs" / "main"
+            config_path = (
+                repo_cache / "snapshots" / bundled_revision / "config.json"
+            )
+            if ref_path.exists():
+                try:
+                    cache_revision = ref_path.read_text(encoding="utf-8").strip()
+                except (OSError, UnicodeError) as error:
+                    raise UserVisibleTaskError(
+                        f"Whisper 缓存 revision 无法读取：{cache_name}",
+                        global_failure=True,
+                    ) from error
+                if cache_revision != bundled_revision:
+                    raise UserVisibleTaskError(
+                        f"ManiaLab Whisper 缓存 revision 不匹配：{cache_name}",
+                        global_failure=True,
+                    )
+            if not config_path.exists():
+                config_path.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    with config_path.open("xb") as stream:
+                        stream.write(config_bytes)
+                except FileExistsError:
+                    pass
+            if not ref_path.exists():
+                ref_path.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    with ref_path.open("x", encoding="utf-8", newline="") as stream:
+                        stream.write(bundled_revision)
+                except FileExistsError:
+                    pass
 
     def _probe(self, *, refresh: bool = False) -> dict:
         now = time.monotonic()
@@ -463,6 +534,7 @@ class V32Engine:
         timeout_seconds: float = 3600,
         env: dict[str, str] | None = None,
         measure_memory: bool = True,
+        global_failure: bool = False,
     ) -> dict:
         env = env or self._runtime_environment(create=True)
         return run_owned_command(
@@ -475,9 +547,10 @@ class V32Engine:
             message=message,
             timeout_seconds=timeout_seconds,
             monitor_python=self.python if measure_memory else None,
+            global_failure=global_failure,
         )
 
-    def install_runtime(self, *, progress, cancelled) -> dict:
+    def install_runtime(self, *, progress, cancelled, use_mirrors=False) -> dict:
         if self._python_override is not None or self.mapper_repo.resolve() != self.runtime.source.resolve():
             raise ValueError("当前已显式指定外部 V32 运行环境，无需自动安装")
         install_id = f"{os.getpid()}-{time.time_ns()}"
@@ -493,22 +566,31 @@ class V32Engine:
             log_path = (
                 self.runtime.root / "logs" / f"{install_id}-{len(command)}-{abs(hash(message))}.log"
             )
-            return self._run(
-                [str(part) for part in command],
-                log_path=log_path,
-                progress=progress,
-                cancelled=cancelled,
-                message=message,
-                cwd=Path(cwd),
-                timeout_seconds=timeout_seconds,
-                env=env,
-                measure_memory=False,
-            )
+            try:
+                result = self._run(
+                    [str(part) for part in command],
+                    log_path=log_path,
+                    progress=progress,
+                    cancelled=cancelled,
+                    message=message,
+                    cwd=Path(cwd),
+                    timeout_seconds=timeout_seconds,
+                    env=env,
+                    measure_memory=False,
+                )
+            except OSError as error:
+                raise UserVisibleTaskError(
+                    f"{message}无法启动",
+                    log_path=log_path,
+                    global_failure=True,
+                ) from error
+            return {**result, "log_path": str(log_path)}
 
         return self.runtime.install(
             progress=progress,
             cancelled=cancelled,
             run_command=run_command,
+            use_mirrors=use_mirrors,
         )
 
     def ensure_model(
@@ -527,16 +609,37 @@ class V32Engine:
         if all((checkpoint / name).is_file() for name in _REQUIRED_MODEL_FILES):
             manifest_path = destination / "model-revision.json"
             if manifest_path.is_file():
-                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-                if manifest.get("repo") != spec["repo"] or manifest.get("revision") != spec["revision"]:
-                    raise ValueError(f"{variant} 本地缓存 revision 与固定版本不一致")
-                expected_hashes = manifest.get("sha256", {})
-                for name in _REQUIRED_MODEL_FILES:
-                    expected = expected_hashes.get(name)
-                    if expected and self._sha256_file(checkpoint / name) != expected:
-                        raise ValueError(f"{variant} 本地缓存校验失败：{name}")
+                try:
+                    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                    if (not isinstance(manifest, dict)
+                            or manifest.get("repo") != spec["repo"]
+                            or manifest.get("revision") != spec["revision"]):
+                        raise UserVisibleTaskError(
+                            f"{variant} 本地缓存 revision 与固定版本不一致",
+                            global_failure=True,
+                        )
+                    expected_hashes = manifest.get("sha256", {})
+                    if not isinstance(expected_hashes, dict):
+                        raise ValueError("SHA-256 清单格式无效")
+                    for name in _REQUIRED_MODEL_FILES:
+                        expected = expected_hashes.get(name)
+                        if expected and self._sha256_file(checkpoint / name) != expected:
+                            raise ValueError(f"文件摘要不匹配：{name}")
+                except UserVisibleTaskError:
+                    raise
+                except (OSError, UnicodeError, ValueError, TypeError) as error:
+                    raise UserVisibleTaskError(
+                        f"{variant} 本地缓存清单校验失败",
+                        global_failure=True,
+                    ) from error
             else:
-                self._verify_hf_local_snapshot(destination, spec)
+                try:
+                    self._verify_hf_local_snapshot(destination, spec)
+                except ValueError as error:
+                    raise UserVisibleTaskError(
+                        f"{variant} 本地缓存校验失败：{error}",
+                        global_failure=True,
+                    ) from error
                 manifest_path.write_text(
                     json.dumps(
                         {
@@ -553,7 +656,10 @@ class V32Engine:
                 )
             return checkpoint
         if not self.python.is_file():
-            raise FileNotFoundError(f"推理 Python 不存在：{self.python}")
+            raise UserVisibleTaskError(
+                "V32 推理 Python 不存在，请重新准备 V32 运行环境",
+                global_failure=True,
+            )
         loader = (
             "import hashlib,json,sys\n"
             "from pathlib import Path\n"
@@ -596,6 +702,7 @@ class V32Engine:
             message=f"下载 {variant} mania 权重",
             cwd=self.mapper_repo if self.mapper_repo.is_dir() else self.data_root,
             timeout_seconds=3600,
+            global_failure=True,
         )
         return checkpoint
 
@@ -678,8 +785,17 @@ class V32Engine:
             preset=preset,
         )
         if not (self.mapper_repo / "inference.py").is_file():
-            raise FileNotFoundError(f"Mapperatorinator inference.py 不存在：{self.mapper_repo}")
-        device_plan = self._device_plan(requested=device)
+            raise UserVisibleTaskError(
+                "Mapperatorinator 固定源码缺失，请重新准备 V32 运行环境",
+                global_failure=True,
+            )
+        try:
+            device_plan = self._device_plan(requested=device)
+        except ValueError as error:
+            raise UserVisibleTaskError(
+                f"V32 推理环境不可用：{error}",
+                global_failure=True,
+            ) from error
         checkpoint = self.ensure_model(
             model_variant,
             progress=progress,
@@ -710,7 +826,10 @@ class V32Engine:
             MKL_NUM_THREADS=str(device_plan.cpu_threads),
             OPENBLAS_NUM_THREADS=str(device_plan.cpu_threads),
             NUMEXPR_NUM_THREADS=str(device_plan.cpu_threads),
+            HF_HUB_OFFLINE="1",
+            TRANSFORMERS_OFFLINE="1",
         )
+        self._seed_whisper_config_cache(env)
         log_path = output / "inference.log"
         measurement = self._run(
             command,
@@ -724,13 +843,19 @@ class V32Engine:
         log = measurement["log"]
         maps = sorted(output.glob("*.osu"))
         if len(maps) != 1:
-            raise RuntimeError(f"Mapperatorinator 应生成 1 张谱面，实际找到 {len(maps)} 张")
+            raise UserVisibleTaskError(
+                f"Mapperatorinator 应生成 1 张谱面，实际找到 {len(maps)} 张",
+                log_path=log_path,
+            )
         lora_loaded = bool(
             options["lora_path"]
             and f"Loaded LoRA weights from {options['lora_path'].as_posix()}" in log.replace("\\", "/")
         )
         if options["lora_path"] and not lora_loaded:
-            raise RuntimeError("请求的 LoRA 未在上游日志中确认加载")
+            raise UserVisibleTaskError(
+                "请求的 LoRA 未在上游日志中确认加载",
+                log_path=log_path,
+            )
         self._last_lora_path = str(options["lora_path"]) if options["lora_path"] else None
         self._last_lora_loaded = lora_loaded
         progress(92, "V32 推理完成，校验谱面")
