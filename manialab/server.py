@@ -33,6 +33,7 @@ from .project_routes import register_project_routes
 from .arrangement_routes import register_arrangement_routes
 from .timing_routes import register_timing_routes
 from .upstream_routes import register_upstream_routes
+from .torosu_bridge import TorosuBridgeError, _cli_path
 from .v32_engine import V32Engine
 from .v32_routes import register_v32_routes
 from .storage import MAX_IMPORT_BYTES, Projects, safe_path
@@ -53,6 +54,7 @@ def create_app(resources, data_root):
     engine = MapperEngine(data_root, resources)
     v32_engine = V32Engine(data_root, resources)
     separator = Separator(resources)
+    v32_separator = Separator(resources, profile="six")
     piano_detector = PianoDetector(resources)
     guitar_detector = GuitarDetector(resources)
     instrument_detector = InstrumentDetector(resources)
@@ -67,7 +69,7 @@ def create_app(resources, data_root):
     )
     app.extensions.update(projects=projects, jobs=task_service.jobs, executor=task_service.executor,
                           task_service=task_service, analysis_services=analysis_services,
-                          v32_engine=v32_engine)
+                          v32_engine=v32_engine, v32_separator=v32_separator)
     register_project_routes(app, projects, task_service, parameters=parameters, describe_chart=describe_chart)
 
     @app.before_request
@@ -107,12 +109,18 @@ def create_app(resources, data_root):
         v32_status["separation_available"] = bool(
             separator_status.get("profiles", {}).get("six", {}).get("available")
         )
+        try:
+            torosu_path = _cli_path()
+            torosu_status = {"ready": True, "path": str(torosu_path)}
+        except TorosuBridgeError:
+            torosu_status = {"ready": False, "path": None}
         return jsonify(version=__version__, defaults=DEFAULTS, projects=projects.recent(),
                        capabilities={"audio": True, "remap": True, "api_planner": True,
                                      "trained_10k": False, "v32": True},
                        engine=engine.status(), separator=separator_status, piano=piano_detector.status(),
                        guitar=guitar_detector.status(), instruments=instrument_detector.status(),
-                       pattern_prior=prior_status(), v32_engine=v32_status)
+                       pattern_prior=prior_status(), v32_engine=v32_status,
+                       torosu=torosu_status)
 
     def current_audio(state):
         if state.get("audio"):
@@ -200,6 +208,8 @@ def create_app(resources, data_root):
         current_audio=current_audio,
         requested_tempo=requested_tempo,
         resources=resources,
+        separator=v32_separator,
+        task_service=task_service,
     )
     register_export_routes(app, projects=projects, resources=resources, current_audio=current_audio)
     register_playback_routes(

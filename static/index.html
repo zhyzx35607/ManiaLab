@@ -7,6 +7,7 @@
     <title>ManiaLab · 6–10K 制谱工作台</title>
     <link rel="stylesheet" href="/static/style.css" />
     <script src="/static/audio-clock.js" defer></script>
+    <script src="/static/chart-preview.js" defer></script>
     <script src="/static/app.js" defer></script>
     <script src="/static/evidence-review.js" defer></script>
     <script src="/static/timing-detail.js" defer></script>
@@ -29,7 +30,15 @@
       <div class="header-note">
         先采音，再编排。<span>为 10K 与长条而做</span>
       </div>
-      <button id="helpBtn" class="quiet">使用说明</button>
+      <div class="header-actions">
+        <div class="runtime-status" aria-live="polite">
+          <span id="hardwareStatus">检查设备…</span>
+          <span id="v32ReadyStatus">V32 检查中</span>
+          <span id="torosuReadyStatus">Torosu 检查中</span>
+          <button id="headerV32Install" class="secondary hidden">准备 V32</button>
+        </div>
+        <button id="helpBtn" class="quiet">使用说明</button>
+      </div>
     </header>
     <div class="notice">
       本地深度分析：四／六声部分离 → 起音与持续段 → 拍线校准 → LN 取舍 →
@@ -40,9 +49,13 @@
         <section>
           <div class="section-title">
             <span class="step">01</span>
-            <h2>导入素材</h2>
+            <h2>选择工作流与导入</h2>
           </div>
-          <label class="drop" id="drop"
+          <div class="work-mode" role="tablist" aria-label="制谱工作流">
+            <button type="button" class="active" data-work-mode="single" role="tab" aria-selected="true">单曲制谱</button>
+            <button type="button" data-work-mode="batch" role="tab" aria-selected="false">批量出谱包 · 最多 20 首</button>
+          </div>
+          <label class="drop" id="drop" data-single-workflow
             ><span class="upload-icon">↥</span
             ><strong>选择或拖入一首歌曲 / 谱面</strong
             ><small
@@ -54,9 +67,9 @@
               accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac,.osu,.osz" /></label
           >
           <details class="batch-panel">
-            <summary>批量分析歌曲 <span>2–10 首 · 最多同时处理 2 首</span></summary>
-            <p class="muted compact">每首歌单独建项目，最多同时分析 2 首，其余自动排队。分析后统一选择键型和预设，生成成功的歌曲可逐首下载或打包下载。</p>
-            <label class="batch-drop">选择 2–10 首音频<input id="batchFiles" type="file" multiple accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac"></label>
+            <summary>20 首批量出谱包 <span>串行生成 · 单首落盘 · 可恢复</span></summary>
+            <p class="muted compact">批量分析最多同时处理 2 首；V32 生成逐首串行，完成结果立即保存。刷新页面或重启后可恢复并仅续跑未完成歌曲。</p>
+            <label class="batch-drop">选择 2–20 首音频<input id="batchFiles" type="file" multiple accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac"></label>
             <p id="batchFileSummary" class="muted compact" aria-live="polite">尚未选择歌曲。</p>
             <button id="batchAnalyze" class="secondary full" disabled>导入并开始批量分析</button>
             <div id="batchStatus" class="batch-status" role="status" aria-live="polite"></div>
@@ -70,13 +83,37 @@
                 <label class="field">键型预设<select id="batchKeyLayout">
                   <option value="10k_5_5">10K · 5+5</option>
                 </select></label>
+                <label class="field">生成引擎<select id="batchEngine">
+                  <option value="v32-mini" selected>V32-mini · 推荐</option>
+                  <option value="v32">V32 旗舰版</option>
+                  <option value="traditional">传统 CPU</option>
+                </select></label>
               </div>
               <label class="field">一键预设<select id="batchPreset">
-                <option value="balanced">均衡起步</option>
-                <option value="onset_only">纯起音（不写 LN）</option>
-                <option value="sustain">偏持续音</option>
-                <option value="rhythm">节奏清晰</option>
+                <option value="rice_stream">切指偏米 · rice_stream</option>
+                <option value="rice_jack">叠键偏米 · rice_jack</option>
+                <option value="hybrid_adaptive" selected>综合随歌 · hybrid_adaptive</option>
+                <option value="ln_focus">精致 LN · ln_focus</option>
               </select></label>
+              <label class="field">Torosu 密度<select id="batchTorosuDensity">
+                <option value="none">保持原密度</option><option value="dense" selected>dense</option>
+                <option value="more-dense">more-dense</option><option value="full">full</option>
+              </select></label>
+              <label class="field">LN 形态<select id="batchTorosuLnMode">
+                <option value="keep">保留原 LN</option><option value="fln">FLN</option><option value="short_ln">Short-LN</option>
+              </select></label>
+              <div class="batch-options">
+                <label class="field">目标难度 / 星<input id="batchDifficulty" type="number" min="0" max="10" step=".1" value="5.5" /></label>
+                <label class="field">LoRA<select id="batchLora"><option value="">不挂载 LoRA</option></select></label>
+              </div>
+              <label class="range-field">LN 条件比例 <output id="batchHoldRatioOut">30%</output>
+                <input id="batchHoldRatio" type="range" min="0" max=".85" step=".05" value=".3" />
+              </label>
+              <label class="field">自定义 LoRA 路径（可选）<input id="batchLoraPath" type="text" autocomplete="off" placeholder="可留空，或填训练好的 adapter 目录" /></label>
+              <div class="batch-options">
+                <label class="field">统一谱师名<input id="batchScribe" type="text" maxlength="64" value="zhyzx35607" /></label>
+                <label class="field">预设版本后缀<input id="batchVersionSuffix" type="text" maxlength="48" placeholder="例如 stream-v1" /></label>
+              </div>
               <label class="range-field">密度上限 / 秒 <output id="batchDensityOut">7</output>
                 <input id="batchDensity" type="range" min="1" max="50" step="1" value="7" />
               </label>
@@ -89,9 +126,11 @@
               <a id="batchDownloadAll" class="button secondary full hidden disabled" aria-disabled="true">下载全部 OSZ（ZIP）</a>
               <div id="batchGeneratedDownloads" class="batch-downloads"></div>
             </div>
+            <div id="batchHistory" class="batch-history" aria-live="polite"></div>
           </details>
           <select id="charts" class="hidden" aria-label="谱包难度"></select
           ><label class="field"
+            data-single-workflow
             >最近项目<select id="recent">
               <option value="">打开已保存项目…</option>
             </select></label
@@ -528,6 +567,10 @@
           <div><strong>—</strong><small>最大同时 LN</small></div>
           <div><strong>—</strong><small>最长 LN</small></div>
         </div>
+        <details id="fallingPreviewPanel" class="falling-preview">
+          <summary>竖屏下落预览 <span>跟随原音频时钟</span></summary>
+          <div id="chartPreviewHost"></div>
+        </details>
         <p id="candidateDraftStatus" class="candidate-draft-status hidden" role="status"></p>
         <details id="lnDesignPanel" class="review-panel">
           <summary>实际 LN 键型 <span>包含没有新起音的放手时刻</span></summary>
@@ -651,14 +694,24 @@
           </select></label>
           <div id="musical">
             <label class="field"
-              >一键预设<select id="preset">
-                <option value="balanced">均衡起步</option>
-                <option value="onset_only">纯起音（不写 LN）</option>
-                <option value="sustain">偏持续音</option>
-                <option value="rhythm">节奏清晰</option>
+            >一键预设<select id="preset">
+                <option value="rice_stream">切指偏米 · rice_stream</option>
+                <option value="rice_jack">叠键偏米 · rice_jack</option>
+                <option value="hybrid_adaptive" selected>综合随歌 · hybrid_adaptive</option>
+                <option value="ln_focus">精致 LN · ln_focus</option>
+                <option value="torosu_remap">已有谱 Torosu 改造</option>
               <option value="custom">自定义</option>
               </select></label
             >
+            <label class="field">生成引擎<select id="singleEngine">
+              <option value="v32-mini" selected>V32-mini · 推荐</option>
+              <option value="v32">V32 旗舰版</option>
+              <option value="traditional">传统 CPU</option>
+            </select></label>
+            <div class="batch-options single-metadata">
+              <label class="field">谱师名<input id="singleScribe" type="text" maxlength="64" value="zhyzx35607" /></label>
+              <label class="field">版本后缀<input id="singleVersionSuffix" type="text" maxlength="48" placeholder="可选" /></label>
+            </div>
             <details class="advanced-settings">
               <summary>采音与 LN 参数 <span>密度、声部取舍</span></summary>
               <label class="range-field"
@@ -677,7 +730,7 @@
                   type="range"
                   min="0"
                   max="1"
-                  step=".05"
+                  step=".01"
                   value=".55"
               /></label>
               <p class="muted compact">
@@ -800,18 +853,19 @@
           <div id="strictHint" class="strict hidden">
             保持数量、起止时间、类型、音效和变速。只重新分配轨道；轨道不够时停止并报告。
           </div>
-          <details class="v32-panel" open>
+          <details class="v32-panel">
             <summary>Mapperatorinator V32 <span>自动 GPU / CPU</span></summary>
             <p id="v32Status" class="v32-status" role="status">检查 V32 引擎状态…</p>
             <button id="v32Install" class="secondary full hidden" disabled>准备 V32 运行环境</button>
-            <div class="v32-options">
+            <div id="v32PanelControls">
+              <div class="v32-options">
               <label class="field">模型<select id="v32Model">
-                <option value="v32" selected>V32 旗舰版</option>
-                <option value="v32-mini">V32-mini 快速版</option>
+              <option value="v32-mini" selected>V32-mini 快速版</option>
+                <option value="v32">V32 旗舰版</option>
               </select></label>
               <label class="field">生成路线<select id="v32Strategy">
-                <option value="7k_to_torosu_10k" selected>7K → Torosu 10K</option>
-                <option value="native_10k">原生 10K</option>
+                <option value="7k_to_torosu" selected>7K → 当前目标键数</option>
+                <option value="native">原生当前目标键数</option>
               </select></label>
               <label class="field">Torosu 密度<select id="v32Density">
                 <option value="dense" selected>dense</option>
@@ -819,15 +873,20 @@
                 <option value="more-dense">more-dense</option>
               </select></label>
               <label class="field">目标难度 / 星<input id="v32Difficulty" type="number" min="0" max="10" step=".1" value="5.5" /></label>
+              </div>
+              <label class="range-field">LN 比例 <output id="v32HoldRatioOut">55%</output>
+                <input id="v32HoldRatio" type="range" min="0" max=".85" step=".05" value=".55" />
+              </label>
+              <label class="range-field">轨道温度 <output id="v32TemperatureOut">1.0</output>
+                <input id="v32Temperature" type="range" min=".1" max="2" step=".1" value="1" />
+              </label>
+              <label class="field">LN 形态<select id="v32LnMode">
+                <option value="keep">保留原 LN</option><option value="fln">FLN</option><option value="short_ln">Short-LN</option>
+              </select></label>
+              <label class="field">本机 LoRA<select id="v32LoraSelect"><option value="">不挂载 LoRA</option></select></label>
+              <label class="field">自定义 LoRA 路径（可选）<input id="v32LoraPath" type="text" autocomplete="off" placeholder="可留空，或填训练好的 adapter 目录" /></label>
+              <button id="v32Generate" class="primary full" disabled>生成 V32 候选</button>
             </div>
-            <label class="range-field">LN 比例 <output id="v32HoldRatioOut">55%</output>
-              <input id="v32HoldRatio" type="range" min="0" max=".85" step=".05" value=".55" />
-            </label>
-            <label class="range-field">轨道温度 <output id="v32TemperatureOut">1.0</output>
-              <input id="v32Temperature" type="range" min=".1" max="2" step=".1" value="1" />
-            </label>
-            <label class="field">LoRA 路径（可选）<input id="v32LoraPath" type="text" autocomplete="off" placeholder="本机权重目录，可留空" /></label>
-            <button id="v32Generate" class="primary full" disabled>生成 V32 候选</button>
           </details>
           <button id="generate" class="primary full large">
             生成候选谱面 <span>↗</span></button
@@ -842,6 +901,14 @@
                 <option value="classic">alpha.3 多次逐排分配</option>
               </select></label
             >
+            <label class="check"><input id="torosuKeepJacks" type="checkbox" checked />保留重复叠键</label>
+            <label class="field">Torosu 密度<select id="torosuLegacyDensity">
+              <option value="none">保持原密度</option><option value="dense">dense</option>
+              <option value="more-dense">more-dense</option><option value="full">full</option>
+            </select></label>
+            <label class="field">Torosu LN 形态<select id="torosuLnMode">
+              <option value="keep">保留原 LN</option><option value="fln">FLN</option><option value="short_ln">Short-LN</option>
+            </select></label>
             <details class="ln-preferences">
               <summary>
                 LN 键型设计 <span>固定起止，只调整配合方式</span>

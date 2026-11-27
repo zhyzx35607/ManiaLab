@@ -43,7 +43,7 @@ def _source_tree_files(root, relative_directory):
 
 def source_snapshot_paths(root, enabled):
     """Return the canonical source inputs hashed into a portable build manifest."""
-    from scripts.package_assets import MAPPER_INSTALLER_FILES
+    from scripts.package_assets import MAPPER_INSTALLER_FILES, lora_adapter_files
 
     root = Path(root).resolve()
     license_directory = root / 'licenses'
@@ -86,6 +86,8 @@ def source_snapshot_paths(root, enabled):
             for name in MAPPER_INSTALLER_FILES
             if name != 'runtime/uv.exe'
         )
+    if enabled.get('lora_support'):
+        files.extend(lora_adapter_files(root / 'assets' / 'lora'))
     unique_files = []
     seen_keys = set()
     for path in files:

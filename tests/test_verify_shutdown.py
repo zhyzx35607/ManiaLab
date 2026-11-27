@@ -62,3 +62,24 @@ def test_core_shutdown_rejects_unexpectedly_available_separator():
 
     with pytest.raises(ValueError, match="unexpectedly reports"):
         verify_core_shutdown(status, "test", [], [], True)
+
+
+def test_workbench_shutdown_report_keeps_its_declared_profile():
+    status = {
+        "version": "test",
+        "separator": {
+            "available": False,
+            "profiles": {
+                "four": {"available": False},
+                "six": {"available": False},
+            },
+        },
+    }
+
+    report = verify_core_shutdown(
+        status, "test", [], [], True, build_profile="workbench",
+    )
+
+    assert report["build_profile"] == "workbench"
+    assert report["passed"] is True
+    assert report["worker_expected"] is False

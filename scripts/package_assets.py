@@ -2,6 +2,7 @@
 from pathlib import Path, PurePosixPath
 import hashlib
 import json
+import re
 import shutil
 from scripts.worker_inventory import verify_worker_inventory
 
@@ -39,12 +40,17 @@ DEEP_FILES = (
 AUDIO_WORKER_PROFILES = ('four', 'six', 'four-piano')
 BASE_FILES = CORE_FILES + MODEL_METADATA_FILES + MAPPER_INSTALLER_FILES + DEEP_FILES
 PUBLIC_PROFILE = 'core'
+_LORA_REQUIRED_FILES = ('adapter_config.json', 'adapter_model.safetensors')
+_LORA_OPTIONAL_FILES = ('lora-manifest.json',)
 PROFILES = {
     PUBLIC_PROFILE: dict(separation_four=False, separation_six=False, piano=False,
                          guitar=False, instruments=False, pattern_prior=False,
-                         mapperatorinator_install=False),
+                         mapperatorinator_install=False, lora_support=False),
     'standard': dict(guitar=False, instruments=False),
     'extended': dict(guitar=True, instruments=True),
+    'workbench': dict(separation_four=False, separation_six=False, piano=False,
+                      guitar=False, instruments=False, pattern_prior=False,
+                      mapperatorinator_install=True, lora_support=True),
 }
 
 
@@ -57,7 +63,7 @@ def capabilities(profile):
     if profile not in PROFILES:
         raise ValueError('Unknown portable profile: ' + profile)
     defaults = dict(audio=True, separation_four=True, separation_six=True, piano=True,
-                    pattern_prior=True, mapperatorinator_install=True)
+                    pattern_prior=True, mapperatorinator_install=True, lora_support=False)
     return defaults | PROFILES[profile]
 
 
@@ -81,6 +87,70 @@ def verify_core_model_files(asset_root):
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     with model_path.open('rb') as stream:
         return verify_core_model_payload(manifest, stream)
+
+
+def lora_adapter_files(lora_root):
+    """List only complete, portable LoRA adapters; never sweep arbitrary user files."""
+    root = Path(lora_root)
+    if root.is_symlink() or root.is_junction():
+        raise ValueError('LoRA asset root must be a real directory')
+    if not root.exists():
+        return ()
+    if not root.is_dir():
+        raise ValueError('LoRA asset root must be a real directory')
+    adapters = []
+    for adapter in sorted(root.iterdir(), key=lambda path: path.name.casefold()):
+        if adapter.is_symlink() or adapter.is_junction():
+            raise ValueError(f'LoRA asset directory must not contain links: {adapter.name}')
+        if not adapter.is_dir():
+            if adapter.name != '.keep':
+                continue
+            continue
+        if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,79}', adapter.name):
+            raise ValueError(f'LoRA adapter directory name is invalid: {adapter.name}')
+        config = adapter / _LORA_REQUIRED_FILES[0]
+        weights = adapter / _LORA_REQUIRED_FILES[1]
+        if not config.exists() and not weights.exists():
+            continue
+        if not config.is_file() or not weights.is_file():
+            raise ValueError(
+                f'LoRA adapter {adapter.name} must include adapter_config.json and '
+                'adapter_model.safetensors'
+            )
+        if config.is_symlink() or weights.is_symlink():
+            raise ValueError(f'LoRA adapter {adapter.name} must not contain linked files')
+        try:
+            configuration = json.loads(config.read_text(encoding='utf-8'))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ValueError(f'LoRA adapter {adapter.name} has invalid adapter_config.json') from error
+        if not isinstance(configuration, dict) or weights.stat().st_size <= 0:
+            raise ValueError(f'LoRA adapter {adapter.name} is incomplete')
+        files = [config, weights]
+        for name in _LORA_OPTIONAL_FILES:
+            optional = adapter / name
+            if optional.exists():
+                if not optional.is_file() or optional.is_symlink():
+                    raise ValueError(f'LoRA adapter {adapter.name} contains an invalid {name}')
+                try:
+                    if not isinstance(json.loads(optional.read_text(encoding='utf-8')), dict):
+                        raise ValueError(f'LoRA adapter {adapter.name} has invalid {name}')
+                except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+                    raise ValueError(f'LoRA adapter {adapter.name} has invalid {name}') from error
+                files.append(optional)
+        adapters.extend(files)
+    return tuple(adapters)
+
+
+def lora_adapter_inventory(lora_root):
+    """Return a deterministic, content-addressed inventory for local adapters."""
+    root = Path(lora_root)
+    inventory = {}
+    for source in lora_adapter_files(root):
+        relative = source.relative_to(root).as_posix()
+        with source.open('rb') as stream:
+            digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+        inventory[relative] = {'bytes': source.stat().st_size, 'sha256': digest}
+    return dict(sorted(inventory.items()))
 
 
 def archive_stem(version, profile):
@@ -161,6 +231,8 @@ def stage_assets(root, destination, profile, *, uv_path=None):
         if not (source / name).is_dir():
             raise ValueError('Missing release directory: assets/' + name)
     core_model = verify_core_model_files(source)
+    lora_source = source / 'lora'
+    lora_files = lora_adapter_files(lora_source) if enabled['lora_support'] else ()
     inventories = {}
     for name in directories:
         manifest = json.loads((source / name).with_name('manifest.json').read_text(encoding='utf-8'))
@@ -182,12 +254,44 @@ def stage_assets(root, destination, profile, *, uv_path=None):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source / name / relative, target)
         verify_worker_inventory(destination / name, inventories[name])
+    if enabled['lora_support']:
+        lora_destination = destination / 'lora'
+        lora_destination.mkdir(parents=True, exist_ok=True)
+        for source_path in lora_files:
+            relative = source_path.relative_to(lora_source)
+            target = lora_destination / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_path, target)
+        if not lora_files:
+            (lora_destination / '.keep').write_text(
+                'Local LoRA adapters may be placed in named subdirectories.\n',
+                encoding='ascii',
+            )
+        if lora_adapter_inventory(lora_destination) != lora_adapter_inventory(lora_source):
+            raise ValueError('Staged LoRA adapters differ from the verified source')
     if verify_core_model_files(destination) != core_model:
         raise ValueError('Staged Basic Pitch model differs from the verified source')
     return enabled
 
 
 def start_guide(version, enabled):
+    if enabled.get('lora_support'):
+        return (
+            f'ManiaLab {version} 工作台版\n'
+            '1. 完整解压文件夹，双击 ManiaLab.exe；无需另装 Python、Docker 或 CUDA。\n'
+            '2. 导入歌曲（批量最多 20 首）并检查采音与 BPM / Offset；批量 V32 会逐首串行保存进度，'
+            '刷新后可从最近批次继续未完成的歌曲。\n'
+            '3. 选择 6–10K 与切指偏米 rice_stream、叠键偏米 rice_jack、'
+            '综合随歌 hybrid_adaptive、精致 LN ln_focus 或已有谱 Torosu 改造 torosu_remap；'
+            '可在精致 LN 预设中选择已扫描到的 LoRA。\n'
+            '4. 检查竖屏下落预览与键型摘要，逐首导出 .osz 或下载整套谱包 ZIP。\n'
+            '首次使用 V32 时按提示准备运行环境；NVIDIA GPU 可自动启用 CUDA，'
+            '无 GPU 时使用 CPU。V32 模型权重按需下载，FFmpeg 与 Torosu CLI 已随包提供。\n'
+            '本机 LoRA 放在 assets/lora/<名称>/，目录需含 adapter_config.json 与 '
+            'adapter_model.safetensors；自定义 LoRA 可在界面选择。\n'
+            '项目及日志：%LOCALAPPDATA%\\ManiaLab\\。结构检查和自动指标不替代真实歌曲试听与 osu! 实打。\n'
+            '版本能力、组件与 LoRA 清单见 release-manifest.json。\n'
+        )
     components = ['混音／导入声轨通用采音']
     if enabled['separation_four']:
         components.append('四／六声部分离、节拍模型')

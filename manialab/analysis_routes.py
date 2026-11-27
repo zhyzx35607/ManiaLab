@@ -8,6 +8,7 @@ from flask import jsonify, request
 from .chart_workspace import audio_work
 from .stems import VOICES
 from .storage import AUDIO, safe_path
+from .task_service import MAX_BATCH_SIZE
 
 
 def register_analysis_routes(app, *, projects, task_service, resources, current_audio, submit,
@@ -120,6 +121,27 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
         )
         return operation, identity
 
+    def submit_batch_analysis(project_ids, options, max_parallel, *, persistent_spec, min_items=2):
+        entries = []
+        identities = []
+        for project_id in project_ids:
+            state = projects.load(project_id)
+            if state.get("mode") != "audio":
+                raise ValueError("批量采音只能选择音频项目")
+            current_audio(state)
+            operation, identity = prepare_analysis(project_id, options)
+            entries.append(dict(project=project_id, title=state.get("title"), operation=operation))
+            identities.append(identity)
+        return task_service.submit_batch(
+            entries,
+            max_parallel=max_parallel,
+            min_items=min_items,
+            identity={"projects": project_ids, "analysis": identities[0]},
+            persistent_spec=persistent_spec,
+        )
+
+    app.extensions["batch_analysis_submit"] = submit_batch_analysis
+
     @app.post("/api/projects/<pid>/analyze")
     def analyze_audio(pid):
         payload = request.json
@@ -132,8 +154,8 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
         if not isinstance(payload, dict):
             raise ValueError("批量采音请求必须为对象")
         project_ids = payload.get("projects")
-        if not isinstance(project_ids, list) or not 2 <= len(project_ids) <= 10:
-            raise ValueError("批量采音需要选择 2–10 首歌曲")
+        if not isinstance(project_ids, list) or not 2 <= len(project_ids) <= MAX_BATCH_SIZE:
+            raise ValueError(f"批量采音需要选择 2–{MAX_BATCH_SIZE} 首歌曲")
         if any(not isinstance(project_id, str) or not project_id for project_id in project_ids):
             raise ValueError("批量采音项目 ID 无效")
         if len(set(project_ids)) != len(project_ids):
@@ -144,21 +166,17 @@ def register_analysis_routes(app, *, projects, task_service, resources, current_
 
         options = {key: value for key, value in payload.items()
                    if key not in ("projects", "max_parallel")}
-        entries = []
-        identities = []
-        for project_id in project_ids:
-            state = projects.load(project_id)
-            if state.get("mode") != "audio":
-                raise ValueError("批量采音只能选择音频项目")
-            current_audio(state)
-            operation, identity = prepare_analysis(project_id, options)
-            entries.append(dict(project=project_id, title=state.get("title"),
-                                operation=operation))
-            identities.append(identity)
         # Every item in a batch shares the same analysis options by design.
-        return jsonify(task_service.submit_batch(
-            entries, max_parallel=max_parallel,
-            identity={"projects": project_ids, "analysis": identities[0]},
+        return jsonify(submit_batch_analysis(
+            project_ids,
+            options,
+            max_parallel,
+            persistent_spec={
+                "kind": "analysis",
+                "projects": project_ids,
+                "options": options,
+                "max_parallel": max_parallel,
+            },
         ))
 
     @app.post("/api/projects/<pid>/provided-stems")

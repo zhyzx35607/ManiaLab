@@ -19,7 +19,7 @@ const v32Status = {
   separation_available: true,
 };
 
-async function openV32Project(page, { canInstall = false } = {}) {
+async function openV32Project(page, { canInstall = false, separationAvailable = true } = {}) {
   const response = await page.request.get('/api/status');
   const status = await response.json();
   status.v32_engine = {
@@ -28,6 +28,7 @@ async function openV32Project(page, { canInstall = false } = {}) {
     source_available: !canInstall,
     runtime_available: !canInstall,
     install_available: canInstall,
+    separation_available: separationAvailable,
   };
   await page.route('**/api/status', route => {
     return route.fulfill({ json: status });
@@ -36,6 +37,8 @@ async function openV32Project(page, { canInstall = false } = {}) {
   await expect(page.locator('#recent option')).toContainText(['UI synthetic']);
   await page.locator('#recent').selectOption({ label: 'UI synthetic' });
   await expect(page.locator('#projectTitle')).toHaveText('UI synthetic');
+  await page.locator('#preset').selectOption('hybrid_adaptive');
+  await page.locator('.v32-panel').evaluate(node => { node.open = true; });
   await expect(page.locator('#v32Status')).toContainText('RTX 4050');
   if (canInstall) {
     await expect(page.locator('#v32Install')).toBeVisible();
@@ -57,7 +60,7 @@ test('V32 controls submit the selected model and generation settings through the
     json: { id: 'v32-ui-job', status: 'done', progress: 100, message: '完成' },
   }));
   await page.locator('#v32Model').selectOption('v32-mini');
-  await page.locator('#v32Strategy').selectOption('native_10k');
+  await page.locator('#v32Strategy').selectOption('native');
   await page.locator('#v32Density').selectOption('more-dense');
   await page.locator('#v32Difficulty').fill('6.2');
   await page.locator('#v32HoldRatio').fill('0.65');
@@ -68,16 +71,48 @@ test('V32 controls submit the selected model and generation settings through the
 
   await expect.poll(() => submitted).toBeDefined();
   await expect.poll(() => submitted).toEqual({
+    preset: 'hybrid_adaptive',
+    keys: 10,
+    key_layout: '10k_5_5',
+    bpm: 120,
+    offset: 0,
+    division: 4,
+    audio_shift_ms: 0,
     model_variant: 'v32-mini',
-    generation_strategy: 'native_10k',
+    generation_strategy: 'native',
     torosu_density: 'more-dense',
+    torosu_keep_jacks: true,
+    torosu_ln_mode: 'keep',
     difficulty: 6.2,
     hold_note_ratio: 0.65,
     mania_column_temperature: 1.3,
     lora_path: 'models/10k-lora',
+    metadata: { creator: 'zhyzx35607', version_suffix: '' },
     timing_confirmed: false,
   });
   await expect(page.locator('#job')).toHaveClass(/hidden/);
+});
+
+test('lightweight workbench keeps V32 available through the mixed-audio RMS fallback', async ({ page }) => {
+  const projectId = await openV32Project(page, { separationAvailable: false });
+  await expect(page.locator('#v32Generate')).toBeEnabled();
+  await expect(page.locator('#v32Status')).toContainText('原混音 RMS fallback');
+  await expect(page.locator('#v32ReadyStatus')).toContainText('混音 RMS fallback');
+
+  let submitted;
+  await page.route(`**/api/projects/${projectId}/v32-generate`, async route => {
+    submitted = route.request().postDataJSON();
+    await route.fulfill({ json: { id: 'v32-rms-fallback-job' } });
+  });
+  await page.route('**/api/jobs/v32-rms-fallback-job', route => route.fulfill({
+    json: { id: 'v32-rms-fallback-job', status: 'done', progress: 100, message: '完成' },
+  }));
+  await page.locator('#v32Generate').click();
+  await expect.poll(() => submitted).toBeDefined();
+  expect(submitted).toMatchObject({
+    model_variant: 'v32-mini',
+    preset: 'hybrid_adaptive',
+  });
 });
 
 test('V32 queued jobs use the shared cancellation endpoint', async ({ page }) => {
@@ -107,9 +142,11 @@ test('V32 queued jobs use the shared cancellation endpoint', async ({ page }) =>
 
 test('V32 first-run setup runs through the shared cancellable task queue', async ({ page }) => {
   await openV32Project(page, { canInstall: true });
-  await page.route('**/api/projects/*/v32-install', route => route.fulfill({
-    json: { id: 'v32-install-job' },
-  }));
+  let submitted;
+  await page.route('**/api/v32/install', route => {
+    submitted = route.request().postDataJSON();
+    return route.fulfill({ json: { id: 'v32-install-job', global: true } });
+  });
   await page.route('**/api/jobs/v32-install-job', route => route.fulfill({
     json: {
       id: 'v32-install-job',
@@ -119,5 +156,42 @@ test('V32 first-run setup runs through the shared cancellable task queue', async
     },
   }));
   await page.locator('#v32Install').click();
+  await expect.poll(() => submitted).toEqual({});
   await expect(page.locator('#job')).toHaveClass(/hidden/);
+});
+
+test('V32 setup is available globally before a project is open', async ({ page }) => {
+  const response = await page.request.get('/api/status');
+  const status = await response.json();
+  status.v32_engine = {
+    ...v32Status,
+    available: false,
+    source_available: true,
+    runtime_available: false,
+    install_available: true,
+    separation_available: false,
+  };
+  let installRequested = false;
+  await page.route('**/api/status', route => route.fulfill({ json: status }));
+  await page.route('**/api/v32/install', async route => {
+    installRequested = true;
+    await route.fulfill({ json: { id: 'v32-global-install-job', global: true } });
+  });
+  await page.route('**/api/jobs/v32-global-install-job', route => route.fulfill({
+    json: {
+      id: 'v32-global-install-job',
+      status: 'done',
+      progress: 100,
+      message: 'V32 推理环境已就绪',
+    },
+  }));
+
+  await page.goto('/');
+  await expect(page.locator('#recent')).toHaveValue('');
+  await expect(page.locator('#headerV32Install')).toBeVisible();
+  await expect(page.locator('#headerV32Install')).toBeEnabled();
+  await page.locator('#headerV32Install').click();
+
+  await expect.poll(() => installRequested).toBe(true);
+  await expect(page.locator('#message')).toContainText('V32 全局运行环境已准备完成');
 });

@@ -13,7 +13,7 @@ const audioFile = name => ({
   name, mimeType:'audio/wav', buffer:Buffer.from('synthetic batch fixture'),
 });
 
-test('batch-wide onset preset requires timing acknowledgement, generates ready songs, and downloads only successful candidates', async ({ page }) => {
+test('batch-wide rice preset requires timing acknowledgement and downloads successful candidates', async ({ page }) => {
   const ids = ['batch-onset-one', 'batch-onset-two', 'batch-onset-failed'];
   const titles = ['Onset Song One', 'Onset Song Two', 'Failed Song'];
   const projectState = new Map(ids.map((id,index) =>
@@ -69,7 +69,7 @@ test('batch-wide onset preset requires timing acknowledgement, generates ready s
   });
 
   await page.goto('/');
-  await page.locator('.batch-panel > summary').click();
+  await page.locator('[data-work-mode="batch"]').click();
   await page.locator('#batchFiles').setInputFiles(ids.map((_,i)=>audioFile(`song-${i+1}.wav`)));
   await page.locator('#batchAnalyze').click();
   await expect(page.locator('#batchStatus')).toContainText('批次完成：2/3 首成功');
@@ -79,7 +79,8 @@ test('batch-wide onset preset requires timing acknowledgement, generates ready s
 
   await page.locator('#batchKeys').selectOption('7');
   await expect(page.locator('#batchKeyLayout')).toHaveValue('7k_3_1_3');
-  await page.locator('#batchPreset').selectOption('onset_only');
+  await page.locator('#batchEngine').selectOption('traditional');
+  await page.locator('#batchPreset').selectOption('rice_stream');
   await expect(page.locator('#batchDensity')).toHaveValue('8');
   await page.locator('#batchDensity').fill('17');
 
@@ -94,9 +95,10 @@ test('batch-wide onset preset requires timing acknowledgement, generates ready s
   await expect(page.locator('#batchStatus [data-batch-download]')).toHaveCount(2);
   expect(generationPoll).toBeGreaterThan(0);
   expect(generationRequest).toMatchObject({
-    projects:ids.slice(0,2),preset:'onset_only',keys:7,key_layout:'7k_3_1_3',
+    projects:ids.slice(0,2),preset:'rice_stream',engine:'traditional',keys:7,key_layout:'7k_3_1_3',
     density:17,timing_confirmed:true,
   });
+  expect(generationRequest.hold_note_ratio).toBeGreaterThan(0);
   const firstDownload=page.locator('#batchStatus [data-batch-download]').first();
   await expect(firstDownload).toHaveAttribute('href',new RegExp(`${ids[0]}.*candidate_id=${'a'.repeat(32)}`));
 
@@ -116,10 +118,11 @@ test('batch-wide onset preset requires timing acknowledgement, generates ready s
   expect(bundleItems).toBe(`${ids[0]}:${'a'.repeat(32)},${ids[1]}:${'b'.repeat(32)}`);
 });
 
-test('changing to onset-only shows the existing candidate as stale and blocks chart export', async ({ page }) => {
+test('changing to a different rice preset shows the existing candidate as stale and blocks chart export', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#recent option')).toContainText(['UI onset stale']);
   await page.locator('#recent').selectOption({label:'UI onset stale'});
+  await page.locator('#preset').selectOption('hybrid_adaptive');
   await page.locator('#timingConfirmed').check();
   await page.locator('#generate').click();
   await expect(page.locator('#message')).toContainText('结构检查通过');
@@ -127,13 +130,13 @@ test('changing to onset-only shows the existing candidate as stale and blocks ch
   const project=await (await page.request.get(`/api/projects/${projectId}`)).json();
   const candidate=project.variants[project.active];
   expect(candidate.report.ln).toBeGreaterThan(0);
-  await expect(page.locator('#preset')).toHaveValue('custom');
+  await expect(page.locator('#preset')).toHaveValue('hybrid_adaptive');
   await page.locator('#musical > .advanced-settings').evaluate(details=>{details.open=true;});
-  await page.locator('#ln_ratio').fill('0.3');
+  await page.locator('#ln_ratio').fill('0.35');
   await expect(page.locator('#preset')).toHaveValue('custom');
   await expect(page.locator('#candidateDraftStatus')).toContainText('只用于下一次生成');
-  await page.locator('#preset').selectOption('onset_only');
-  await expect(page.locator('#preset')).toHaveValue('onset_only');
+  await page.locator('#preset').selectOption('rice_stream');
+  await expect(page.locator('#preset')).toHaveValue('rice_stream');
   await expect(page.locator('#candidateDraftStatus')).toContainText(
     `当前候选实际含 ${candidate.report.ln} 个 LN`,
   );
@@ -225,7 +228,7 @@ test('batch downloads cannot be activated until generation finishes', async ({ p
   });
 
   await page.goto('/');
-  await page.locator('.batch-panel > summary').click();
+  await page.locator('[data-work-mode="batch"]').click();
   await page.locator('#batchFiles').setInputFiles(ids.map((_,i)=>audioFile(`download-${i+1}.wav`)));
   await page.locator('#batchAnalyze').click();
   await expect(page.locator('#batchStatus')).toContainText('批次完成：2/2 首成功');

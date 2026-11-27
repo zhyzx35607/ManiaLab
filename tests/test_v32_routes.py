@@ -18,10 +18,12 @@ from manialab.separation import PROFILES
 from manialab.storage import Projects as ProjectStore
 from manialab.task_service import ProjectTasks
 from manialab.v32_engine import MODEL_SPECS, V32Engine
-from manialab.v32_routes import register_v32_routes
+from manialab.v32_routes import build_v32_operation, register_v32_routes, scan_local_loras
 
 
 ROOT = Path(__file__).parents[1]
+_FAKE_TOROSU_CALLS = []
+_FAKE_LN_SHAPE_CALLS = []
 
 
 def _osu(keys: int, *, audio: str = "song.wav", notes=None) -> str:
@@ -62,7 +64,17 @@ class FakeEngine:
         return {"device": "cuda", "gpu": "RTX 4050"}
 
     def generate(self, **kwargs):
-        self.calls.append(kwargs.copy())
+        call = kwargs.copy()
+        reference = parse_osu(
+            Path(kwargs["reference_chart"]).read_text(encoding="utf-8-sig")
+        )
+        call["reference_keys"] = reference["keys"]
+        call["reference_note_count"] = len(reference["notes"])
+        call["reference_note_times"] = [
+            (note.start, note.end) for note in reference["notes"]
+        ]
+        call["reference_timing_offset"] = float(reference["timing"][0].split(",")[0])
+        self.calls.append(call)
         if self.generate_started is not None:
             self.generate_started.set()
         while self.wait_for_cancel:
@@ -123,6 +135,13 @@ def route_app(tmp_path, monkeypatch):
 
     monkeypatch.setattr(routes, "Separator", FakeSeparator)
     monkeypatch.setattr(routes, "convert_osu_text", _fake_torosu)
+    monkeypatch.setattr(
+        routes,
+        "ln_shape_osu_text",
+        lambda text, mode: _record_ln_shape(text, mode),
+    )
+    _FAKE_TOROSU_CALLS.clear()
+    _FAKE_LN_SHAPE_CALLS.clear()
 
     def fake_decode(_audio, work, *, cancelled):
         assert not cancelled()
@@ -176,13 +195,23 @@ def route_app(tmp_path, monkeypatch):
         return projects.path(state["id"]) / "files" / state["audio"]
 
     def requested_tempo(payload, state):
+        bpm = float(payload.get("bpm", 120))
+        offset = float(payload.get("offset", 0))
+        division = payload.get("division", 4)
+        audio_shift_ms = float(payload.get("audio_shift_ms", 0))
         return {
-            "bpm": float(payload.get("bpm", 120)),
-            "offset": float(payload.get("offset", 0)),
-            "division": int(payload.get("division", 4)),
-            "audio_shift_ms": 0.0,
+            "bpm": bpm,
+            "offset": offset,
+            "division": division,
+            "audio_shift_ms": audio_shift_ms,
             "meter": 4,
-            "stable": state["analysis"]["tempo"]["stable"],
+            "stable": (
+                state["analysis"]["tempo"]["stable"]
+                and bpm == 120
+                and offset == 0
+                and division == 4
+                and audio_shift_ms == 0
+            ),
         }
 
     def submit(pid, operation, *, cleanup=None):
@@ -206,7 +235,9 @@ def route_app(tmp_path, monkeypatch):
         current_audio=current_audio,
         requested_tempo=requested_tempo,
         resources=ROOT,
+        task_service=tasks,
     )
+    app.extensions.update(task_service=tasks, v32_engine=engine)
     register_export_routes(
         app,
         projects=projects,
@@ -249,6 +280,12 @@ def _fake_torosu(
 ):
     if cancelled():
         raise InterruptedError("Torosu 定轨已取消")
+    _FAKE_TOROSU_CALLS.append({
+        "keys": keys,
+        "density": density,
+        "keep_jacks": _kwargs.get("keep_jacks"),
+        "playstyle": _kwargs.get("playstyle"),
+    })
     parsed = parse_osu(osu_text)
     notes = [
         Note(
@@ -265,6 +302,11 @@ def _fake_torosu(
         for note in parsed["notes"]
     ]
     return export_osu(notes, keys, None, original=osu_text, version=f"fake {density}")
+
+
+def _record_ln_shape(osu_text, mode):
+    _FAKE_LN_SHAPE_CALLS.append(mode)
+    return osu_text
 
 
 def _wait_job(client, job_id):
@@ -299,6 +341,9 @@ def test_v32_candidate_uses_torus_task_pipeline_and_existing_osz_export(route_ap
     job = _wait_job(client, response.json["id"])
     assert job["status"] == "done", job
     assert route_app["engine"].calls[0]["keycount"] == 7
+    assert route_app["engine"].calls[0]["target_keycount"] == 10
+    assert route_app["engine"].calls[0]["reference_keys"] == 7
+    assert route_app["engine"].calls[0]["reference_note_count"] == 1
 
     saved = route_app["projects"].load(project_id)
     assert saved["active"] == 1
@@ -310,6 +355,7 @@ def test_v32_candidate_uses_torus_task_pipeline_and_existing_osz_export(route_ap
     assert candidate["source_audio_sha256"] == route_app["audio_sha"]
     assert candidate["report"]["v32"]["separation"]["profile"] == "six"
     assert candidate["report"]["grid"]["off_grid"] == 0
+    assert candidate["report"]["v32"]["torosu"]["keep_jacks"] is True
 
     osu_response = client.get(f"/api/projects/{project_id}/export/osu")
     assert osu_response.status_code == 200, osu_response.json
@@ -328,13 +374,20 @@ def test_v32_runtime_install_uses_shared_task_queue(route_app):
     engine = route_app["engine"]
     engine.install_available = True
     submitted = route_app["client"].post(
-        f"/api/projects/{route_app['project_id']}/v32-install",
+        "/api/v32/install",
         json={},
     )
     assert submitted.status_code == 200
     job = _wait_job(route_app["client"], submitted.json["id"])
     assert job["status"] == "done", job
+    assert job["global"] is True
     assert job["result"] == {"device": "cuda", "gpu": "RTX 4050"}
+    status = route_app["client"].get(
+        f"/api/v32/install/{submitted.json['id']}"
+    )
+    assert status.status_code == 200
+    assert status.json["global"] is True
+    assert route_app["client"].get("/api/v32/status").json["install_available"] is True
 
 
 @pytest.mark.parametrize(
@@ -342,12 +395,19 @@ def test_v32_runtime_install_uses_shared_task_queue(route_app):
     [
         [],
         {"model_variant": "v31"},
-        {"generation_strategy": "native"},
+        {"generation_strategy": "not-a-strategy"},
         {"torosu_density": "sparse"},
         {"difficulty": True},
         {"hold_note_ratio": 0.9},
         {"mania_column_temperature": 2.1},
         {"timing_confirmed": 1},
+        {"keys": 8, "key_layout": "10k_5_5"},
+        {"bpm": True},
+        {"bpm": 1001},
+        {"offset": 600001},
+        {"division": True},
+        {"division": 5},
+        {"audio_shift_ms": 101},
         {"unexpected": True},
     ],
 )
@@ -417,3 +477,277 @@ def test_v32_cancel_keeps_candidate_history_unchanged(route_app):
         path for path in remaining.glob("v32-*")
         if not path.name.startswith("v32-separation-")
     ]
+
+
+@pytest.mark.parametrize(
+    "keys,preset,model_keys,keep_jacks,density",
+    [
+        (6, "rice_stream", 7, False, "dense"),
+        (7, "rice_jack", 7, True, "more-dense"),
+        (8, "hybrid_adaptive", 7, True, "dense"),
+        (9, "ln_focus", 7, True, "dense"),
+        (10, "rice_stream", 7, False, "dense"),
+    ],
+)
+def test_v32_named_presets_emit_requested_6_to_10k_and_real_torosu_options(
+    route_app, keys, preset, model_keys, keep_jacks, density,
+):
+    client = route_app["client"]
+    project_id = route_app["project_id"]
+    response = client.post(
+        f"/api/projects/{project_id}/v32-generate",
+        json={"preset": preset, "keys": keys, "timing_confirmed": False},
+    )
+    assert response.status_code == 200, response.json
+    job = _wait_job(client, response.json["id"])
+    assert job["status"] == "done", job
+    assert route_app["engine"].calls[0]["keycount"] == model_keys
+    assert route_app["engine"].calls[0]["target_keycount"] == keys
+    assert route_app["engine"].calls[0]["preset"] == preset
+
+    saved = route_app["projects"].load(project_id)
+    candidate = saved["variants"][saved["active"]]
+    assert candidate["settings"]["keys"] == keys
+    assert candidate["report"]["v32"]["torosu"]["target_keys"] == keys
+    assert candidate["report"]["v32"]["torosu"]["keep_jacks"] is keep_jacks
+    assert candidate["report"]["v32"]["torosu"]["density"] == density
+    assert _FAKE_TOROSU_CALLS[-1] == {
+        "keys": keys,
+        "density": density,
+        "keep_jacks": keep_jacks,
+        "playstyle": {
+            6: "3+3",
+            7: "3+1+3",
+            8: "3+2+3",
+            9: "4+1+4",
+            10: "5+5",
+        }[keys],
+    }
+
+
+def test_v32_applies_explicit_clock_and_layout_to_candidate_and_export(route_app):
+    client = route_app["client"]
+    project_id = route_app["project_id"]
+    response = client.post(
+        f"/api/projects/{project_id}/v32-generate",
+        json={
+            "keys": 8,
+            "key_layout": "8k_4_4",
+            "generation_strategy": "native",
+            "bpm": 137.5,
+            "offset": -40,
+            "division": 6,
+            "audio_shift_ms": 10,
+            "timing_confirmed": True,
+        },
+    )
+    assert response.status_code == 200, response.json
+    job = _wait_job(client, response.json["id"])
+    assert job["status"] == "done", job
+    candidate = route_app["projects"].load(project_id)["variants"][-1]
+    assert candidate["settings"]["keys"] == 8
+    assert candidate["settings"]["key_layout"] == "8k_4_4"
+    assert candidate["bpm"] == 137.5
+    assert candidate["offset"] == -40
+    assert candidate["division"] == 6
+    assert candidate["audio_shift_ms"] == 10
+    assert route_app["engine"].calls[0]["reference_keys"] == 8
+    assert route_app["engine"].calls[0]["reference_note_count"] == 1
+    assert route_app["engine"].calls[0]["reference_note_times"] == [(0, 0)]
+
+    exported = client.get(f"/api/projects/{project_id}/export/osu")
+    assert exported.status_code == 200, exported.json
+    parsed = parse_osu(exported.data.decode("utf-8"))
+    assert parsed["keys"] == 8
+    assert parsed["timing"][0].split(",")[0] == "-40.000"
+    assert "BeatDivisor: 6" in exported.data.decode("utf-8")
+
+
+def test_v32_timing_placeholder_does_not_precede_positive_first_red_line(route_app):
+    response = route_app["client"].post(
+        f"/api/projects/{route_app['project_id']}/v32-generate",
+        json={
+            "bpm": 150,
+            "offset": 3181,
+            "timing_confirmed": True,
+        },
+    )
+    assert response.status_code == 200, response.json
+    result = _wait_job(route_app["client"], response.json["id"])
+    assert result["status"] == "done", result
+
+    call = route_app["engine"].calls[0]
+    assert call["reference_timing_offset"] == 3181
+    assert call["reference_note_times"] == [(3181, 3181)]
+    assert call["reference_note_times"][0][0] >= call["reference_timing_offset"]
+
+
+def test_v32_timing_reference_parses_with_upstream_slider(route_app, monkeypatch):
+    slider = pytest.importorskip("slider")
+    engine = route_app["engine"]
+    original_generate = engine.generate
+
+    def parse_upstream_reference(**kwargs):
+        reference_path = Path(kwargs["reference_chart"])
+        reference_text = reference_path.read_text(encoding="utf-8-sig")
+        assert reference_text.count("timing-context-placeholder") == 1
+        assert len(parse_osu(reference_text)["notes"]) == 1
+        beatmap = slider.Beatmap.from_path(str(reference_path))
+        assert beatmap is not None
+        return original_generate(**kwargs)
+
+    monkeypatch.setattr(engine, "generate", parse_upstream_reference)
+    response = route_app["client"].post(
+        f"/api/projects/{route_app['project_id']}/v32-generate",
+        json={"timing_confirmed": True},
+    )
+    assert response.status_code == 200, response.json
+    result = _wait_job(route_app["client"], response.json["id"])
+    assert result["status"] == "done", result
+    assert route_app["engine"].calls[0]["reference_note_count"] == 1
+
+
+def test_v32_uses_mixed_rms_fallback_when_six_stem_profile_is_unavailable(
+    route_app, monkeypatch,
+):
+    separator = route_app["app"].extensions["v32_separator"]
+    monkeypatch.setattr(separator, "status", lambda: {"available": False})
+    monkeypatch.setattr(
+        separator,
+        "separate",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("unavailable six-stem profile must not be invoked")
+        ),
+    )
+    response = route_app["client"].post(
+        f"/api/projects/{route_app['project_id']}/v32-generate",
+        json={"timing_confirmed": True},
+    )
+    assert response.status_code == 200, response.json
+    job = _wait_job(route_app["client"], response.json["id"])
+    assert job["status"] == "done", job
+    candidate = route_app["projects"].load(route_app["project_id"])["variants"][-1]
+    assert candidate["report"]["v32"]["energy_source"] == "mixed_audio_rms"
+    assert candidate["report"]["v32"]["separation"]["profile"] == "mixed_rms_fallback"
+    status = route_app["client"].get("/api/v32/status")
+    assert status.status_code == 200
+    assert status.json["available"] is True
+    assert status.json["separation_available"] is False
+
+
+def test_v32_4_plus_4_uses_requested_lane_layout(route_app):
+    response = route_app["client"].post(
+        f"/api/projects/{route_app['project_id']}/v32-generate",
+        json={
+            "keys": 8,
+            "key_layout": "8k_4_4",
+            "generation_strategy": "native",
+            "timing_confirmed": True,
+        },
+    )
+    assert response.status_code == 200, response.json
+    result = _wait_job(route_app["client"], response.json["id"])
+    assert result["status"] == "done", result
+    candidate = route_app["projects"].load(route_app["project_id"])["variants"][-1]
+    assert candidate["settings"]["key_layout"] == "8k_4_4"
+    assert candidate["settings"]["layout_engine"] == "beam"
+    assert candidate["report"]["v32"]["torosu"]["target_layout"]["reassigned"] is True
+    assert _FAKE_TOROSU_CALLS[-1]["playstyle"] == "3+2+3"
+
+
+def test_v32_route_and_registered_factory_share_same_operation_builder(route_app):
+    assert route_app["app"].extensions["v32_operation_factory"].func is build_v32_operation
+
+
+def test_v32_route_validates_and_applies_torosuln_mode(route_app):
+    client = route_app["client"]
+    project_id = route_app["project_id"]
+    bad = client.post(
+        f"/api/projects/{project_id}/v32-generate",
+        json={"preset": "ln_focus", "keys": 10, "torosu_ln_mode": "unknown"},
+    )
+    assert bad.status_code == 400
+    assert not route_app["tasks"].has_active()
+
+    response = client.post(
+        f"/api/projects/{project_id}/v32-generate",
+        json={"preset": "ln_focus", "keys": 10, "torosu_ln_mode": "short_ln"},
+    )
+    assert response.status_code == 200
+    job = _wait_job(client, response.json["id"])
+    assert job["status"] == "done", job
+    assert _FAKE_LN_SHAPE_CALLS == ["short_ln"]
+    assert route_app["engine"].calls[0]["torosu_ln_mode"] == "short_ln"
+    saved = route_app["projects"].load(project_id)
+    candidate = saved["variants"][saved["active"]]
+    assert candidate["report"]["v32"]["torosu"]["ln_mode"] == "short_ln"
+
+
+def test_v32_route_persists_creator_preset_and_version_suffix(route_app):
+    client = route_app["client"]
+    project_id = route_app["project_id"]
+    response = client.post(
+        f"/api/projects/{project_id}/v32-generate",
+        json={
+            "preset": "hybrid_adaptive",
+            "keys": 10,
+            "metadata": {"creator": "zhyzx35607", "version_suffix": "adaptive-v1"},
+        },
+    )
+    assert response.status_code == 200, response.json
+    job = _wait_job(client, response.json["id"])
+    assert job["status"] == "done", job
+    candidate = route_app["projects"].load(project_id)["variants"][-1]
+    assert candidate["preset"] == "hybrid_adaptive"
+    assert candidate["metadata"] == {
+        "creator": "zhyzx35607",
+        "version_suffix": "adaptive-v1",
+    }
+
+
+def test_local_lora_scan_lists_only_valid_direct_child_adapters(tmp_path):
+    lora_root = tmp_path / "assets" / "lora"
+    valid = lora_root / "tiny"
+    valid.mkdir(parents=True)
+    (valid / "adapter_config.json").write_text("{}", encoding="utf-8")
+    (valid / "adapter_model.safetensors").write_bytes(b"weights")
+    (valid / "lora-manifest.json").write_text(
+        '{"name":"LN Focus","base_model":{"variant":"v32-mini"}}',
+        encoding="utf-8",
+    )
+    incomplete = lora_root / "incomplete"
+    incomplete.mkdir()
+    (incomplete / "adapter_config.json").write_text("{}", encoding="utf-8")
+    nested = lora_root / "nested"
+    nested.mkdir()
+    hidden = nested / "child"
+    hidden.mkdir()
+    (hidden / "adapter_config.json").write_text("{}", encoding="utf-8")
+    (hidden / "adapter_model.safetensors").write_bytes(b"weights")
+
+    assert scan_local_loras(tmp_path) == [{
+        "id": "tiny",
+        "label": "LN Focus",
+        "path": str(valid.resolve()),
+        "base_model": "v32-mini",
+        "location": "bundle",
+    }]
+
+
+def test_frozen_local_lora_overrides_same_named_bundled_adapter(tmp_path, monkeypatch):
+    import manialab.v32_routes as routes
+
+    monkeypatch.setattr(routes.sys, "frozen", True, raising=False)
+    resources = tmp_path / "_internal"
+    bundled = resources / "assets" / "lora" / "focus"
+    portable = resources.parent / "assets" / "lora" / "focus"
+    for directory, content in ((bundled, b"bundle"), (portable, b"portable")):
+        directory.mkdir(parents=True)
+        (directory / "adapter_config.json").write_text("{}", encoding="utf-8")
+        (directory / "adapter_model.safetensors").write_bytes(content)
+
+    rows = scan_local_loras(resources)
+
+    assert len(rows) == 1
+    assert rows[0]["path"] == str(portable.resolve())
+    assert rows[0]["location"] == "portable"

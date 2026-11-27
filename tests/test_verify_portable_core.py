@@ -1,9 +1,14 @@
 import hashlib
+import shutil
 
 import pytest
 
 from scripts import verify_portable
-from scripts.package_assets import capabilities
+from scripts.package_assets import (
+    MAPPER_INSTALLER_FILES,
+    capabilities,
+    lora_adapter_inventory,
+)
 
 
 def test_basic_analysis_evidence_uses_stable_engine_classification():
@@ -40,6 +45,233 @@ def test_core_manifest_skips_worker_and_piano_identity_checks(tmp_path, monkeypa
     assert verify_portable.verify_manifest_components(
         manifest, capabilities("core"), tmp_path
     ) == (None, None)
+
+
+def test_workbench_lora_inventory_matches_manifest_and_only_scans_adapters(tmp_path):
+    bundle = tmp_path / "bundle"
+    adapter = bundle / "_internal/assets/lora/ln-focus"
+    adapter.mkdir(parents=True)
+    (adapter / "adapter_config.json").write_text('{"r":16}', encoding="utf-8")
+    (adapter / "adapter_model.safetensors").write_bytes(b"lora weights")
+    (adapter / "lora-manifest.json").write_text(
+        '{"base_model":"v32-mini"}', encoding="utf-8",
+    )
+    manifest = {"lora_adapters": lora_adapter_inventory(bundle / "_internal/assets/lora")}
+
+    inventory = verify_portable.verify_packaged_loras(
+        manifest, capabilities("workbench"), bundle,
+    )
+
+    assert set(inventory) == {
+        "ln-focus/adapter_config.json",
+        "ln-focus/adapter_model.safetensors",
+        "ln-focus/lora-manifest.json",
+    }
+
+
+def test_core_portable_inventory_requires_an_empty_lora_manifest(tmp_path):
+    bundle = tmp_path / "bundle"
+    (bundle / "_internal/assets").mkdir(parents=True)
+
+    assert verify_portable.verify_packaged_loras(
+        {"lora_adapters": {}}, capabilities("core"), bundle,
+    ) == {}
+
+
+def test_profile_without_lora_support_rejects_packaged_adapter(tmp_path):
+    bundle = tmp_path / "bundle"
+    adapter = bundle / "_internal/assets/lora/private"
+    adapter.mkdir(parents=True)
+    (adapter / "adapter_config.json").write_text("{}", encoding="utf-8")
+    (adapter / "adapter_model.safetensors").write_bytes(b"private weights")
+    manifest = {"lora_adapters": lora_adapter_inventory(bundle / "_internal/assets/lora")}
+
+    with pytest.raises(AssertionError, match="without LoRA support"):
+        verify_portable.verify_packaged_loras(
+            manifest, capabilities("core"), bundle,
+        )
+
+
+def test_workbench_manifest_verifies_pinned_v32_installer_without_installing_it(
+        tmp_path, monkeypatch):
+    bundle = tmp_path / "bundle"
+    executable = bundle / "ManiaLab.exe"
+    executable.parent.mkdir(parents=True)
+    executable.write_bytes(b"synthetic workbench executable")
+    assets = bundle / "_internal/assets"
+    assets.mkdir(parents=True)
+    source_assets = verify_portable.ROOT / "assets"
+    shutil.copy2(source_assets / "model-manifest.json", assets / "model-manifest.json")
+    for name in MAPPER_INSTALLER_FILES:
+        if name == "runtime/uv.exe":
+            continue
+        target = assets / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_assets / name, target)
+    (assets / "runtime").mkdir()
+    (assets / "runtime/uv.exe").write_bytes(b"synthetic uv")
+    identity = {
+        "version": "0.12.1",
+        "target": "x86_64-pc-windows-msvc",
+        "archive_url": "https://example.invalid/uv.zip",
+        "archive_bytes": 12,
+        "archive_sha256": "a" * 64,
+        "filename": "uv.exe",
+        "bytes": len(b"synthetic uv"),
+        "sha256": hashlib.sha256(b"synthetic uv").hexdigest(),
+    }
+    calls = []
+
+    def verify_uv(path, *, check_version=True):
+        calls.append((path, check_version))
+        return identity
+
+    monkeypatch.setattr(verify_portable, "verify_uv_binary", verify_uv)
+    source_root = tmp_path / "source-root"
+    (source_root / "assets").mkdir(parents=True)
+    for name in ("model-manifest.json", "mapperatorinator-source.zip",
+                 "mapperatorinator-requirements.txt"):
+        shutil.copy2(source_assets / name, source_root / "assets" / name)
+    monkeypatch.setattr(verify_portable, "ROOT", source_root)
+    source_inventory = {
+        "assets/" + name: hashlib.sha256((source_assets / name).read_bytes()).hexdigest()
+        for name in MAPPER_INSTALLER_FILES
+        if name != "runtime/uv.exe"
+    }
+    manifest = {
+        "build_profile": "workbench",
+        "capabilities": capabilities("workbench"),
+        "sources": source_inventory,
+        "uv_runtime": identity,
+    }
+
+    assert verify_portable.verify_workbench_manifest(executable, manifest) == identity
+    assert calls == [(assets / "runtime/uv.exe", False)]
+
+
+def test_workbench_manifest_rejects_stale_mapper_source_archive(tmp_path, monkeypatch):
+    bundle = tmp_path / "bundle"
+    executable = bundle / "ManiaLab.exe"
+    executable.parent.mkdir(parents=True)
+    executable.write_bytes(b"synthetic workbench executable")
+    assets = bundle / "_internal/assets"
+    (assets / "runtime").mkdir(parents=True)
+    (assets / "runtime/uv.exe").write_bytes(b"synthetic uv")
+    source_assets = verify_portable.ROOT / "assets"
+    shutil.copy2(source_assets / "model-manifest.json", assets / "model-manifest.json")
+    for name in MAPPER_INSTALLER_FILES:
+        if name == "runtime/uv.exe":
+            continue
+        target = assets / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_assets / name, target)
+    (assets / "mapperatorinator-source.zip").write_bytes(b"stale source archive")
+    identity = {
+        "version": "0.12.1",
+        "target": "x86_64-pc-windows-msvc",
+        "archive_url": "https://example.invalid/uv.zip",
+        "archive_bytes": 12,
+        "archive_sha256": "a" * 64,
+        "filename": "uv.exe",
+        "bytes": len(b"synthetic uv"),
+        "sha256": hashlib.sha256(b"synthetic uv").hexdigest(),
+    }
+    monkeypatch.setattr(
+        verify_portable, "verify_uv_binary", lambda *args, **kwargs: identity,
+    )
+    source_inventory = {
+        "assets/" + name: hashlib.sha256((source_assets / name).read_bytes()).hexdigest()
+        for name in MAPPER_INSTALLER_FILES
+        if name != "runtime/uv.exe"
+    }
+    manifest = {
+        "build_profile": "workbench",
+        "capabilities": capabilities("workbench"),
+        "sources": source_inventory,
+        "uv_runtime": identity,
+    }
+
+    with pytest.raises(AssertionError, match="source archive"):
+        verify_portable.verify_workbench_manifest(executable, manifest)
+
+
+def test_workbench_manifest_rejects_changed_pinned_requirements(tmp_path, monkeypatch):
+    bundle = tmp_path / "bundle"
+    executable = bundle / "ManiaLab.exe"
+    executable.parent.mkdir(parents=True)
+    executable.write_bytes(b"synthetic workbench executable")
+    assets = bundle / "_internal/assets"
+    (assets / "runtime").mkdir(parents=True)
+    (assets / "runtime/uv.exe").write_bytes(b"synthetic uv")
+    source_assets = verify_portable.ROOT / "assets"
+    shutil.copy2(source_assets / "model-manifest.json", assets / "model-manifest.json")
+    for name in MAPPER_INSTALLER_FILES:
+        if name == "runtime/uv.exe":
+            continue
+        target = assets / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_assets / name, target)
+    (assets / "mapperatorinator-requirements.txt").write_bytes(b"unlocked requirements")
+    identity = {
+        "version": "0.12.1",
+        "target": "x86_64-pc-windows-msvc",
+        "archive_url": "https://example.invalid/uv.zip",
+        "archive_bytes": 12,
+        "archive_sha256": "a" * 64,
+        "filename": "uv.exe",
+        "bytes": len(b"synthetic uv"),
+        "sha256": hashlib.sha256(b"synthetic uv").hexdigest(),
+    }
+    monkeypatch.setattr(
+        verify_portable, "verify_uv_binary", lambda *args, **kwargs: identity,
+    )
+    manifest = {
+        "build_profile": "workbench",
+        "capabilities": capabilities("workbench"),
+        "sources": {
+            "assets/" + name: hashlib.sha256((source_assets / name).read_bytes()).hexdigest()
+            for name in MAPPER_INSTALLER_FILES if name != "runtime/uv.exe"
+        },
+        "uv_runtime": identity,
+    }
+
+    with pytest.raises(AssertionError, match="mapperatorinator-requirements"):
+        verify_portable.verify_workbench_manifest(executable, manifest)
+
+
+def test_workbench_verifier_runs_bundled_ffmpeg_version_smoke(tmp_path, monkeypatch):
+    binary = tmp_path / "_internal/imageio_ffmpeg/binaries/ffmpeg-win-x86_64.exe"
+    binary.parent.mkdir(parents=True)
+    binary.write_bytes(b"synthetic ffmpeg")
+
+    def run(arguments, **kwargs):
+        assert arguments == [str(binary), "-version"]
+        return type("Result", (), {
+            "returncode": 0,
+            "stdout": "ffmpeg version 9.0.2-test\n",
+        })()
+
+    monkeypatch.setattr(verify_portable.subprocess, "run", run)
+    identity = verify_portable.verify_packaged_ffmpeg(tmp_path)
+
+    assert identity == {
+        "path": "_internal/imageio_ffmpeg/binaries/ffmpeg-win-x86_64.exe",
+        "bytes": len(b"synthetic ffmpeg"),
+        "sha256": hashlib.sha256(b"synthetic ffmpeg").hexdigest(),
+        "version": "ffmpeg version 9.0.2-test",
+    }
+
+
+def test_workbench_ffmpeg_verifier_rejects_missing_or_multiple_binaries(tmp_path):
+    binary_root = tmp_path / "_internal/imageio_ffmpeg/binaries"
+    binary_root.mkdir(parents=True)
+    with pytest.raises(AssertionError, match="found 0"):
+        verify_portable.verify_packaged_ffmpeg(tmp_path)
+
+    (binary_root / "ffmpeg-one.exe").write_bytes(b"one")
+    (binary_root / "ffmpeg-two.exe").write_bytes(b"two")
+    with pytest.raises(AssertionError, match="found 2"):
+        verify_portable.verify_packaged_ffmpeg(tmp_path)
 
 
 def test_portable_manifest_verifies_and_smokes_bundled_torosu_cli_identity(

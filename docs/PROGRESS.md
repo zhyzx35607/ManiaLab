@@ -1,13 +1,13 @@
 # ManiaLab 2.0 续接进度
 
-更新：2026-11-27（Asia/Shanghai）。阶段 #02–#04 已由用户验收，阶段 #03/#04 经单一 PR #280 合入 `main`。当前仅执行阶段 #05（Phase 2B）；不发 Release/tag，不进入阶段 #06。
+更新：2026-11-27（Asia/Shanghai）。阶段 #01–#05 已由用户验收；当前只执行阶段 #06（Phase 3A），不发 Release/tag，不进入阶段 #07。
 
 ## 当前基线
 
-- `main` / `origin/main` 基线：`dda07ed`。阶段 #05 唯一分支 `feat/phase2b-10k-lora-kit`，唯一 worktree 为 `D:\project\ManiaLab`。
+- `main` / `origin/main` 基线：`27a9d41`（PR #281）。阶段 #06 唯一分支 `feat/phase3-full-workbench`，唯一 worktree 为 `D:\project\ManiaLab`；改动尚未提交或创建 PR。
 - PR #280 于 2026-11-26 合并，一并包含阶段 #03 提交 `582dd337` 与阶段 #04 提交 `438850a0`；特性分支已删除。未发布 Release/tag。
 - 阶段 #03 用户实打冠军：FullMix → v32-mini 7K → Torosu dense 10K；去人声不再作为主推理输入。
-- C 盘当前约 6.95 GiB 可用，D 盘约 118.2 GiB 可用；模型、运行时与实验缓存可通过环境变量指向大容量盘。
+- C 盘阶段 #06 起始可用约 7,754,723,328 bytes；测试、PyTorch/V32 运行时、模型权重、缓存和临时目录均置于 D 盘。
 
 ## 阶段 #01 历史基线
 
@@ -81,3 +81,15 @@
 - 纯 CPU 真实端到端 smoke 使用 Sayobot 音频和 v32-mini 固定 revision `7807f0dc70cab671be012e1f5ddf945b0b8b7278`：冷启动 step1 保存完整模型/optimizer/scheduler/RNG/tokenizer checkpoint，续训 step2 后导出 LoRA，并由 `manialab/v32_engine.py` 实际加载生成合法 10K 谱、调用 Torosu `analyze`。更新后的验证抽样实测选中两个不同歌曲组：10K LN（目标 LN 70.6%，推理 35.6 秒）与 10K Hybrid（目标 LN 29.0%，推理 101.3 秒）；两谱均合法、LoRA 已加载、无 incomplete-LN 警告。两步 smoke 尚未学出 LN（实际均为 0%），只验证链路，不代表训练质量。
 - 训练器默认 V32-mini（约 228 MB），支持 V32；LoRA `r=16/alpha=32`、bf16、gradient checkpointing、micro-batch 1、默认梯度累积16、可选8-bit AdamW、断点续训及逐轮 NLL/hold/LN/Torosu 指标。CPU 实测约17.35秒/optimizer step，peak RSS 报告约932 MiB。没有本机 CUDA/RTX 4050，不能给出可信的 4050 实测训练时长；脚本会在目标机首轮按实际 step 与评测耗时生成预计总时长。
 - 最终本地全量 `pytest -q`：`2498 passed, 75 skipped, 1 warning`（238.44秒）；Playwright `90 passed`。跨窗LN、泄露组去重抽样、CUDA配置、LoRA加载等专项测试通过；PowerShell解析、Python编译与 `git diff --check` 通过。单一 PR #281 的 Windows `verify` CI run `45876826692` 已通过，代码与进度记录在同一 PR；不发 Release/tag，不进入阶段 #06。
+
+## 阶段 #06（Phase 3A）执行记录
+
+- 清理了 `workspace_exp/lora_10k_kit/` 下 10 个阶段 #05 重复 smoke/audited 副本，保留唯一正式 `dataset/`；其 `manifest.json` SHA-256 为 `685D5AE89BD3A100B6AD17AF03B8A69383D64358E773E00DA44D2D2E27D68830`。更新了 `ROADMAP.md` 的 #06 → #07 → #08 顺序。
+- 本阶段唯一分支 `feat/phase3-full-workbench`，唯一工作区为 `D:\project\ManiaLab`。C 盘遗留 pytest 临时目录的 19,386 个文件已逐一校验 SHA-256 后复制到忽略的 `workspace_exp/phase06/c-drive-test-temp/`，再清理 C 盘副本；本阶段 pytest 使用显式 D 盘 `basetemp`。
+- 新增统一 `manialab/presets.py` 五预设、6–10K/Torosu/LoRA/V32 参数映射；批量 20 首上限、持久化任务、V32 串行生成、候选恢复 lineage、批次终态恢复下载已实现并有 API 测试。新增 Canvas 下落预览、原音频同步控制与工作台集成。
+- V32 独立 Python 3.10.20 + PyTorch 2.9.1 CPU 运行时成功安装到 `workspace_exp/phase06/v32-runtime/`；HF/Torch/uv/TMP 均指向 D 盘。真实安装发现原 SciPy 1.17.0 和 NumPy 2.3.5 锁定版本不兼容 Python 3.10，已改为 SciPy 1.15.3 / NumPy 2.2.6。运行时专项测试 57 passed；便携构建脚本/验证专项此前 71 passed，后续 CI/verifier 增量 93 passed。
+- 本机真实歌曲《探故知》30 秒片段来自整曲 `114000–144000ms`，Basic Pitch 分析通过（22,050Hz，音频 SHA-256 `884a1bc04c20a2c5228f37b5b250fb34339adeaa7e3a029c03bc680d57b57f0a`）；复用真实 7-TimingPoint reference，BPM 150 / offset `-110819ms`。CPU `v32-mini` + `hybrid_adaptive` 工作台路由推理 370.078 秒、峰值 RSS 912,179,200 bytes（869.92 MiB），生成合法 10K 560 物件 / 472 LN（84.3%），Torosu dense；30 秒推理本身已超过纯 CPU 3 分钟提示阈值。
+- 完整 201.6 秒歌曲工作台推理在 360 秒 smoke 等待上限未完成，未生成候选，不计作成功；未继续盲目挂机。有效短片 A/B 包 `workspace_exp/phase06/real-music/Tan Gu Zhi - Phase06 V32 Mini vs Old Engine.osz` 为 5,211,689 bytes，ZIP CRC、媒体哈希、10K 键数及谱面结构均通过：V32-mini 560/472，旧引擎 138/35（物件/LN）。待用户在 osu! 实打验收音乐质量。
+- 最终本机全量 pytest：`2624 passed, 76 skipped, 1 warning`（368.17s）；Playwright `103 passed`（3.6m）。本机 `workbench` 便携 ZIP `build/portable/phase06-workbench-20261127-final1/release/ManiaLab-0.1.0-alpha.6-dev.28-windows-x64-workbench.zip` 为 130,003,207 bytes，SHA-256 `a7d78d88561cdf530b11c804bedbe678f5d160396551efeca3d6fa76f71c6ec4`；解压目录 332,225,831 bytes。`verify_portable.py` 全部通过：EXE 启动/重启、6–10K 生谱导出、FFmpeg 9.0.2、包内 Torosu `convert/analyze`、V32 按需安装器状态与服务关停；未安装 V32 runtime/模型。
+- 最终本地测试、模型缓存、便携构建与 smoke 的临时/输出目录均显式置于 D 盘。C 盘阶段起始可用 `7,754,723,328` bytes；当前实测 `7,341,690,880` bytes，低于基线 `413,032,448` bytes。当前差额尚未归因；未清理含其他项目测试数据或用户数据的 C 盘临时目录。该空间验收项未通过。
+- 尚未完成：提交并推送唯一 PR、Windows CI、合并与删除特性分支。阶段 #06 仍进行中；在 C 盘空间差额未恢复/解释且验收未全绿前不合并；不进入阶段 #07。
