@@ -303,12 +303,48 @@ class V32Engine:
         mania_column_temperature: float,
         lora_path: str | Path | None,
         device: str = "auto",
+        keys: int = 10,
+        torosu_keep_jacks: bool = True,
+        torosu_ln_mode: str = "keep",
+        preset: str | None = None,
     ) -> dict:
         V32Engine._model_spec(model_variant)
-        if generation_strategy not in ("7k_to_torosu_10k", "native_10k"):
-            raise ValueError("生成策略必须为 7k_to_torosu_10k 或 native_10k")
-        if torosu_density not in ("none", "dense", "more-dense"):
-            raise ValueError("Torosu 密度必须为 none、dense 或 more-dense")
+        if type(keys) is not int or keys not in range(6, 11):
+            raise ValueError("目标键数必须为 6–10")
+        if generation_strategy not in (
+            "7k_to_torosu_10k",
+            "native_10k",
+            "7k_to_torosu",
+            "native",
+        ):
+            raise ValueError(
+                "生成策略必须为 7k_to_torosu、native 或兼容旧值 "
+                "7k_to_torosu_10k、native_10k"
+            )
+        if generation_strategy == "7k_to_torosu_10k":
+            if keys != 10:
+                raise ValueError("旧策略 7k_to_torosu_10k 的目标键数固定为 10K")
+            model_keycount, target_keys = 7, 10
+        elif generation_strategy == "native_10k":
+            if keys != 10:
+                raise ValueError("旧策略 native_10k 的键数固定为 10K")
+            model_keycount, target_keys = 10, 10
+        elif generation_strategy == "7k_to_torosu":
+            model_keycount, target_keys = 7, keys
+        else:
+            model_keycount, target_keys = keys, keys
+        if torosu_density not in ("none", "dense", "more-dense", "full"):
+            raise ValueError("Torosu 密度必须为 none、dense、more-dense 或 full")
+        if type(torosu_keep_jacks) is not bool:
+            raise ValueError("Torosu keep_jacks 必须为布尔值")
+        if torosu_ln_mode not in ("keep", "fln", "short_ln"):
+            raise ValueError("Torosu LN 模式必须为 keep、fln 或 short_ln")
+        if preset is not None:
+            if not isinstance(preset, str):
+                raise ValueError("预设 ID 必须为文本")
+            from .presets import canonical_preset_id
+
+            preset = canonical_preset_id(preset)
         for name, value, low, high in (
             ("difficulty", difficulty, 0, 10),
             ("hold_note_ratio", hold_note_ratio, 0, 0.85),
@@ -330,7 +366,12 @@ class V32Engine:
         return {
             "model_variant": model_variant,
             "generation_strategy": generation_strategy,
+            "model_keycount": model_keycount,
+            "keys": target_keys,
             "torosu_density": torosu_density,
+            "torosu_keep_jacks": torosu_keep_jacks,
+            "torosu_ln_mode": torosu_ln_mode,
+            "preset": preset,
             "difficulty": float(difficulty),
             "hold_note_ratio": float(hold_note_ratio),
             "mania_column_temperature": float(mania_column_temperature),
@@ -357,8 +398,8 @@ class V32Engine:
         seed: int = 20261126,
     ) -> list[str]:
         spec = self._model_spec(model_variant)
-        if keycount not in (7, 10):
-            raise ValueError("Mapperatorinator V32 当前仅支持 7K 或 10K 输入")
+        if type(keycount) is not int or keycount not in range(6, 11):
+            raise ValueError("Mapperatorinator V32 键数必须为 6–10")
         if type(start_ms) is not int or start_ms < 0:
             raise ValueError("推理起点必须为非负毫秒整数")
         if end_ms is not None and (type(end_ms) is not int or end_ms <= start_ms):
@@ -612,16 +653,29 @@ class V32Engine:
         end_ms: int | None = None,
         model_directory: str | Path | None = None,
         seed: int = 20261126,
+        target_keycount: int | None = None,
+        generation_strategy: str | None = None,
+        torosu_density: str = "none",
+        torosu_keep_jacks: bool = True,
+        torosu_ln_mode: str = "keep",
+        preset: str | None = None,
     ) -> dict:
+        if generation_strategy is None:
+            generation_strategy = "native"
+            target_keycount = keycount if target_keycount is None else target_keycount
         options = self.validate_options(
             model_variant=model_variant,
-            generation_strategy="7k_to_torosu_10k" if keycount == 7 else "native_10k",
-            torosu_density="none",
+            generation_strategy=generation_strategy,
+            torosu_density=torosu_density,
             difficulty=difficulty,
             hold_note_ratio=hold_note_ratio,
             mania_column_temperature=mania_column_temperature,
             lora_path=lora_path,
             device=device,
+            keys=keycount if target_keycount is None else target_keycount,
+            torosu_keep_jacks=torosu_keep_jacks,
+            torosu_ln_mode=torosu_ln_mode,
+            preset=preset,
         )
         if not (self.mapper_repo / "inference.py").is_file():
             raise FileNotFoundError(f"Mapperatorinator inference.py 不存在：{self.mapper_repo}")
@@ -696,6 +750,13 @@ class V32Engine:
             ),
             "lora_loaded": lora_loaded,
             "lora_path": str(options["lora_path"]) if options["lora_path"] else None,
+            "generation_strategy": options["generation_strategy"],
+            "model_keycount": options["model_keycount"],
+            "keys": options["keys"],
+            "torosu_density": options["torosu_density"],
+            "torosu_keep_jacks": options["torosu_keep_jacks"],
+            "torosu_ln_mode": options["torosu_ln_mode"],
+            "preset": options["preset"],
         }
         (output / "run-report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2, default=str),

@@ -66,7 +66,8 @@ DEFAULTS = dict(keys=10, key_layout="10k_5_5", density=7.0, ln_ratio=.55, min_ln
                 chord_size=4, pitch_follow=.55, balance=.8, jack_avoid=.8, seed=42,
                 onset_threshold=.45, frame_threshold=.3, focus="balanced", phrase_ln=.65, layout_engine="beam", pattern_prior=.35,
                 drums_weight=1., bass_weight=1., vocals_weight=1., other_weight=1., guitar_weight=1., piano_weight=1.,
-                ln_coordination=.35, ln_release=.65, ln_inverse=0.)
+                ln_coordination=.35, ln_release=.65, ln_inverse=0.,
+                torosu_keep_jacks=True, torosu_density="none", torosu_ln_mode="keep")
 MAX_DENSITY = 50
 BOUNDS = dict(keys=(6, 10), density=(1, MAX_DENSITY), ln_ratio=(0, 1), min_ln=(100, 2000), max_held=(1, 10),
               release_gap=(0, 250), chord_size=(1, 10), pitch_follow=(0, 1), balance=(0, 1),
@@ -94,6 +95,18 @@ def parameters(raw=None):
         elif k == "layout_engine":
             if v not in ("beam", "classic", "torosu"):
                 raise ValueError("定轨引擎无效")
+            result[k] = v
+        elif k == "torosu_keep_jacks":
+            if type(v) is not bool:
+                raise ValueError("Torosu keep_jacks 必须为布尔值")
+            result[k] = v
+        elif k == "torosu_density":
+            if v not in ("none", "dense", "more-dense", "full"):
+                raise ValueError("Torosu 密度必须为 none、dense、more-dense 或 full")
+            result[k] = v
+        elif k == "torosu_ln_mode":
+            if v not in ("keep", "fln", "short_ln"):
+                raise ValueError("Torosu LN 模式必须为 keep、fln 或 short_ln")
             result[k] = v
         elif k == "key_layout":
             if v is not None and not isinstance(v, str):

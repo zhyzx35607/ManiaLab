@@ -84,7 +84,10 @@ def assign_lanes(notes, settings=None, locked=(), beat_ms=500, progress=None,
         output = convert_notes(
             notes, p["keys"], source_keys=source_keys, timing_points=timing_points,
             beat_ms=beat_ms, offset_ms=offset_ms, meter=meter,
-            playstyle=TOROSU_PLAYSTYLES[p["key_layout"]], cancelled=cancelled, strict=True,
+            playstyle=TOROSU_PLAYSTYLES[p["key_layout"]],
+            density=p["torosu_density"],
+            keep_jacks=p["torosu_keep_jacks"],
+            cancelled=cancelled, strict=True,
         )
         if cancelled():
             raise InterruptedError("已取消定轨搜索")

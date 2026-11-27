@@ -89,6 +89,26 @@ test('regional audit separates final locked output from whole-song proposed omis
   expect(errors).toEqual([]);
 });
 
+test('regional rewriting stays enabled and reports the Torosu-only limitation',async({page})=>{
+  await openProject(page,'current');
+  await page.locator('#singleEngine').selectOption('traditional');
+  await page.locator('#generate').click();
+  await expect(page.locator('#message')).toContainText('结构检查通过');
+  await page.locator('.right section > .advanced-settings').evaluate(node=>{node.open=true;});
+  await page.locator('#layoutEngine').selectOption('torosu');
+  await page.locator('#regenerate').evaluate(el=>{el.closest('details').open=true;});
+  await page.locator('#regionStart').fill('3');
+  await page.locator('#regionEnd').fill('5');
+  await expect(page.locator('#regenerate')).toBeEnabled();
+  await page.locator('#regenerate').click();
+  await expect(page.locator('#message')).toContainText('Torosu 不支持局部重写');
+
+  await page.locator('#layoutEngine').selectOption('beam');
+  await page.locator('#regenerate').click();
+  await expect(page.locator('#variants option:checked')).toContainText('局部');
+  await expect(page.locator('#message')).toContainText('结构检查通过');
+});
+
 test('editing a regional candidate keeps its origin and evidence without stale generation claims',async({page})=>{
   const pid=await generateRegional(page,'edit');
   const parent=await page.evaluate(()=>({index:state.active,candidate:structuredClone(variant())}));

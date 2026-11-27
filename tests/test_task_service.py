@@ -1,4 +1,6 @@
+import json
 import logging
+from pathlib import Path
 import queue
 import threading
 import time
@@ -634,3 +636,106 @@ def test_batch_worker_start_failure_marks_all_items_terminal(task_store, monkeyp
     assert all(item["status"] == "error" for item in result["items"])
     assert service._idle.is_set()
     assert service._closed
+
+
+def test_batch_tasks_accept_twenty_items_and_reject_twenty_one(task_store):
+    projects, service = task_store
+    project_ids = [create_project(projects) for _ in range(21)]
+    entries = [
+        {"project": project_id, "operation": lambda state, progress, cancelled: {"ok": True}}
+        for project_id in project_ids
+    ]
+
+    with pytest.raises(ValueError, match="1–20"):
+        service.submit_batch(entries, min_items=1)
+
+    submitted = service.submit_batch(entries[:20], max_parallel=1, min_items=1)
+    result = wait_for_job(service, submitted["id"])
+
+    assert result["status"] == "done"
+    assert len(result["items"]) == 20
+    assert all(item["status"] == "done" for item in result["items"])
+
+
+def test_persistent_batch_recovers_completed_items_and_marks_live_items_interrupted(tmp_path):
+    projects = Projects(tmp_path / "projects")
+    service = ProjectTasks(projects, logging.getLogger("test.task_service.persistence"))
+    project_ids = [create_project(projects) for _ in range(3)]
+    persistent_spec = {
+        "kind": "generation",
+        "payload": {"projects": project_ids, "preset": "hybrid_adaptive", "keys": 10},
+    }
+    submitted = service.submit_batch(
+        [
+            {
+                "project": project_id,
+                "operation": lambda state, progress, cancelled, index=index: {
+                    "candidate_id": f"{index:032x}",
+                },
+            }
+            for index, project_id in enumerate(project_ids)
+        ],
+        max_parallel=1,
+        min_items=1,
+        persistent_spec=persistent_spec,
+    )
+    finished = wait_for_job(service, submitted["id"])
+    assert finished["status"] == "done"
+    assert service.get(submitted["id"])["items"][0]["result"]["candidate_id"] == f"{0:032x}"
+
+    record_path = projects.root.parent / "batch-jobs" / f"{submitted['id']}.json"
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    items = record["job"]["items"]
+    items[0]["status"] = "done"
+    items[0]["candidate_id"] = f"{0:032x}"
+    items[1]["status"] = "running"
+    items[2]["status"] = "queued"
+    record["job"]["status"] = "running"
+    record_path.write_text(json.dumps(record), encoding="utf-8")
+    service.shutdown()
+
+    recovered = ProjectTasks(projects, logging.getLogger("test.task_service.recovery"))
+    try:
+        snapshot = recovered.get(submitted["id"])
+        assert snapshot["status"] == "interrupted"
+        assert snapshot["resume_available"] is True
+        assert [item["status"] for item in snapshot["items"]] == [
+            "done", "interrupted", "interrupted",
+        ]
+        assert snapshot["items"][0]["candidate_id"] == f"{0:032x}"
+        assert recovered.batch_resume_spec(submitted["id"]) == persistent_spec
+        assert recovered.recent_batches()[0]["id"] == submitted["id"]
+    finally:
+        recovered.shutdown()
+
+
+def test_persistent_batch_journal_retries_transient_windows_replace_lock(
+        tmp_path, monkeypatch):
+    import manialab.task_service as task_service_module
+
+    projects = Projects(tmp_path / "projects")
+    service = ProjectTasks(projects, logging.getLogger("test.task_service.replace_retry"))
+    project_id = create_project(projects)
+    real_replace = task_service_module.os.replace
+    attempts = []
+
+    def flaky_replace(source, destination):
+        if Path(destination).parent.name == "batch-jobs" and not attempts:
+            attempts.append("locked")
+            raise PermissionError("transient target lock")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(task_service_module.os, "replace", flaky_replace)
+    monkeypatch.setattr(task_service_module, "_BATCH_REPLACE_RETRY_DELAYS", (0, 0))
+    try:
+        submitted = service.submit_batch(
+            [{"project": project_id, "operation": lambda *_: {"candidate_id": "a" * 32}}],
+            min_items=1,
+            persistent_spec={"kind": "generation", "payload": {"projects": [project_id]}},
+        )
+        result = wait_for_job(service, submitted["id"])
+        assert attempts == ["locked"]
+        assert result["status"] == "done"
+        assert (projects.root.parent / "batch-jobs" / f"{submitted['id']}.json").is_file()
+    finally:
+        service.shutdown()

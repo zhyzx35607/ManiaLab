@@ -146,6 +146,36 @@ def test_convert_osu_text_rejects_hit_sample_and_hit_sound_mutation(monkeypatch)
         torosu_bridge.convert_osu_text(_chart(), 10)
 
 
+def test_ln_shape_notes_restores_source_ids_and_only_changes_hold_endpoints(monkeypatch):
+    source = parse_osu(_chart())["notes"]
+
+    def shorten_one(osu_text, _args, *, output_file=False, **_kwargs):
+        lines = osu_text.splitlines()
+        for index, line in enumerate(lines):
+            fields = line.split(",")
+            if len(fields) >= 6 and int(fields[3]) & 128:
+                fields[5] = "1200:0:0:0:0:"
+                lines[index] = ",".join(fields)
+                break
+        return "\n".join(lines) + "\n"
+
+    monkeypatch.setattr(torosu_bridge, "_run_with_input", shorten_one)
+
+    shaped = torosu_bridge.ln_shape_notes(source, 6, "short_ln")
+
+    assert {(note.id, note.lane, note.start) for note in shaped} == {
+        (note.id, note.lane, note.start) for note in source
+    }
+    assert len(shaped) == len(source)
+    changed = [note for note in shaped if note.end != next(
+        old.end for old in source if old.id == note.id
+    )]
+    assert len(changed) == 1
+    assert changed[0].end == 1200
+    assert {note.id for note in shaped} == {note.id for note in source}
+    assert sum(note.hold for note in shaped) == sum(note.hold for note in source)
+
+
 def test_analyze_osu_text_checks_key_count_and_requires_json_object(monkeypatch):
     monkeypatch.setattr(
         torosu_bridge, "_run_with_input",
@@ -193,6 +223,72 @@ def test_convert_notes_restores_note_identity_and_rejects_same_lane_conflicts(mo
     monkeypatch.setattr(torosu_bridge, "convert_osu_text", conflicting)
     with pytest.raises(torosu_bridge.TorosuBridgeError, match="结果存在冲突"):
         torosu_bridge.convert_notes(notes, 10, source_keys=6)
+
+
+def test_convert_notes_density_additions_receive_ids_without_losing_source_identity(monkeypatch):
+    notes = [
+        Note(1000, 2200, lane=0, id="hold"),
+        Note(1800, 1800, lane=1, id="tap-a"),
+        Note(2600, 2600, lane=2, id="tap-b"),
+    ]
+    observed = {}
+
+    def expand(text, keys, **options):
+        observed.update(options)
+        converted = _convert_fixture(text, keys)
+        return converted.replace(
+            "[HitObjects]\n",
+            "[HitObjects]\n281,192,3000,1,0,0:0:0:0:\n",
+        )
+
+    monkeypatch.setattr(torosu_bridge, "convert_osu_text", expand)
+    converted = torosu_bridge.convert_notes(
+        notes,
+        10,
+        source_keys=6,
+        density="dense",
+        keep_jacks=False,
+    )
+
+    assert {note.id for note in converted if note.id in {"hold", "tap-a", "tap-b"}} == {
+        "hold", "tap-a", "tap-b",
+    }
+    added = [note for note in converted if note.source == "torosu"]
+    assert len(converted) == len(notes) + 1
+    assert len(added) == 1
+    assert added[0].id.startswith("torosu-")
+    assert added[0].hold is False
+    assert observed["density"] == "dense"
+    assert observed["keep_jacks"] is False
+    assert validate(converted, 10)["valid"]
+
+
+def test_legacy_torosu_assignment_forwards_preset_style_controls(monkeypatch):
+    from manialab.arrange import assign_lanes
+
+    note = Note(1000, 1000, lane=0, id="tap")
+    observed = {}
+
+    def convert_notes(notes, keys, **options):
+        observed.update(options)
+        return list(notes)
+
+    monkeypatch.setattr("manialab.torosu_bridge.convert_notes", convert_notes)
+    result = assign_lanes(
+        [note],
+        {
+            "keys": 8,
+            "key_layout": "8k_3_2_3",
+            "layout_engine": "torosu",
+            "torosu_keep_jacks": False,
+            "torosu_density": "more-dense",
+        },
+    )
+
+    assert result == [note]
+    assert observed["keep_jacks"] is False
+    assert observed["density"] == "more-dense"
+    assert observed["playstyle"] == "3+2+3"
 
 
 def test_pitch_only_notes_are_seeded_before_the_native_conversion(monkeypatch):

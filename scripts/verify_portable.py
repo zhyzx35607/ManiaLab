@@ -32,8 +32,15 @@ from scripts.build_provenance import (
     verify_worker,
     verify_instrument_worker,
     verify_piano_model,
+    verify_uv_binary,
 )
-from scripts.package_assets import capabilities, verify_core_model_files
+from scripts.package_assets import (
+    MAPPER_INSTALLER_FILES,
+    archive_stem,
+    capabilities,
+    lora_adapter_inventory,
+    verify_core_model_files,
+)
 
 
 def verify_piano_onnx_runtime(model_path, identity):
@@ -133,6 +140,107 @@ def verify_manifest_components(manifest, declared, bundle_root, source_root=ROOT
             source_root, bundle_root / "_internal/assets/instruments"
         ) == manifest["instrument_worker"]
     return worker, piano_identity
+
+
+def verify_packaged_loras(manifest, declared, bundle_root):
+    """Verify that only declared local LoRA adapters ship in the bundle."""
+    actual = lora_adapter_inventory(
+        Path(bundle_root) / "_internal/assets/lora"
+    )
+    expected = manifest.get("lora_adapters")
+    if not isinstance(expected, dict) or expected != actual:
+        raise AssertionError("Packaged LoRA adapter inventory differs from the release manifest")
+    if not declared.get("lora_support") and actual:
+        raise AssertionError("Profile without LoRA support contains packaged adapters")
+    return actual
+
+
+def verify_workbench_manifest(executable, manifest):
+    """Require the complete lightweight workbench contract before launching it."""
+    profile = manifest.get("build_profile")
+    if profile != "workbench":
+        raise AssertionError(f"Expected workbench profile, found {profile!r}")
+    declared = capabilities("workbench")
+    if manifest.get("capabilities") != declared:
+        raise AssertionError("Workbench capability declaration differs from its profile")
+
+    identity = verify_uv_binary(
+        Path(executable).parent / "_internal/assets/runtime/uv.exe",
+        check_version=False,
+    )
+    if manifest.get("uv_runtime") != identity:
+        raise AssertionError("Workbench uv installer identity differs from its manifest")
+
+    models = json.loads(
+        (Path(ROOT) / "assets/model-manifest.json").read_text(encoding="utf-8")
+    ).get("mapperatorinator")
+    installer_root = Path(executable).parent / "_internal/assets"
+    source_inventory = manifest.get("sources")
+    if not isinstance(source_inventory, dict):
+        raise AssertionError("Workbench manifest has no V32 installer source inventory")
+    if (not isinstance(models, dict)
+            or models.get("commit") is None
+            or models.get("source_archive_sha256") is None):
+        raise AssertionError("Workbench V32 installer lacks fixed source provenance")
+    archive = installer_root / "mapperatorinator-source.zip"
+    if not archive.is_file() or sha256(archive) != models["source_archive_sha256"]:
+        raise AssertionError("Workbench V32 source archive differs from the pinned manifest")
+    for name in MAPPER_INSTALLER_FILES:
+        packaged = installer_root / Path(name)
+        if not packaged.is_file():
+            raise AssertionError(f"Workbench V32 installer component is missing: {name}")
+        if name == "runtime/uv.exe":
+            continue
+        source_name = "assets/" + name
+        expected_sha256 = source_inventory.get(source_name)
+        if not isinstance(expected_sha256, str) or sha256(packaged) != expected_sha256:
+            raise AssertionError(f"Workbench V32 installer component is stale: {name}")
+
+    required_capabilities = (
+        "mapperatorinator_install",
+        "lora_support",
+    )
+    if not all(declared.get(name) is True for name in required_capabilities):
+        raise AssertionError("Workbench does not declare its V32 installer and LoRA capabilities")
+    if any(declared.get(name) is not False for name in (
+            "separation_four", "separation_six", "piano", "guitar", "instruments")):
+        raise AssertionError("Workbench unexpectedly declares heavyweight audio assets")
+    return identity
+
+
+def verify_packaged_ffmpeg(bundle_root):
+    """Run the sole bundled FFmpeg executable and report its file identity."""
+    binary_root = Path(bundle_root) / "_internal/imageio_ffmpeg/binaries"
+    if not binary_root.is_dir():
+        raise AssertionError("Packaged FFmpeg binary directory is missing")
+    binaries = sorted(
+        path for path in binary_root.iterdir()
+        if path.is_file() and path.name.casefold().startswith("ffmpeg")
+        and path.suffix.casefold() == ".exe"
+    )
+    if len(binaries) != 1:
+        raise AssertionError(
+            f"Expected one packaged FFmpeg executable, found {len(binaries)}"
+        )
+    binary = binaries[0]
+    result = subprocess.run(
+        [str(binary), "-version"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=20,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    version = result.stdout.splitlines()[0].strip() if result.stdout else ""
+    if result.returncode or not version.startswith("ffmpeg version "):
+        raise AssertionError("Packaged FFmpeg version smoke failed")
+    return dict(
+        path=binary.relative_to(bundle_root).as_posix(),
+        bytes=binary.stat().st_size,
+        sha256=sha256(binary),
+        version=version,
+    )
 
 
 def verify_torosu_cli(bundle_root, identity, work_root):
@@ -497,8 +605,20 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, f'Packaged source is stale: {name}'
         declared=capabilities(release_manifest['build_profile'])
         assert release_manifest['capabilities']==declared
+        build_profile=release_manifest['build_profile']
+        if build_profile == "workbench":
+            uv_identity = verify_workbench_manifest(executable, release_manifest)
+        else:
+            uv_identity = None
         worker,piano_identity=verify_manifest_components(
             release_manifest,declared,executable.parent,ROOT
+        )
+        lora_inventory=verify_packaged_loras(
+            release_manifest,declared,executable.parent
+        )
+        ffmpeg_identity = (
+            verify_packaged_ffmpeg(executable.parent)
+            if build_profile == "workbench" else None
         )
         core_model_identity=verify_core_model_files(
             executable.parent/'_internal/assets'
@@ -506,13 +626,18 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         assert release_manifest.get('core_models')==core_model_identity, (
             'Basic Pitch identity does not match the release manifest'
         )
-        is_core=release_manifest['build_profile']=='core'
+        is_lightweight=build_profile in ('core','workbench')
         verification_identity=build_verification_identity(
             executable,manifest_path,release_manifest,verification_run_id
         )
         record(dict(check='release_manifest',source_files=len(release_manifest['sources']),
             worker_files=0 if worker is None else len(worker['worker_files']),
             **verification_identity))
+        if declared.get('lora_support'):
+            adapter_names=sorted({path.split('/',1)[0] for path in lora_inventory})
+            record(dict(check='lora_inventory',adapters=adapter_names))
+        if ffmpeg_identity:
+            record(dict(check='ffmpeg_smoke', **ffmpeg_identity))
         record(dict(check='core_model',**core_model_identity))
         prior_path=executable.parent/'_internal/assets/pattern-prior.json'
         if declared['pattern_prior']:
@@ -532,6 +657,16 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             record(dict(check='torosu_cli_smoke',
                 path=torosu_smoke['path'],bytes=torosu_smoke['bytes'],
                 sha256=torosu_smoke['sha256'],commands=['convert','analyze']))
+        if build_profile == "workbench":
+            record(dict(
+                check='workbench_installer',
+                uv_version=uv_identity['version'],
+                uv_sha256=uv_identity['sha256'],
+                source_commit=json.loads(
+                    (ROOT/'assets/model-manifest.json').read_text(encoding='utf-8')
+                )['mapperatorinator']['commit'],
+                runtime_available=release_manifest.get('uv_runtime') is not None,
+            ))
         start();status=request('/api/status')
         assert status['version']==__version__,status
         separator_status=verify_runtime_capabilities(status,declared)
@@ -542,14 +677,39 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
             ))
         record(dict(check='startup',version=status['version'],separator=status['separator'],
                            prior=status['pattern_prior'],engine=status['engine']))
-        if is_core:
+        if build_profile == "workbench":
+            assert status.get("v32_engine", {}).get("install_available") is True, (
+                "Workbench v32_engine install_available must be true"
+            )
+            assert status.get("v32_engine", {}).get("runtime_available") is False, (
+                "Workbench smoke must not install a V32 runtime"
+            )
+            assert status.get("v32_engine", {}).get("available") is False, (
+                "Workbench smoke must not claim V32 generation is ready without its separation runtime"
+            )
+            record(dict(
+                check="v32_install_status",
+                v32_engine_install_available=status["v32_engine"]["install_available"],
+                runtime_installed=status["v32_engine"].get("runtime_available"),
+                generation_ready=status["v32_engine"].get("available"),
+                install_message="V32 runtime installer is bundled; no runtime or model was installed during smoke.",
+                model_ready={
+                    name: bool(row.get("ready"))
+                    for name, row in status["v32_engine"].get("models", {}).items()
+                },
+            ))
+        if is_lightweight:
             if instruments_only or guitar_only or piano_audio is not None \
                     or instrument_fixtures is not None or guitar_probe is not None:
-                raise ValueError("Core portable verification does not accept specialist-engine fixtures")
-            record(dict(check='core_capability_status',separator=separator_status,
-                               piano_available=status['piano']['available']))
+                raise ValueError("Lightweight portable verification does not accept specialist-engine fixtures")
+            lightweight_check = (
+                'core_capability_status' if build_profile == 'core'
+                else 'workbench_capability_status'
+            )
+            record(dict(check=lightweight_check,separator=separator_status,
+                        piano_available=status['piano']['available']))
             verify_core_workflow(request,wait,start,stop,work,source,record)
-            print(json.dumps(dict(passed=True,scope='core',checks=checks),ensure_ascii=True),flush=True)
+            print(json.dumps(dict(passed=True,scope=build_profile,checks=checks),ensure_ascii=True),flush=True)
             return
         if guitar_only:
             if guitar_probe is None:

@@ -29,6 +29,24 @@ def test_density_ceiling_accepts_50_and_rejects_values_above_it():
         arrange_config.parameters({"density": 50.01})
 
 
+def test_torosu_preferences_are_validated_as_engine_parameters():
+    assert arrange_config.parameters({
+        "keys": 8,
+        "layout_engine": "torosu",
+        "torosu_keep_jacks": False,
+        "torosu_density": "dense",
+    })["torosu_keep_jacks"] is False
+    with pytest.raises(ValueError, match="布尔值"):
+        arrange_config.parameters({"torosu_keep_jacks": 0})
+    with pytest.raises(ValueError, match="Torosu 密度"):
+        arrange_config.parameters({"torosu_density": "invalid"})
+    assert arrange_config.parameters({"torosu_ln_mode": "short_ln"})[
+        "torosu_ln_mode"
+    ] == "short_ln"
+    with pytest.raises(ValueError, match="LN 模式"):
+        arrange_config.parameters({"torosu_ln_mode": "unknown"})
+
+
 @pytest.mark.parametrize("keys,expected", [
     (6, "6k_3_3"), (7, "7k_3_1_3"), (8, "8k_3_2_3"),
     (9, "9k_4_1_4"), (10, "10k_5_5"),

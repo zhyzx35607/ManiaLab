@@ -1,6 +1,7 @@
 """Batch generation and bundle export keep independent project identities."""
 import hashlib
 import io
+import json
 from pathlib import Path
 import time
 from urllib.parse import urlencode
@@ -163,6 +164,130 @@ def test_batch_generation_uses_each_song_clock_and_returns_candidate_ids(tmp_pat
         app.extensions["task_service"].shutdown()
 
 
+def test_batch_generation_persists_explicit_clock_and_layout_settings(tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    calls = []
+    _install_fake_generator(monkeypatch, calls)
+    song, _audio = _import_song(client, headers, "explicit-clock.wav")
+    _set_analysis(app.extensions["projects"], song, stable=False)
+
+    try:
+        response = client.post(
+            "/api/batch/generate",
+            headers=headers,
+            json={
+                "projects": [song["id"]],
+                "preset": "onset_only",
+                "keys": 8,
+                "key_layout": "8k_4_4",
+                "engine": "traditional",
+                "bpm": 137.5,
+                "offset": -40,
+                "division": 6,
+                "audio_shift_ms": 10,
+                "timing_confirmed": True,
+            },
+        )
+        assert response.status_code == 200, response.json
+        job = _wait_job(client, response.json["id"])
+        assert job["status"] == "done", job
+        assert calls[0]["tempo"] == {
+            "bpm": 137.5,
+            "offset": -40,
+            "division": 6,
+            "audio_shift_ms": 10,
+            "stable": False,
+            "meter": 4,
+        }
+        task_service = app.extensions["task_service"]
+        spec = task_service.batch_resume_spec(response.json["id"])
+        assert spec["payload"]["key_layout"] == "8k_4_4"
+        assert spec["settings"]["timing"] == {
+            "bpm": 137.5,
+            "offset": -40,
+            "division": 6,
+            "audio_shift_ms": 10,
+        }
+        assert task_service.get(response.json["id"])["identity"]["settings"]["shared"]["key_layout"] == "8k_4_4"
+    finally:
+        app.extensions["task_service"].shutdown()
+
+
+def test_resume_recovers_candidate_saved_before_item_completion_checkpoint(tmp_path, monkeypatch):
+    calls = []
+    _install_fake_generator(monkeypatch, calls)
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    song, _audio = _import_song(client, headers, "crash-window.wav")
+    projects = app.extensions["projects"]
+    _set_analysis(projects, song)
+    try:
+        submitted = _submit_generation(client, headers, [song["id"]])
+        assert submitted.status_code == 200, submitted.json
+        initial = _wait_job(client, submitted.json["id"])
+        assert initial["status"] == "done"
+        saved = projects.load(song["id"])
+        committed_candidate = saved["variants"][saved["active"]]
+        candidate_id = committed_candidate["candidate_id"]
+        batch_identity = committed_candidate["batch_identity"]
+
+        # Simulate a crash after Projects.save(candidate) but before the item
+        # status/result checkpoint reached the durable batch journal.
+        journal_path = (
+            projects.root.parent / "batch-jobs" / f"{submitted.json['id']}.json"
+        )
+        journal = json.loads(journal_path.read_text(encoding="utf-8"))
+        journal["job"]["status"] = "running"
+        item = journal["job"]["items"][0]
+        item.update(status="running", message="正在生成", progress=57)
+        item.pop("candidate_id", None)
+        item.pop("result", None)
+        journal_path.write_text(json.dumps(journal), encoding="utf-8")
+    finally:
+        app.extensions["task_service"].shutdown()
+
+    reopened = create_app(ROOT, tmp_path)
+    try:
+        restored_client = reopened.test_client()
+        restored_history = restored_client.get("/api/batch/jobs")
+        assert restored_history.status_code == 200
+        restored = next(
+            row for row in restored_history.json["items"]
+            if row["id"] == submitted.json["id"]
+        )
+        assert restored["status"] == "interrupted"
+        assert restored["items"][0]["status"] == "interrupted"
+        assert restored_client.get(
+            f"/api/batch/jobs/{submitted.json['id']}"
+        ).json["resume_available"] is True
+
+        resumed = restored_client.post(
+            f"/api/batch/jobs/{submitted.json['id']}/resume",
+            headers={"X-ManiaLab-Token": reopened.config["TOKEN"]},
+            json={},
+        )
+        assert resumed.status_code == 200, resumed.json
+        final = _wait_job(restored_client, resumed.json["id"])
+        assert final["status"] == "done", final
+        assert final["items"][0]["status"] == "done"
+        assert final["items"][0]["recovered"] is True
+        assert final["items"][0]["result"]["candidate_id"] == candidate_id
+        assert len(calls) == 1
+
+        latest = reopened.extensions["projects"].load(song["id"])
+        recovered = [
+            candidate for candidate in latest["variants"]
+            if candidate.get("batch_identity") == batch_identity
+        ]
+        assert len(recovered) == 1
+        assert recovered[0]["candidate_id"] == candidate_id
+    finally:
+        reopened.extensions["task_service"].shutdown()
+
+
 def test_batch_generation_requires_explicit_timing_confirmation_per_song(tmp_path, monkeypatch):
     app = create_app(ROOT, tmp_path)
     client = app.test_client()
@@ -230,9 +355,13 @@ def test_batch_generation_isolates_generation_errors_and_validates_request(tmp_p
             {"projects": [songs[0]["id"], songs[2]["id"]], "preset": "onset_only", "keys": 11},
             {"projects": [f"{index:032x}" for index in range(11)],
              "preset": "onset_only", "keys": 7},
+            {"projects": [f"{index:032x}" for index in range(21)],
+             "preset": "onset_only", "keys": 7},
         ):
             result = client.post("/api/batch/generate", headers=headers, json=invalid)
             assert result.status_code == 400
+            if len(invalid["projects"]) == 21:
+                assert "1–20" in result.json["error"]
 
         # An analysis batch can leave a single ready song; generation still applies
         # the shared preset and produces a one-member bundle without weakening the
@@ -247,6 +376,443 @@ def test_batch_generation_isolates_generation_errors_and_validates_request(tmp_p
             "/api/batch/analyze", headers=headers,
             json={"projects": [songs[0]["id"]]},
         ).status_code == 400
+
+        recent = client.get("/api/batch/jobs")
+        assert recent.status_code == 200
+        assert any(item["id"] == response.json["id"] for item in recent.json["items"])
+        resumable = client.get(f"/api/batch/jobs/{response.json['id']}")
+        assert resumable.status_code == 200
+        assert resumable.json["resume_available"] is True
+        resumed = client.post(
+            f"/api/batch/jobs/{response.json['id']}/resume",
+            headers=headers,
+            json={},
+        )
+        assert resumed.status_code == 200, resumed.json
+        assert [item["project"] for item in resumed.json["attempt_items"]] == [songs[1]["id"]]
+        assert {item["project"] for item in resumed.json["items"]} == {
+            song["id"] for song in songs
+        }
+        assert resumed.json["max_parallel"] == 1
+        assert _wait_job(client, resumed.json["id"])["result"] == {
+            "done": 0, "error": 1, "cancelled": 0,
+        }
+    finally:
+        app.extensions["task_service"].shutdown()
+
+
+def test_resume_recovers_candidate_saved_before_item_completion_checkpoint(tmp_path, monkeypatch):
+    calls = []
+    _install_fake_generator(monkeypatch, calls)
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    song, _audio = _import_song(client, headers, "crash-window.wav")
+    projects = app.extensions["projects"]
+    _set_analysis(projects, song)
+    try:
+        submitted = _submit_generation(client, headers, [song["id"]])
+        assert submitted.status_code == 200, submitted.json
+        initial = _wait_job(client, submitted.json["id"])
+        assert initial["status"] == "done"
+        saved = projects.load(song["id"])
+        committed = saved["variants"][saved["active"]]
+        candidate_id = committed["candidate_id"]
+        batch_identity = committed["batch_identity"]
+
+        # Model a process death after Projects.save(candidate) but before the
+        # durable job journal marks this item done and records its result ID.
+        journal_path = (
+            projects.root.parent / "batch-jobs" / f"{submitted.json['id']}.json"
+        )
+        journal = json.loads(journal_path.read_text(encoding="utf-8"))
+        journal["job"]["status"] = "running"
+        item = journal["job"]["items"][0]
+        item.update(status="running", message="正在写谱", progress=57)
+        item.pop("candidate_id", None)
+        item.pop("result", None)
+        journal_path.write_text(json.dumps(journal), encoding="utf-8")
+    finally:
+        app.extensions["task_service"].shutdown()
+
+    reopened = create_app(ROOT, tmp_path)
+    try:
+        restored_client = reopened.test_client()
+        recent = restored_client.get("/api/batch/jobs")
+        assert recent.status_code == 200
+        snapshot = next(
+            item for item in recent.json["items"]
+            if item["id"] == submitted.json["id"]
+        )
+        assert snapshot["status"] == "interrupted"
+        assert snapshot["items"][0]["status"] == "interrupted"
+        assert restored_client.get(
+            f"/api/batch/jobs/{submitted.json['id']}"
+        ).json["resume_available"] is True
+
+        resumed = restored_client.post(
+            f"/api/batch/jobs/{submitted.json['id']}/resume",
+            headers={"X-ManiaLab-Token": reopened.config["TOKEN"]},
+            json={},
+        )
+        assert resumed.status_code == 200, resumed.json
+        result = _wait_job(restored_client, resumed.json["id"])
+        assert result["status"] == "done", result
+        assert result["items"][0]["status"] == "done"
+        assert result["items"][0]["recovered"] is True
+        assert result["items"][0]["result"]["candidate_id"] == candidate_id
+        assert len(calls) == 1
+
+        latest = reopened.extensions["projects"].load(song["id"])
+        recovered = [
+            item for item in latest["variants"]
+            if item.get("batch_identity") == batch_identity
+        ]
+        assert len(recovered) == 1
+        assert recovered[0]["candidate_id"] == candidate_id
+    finally:
+        reopened.extensions["task_service"].shutdown()
+
+
+def test_repeated_batch_resume_keeps_all_completed_candidates_for_bundle(
+    tmp_path, monkeypatch,
+):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    songs = [
+        _import_song(client, headers, f"lineage-{index}.wav")[0]
+        for index in range(3)
+    ]
+    projects = app.extensions["projects"]
+    for song in songs:
+        _set_analysis(projects, song)
+
+    failing_projects = {songs[1]["id"], songs[2]["id"]}
+    calls = []
+
+    def generate(state, payload, prefs, tempo, progress, cancelled):
+        calls.append(state["title"])
+        if state["id"] in failing_projects:
+            raise ValueError(f"synthetic generation failure: {state['title']}")
+        note = Note(
+            int(round(tempo["offset"] + 1000)),
+            int(round(tempo["offset"] + 1000)),
+            lane=0,
+            pitch=60,
+            source="pitch",
+            id=f"{state['id']}-lineage",
+        )
+        variant = {
+            "candidate_id": new_candidate_id(),
+            "mode": "audio",
+            "timing_revision": 3,
+            "settings": dict(prefs),
+            "notes": [note.data()],
+            "bpm": tempo["bpm"],
+            "offset": tempo["offset"],
+            "division": tempo["division"],
+            "meter": tempo.get("meter", 4),
+            "audio_shift_ms": tempo["audio_shift_ms"],
+            "source_audio_sha256": state["analysis"]["audio_sha256"],
+            "report": {"valid": True, "notes": 1, "ln": 0},
+        }
+        state["variants"] = (state.get("variants", []) + [variant])[-8:]
+        state["active"] = len(state["variants"]) - 1
+        progress(90, "lineage fixture complete")
+        return variant["report"]
+
+    monkeypatch.setattr(candidate_routes, "generate_variant", generate)
+    try:
+        initial = _submit_generation(
+            client, headers, [song["id"] for song in songs], preset="onset_only",
+        )
+        assert initial.status_code == 200, initial.json
+        first = _wait_job(client, initial.json["id"])
+        assert [item["status"] for item in first["attempt_items"]] == [
+            "done", "error", "error",
+        ]
+
+        failing_projects.remove(songs[1]["id"])
+        resumed = client.post(
+            f"/api/batch/jobs/{initial.json['id']}/resume",
+            headers=headers,
+            json={},
+        )
+        assert resumed.status_code == 200, resumed.json
+        second = _wait_job(client, resumed.json["id"])
+        assert [item["status"] for item in second["attempt_items"]] == ["done", "error"]
+        assert {item["project"] for item in second["items"]} == {
+            song["id"] for song in songs
+        }
+        assert second["resumed_from"] == initial.json["id"]
+
+        failing_projects.clear()
+        resumed_again = client.post(
+            f"/api/batch/jobs/{second['id']}/resume",
+            headers=headers,
+            json={},
+        )
+        assert resumed_again.status_code == 200, resumed_again.json
+        third = _wait_job(client, resumed_again.json["id"])
+        assert all(item["status"] == "done" for item in third["items"])
+        assert len(third["items"]) == 3
+        assert third["attempt_items"][0]["project"] == songs[2]["id"]
+        assert third["resume_chain"] == [initial.json["id"], second["id"]]
+        assert third["view_results_available"] is True
+        history = client.get("/api/batch/jobs").json["items"]
+        latest_history = next(item for item in history if item["id"] == third["id"])
+        assert latest_history["view_results_available"] is True
+        assert latest_history["reconnect_available"] is False
+
+        bundle = client.post(
+            "/api/batch/export-osz",
+            headers=headers,
+            json={"items": [
+                {
+                    "project": item["project"],
+                    "candidate_id": item["candidate_id"],
+                }
+                for item in third["items"]
+            ]},
+        )
+        assert bundle.status_code == 200, bundle.json
+        with zipfile.ZipFile(io.BytesIO(bundle.data)) as archive:
+            assert archive.testzip() is None
+            assert len(archive.namelist()) == 3
+            assert all(name.endswith(".osz") for name in archive.namelist())
+        assert calls.count(songs[0]["title"]) == 1
+        assert calls.count(songs[1]["title"]) == 2
+        assert calls.count(songs[2]["title"]) == 3
+    finally:
+        app.extensions["task_service"].shutdown()
+
+
+def test_batch_generation_and_osz_bundle_accept_twenty_songs(tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    calls = []
+    _install_fake_generator(monkeypatch, calls)
+    songs = [_import_song(client, headers, f"twenty-{index}.wav")[0] for index in range(20)]
+    projects = app.extensions["projects"]
+    for song in songs:
+        _set_analysis(projects, song)
+
+    try:
+        submitted = _submit_generation(
+            client, headers, [song["id"] for song in songs],
+            preset="rice_stream", keys=10, key_layout="10k_5_5",
+        )
+        assert submitted.status_code == 200, submitted.json
+        assert len(submitted.json["items"]) == 20
+        assert submitted.json["max_parallel"] == 1
+        result = _wait_job(client, submitted.json["id"])
+        assert result["status"] == "done"
+        assert result["result"] == {"done": 20, "error": 0, "cancelled": 0}
+        assert all(item["status"] == "done" for item in result["items"])
+        items = [
+            {"project": item["project"], "candidate_id": item["result"]["candidate_id"]}
+            for item in result["items"]
+        ]
+        response = client.post(
+            "/api/batch/export-osz", headers=headers, json={"items": items},
+        )
+        assert response.status_code == 200
+        with zipfile.ZipFile(io.BytesIO(response.data)) as bundle:
+            assert bundle.testzip() is None
+            assert len(bundle.namelist()) == 20
+            assert all(name.endswith(".osz") for name in bundle.namelist())
+            with zipfile.ZipFile(io.BytesIO(bundle.read(bundle.namelist()[0]))) as first_osz:
+                chart_name = next(name for name in first_osz.namelist() if name.endswith(".osu"))
+                metadata = parse_osu(first_osz.read(chart_name).decode("utf-8"))["metadata"]
+                assert metadata["Creator"] == "zhyzx35607"
+                assert "rice_stream" in metadata["Version"]
+        encoded_items = ",".join(
+            f"{item['project']}:{item['candidate_id']}" for item in items
+        )
+        direct = client.get(
+            "/api/batch/export-osz?" + urlencode({"items": encoded_items}),
+        )
+        assert direct.status_code == 200
+        with zipfile.ZipFile(io.BytesIO(direct.data)) as bundle:
+            assert bundle.testzip() is None
+            assert len(bundle.namelist()) == 20
+        assert len(calls) == 20
+        assert all(call["settings"]["ln_ratio"] > 0 for call in calls)
+        assert all(call["settings"]["torosu_keep_jacks"] is False for call in calls)
+    finally:
+        app.extensions["task_service"].shutdown()
+
+
+def test_batch_v32_uses_shared_operation_factory_and_serializes_projects(tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    songs = [_import_song(client, headers, f"v32-batch-{index}.wav")[0] for index in range(3)]
+    projects = app.extensions["projects"]
+    for song in songs:
+        _set_analysis(projects, song)
+    calls = []
+    monkeypatch.setattr(app.extensions["v32_engine"], "status", lambda: {"available": True})
+
+    def operation_factory(project_id, options):
+        def operation(state, progress, cancelled):
+            calls.append((project_id, dict(options)))
+            assert not cancelled()
+            notes = [Note(1000, 1800, 0, id=f"{project_id}-note")]
+            variant = {
+                "candidate_id": new_candidate_id(),
+                "mode": "audio",
+                "timing_revision": 3,
+                "settings": {"keys": options["keys"], "seed": 42},
+                "notes": [note.data() for note in notes],
+                "bpm": 120,
+                "offset": 115,
+                "division": 4,
+                "meter": 4,
+                "audio_shift_ms": 22.5,
+                "source_audio_sha256": state["analysis"]["audio_sha256"],
+                "report": {"valid": True, "notes": 1, "ln": 1, "ln_ratio": 1},
+                "v32": {"torosu": {"minijack": 0, "pill": 0}},
+            }
+            state["variants"] = (state.get("variants", []) + [variant])[-8:]
+            state["active"] = len(state["variants"]) - 1
+            progress(100, "V32 fixture complete")
+            return {"candidate_id": variant["candidate_id"]}
+
+        operation.options = options
+        operation.cleanup = lambda _committed: None
+        return operation
+
+    app.extensions["v32_operation_factory"] = operation_factory
+    try:
+        response = client.post(
+            "/api/batch/generate",
+            headers=headers,
+            json={
+                "projects": [song["id"] for song in songs],
+                "preset": "ln_focus",
+                "engine": "v32-mini",
+                "keys": 8,
+                "key_layout": "8k_4_4",
+                "bpm": 137.5,
+                "offset": -40,
+                "division": 6,
+                "audio_shift_ms": 10,
+                "difficulty": 6.1,
+                "hold_note_ratio": 0.6,
+                "lora_path": "adapter-path",
+                "torosu_ln_mode": "short_ln",
+                "scribe": "zhyzx35607",
+                "version_suffix": "ln-v1",
+                "timing_confirmed": True,
+            },
+        )
+        assert response.status_code == 200, response.json
+        assert response.json["max_parallel"] == 1
+        result = _wait_job(client, response.json["id"])
+        assert result["status"] == "done"
+        assert [call[0] for call in calls] == [song["id"] for song in songs]
+        assert all(call[1]["keys"] == 8 for call in calls)
+        assert all(call[1]["model_variant"] == "v32-mini" for call in calls)
+        assert all(call[1]["lora_path"] == "adapter-path" for call in calls)
+        assert all(call[1]["torosu_ln_mode"] == "short_ln" for call in calls)
+        assert all(call[1]["key_layout"] == "8k_4_4" for call in calls)
+        assert all(call[1]["bpm"] == 137.5 for call in calls)
+        assert all(call[1]["offset"] == -40 for call in calls)
+        assert all(call[1]["division"] == 6 for call in calls)
+        assert all(call[1]["audio_shift_ms"] == 10 for call in calls)
+        spec = app.extensions["task_service"].batch_resume_spec(response.json["id"])
+        assert spec["settings"]["key_layout"] == "8k_4_4"
+        assert spec["settings"]["timing"] == {
+            "bpm": 137.5,
+            "offset": -40,
+            "division": 6,
+            "audio_shift_ms": 10,
+        }
+        for song in songs:
+            candidate = projects.load(song["id"])["variants"][-1]
+            assert candidate["metadata"] == {
+                "creator": "zhyzx35607",
+                "version_suffix": "ln-v1",
+            }
+            assert candidate["batch_identity"]
+        resumed = client.post(
+            f"/api/batch/jobs/{response.json['id']}/resume",
+            headers=headers,
+            json={},
+        )
+        assert resumed.status_code == 400
+        assert "没有待续跑" in resumed.json["error"]
+    finally:
+        app.extensions["task_service"].shutdown()
+
+
+def test_batch_v32_keeps_processing_after_a_song_fails(tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    songs = [_import_song(client, headers, f"v32-failure-{index}.wav")[0] for index in range(3)]
+    projects = app.extensions["projects"]
+    for song in songs:
+        _set_analysis(projects, song)
+    monkeypatch.setattr(app.extensions["v32_engine"], "status", lambda: {"available": True})
+    calls = []
+    failing_project = songs[1]["id"]
+
+    def operation_factory(project_id, options):
+        def operation(state, progress, cancelled):
+            calls.append(project_id)
+            assert not cancelled()
+            if project_id == failing_project:
+                raise ValueError("synthetic V32 item failure")
+            note = Note(1000, 1000, lane=0, id=f"{project_id}-note")
+            variant = {
+                "candidate_id": new_candidate_id(),
+                "mode": "audio",
+                "timing_revision": 3,
+                "settings": {"keys": options["keys"], "seed": 42},
+                "notes": [note.data()],
+                "bpm": 120,
+                "offset": 115,
+                "division": 4,
+                "meter": 4,
+                "audio_shift_ms": 22.5,
+                "source_audio_sha256": state["analysis"]["audio_sha256"],
+                "report": {"valid": True},
+            }
+            state["variants"] = (state.get("variants", []) + [variant])[-8:]
+            state["active"] = len(state["variants"]) - 1
+            return {"candidate_id": variant["candidate_id"]}
+
+        operation.options = options
+        operation.cleanup = lambda _committed: None
+        return operation
+
+    app.extensions["v32_operation_factory"] = operation_factory
+    try:
+        response = client.post(
+            "/api/batch/generate",
+            headers=headers,
+            json={
+                "projects": [song["id"] for song in songs],
+                "preset": "rice_jack",
+                "engine": "v32-mini",
+                "keys": 8,
+            },
+        )
+        assert response.status_code == 200, response.json
+        assert response.json["max_parallel"] == 1
+        result = _wait_job(client, response.json["id"])
+        assert result["status"] == "error"
+        assert [item["status"] for item in result["items"]] == ["done", "error", "done"]
+        assert "synthetic V32 item failure" in result["items"][1]["message"]
+        assert calls == [song["id"] for song in songs]
+        assert [
+            app.extensions["projects"].load(song["id"])["active"]
+            for song in (songs[0], songs[2])
+        ] == [0, 0]
     finally:
         app.extensions["task_service"].shutdown()
 

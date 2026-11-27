@@ -35,7 +35,7 @@ def test_batch_analysis_reports_independent_results_with_max_two_active(tmp_path
     client = app.test_client()
     headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
     names = ["first.wav", "broken.wav", "third.wav"] + [
-        f"song-{index}.wav" for index in range(4, 11)
+        f"song-{index}.wav" for index in range(4, 21)
     ]
     songs = [_import_song(client, headers, name) for name in names]
     gate = threading.Lock()
@@ -72,13 +72,13 @@ def test_batch_analysis_reports_independent_results_with_max_two_active(tmp_path
         assert queued["batch"] is True
         assert queued["max_parallel"] == 2
         expected_titles = [Path(name).stem for name in names]
-        assert len(queued["items"]) == 10
+        assert len(queued["items"]) == 20
         assert [item["title"] for item in queued["items"]] == expected_titles
         result = _wait_job(client, queued["id"])
         assert result["status"] == "error"
-        assert result["result"] == {"done": 9, "error": 1, "cancelled": 0}
+        assert result["result"] == {"done": 19, "error": 1, "cancelled": 0}
         assert [item["status"] for item in result["items"]] == [
-            "done", "error", "done", *(["done"] * 7)]
+            "done", "error", "done", *(["done"] * 17)]
         assert result["items"][1]["message"] == "synthetic decode error"
         assert result["items"][0]["result"] == {"candidates": 0}
         assert 1 < peak <= 2
@@ -93,8 +93,8 @@ def test_batch_analysis_reports_independent_results_with_max_two_active(tmp_path
 @pytest.mark.parametrize(
     ("projects", "max_parallel", "message"),
     [
-        (["a"], 2, "2–10 首歌曲"),
-        ([f"song-{index}" for index in range(11)], 2, "2–10 首歌曲"),
+        (["a"], 2, "2–20 首歌曲"),
+        ([f"song-{index}" for index in range(21)], 2, "2–20 首歌曲"),
         (["a", "a"], 2, "不能重复选择"),
         (["a", "b"], 3, "只能为 1 或 2"),
     ],

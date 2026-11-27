@@ -13,9 +13,10 @@ from flask import request, send_file
 
 from .domain import export_osu, note_from, parse_osu
 from .storage import AUDIO, MAX_IMPORT_BYTES, MAX_IMPORT_ENTRIES, resolve_project_reference, safe_path
+from .task_service import MAX_BATCH_SIZE
 
 
-MAX_BATCH_EXPORT_ITEMS = 10
+MAX_BATCH_EXPORT_ITEMS = MAX_BATCH_SIZE
 MAX_BATCH_EXPORT_BYTES = MAX_IMPORT_BYTES * MAX_BATCH_EXPORT_ITEMS
 _BATCH_EXPORT_DISK_RESERVE_BYTES = 256 * 1024 * 1024
 _COPY_CHUNK_BYTES = 1024 * 1024
@@ -84,6 +85,14 @@ def _candidate_osu_content(projects, resources, project_id, state, variant):
     if variant["mode"] == "remap":
         original = safe_path(base, state["original"]).read_text(encoding="utf-8-sig")
         folder = PurePosixPath(state["original"]).parent
+    metadata = variant.get("metadata") if isinstance(variant.get("metadata"), dict) else {}
+    version = f'ManiaLab {variant["settings"]["seed"]}'
+    preset_id = variant.get("preset") or variant.get("selection", {}).get("preset")
+    if preset_id:
+        version += f" {preset_id}"
+    version_suffix = metadata.get("version_suffix")
+    if isinstance(version_suffix, str) and version_suffix.strip():
+        version += f" {version_suffix.strip()}"
     content = export_osu(
         notes,
         variant["settings"]["keys"],
@@ -96,7 +105,8 @@ def _candidate_osu_content(projects, resources, project_id, state, variant):
         original=original,
         meter=variant.get("meter", 4),
         grid_division=variant["division"] if variant["mode"] == "audio" else None,
-        version=f'ManiaLab {variant["settings"]["seed"]}',
+        version=version,
+        creator=metadata.get("creator") if isinstance(metadata.get("creator"), str) else "ManiaLab",
         bookmarks=[
             max(0, math.floor(time - variant.get("audio_shift_ms", 0) + .5))
             for time in variant.get("selection", {}).get("structure", {}).get("boundaries", [])[1:-1]

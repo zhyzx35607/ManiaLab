@@ -18,7 +18,8 @@ from scripts.verify_portable import synthetic
 
 
 def verify_core_shutdown(status, version, worker_processes_before_exit,
-                         worker_processes_after_exit, application_exited):
+                         worker_processes_after_exit, application_exited, *,
+                         build_profile="core"):
     if status.get('version') != version:
         raise ValueError('Core application status version differs from the release manifest')
     separator = status.get('separator', {})
@@ -32,7 +33,7 @@ def verify_core_shutdown(status, version, worker_processes_before_exit,
         raise ValueError('Core application did not exit')
     return dict(
         passed=True,
-        build_profile='core',
+        build_profile=build_profile,
         worker_expected=False,
         worker_processes_before_exit=worker_processes_before_exit,
         worker_processes_after_exit=worker_processes_after_exit,
@@ -115,6 +116,7 @@ def run(executable, work):
                 result=verify_core_shutdown(
                     status,release_manifest['version'],before,after,
                     process.poll() is not None,
+                    build_profile=build_profile,
                 )
                 result['application_pid']=process.pid
             else:

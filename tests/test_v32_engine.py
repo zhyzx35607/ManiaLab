@@ -247,10 +247,112 @@ def test_command_disables_cuda_fast_loop_for_cpu(tmp_path):
 
 
 @pytest.mark.parametrize(
+    "strategy,keys,model_keys,target_keys",
+    [
+        ("7k_to_torosu", 6, 7, 6),
+        ("7k_to_torosu", 7, 7, 7),
+        ("7k_to_torosu", 8, 7, 8),
+        ("7k_to_torosu", 9, 7, 9),
+        ("7k_to_torosu", 10, 7, 10),
+        ("native", 6, 6, 6),
+        ("native", 10, 10, 10),
+        ("7k_to_torosu_10k", 10, 7, 10),
+        ("native_10k", 10, 10, 10),
+    ],
+)
+def test_options_support_all_6_to_10k_modes_and_legacy_strategy_aliases(
+    strategy, keys, model_keys, target_keys,
+):
+    options = V32Engine.validate_options(
+        model_variant="v32-mini",
+        generation_strategy=strategy,
+        torosu_density="dense",
+        difficulty=5.5,
+        hold_note_ratio=0.12,
+        mania_column_temperature=1.0,
+        lora_path=None,
+        keys=keys,
+        torosu_keep_jacks=strategy != "7k_to_torosu",
+        preset="rice_stream",
+    )
+
+    assert options["model_keycount"] == model_keys
+    assert options["keys"] == target_keys
+    assert options["preset"] == "rice_stream"
+
+
+def test_engine_normalizes_legacy_preset_names():
+    options = V32Engine.validate_options(
+        model_variant="v32-mini",
+        generation_strategy="native_10k",
+        torosu_density="none",
+        difficulty=5.5,
+        hold_note_ratio=0.55,
+        mania_column_temperature=1.0,
+        lora_path=None,
+        preset="balanced",
+    )
+
+    assert options["preset"] == "hybrid_adaptive"
+
+
+@pytest.mark.parametrize(
+    "values,message",
+    [
+        ({"keys": 5}, "6–10"),
+        ({"keys": 11}, "6–10"),
+        ({"keys": 6, "generation_strategy": "native_10k"}, "固定为 10K"),
+        ({"keys": 7, "generation_strategy": "7k_to_torosu_10k"}, "固定为 10K"),
+        ({"torosu_keep_jacks": 1}, "布尔值"),
+        ({"torosu_density": "invalid"}, "Torosu 密度"),
+        ({"torosu_ln_mode": "invalid"}, "Torosu LN 模式"),
+    ],
+)
+def test_options_reject_invalid_target_keycount_or_torosu_parameters(values, message):
+    options = {
+        "model_variant": "v32-mini",
+        "generation_strategy": "native",
+        "torosu_density": "none",
+        "difficulty": 5.5,
+        "hold_note_ratio": 0.55,
+        "mania_column_temperature": 1.0,
+        "lora_path": None,
+        "keys": 10,
+    }
+    options.update(values)
+
+    with pytest.raises(ValueError, match=message):
+        V32Engine.validate_options(**options)
+
+
+@pytest.mark.parametrize("keys", [6, 7, 8, 9, 10])
+def test_command_build_supports_v32_keycount_tokens_across_6_to_10k(tmp_path, keys):
+    engine = V32Engine(
+        tmp_path / "data",
+        tmp_path / "resources",
+        mapper_repo=tmp_path / "mapper",
+        python=tmp_path / "python.exe",
+    )
+    command = engine.build_command(
+        model_variant="v32-mini",
+        audio_path=tmp_path / "song.wav",
+        reference_chart=tmp_path / "timing.osu",
+        output_dir=tmp_path / "output",
+        keycount=keys,
+        difficulty=4.0,
+        hold_note_ratio=0.2,
+        device_plan=DevicePlan("cpu", "CPU", None, "fp32", False, 1, 6),
+    )
+
+    assert f"keycount={keys}" in command
+    assert f"circle_size={keys}" in command
+
+
+@pytest.mark.parametrize(
     "options, message",
     [
         ({"model_variant": "v31"}, "模型版本"),
-        ({"generation_strategy": "native"}, "生成策略"),
+        ({"generation_strategy": "unknown"}, "生成策略"),
         ({"torosu_density": "sparse"}, "Torosu 密度"),
         ({"difficulty": 10.1}, "difficulty"),
         ({"hold_note_ratio": 0.86}, "hold_note_ratio"),

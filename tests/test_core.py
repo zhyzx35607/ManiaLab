@@ -40,6 +40,60 @@ def test_remap_preserves_events(keys):
     assert validate(result,keys)["valid"]
 
 
+def test_torosu_remap_ln_shape_option_runs_before_strict_lane_conversion(monkeypatch):
+    from manialab import generation, torosu_bridge
+
+    observed = {}
+
+    def shape(notes, keys, mode, **options):
+        observed.update(keys=keys, mode=mode, options=options)
+        return [
+            replace(note, end=note.start + 250) if note.hold else note
+            for note in notes
+        ]
+
+    def assign(notes, settings, *args, **kwargs):
+        observed["settings"] = settings
+        return list(notes)
+
+    monkeypatch.setattr(torosu_bridge, "ln_shape_notes", shape)
+    monkeypatch.setattr(generation, "assign_lanes", assign)
+    source = Note(1000, 3000, lane=0, id="source-ln")
+    state = {
+        "input_keys": 6,
+        "input_notes": [source.data()],
+        "input_timing": ["0,500,4,1,0,70,1,0"],
+        "variants": [],
+        "active": -1,
+        "settings": {},
+    }
+    prefs = parameters({
+        "keys": 8,
+        "key_layout": "8k_3_2_3",
+        "layout_engine": "torosu",
+        "torosu_ln_mode": "short_ln",
+    })
+
+    generation.generate_variant(
+        state,
+        {"mode": "remap"},
+        prefs,
+        {"bpm": 120, "offset": 0, "division": 4, "audio_shift_ms": 0},
+        lambda *_: None,
+        lambda: False,
+    )
+
+    candidate = state["variants"][-1]
+    output = candidate["notes"][0]
+    assert observed["keys"] == 6
+    assert observed["mode"] == "short_ln"
+    assert observed["settings"]["torosu_keep_jacks"] is True
+    assert output["id"] == "source-ln"
+    assert output["start"] == source.start
+    assert output["end"] == source.start + 250
+    assert candidate["selection"]["torosu_ln_mode"] == "short_ln"
+
+
 def test_capacity_and_zero_length():
     with pytest.raises(ValueError, match="1000ms"):
         assign_lanes([Note(0,5000,i,id=str(i)) for i in range(6)]+[Note(1000,1000,id="tap")],{"keys":6})

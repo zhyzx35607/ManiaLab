@@ -22,8 +22,9 @@ jobs:
       PYTHONIOENCODING: utf-8
       MANIALAB_BUILD_ID: ${{ github.run_id }}-${{ github.run_attempt }}
       CARGO_TARGET_DIR: ${{ github.workspace }}\build\torosu-cli-target
-      PORTABLE_PROFILE: core
-      # Core EXE checks run on tags, manual runs, and explicit portable requests.
+      # Marked PRs exercise the lightweight workbench bundle; other explicit
+      # portable runs keep the public Core profile.
+      PORTABLE_PROFILE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[portable]') && 'workbench' || 'core' }}
       BUILD_PORTABLE: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[portable]') || (github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[portable]')) }}
     defaults:
       run:
@@ -59,7 +60,7 @@ jobs:
           New-Item -ItemType Directory -Force test-data/release-ci | Out-Null
           .venv/Scripts/python.exe -m pytest -q --junitxml=test-data/release-ci/junit.xml
       - name: Fetch verified audio models
-        if: env.BUILD_PORTABLE == 'true' && env.PORTABLE_PROFILE != 'core'
+        if: env.BUILD_PORTABLE == 'true' && contains(fromJSON('["standard","extended"]'), env.PORTABLE_PROFILE)
         run: .venv/Scripts/python.exe scripts/fetch_audio_models.py
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -83,14 +84,14 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
       - name: Install isolated audio environment
-        if: env.BUILD_PORTABLE == 'true' && env.PORTABLE_PROFILE != 'core'
+        if: env.BUILD_PORTABLE == 'true' && contains(fromJSON('["standard","extended"]'), env.PORTABLE_PROFILE)
         run: |
           uv venv .venv-audio --python 3.12.10
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           uv pip sync --python .venv-audio/Scripts/python.exe --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match requirements-deep-lock.txt
       - name: Build and verify the fixed piano model
         id: piano_model
-        if: env.BUILD_PORTABLE == 'true' && env.PORTABLE_PROFILE != 'core'
+        if: env.BUILD_PORTABLE == 'true' && contains(fromJSON('["standard","extended"]'), env.PORTABLE_PROFILE)
         run: .venv-audio/Scripts/python.exe scripts/fetch_piano_model.py --work "build/piano-model-$env:MANIALAB_BUILD_ID"
       - name: Save failed piano export diagnostics
         if: always() && steps.piano_model.outcome == 'failure'
@@ -101,7 +102,7 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
       - name: Build portable audio worker
-        if: env.BUILD_PORTABLE == 'true' && env.PORTABLE_PROFILE != 'core'
+        if: env.BUILD_PORTABLE == 'true' && contains(fromJSON('["standard","extended"]'), env.PORTABLE_PROFILE)
         run: .venv-audio/Scripts/python.exe scripts/build_audio_worker.py
       - name: Build declared Windows profile
         if: env.BUILD_PORTABLE == 'true'
@@ -429,7 +430,7 @@ jobs:
           $exe = "build/portable/$env:MANIALAB_BUILD_ID/dist/ManiaLab/ManiaLab.exe"
           .venv/Scripts/python.exe scripts/verify_shutdown.py $exe --work test-data/shutdown-ci
       - name: Collect release verification evidence
-        if: success() && env.BUILD_PORTABLE == 'true'
+        if: success() && env.BUILD_PORTABLE == 'true' && contains(fromJSON('["core","standard","extended"]'), env.PORTABLE_PROFILE)
         run: |
           $collectorArgs = @(
             '--build-root', "build/portable/$env:MANIALAB_BUILD_ID",

@@ -10,9 +10,11 @@ import pytest
 from scripts.package_assets import (
     BASE_FILES,
     CORE_FILES,
+    MAPPER_INSTALLER_FILES,
     PUBLIC_PROFILE,
     add_profile_argument,
     capabilities,
+    lora_adapter_inventory,
     stage_assets,
     start_guide,
     verify_core_model_files,
@@ -21,6 +23,11 @@ from scripts.package_assets import (
 from scripts.worker_inventory import worker_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
+PORTABLE_PR_PROFILE = (
+    "${{ github.event_name == 'pull_request' && "
+    "contains(github.event.pull_request.title, '[portable]') && "
+    "'workbench' || 'core' }}"
+)
 
 
 def _workflow_uses_public_profile(workflow):
@@ -76,38 +83,71 @@ def _workflow_uses_public_profile(workflow):
             if match is None:
                 return False
             profile_count += 1
-            if re.fullmatch(r"core(?:[ \t]+#.*)?[ \t]*", match.group(1)) is None:
+            if re.fullmatch(
+                re.escape(PORTABLE_PR_PROFILE) + r"(?:[ \t]+#.*)?[ \t]*",
+                match.group(1),
+            ) is None:
                 return False
 
     return profile_count == 1
 
 
-def test_windows_workflow_uses_declared_public_profile():
+def test_portable_pr_builds_workbench_while_other_events_keep_core():
     workflow = (ROOT / '.github/workflows/windows.yml').read_text(encoding='utf-8')
     assert _workflow_uses_public_profile(workflow)
+    assert (
+        "contains(github.event.pull_request.title, '[portable]')"
+        " && 'workbench' || 'core'"
+    ) in workflow
+
+
+def test_marked_portable_pr_runs_workbench_verifiers_without_heavy_assets_or_legacy_collector():
+    workflow = (ROOT / '.github/workflows/windows.yml').read_text(encoding='utf-8')
+    light_profiles = "contains(fromJSON('[\"standard\",\"extended\"]'), env.PORTABLE_PROFILE)"
+    heavy_steps = (
+        'Fetch verified audio models',
+        'Install isolated audio environment',
+        'Build and verify the fixed piano model',
+        'Build portable audio worker',
+    )
+    for name in heavy_steps:
+        start = workflow.index(f'- name: {name}')
+        next_step = workflow.find('\n      - name:', start + 1)
+        block = workflow[start: next_step if next_step >= 0 else len(workflow)]
+        assert light_profiles in block
+
+    assert '- name: Build declared Windows profile' in workflow
+    assert '- name: Verify actual EXE offline with clean PATH and Unicode data paths' in workflow
+    assert '- name: Verify portable process and worker shutdown behavior' in workflow
+    collector_start = workflow.index('- name: Collect release verification evidence')
+    collector_end = workflow.find('\n      - name:', collector_start + 1)
+    collector = workflow[collector_start:collector_end]
+    assert "contains(fromJSON('[\"core\",\"standard\",\"extended\"]'), env.PORTABLE_PROFILE)" in collector
+    assert 'env.PORTABLE_PROFILE != \'workbench\'' not in collector
 
 
 @pytest.mark.parametrize(('workflow', 'valid'), [
-    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE}\n', True),
-    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE} # portable release\n', True),
-    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE} extended\n', False),
-    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE}#suffix\n', False),
-    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE}\n  extended\n', False),
-    (f'PORTABLE_PROFILE: {PUBLIC_PROFILE}\u00a0\n', False),
+    (f'PORTABLE_PROFILE: {PORTABLE_PR_PROFILE}\n', True),
+    (f'PORTABLE_PROFILE: {PORTABLE_PR_PROFILE} # profile policy\n', True),
+    ('PORTABLE_PROFILE: core\n', False),
+    ('PORTABLE_PROFILE: workbench\n', False),
+    (f'PORTABLE_PROFILE: {PORTABLE_PR_PROFILE}#suffix\n', False),
+    (f'PORTABLE_PROFILE: {PORTABLE_PR_PROFILE}\n  workbench\n', False),
+    (f'PORTABLE_PROFILE: {PORTABLE_PR_PROFILE}\u00a0\n', False),
 ])
-def test_workflow_profile_must_be_one_exact_scalar(workflow, valid):
+def test_workflow_profile_must_be_one_exact_policy_scalar(workflow, valid):
     wrapped = f'jobs:\n  verify:\n    env:\n      {workflow.rstrip(chr(10)).replace(chr(10), chr(10) + "      ")}\n'
     assert _workflow_uses_public_profile(wrapped) is valid
 
 
 @pytest.mark.parametrize('env_block', [
-    f'      PORTABLE_PROFILE: {PUBLIC_PROFILE}\n      PORTABLE_PROFILE: {PUBLIC_PROFILE}\n',
+    f'      PORTABLE_PROFILE: {PORTABLE_PR_PROFILE}\n      PORTABLE_PROFILE: {PORTABLE_PR_PROFILE}\n',
     f'      PORTABLE_PROFILE : {PUBLIC_PROFILE}\n',
     f"      'PORTABLE_PROFILE': {PUBLIC_PROFILE}\n",
     f'      "PORTABLE_PROFILE" : {PUBLIC_PROFILE}\n',
     f'      ? PORTABLE_PROFILE\n      : {PUBLIC_PROFILE}\n',
-    f'      OTHER: {{PORTABLE_PROFILE: {PUBLIC_PROFILE}}}\n',
-    f'      PORTABLE_PROFILE: {PUBLIC_PROFILE}\n        extended\n',
+    f'      OTHER: {{PORTABLE_PROFILE: {PORTABLE_PR_PROFILE}}}\n',
+    f'      PORTABLE_PROFILE: {PORTABLE_PR_PROFILE}\n        workbench\n',
 ])
 def test_workflow_profile_guard_rejects_ambiguous_yaml_declarations(env_block):
     workflow = f'jobs:\n  verify:\n    env:\n{env_block}'
@@ -115,7 +155,7 @@ def test_workflow_profile_guard_rejects_ambiguous_yaml_declarations(env_block):
 
 
 def test_workflow_profile_guard_rejects_flow_env_mapping():
-    workflow = f'jobs:\n  verify:\n    env: {{PORTABLE_PROFILE: {PUBLIC_PROFILE}}}\n'
+    workflow = f'jobs:\n  verify:\n    env: {{PORTABLE_PROFILE: {PORTABLE_PR_PROFILE}}}\n'
     assert not _workflow_uses_public_profile(workflow)
 
 
@@ -180,7 +220,8 @@ def test_core_profile_excludes_weights_and_workers(tmp_path):
     assert enabled == capabilities('core')
     assert enabled == dict(audio=True, separation_four=False, separation_six=False,
                            piano=False, guitar=False, instruments=False,
-                           pattern_prior=False, mapperatorinator_install=False)
+                           pattern_prior=False, mapperatorinator_install=False,
+                           lora_support=False)
     assert {p.relative_to(destination).as_posix() for p in destination.rglob('*') if p.is_file()} == set(CORE_FILES)
     guide = start_guide('test', enabled)
     assert '本包未包含：内置四／六声部分离与节拍模型' in guide
@@ -263,12 +304,90 @@ def test_extended_profile_requires_components_before_staging(tmp_path):
     assert '本包未包含' not in start_guide('test', enabled)
 
 
+def test_workbench_profile_is_lightweight_but_includes_v32_installer_and_lora_support(tmp_path):
+    source = assets(tmp_path)
+    lora = source / 'lora' / 'ln-focus'
+    lora.mkdir(parents=True)
+    (lora / 'adapter_config.json').write_text(
+        json.dumps({'r': 16, 'lora_alpha': 32}), encoding='utf-8',
+    )
+    (lora / 'adapter_model.safetensors').write_bytes(b'portable lora weights')
+    (lora / 'lora-manifest.json').write_text(
+        json.dumps({'base_model': {'variant': 'v32-mini'}}), encoding='utf-8',
+    )
+
+    destination = tmp_path / 'staged-workbench'
+    enabled = stage_assets(tmp_path, destination, 'workbench')
+    staged_files = {
+        path.relative_to(destination).as_posix()
+        for path in destination.rglob('*')
+        if path.is_file()
+    }
+
+    assert enabled == capabilities('workbench')
+    assert enabled['mapperatorinator_install'] is True
+    assert enabled['lora_support'] is True
+    assert enabled['separation_four'] is False
+    assert enabled['piano'] is False
+    assert staged_files == (
+        set(CORE_FILES)
+        | set(MAPPER_INSTALLER_FILES)
+        | {
+            'lora/ln-focus/adapter_config.json',
+            'lora/ln-focus/adapter_model.safetensors',
+            'lora/ln-focus/lora-manifest.json',
+        }
+    )
+    assert lora_adapter_inventory(destination / 'lora') == lora_adapter_inventory(source / 'lora')
+    guide = start_guide('test', enabled)
+    for required in ('最多 20 首', 'rice_stream', 'rice_jack', 'hybrid_adaptive',
+                     'ln_focus', 'torosu_remap', 'adapter_model.safetensors'):
+        assert required in guide
+
+
+def test_workbench_profile_creates_empty_scan_directory_without_local_loras(tmp_path):
+    source = assets(tmp_path)
+
+    destination = tmp_path / 'staged-workbench'
+    stage_assets(tmp_path, destination, 'workbench')
+
+    assert (destination / 'lora' / '.keep').is_file()
+    assert lora_adapter_inventory(destination / 'lora') == {}
+    assert not (destination / 'deep').exists()
+    assert not (destination / 'instruments').exists()
+
+
+def test_workbench_profile_rejects_incomplete_local_lora_before_staging(tmp_path):
+    source = assets(tmp_path)
+    adapter = source / 'lora' / 'broken'
+    adapter.mkdir(parents=True)
+    (adapter / 'adapter_config.json').write_text('{}', encoding='utf-8')
+    destination = tmp_path / 'staged-workbench'
+
+    with pytest.raises(ValueError, match='adapter_model.safetensors'):
+        stage_assets(tmp_path, destination, 'workbench')
+    assert not destination.exists()
+
+
+def test_existing_profiles_do_not_sweep_local_lora_weights(tmp_path):
+    source = assets(tmp_path)
+    adapter = source / 'lora' / 'private'
+    adapter.mkdir(parents=True)
+    (adapter / 'adapter_config.json').write_text('{}', encoding='utf-8')
+    (adapter / 'adapter_model.safetensors').write_bytes(b'private weights')
+
+    destination = tmp_path / 'staged-standard'
+    stage_assets(tmp_path, destination, 'standard')
+
+    assert not (destination / 'lora' / 'private').exists()
+
+
 def test_unknown_profile_rejected():
     with pytest.raises(ValueError, match='profile'):
         capabilities('automatic')
 
 
-@pytest.mark.parametrize('profile', ('standard', 'extended'))
+@pytest.mark.parametrize('profile', ('standard', 'extended', 'workbench'))
 def test_build_profile_argument_defaults_public_and_keeps_explicit_internal_profiles(profile):
     parser = argparse.ArgumentParser()
     add_profile_argument(parser)
@@ -294,6 +413,7 @@ def test_license_staging_includes_only_runtime_trees_for_enabled_components(tmp_
         ('core', set()),
         ('standard', {'deep-runtime'}),
         ('extended', {'deep-runtime', 'instrument-runtime'}),
+        ('workbench', set()),
     ):
         destination = tmp_path / f'staged-{profile}'
         stage_license_inputs(source, destination, capabilities(profile))

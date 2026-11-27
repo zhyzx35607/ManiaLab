@@ -86,6 +86,7 @@ def test_torosu_cli_binary_lookup_honors_target_and_explicit_path(tmp_path):
 
 @pytest.mark.parametrize(('profile', 'includes_deep_lock'), (
     ('core', False),
+    ('workbench', False),
     ('standard', True),
     ('extended', True),
 ))
@@ -133,6 +134,32 @@ def test_build_source_snapshot_hashes_profile_dependency_locks(
         )
     else:
         assert 'requirements-deep-lock.txt' not in snapshot
+
+
+def test_source_snapshot_hashes_only_packaged_workbench_lora_adapters(tmp_path):
+    adapter = tmp_path / 'assets' / 'lora' / 'ln-focus'
+    adapter.mkdir(parents=True)
+    files = {
+        'adapter_config.json': b'{"r":16}',
+        'adapter_model.safetensors': b'portable adapter weights',
+        'lora-manifest.json': b'{"base_model":"v32-mini"}',
+    }
+    for name, contents in files.items():
+        (adapter / name).write_bytes(contents)
+
+    workbench = build_provenance.source_snapshot_paths(
+        tmp_path, capabilities('workbench'),
+    )
+    workbench_names = {path.relative_to(tmp_path).as_posix() for path in workbench}
+    core = build_provenance.source_snapshot_paths(tmp_path, capabilities('core'))
+    core_names = {path.relative_to(tmp_path).as_posix() for path in core}
+
+    assert {
+        'assets/lora/ln-focus/adapter_config.json',
+        'assets/lora/ln-focus/adapter_model.safetensors',
+        'assets/lora/ln-focus/lora-manifest.json',
+    } <= workbench_names
+    assert not any(name.startswith('assets/lora/') for name in core_names)
 
 
 def test_archive_payload_inventory_covers_final_tree_except_root_manifest(tmp_path):

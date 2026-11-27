@@ -289,6 +289,8 @@ class V32Runtime:
                 [
                     str(uv), "python", "install", SOURCE_PYTHON,
                     "--install-dir", env["UV_PYTHON_INSTALL_DIR"],
+                    "--no-bin",
+                    *(["--no-registry"] if os.name == "nt" else []),
                     "--cache-dir", env["UV_CACHE_DIR"],
                 ],
                 message=f"准备 Mapperatorinator Python {SOURCE_PYTHON}",

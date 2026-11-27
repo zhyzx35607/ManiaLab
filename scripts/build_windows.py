@@ -16,8 +16,8 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from manialab import __version__
 from package_assets import (
-    MAPPER_INSTALLER_FILES, add_profile_argument, archive_stem, capabilities, stage_assets, start_guide,
-    verify_core_model_files,
+    MAPPER_INSTALLER_FILES, add_profile_argument, archive_stem, capabilities,
+    lora_adapter_inventory, stage_assets, start_guide, verify_core_model_files,
 )
 from worker_inventory import worker_inventory
 parser=argparse.ArgumentParser(description=__doc__)
@@ -173,6 +173,10 @@ for directory in (workpath,distpath,specpath,package_path):
     directory.mkdir()
 staged_assets=build_root/'assets'
 stage_assets(ROOT,staged_assets,profile,uv_path=uv_binary)
+lora_source_inventory = (
+    lora_adapter_inventory(staged_assets/'lora')
+    if enabled.get('lora_support') else {}
+)
 if uv_identity and verify_uv_binary(staged_assets/'runtime/uv.exe',check_version=False)!=uv_identity:
     raise SystemExit('Staged uv executable differs from its pinned release identity.')
 args=[sys.executable,'-m','PyInstaller','--noconfirm','--name','ManiaLab','--console',
@@ -225,10 +229,18 @@ for name in ['README.md','LICENSE','THIRD_PARTY_NOTICES.md']:
     shutil.copy2(ROOT/name,target/name)
 shutil.copytree(license_stage,target/'licenses',dirs_exist_ok=True)
 shutil.copytree(ROOT/'docs',target/'docs',dirs_exist_ok=True)
-(target/'开始使用.txt').write_text(start_guide(__version__,enabled),encoding='utf-8-sig')
+guide = start_guide(__version__,enabled)
+(target/'使用说明.txt').write_text(guide,encoding='utf-8-sig')
+(target/'开始使用.txt').write_text(guide,encoding='utf-8-sig')
 if source_snapshot()!=build_sources:
     raise SystemExit('Application sources changed while staging the portable package; rebuild before publishing.')
 archive_payload=archive_payload_inventory(target)
+lora_inventory = (
+    lora_adapter_inventory(target/'_internal/assets/lora')
+    if enabled.get('lora_support') else {}
+)
+if lora_inventory != lora_source_inventory:
+    raise SystemExit('Packaged LoRA adapters differ from the verified workbench inputs.')
 release_manifest=dict(version=__version__,sources=build_sources,build_profile=profile,capabilities=enabled,
     executable_sha256=hashlib.sha256((target/'ManiaLab.exe').read_bytes()).hexdigest(),
     torosu_cli=dict(path='_internal/engines/torosu_cli/torosu-cli.exe',**torosu_cli_identity),
@@ -238,6 +250,7 @@ release_manifest=dict(version=__version__,sources=build_sources,build_profile=pr
     worker_sources=bundled_worker.get('worker_sources') if bundled_worker else None,
     worker_files=bundled_worker.get('worker_files') if bundled_worker else None,
     piano_model=piano_identity,guitar_model=guitar_identity,instrument_worker=instrument_identity,
+    lora_adapters=lora_inventory,
     instrument_runtime_license_files=instrument_runtime_license_files,
     runtime_license_files=runtime_license_files,
     runtime_license_inventory=runtime_license_inventory,

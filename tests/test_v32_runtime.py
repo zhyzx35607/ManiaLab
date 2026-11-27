@@ -74,6 +74,9 @@ def test_runtime_installer_checks_bundle_and_stages_pinned_source(tmp_path, monk
     assert identity == {"commit": "1" * 40, "sha256": source_sha}
     assert result["device"] == "cuda"
     assert result["gpu"] == "RTX 4050"
+    python_install = commands[0][0]
+    assert "--no-bin" in python_install
+    assert ("--no-registry" in python_install) == (os.name == "nt")
     torch_install = next(row[0] for row in commands if "torch==" + "2.9.1" in " ".join(row[0]))
     assert TORCH_CUDA_INDEX in torch_install
     assert all(row[3] == runtime.source for row in commands[2:])

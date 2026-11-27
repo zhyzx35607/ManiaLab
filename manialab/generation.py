@@ -5,12 +5,14 @@ The caller owns serialization and commits state only after successful completion
 from dataclasses import replace
 from copy import deepcopy
 import math
+from pathlib import Path
 import time
 
 from .arrange import assign_lanes, layout_metrics
+from .arrange_config import TOROSU_PLAYSTYLES
 from .candidate_identity import new_candidate_id
 from .candidate_selection import select_notes
-from .domain import note_from, validate, upstream_events
+from .domain import export_osu, note_from, validate, upstream_events
 from .timing import align_candidates, chart_clock_notes, grid_report, analysis_timing_diagnostics
 from .voices import apply_phrase_evidence
 from .review import review_chart
@@ -85,10 +87,31 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
         if not state["input_notes"]:
             raise ValueError("请先导入原生 mania 谱面")
         selected = [note_from(n) for n in state["input_notes"]]
+        torosu_ln_mode = prefs.get("torosu_ln_mode", "keep")
+        if use_torosu and torosu_ln_mode != "keep":
+            from .torosu_bridge import ln_shape_notes
+
+            selected = ln_shape_notes(
+                selected,
+                state["input_keys"],
+                torosu_ln_mode,
+                timing_points=state.get("input_timing", []),
+                beat_ms=60000 / tempo["bpm"],
+                offset_ms=tempo["offset"],
+                meter=tempo.get("meter", 4),
+            )
         # Torosu uses the real source layout to recognize patterns before conversion.
         if not use_torosu:
             selected = [replace(n, lane=min(prefs["keys"] - 1, int((n.lane + .5) * prefs["keys"] / state["input_keys"]))) for n in selected]
-        selection = {"message": "严格保留音符数量、起止时间、物件类型、音效和原始变速。"}
+        selection = {
+            "message": (
+                f"Torosu {torosu_ln_mode} LN 改造后严格转键；"
+                "保留物件数量、起点、轨道与非 LN 字段。"
+                if use_torosu and torosu_ln_mode != "keep"
+                else "严格保留音符数量、起止时间、物件类型、音效和原始变速。"
+            ),
+            "torosu_ln_mode": torosu_ln_mode,
+        }
     else:
         if not state.get("analysis"):
             raise ValueError("请先完成音频分析")
@@ -190,6 +213,34 @@ def generate_variant(state, payload, prefs, tempo, progress, cancelled):
         output, prefs["keys"], 60000 / tempo["bpm"], original_timing,
         key_layout=prefs["key_layout"],
     )
+    if prefs["layout_engine"] == "torosu":
+        from .torosu_bridge import analyze_osu_text
+
+        template = Path(__file__).resolve().parents[1] / "vendor" / "mapperatorinator" / "template.osu"
+        chart_text = export_osu(
+            output,
+            prefs["keys"],
+            template,
+            title=state.get("title", "Untitled"),
+            artist=state.get("artist", "Unknown"),
+            audio=state.get("audio") or "audio.ogg",
+            bpm=tempo["bpm"],
+            offset=tempo["offset"],
+            original=None,
+            meter=audio_meter or 4,
+            grid_division=tempo["division"] if mode == "audio" else None,
+            creator=(
+                state["variants"][state["active"]].get("metadata", {}).get("creator", "ManiaLab")
+                if isinstance(state.get("active"), int)
+                and 0 <= state["active"] < len(state.get("variants", []))
+                else "ManiaLab"
+            ),
+        )
+        report["torosu"] = analyze_osu_text(
+            chart_text,
+            keys=prefs["keys"],
+            playstyle=TOROSU_PLAYSTYLES[prefs["key_layout"]],
+        )
     timing_diagnostics = analysis_timing_diagnostics(state.get('analysis', {}), tempo) if mode == 'audio' else None
     if region is not None:
         selection = regional_selection_report(selection, output, locked)

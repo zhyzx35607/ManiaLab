@@ -11,6 +11,7 @@ import sys
 import tempfile
 from threading import Thread
 import time
+import uuid
 
 from .domain import Note, parse_osu, validate
 
@@ -334,6 +335,46 @@ def ln_shape_osu_text(osu_text: str, mode: str) -> str:
     return output
 
 
+def ln_shape_notes(
+    notes,
+    keys: int,
+    mode: str,
+    *,
+    timing_points=(),
+    beat_ms: float = 500,
+    offset_ms: float = 0,
+    meter: int = 4,
+) -> list[Note]:
+    """Apply a strict Torosu LN shape mode while restoring source note ids."""
+    source_notes = list(notes)
+    if mode == "keep":
+        return source_notes
+    source_text = _temporary_chart(
+        source_notes,
+        keys,
+        timing_points,
+        beat_ms,
+        offset_ms,
+        meter,
+    )
+    output = parse_osu(ln_shape_osu_text(source_text, mode))
+    source_by_start: dict[tuple[int, int], Note] = {}
+    for note in source_notes:
+        identity = (note.lane, note.start)
+        if identity in source_by_start:
+            raise TorosuBridgeError("LN 改造输入同轨同时间物件无法唯一映射")
+        source_by_start[identity] = note
+    result = []
+    for shaped in output["notes"]:
+        original = source_by_start.pop((shaped.lane, shaped.start), None)
+        if original is None:
+            raise TorosuBridgeError("LN 改造意外改变了音符轨道或起点")
+        result.append(replace(original, end=shaped.end, raw=shaped.raw))
+    if source_by_start or len(result) != len(source_notes):
+        raise TorosuBridgeError("LN 改造改变了物件数量")
+    return result
+
+
 def _temporary_chart(
     notes: list[Note],
     keys: int,
@@ -547,9 +588,17 @@ def convert_notes(
     for converted in output:
         token = _sample_token(converted.raw, converted.hold)
         original = identity_by_token.pop(token, None)
-        if original is None:
+        if original is None and density == "none":
             raise TorosuBridgeError("Torosu 输出无法映射回原始音符身份")
-        result.append(replace(original, lane=converted.lane))
+        if original is None:
+            result.append(replace(
+                converted,
+                id=f"torosu-{uuid.uuid4().hex}",
+                source="torosu",
+                raw=converted.raw,
+            ))
+        else:
+            result.append(replace(original, lane=converted.lane))
     if identity_by_token:
         raise TorosuBridgeError("Torosu 输出遗漏了原始音符")
     report = validate(result, keys)

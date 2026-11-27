@@ -13,12 +13,12 @@ const audioFile = name => ({
   name, mimeType: 'audio/wav', buffer: Buffer.from('synthetic fixture audio'),
 });
 
-test('batch analysis imports ten songs, caps parallelism, and isolates a failed song', async ({ page }) => {
+test('batch analysis imports twenty songs, caps parallelism, and isolates a failed song', async ({ page }) => {
   const imported = [];
   let batchRequest;
   let pollCount = 0;
-  const ids = Array.from({ length: 10 }, (_, index) => `batch-song-${index + 1}`);
-  const titles = Array.from({ length: 10 }, (_, index) => `Song ${index + 1}`);
+  const ids = Array.from({ length: 20 }, (_, index) => `batch-song-${index + 1}`);
+  const titles = Array.from({ length: 20 }, (_, index) => `Song ${index + 1}`);
 
   await page.route('**/api/import', async route => {
     const index = imported.length;
@@ -40,7 +40,7 @@ test('batch analysis imports ten songs, caps parallelism, and isolates a failed 
     const finished = pollCount >= 2;
     const items = ids.map((id, index) => {
       if (index === 1) return { project: id, title: titles[index], status: 'error', progress: 100, message: '合成分析失败' };
-      const running = index === 9 && !finished;
+      const running = index === 19 && !finished;
       return {
         project: id, title: titles[index], status: running ? 'running' : 'done',
         progress: running ? 60 : 100, message: running ? '正在提取音符' : '完成',
@@ -49,7 +49,7 @@ test('batch analysis imports ten songs, caps parallelism, and isolates a failed 
     });
     await route.fulfill({ json: {
       id: 'batch-fixture', status: finished ? 'done' : 'running', batch: true,
-      progress: finished ? 100 : 95, message: finished ? '批量分析完成' : '正在分析 9 / 10', items,
+      progress: finished ? 100 : 95, message: finished ? '批量分析完成' : '正在分析 19 / 20', items,
     } });
   });
   await page.route(/\/api\/projects\/batch-song-1$/, async route => {
@@ -58,20 +58,20 @@ test('batch analysis imports ten songs, caps parallelism, and isolates a failed 
   await page.route('**/api/projects/batch-song-1/audio*', route => route.fulfill({ status: 404, body: '' }));
 
   await page.goto('/');
-  await page.locator('.batch-panel > summary').click();
+  await page.locator('[data-work-mode="batch"]').click();
   await page.locator('#batchFiles').setInputFiles(
     ids.map((_, index) => audioFile(`song-${index + 1}.wav`)),
   );
   await page.locator('#batchAnalyze').click();
 
-  await expect(page.locator('#batchStatus [data-batch-item]')).toHaveCount(10);
+  await expect(page.locator('#batchStatus [data-batch-item]')).toHaveCount(20);
   for (const title of titles) await expect(page.locator('#batchStatus')).toContainText(title);
   await expect(page.locator('#batchStatus')).toContainText('完成');
   await expect(page.locator('#batchStatus')).toContainText('失败');
 
-  expect(imported).toHaveLength(10);
+  expect(imported).toHaveLength(20);
   expect(imported[0]).toContain('song-1.wav');
-  expect(imported[9]).toContain('song-10.wav');
+  expect(imported[19]).toContain('song-20.wav');
   expect(batchRequest.projects).toEqual(ids);
   expect(batchRequest.max_parallel).toBe(2);
 
@@ -79,15 +79,15 @@ test('batch analysis imports ten songs, caps parallelism, and isolates a failed 
   await expect(page.locator('#projectTitle')).toHaveText('Song 1');
 });
 
-test('selecting eleven songs disables batch analysis', async ({ page }) => {
+test('selecting twenty-one songs disables batch analysis', async ({ page }) => {
   await page.goto('/');
-  await page.locator('.batch-panel > summary').click();
+  await page.locator('[data-work-mode="batch"]').click();
   await page.locator('#batchFiles').setInputFiles(
-    Array.from({ length: 11 }, (_, index) => audioFile(`song-${index + 1}.wav`)),
+    Array.from({ length: 21 }, (_, index) => audioFile(`song-${index + 1}.wav`)),
   );
 
   await expect(page.locator('#batchAnalyze')).toBeDisabled();
-  await expect(page.locator('#batchFileSummary')).toContainText('10');
+  await expect(page.locator('#batchFileSummary')).toContainText('20');
 });
 
 test('cancelling while an import is in flight prevents the next song from starting', async ({ page }) => {
@@ -104,7 +104,7 @@ test('cancelling while an import is in flight prevents the next song from starti
   });
 
   await page.goto('/');
-  await page.locator('.batch-panel > summary').click();
+  await page.locator('[data-work-mode="batch"]').click();
   await page.locator('#batchFiles').setInputFiles([
     audioFile('cancel-one.wav'), audioFile('cancel-two.wav'),
   ]);
@@ -143,7 +143,7 @@ test('a temporary polling error is retried until the batch result returns', asyn
   });
 
   await page.goto('/');
-  await page.locator('.batch-panel > summary').click();
+  await page.locator('[data-work-mode="batch"]').click();
   await page.locator('#batchFiles').setInputFiles([
     audioFile('retry-one.wav'), audioFile('retry-two.wav'),
   ]);
@@ -171,7 +171,7 @@ test('a missing batch job stops polling and releases the interface', async ({ pa
   });
 
   await page.goto('/');
-  await page.locator('.batch-panel > summary').click();
+  await page.locator('[data-work-mode="batch"]').click();
   await page.locator('#batchFiles').setInputFiles([
     audioFile('missing-one.wav'), audioFile('missing-two.wav'),
   ]);
