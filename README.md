@@ -4,7 +4,7 @@ ManiaLab 是面向 osu!mania 6–10K 的本地智能制谱工作台，以 10K �
 
 ## 当前公开试用版
 
-[下载 ManiaLab 2.0 Workbench Beta 1（Windows x64）](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.2.0-beta.1/ManiaLab-0.2.0-beta.1-windows-x64-workbench.zip)（单文件 ZIP，首次使用 V32 时在界面点击「准备 V32 运行环境」）。
+[下载 ManiaLab 2.0 Workbench Beta 2（Windows x64）](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.2.0-beta.2/ManiaLab-0.2.0-beta.2-windows-x64-workbench.zip)（单文件 ZIP，首次使用 V32 时在界面点击「准备 V32 运行环境」）。
 
 ## 工作流程
 

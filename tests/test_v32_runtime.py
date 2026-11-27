@@ -8,7 +8,14 @@ import zipfile
 
 import pytest
 
-from manialab.v32_runtime import TORCH_CUDA_INDEX, TORCH_CPU_INDEX, V32Runtime
+from manialab.task_errors import UserVisibleTimeoutError
+from manialab.v32_runtime import (
+    PYPI_MIRROR_INDEX,
+    TORCH_CUDA_INDEX,
+    TORCH_CUDA_MIRROR_INDEX,
+    TORCH_CPU_INDEX,
+    V32Runtime,
+)
 
 
 def _runtime_fixture(tmp_path):
@@ -106,6 +113,97 @@ def test_runtime_installer_uses_cpu_wheels_when_no_nvidia_gpu(tmp_path, monkeypa
 
     torch_install = next(command for command in commands if "torch==2.9.1" in " ".join(command))
     assert TORCH_CPU_INDEX in torch_install
+
+
+def test_runtime_installer_uses_mirrors_and_configurable_long_timeouts(
+    tmp_path, monkeypatch,
+):
+    runtime, _, _ = _runtime_fixture(tmp_path)
+    monkeypatch.delenv("MANIALAB_TORCH_INDEX_URL", raising=False)
+    monkeypatch.delenv("MANIALAB_PYPI_INDEX_URL", raising=False)
+    monkeypatch.setenv("MANIALAB_V32_INSTALL_TIMEOUT_SECONDS", "4321")
+    monkeypatch.setattr(runtime, "_cuda_expected", lambda: True)
+    commands = []
+
+    def run_command(command, *, message, env, cwd, timeout_seconds):
+        commands.append((command, message, env, cwd, timeout_seconds))
+        if "venv" in command:
+            runtime._default_python.parent.mkdir(parents=True, exist_ok=True)
+            runtime._default_python.write_bytes(b"venv interpreter fixture")
+        if command[1:2] == ["-c"]:
+            return {"log": json.dumps({
+                "python": "3.10.20",
+                "torch": "2.9.1+cu128",
+                "cuda": True,
+                "gpu": "RTX 4050",
+            })}
+        return {"log": ""}
+
+    runtime.install(
+        progress=lambda *_: None,
+        cancelled=lambda: False,
+        run_command=run_command,
+        use_mirrors=True,
+    )
+
+    torch_row = next(row for row in commands if "torch==2.9.1" in " ".join(row[0]))
+    dependency_row = next(row for row in commands if "-r" in row[0])
+    assert TORCH_CUDA_MIRROR_INDEX in torch_row[0]
+    assert "--extra-index-url" in torch_row[0]
+    assert torch_row[0][torch_row[0].index("--extra-index-url") + 1] == PYPI_MIRROR_INDEX
+    assert torch_row[4] == 4321
+    assert dependency_row[0][dependency_row[0].index("--index-url") + 1] == PYPI_MIRROR_INDEX
+    assert dependency_row[4] == 4321
+    assert torch_row[2]["MANIALAB_TORCH_INDEX_URL"] == TORCH_CUDA_MIRROR_INDEX
+    assert torch_row[2]["MANIALAB_PYPI_INDEX_URL"] == PYPI_MIRROR_INDEX
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "not-a-number", "86401"])
+def test_runtime_installer_timeout_override_is_bounded(tmp_path, monkeypatch, value):
+    monkeypatch.setenv("MANIALAB_V32_INSTALL_TIMEOUT_SECONDS", value)
+    with pytest.raises(ValueError, match="必须为 1–86400 秒"):
+        V32Runtime._install_timeout_seconds()
+
+
+def test_runtime_installer_defaults_to_two_hour_timeout(monkeypatch):
+    monkeypatch.delenv("MANIALAB_V32_INSTALL_TIMEOUT_SECONDS", raising=False)
+    assert V32Runtime._install_timeout_seconds() == 7200
+
+
+def test_runtime_installer_failure_suggests_mirror_configuration(tmp_path, monkeypatch):
+    runtime, _, _ = _runtime_fixture(tmp_path)
+    monkeypatch.delenv("MANIALAB_TORCH_INDEX_URL", raising=False)
+    monkeypatch.delenv("MANIALAB_PYPI_INDEX_URL", raising=False)
+    monkeypatch.setattr(runtime, "_cuda_expected", lambda: True)
+
+    def run_command(command, **kwargs):
+        if "venv" in command:
+            runtime._default_python.parent.mkdir(parents=True, exist_ok=True)
+            runtime._default_python.write_bytes(b"venv interpreter fixture")
+        if "torch==" in " ".join(command):
+            raise UserVisibleTimeoutError(
+                "安装 CUDA PyTorch 超过 7200 秒，已停止",
+                log_path=tmp_path / "install.log",
+            )
+        if command[1:2] == ["-c"]:
+            return {"log": json.dumps({
+                "python": "3.10.20",
+                "torch": "2.9.1+cu128",
+                "cuda": True,
+                "gpu": "RTX 4050",
+            })}
+        return {"log": ""}
+
+    with pytest.raises(UserVisibleTimeoutError) as raised:
+        runtime.install(
+            progress=lambda *_: None,
+            cancelled=lambda: False,
+            run_command=run_command,
+        )
+
+    assert "MANIALAB_TORCH_INDEX_URL" in raised.value.user_message
+    assert "MANIALAB_PYPI_INDEX_URL" in raised.value.user_message
+    assert raised.value.log_path == str(tmp_path / "install.log")
 
 
 def test_runtime_installer_rejects_corrupt_source_archive(tmp_path):

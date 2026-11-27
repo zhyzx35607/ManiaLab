@@ -8,6 +8,7 @@ import time
 import pytest
 
 from manialab.storage import Projects
+from manialab.task_errors import UserVisibleTaskError, UserVisibleTimeoutError
 from manialab.task_service import ProjectTasks
 
 
@@ -105,6 +106,31 @@ def test_base_exception_finishes_job_and_allows_later_work(task_store):
     assert cleanup == [False]
     recovered = service.submit(project_id, lambda *args: {"recovered": True})
     assert wait_for_job(service, recovered["id"])["status"] == "done"
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    [UserVisibleTaskError, UserVisibleTimeoutError],
+)
+def test_task_exposes_safe_runtime_summary_and_log_path(task_store, error_type):
+    projects, service = task_store
+    project_id = create_project(projects)
+    log_path = Path("D:/ManiaLab/logs/v32-install.log")
+
+    def operation(_state, _progress, _cancelled):
+        raise error_type(
+            "安装 CUDA PyTorch 超时\nprivate subprocess log tail",
+            log_path=log_path,
+        )
+
+    submitted = service.submit(project_id, operation)
+    result = wait_for_job(service, submitted["id"])
+
+    assert result["status"] == "error"
+    assert result["message"] == (
+        "安装 CUDA PyTorch 超时；日志：D:\\ManiaLab\\logs\\v32-install.log"
+    )
+    assert "private subprocess log tail" not in result["message"]
 
 
 def test_worker_start_failure_cancels_queued_work_and_closes_service(task_store, monkeypatch):

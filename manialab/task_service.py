@@ -12,6 +12,7 @@ import time
 import uuid
 
 from .cancellation import CancellationContext, remaining_until
+from .task_errors import task_error_message
 
 
 TERMINAL_STATUSES = ("done", "error", "cancelled")
@@ -340,7 +341,7 @@ class ProjectTasks:
                         )
                 except BaseException as error:
                     self.logger.exception("Project task failed: project=%s job=%s", project_id, job_id)
-                    message = str(error) if isinstance(error, ValueError) else "任务失败，请查看本地日志"
+                    message = task_error_message(error)
                     outcome = dict(status="error", message=message)
                     recovery_hints = _user_recovery_hints(error)
                     if recovery_hints:
@@ -448,6 +449,7 @@ class ProjectTasks:
             items = [dict(project=entry["project"], title=entry["title"],
                           status="queued", progress=0, message="等待运行")
                      for entry in normalized]
+            global_failure_messages = []
             job = dict(id=job_id, project=normalized[0]["project"],
                        projects=[entry["project"] for entry in normalized],
                        batch=True, max_parallel=max_parallel, status="queued", progress=0,
@@ -519,7 +521,10 @@ class ProjectTasks:
                 except BaseException as error:
                     self.logger.exception("Batch project task failed: project=%s batch=%s",
                                           entry["project"], job_id)
-                    message = str(error) if isinstance(error, ValueError) else "任务失败，请查看本地日志"
+                    message = task_error_message(error)
+                    if getattr(error, "global_failure", False):
+                        global_failure_messages.append(message)
+                        cancellation.cancel()
                     outcome = dict(status="error", progress=100, message=message)
                 finally:
                     cleanup = entry.get("cleanup")
@@ -577,8 +582,13 @@ class ProjectTasks:
                     outcome = dict(
                         status=status,
                         progress=100,
-                        message=(f"批量处理结束：{counts['done']} 首成功，"
-                                 f"{counts['error']} 首失败，{counts['cancelled']} 首取消"),
+                        message=(
+                            f"{global_failure_messages[0]}；批量生成已提前停止，"
+                            f"{counts['cancelled']} 首歌曲未启动"
+                            if global_failure_messages else
+                            f"批量处理结束：{counts['done']} 首成功，"
+                            f"{counts['error']} 首失败，{counts['cancelled']} 首取消"
+                        ),
                         result={"done": counts["done"], "error": counts["error"],
                                 "cancelled": counts["cancelled"]},
                         elapsed_seconds=round(time.perf_counter() - batch_started, 2),

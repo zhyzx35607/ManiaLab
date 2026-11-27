@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from manialab.v32_engine import DevicePlan, MODEL_SPECS, V32Engine, select_device_plan
+from manialab.task_errors import UserVisibleTaskError
 
 
 class FakeCuda:
@@ -421,6 +424,98 @@ def test_runtime_environment_uses_configured_roots_without_creating_them(tmp_pat
     configured = engine._runtime_environment()
     assert configured["HF_HOME"] == str((cache / "huggingface").resolve())
     assert configured["TEMP"] == str(temporary.resolve())
+
+
+def test_whisper_config_cache_seeds_both_hub_roots_without_overwriting(
+    tmp_path,
+):
+    from manialab.v32_engine import _WHISPER_CONFIGS
+
+    engine = V32Engine(tmp_path / "data", Path(__file__).resolve().parents[1])
+    hub_cache = tmp_path / "hub-cache"
+    transformers_cache = tmp_path / "transformers-cache"
+    existing_revision = "a" * 40
+    existing_config = (
+        hub_cache / "models--openai--whisper-base" / "snapshots"
+        / existing_revision / "config.json"
+    )
+    existing_config.parent.mkdir(parents=True)
+    existing_config.write_bytes(b'{"preserve":"user cache"}')
+    existing_ref = (
+        hub_cache / "models--openai--whisper-base" / "refs" / "main"
+    )
+    existing_ref.parent.mkdir(parents=True)
+    existing_ref.write_text(existing_revision, encoding="utf-8")
+
+    runtime_env = {
+        "HF_HOME": str(tmp_path / "hf-home"),
+        "HF_HUB_CACHE": str(hub_cache),
+        "TRANSFORMERS_CACHE": str(transformers_cache),
+    }
+    engine._seed_whisper_config_cache(runtime_env)
+
+    assert existing_ref.read_text(encoding="utf-8") == existing_revision
+    assert existing_config.read_bytes() == b'{"preserve":"user cache"}'
+    isolated_cache = Path(runtime_env["HF_HUB_CACHE"])
+    assert isolated_cache == Path(runtime_env["TRANSFORMERS_CACHE"])
+    assert isolated_cache != hub_cache
+    assert isolated_cache != transformers_cache
+    for repo, revision in _WHISPER_CONFIGS.items():
+        ref = isolated_cache / repo / "refs" / "main"
+        config = isolated_cache / repo / "snapshots" / revision / "config.json"
+        assert ref.read_text(encoding="utf-8").strip() == revision
+        raw = config.read_bytes()
+        assert not raw.startswith(b"\xef\xbb\xbf")
+        assert json.loads(raw.decode("utf-8"))["model_type"] == "whisper"
+
+
+def test_model_cache_revision_mismatch_is_a_global_user_visible_error(tmp_path):
+    cache = tmp_path / "models"
+    destination = cache / "Mapperatorinator-v32-74f2258"
+    checkpoint = destination / "gamemode=3"
+    checkpoint.mkdir(parents=True)
+    for name in ("config.json", "generation_config.json", "model.safetensors", "tokenizer.json"):
+        (checkpoint / name).write_bytes(b"fixture")
+    (destination / "model-revision.json").write_text(
+        json.dumps({"repo": MODEL_SPECS["v32"]["repo"], "revision": "0" * 40}),
+        encoding="utf-8",
+    )
+    engine = V32Engine(tmp_path / "data", Path(__file__).resolve().parents[1], model_cache=cache)
+
+    with pytest.raises(UserVisibleTaskError) as raised:
+        engine.ensure_model(
+            "v32",
+            progress=lambda *_: None,
+            cancelled=lambda: False,
+        )
+
+    assert raised.value.global_failure is True
+    assert "revision 与固定版本不一致" in raised.value.user_message
+
+
+def test_corrupt_model_cache_manifest_is_a_global_user_visible_error(tmp_path):
+    cache = tmp_path / "models"
+    destination = cache / "Mapperatorinator-v32-74f2258"
+    checkpoint = destination / "gamemode=3"
+    checkpoint.mkdir(parents=True)
+    for name in ("config.json", "generation_config.json", "model.safetensors", "tokenizer.json"):
+        (checkpoint / name).write_bytes(b"fixture")
+    (destination / "model-revision.json").write_text("{broken", encoding="utf-8")
+    engine = V32Engine(
+        tmp_path / "data",
+        Path(__file__).resolve().parents[1],
+        model_cache=cache,
+    )
+
+    with pytest.raises(UserVisibleTaskError) as raised:
+        engine.ensure_model(
+            "v32",
+            progress=lambda *_: None,
+            cancelled=lambda: False,
+        )
+
+    assert raised.value.global_failure is True
+    assert "本地缓存清单校验失败" in raised.value.user_message
 
 
 def test_model_cache_follows_huggingface_environment_root(tmp_path, monkeypatch):

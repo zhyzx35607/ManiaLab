@@ -15,6 +15,7 @@ from manialab.arrange import parameters
 from manialab.candidate_identity import new_candidate_id
 from manialab.domain import Note, parse_osu
 from manialab.server import create_app
+from manialab.task_errors import UserVisibleTaskError
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -813,6 +814,62 @@ def test_batch_v32_keeps_processing_after_a_song_fails(tmp_path, monkeypatch):
             app.extensions["projects"].load(song["id"])["active"]
             for song in (songs[0], songs[2])
         ] == [0, 0]
+    finally:
+        app.extensions["task_service"].shutdown()
+
+
+def test_batch_v32_stops_after_global_model_download_failure(tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    songs = [
+        _import_song(client, headers, f"v32-global-failure-{index}.wav")[0]
+        for index in range(3)
+    ]
+    projects = app.extensions["projects"]
+    for song in songs:
+        _set_analysis(projects, song)
+    monkeypatch.setattr(
+        app.extensions["v32_engine"],
+        "status",
+        lambda: {"available": True},
+    )
+    calls = []
+
+    def operation_factory(project_id, _options):
+        def operation(_state, _progress, _cancelled):
+            calls.append(project_id)
+            raise UserVisibleTaskError(
+                "下载 v32-mini mania 权重失败",
+                log_path=Path("D:/ManiaLab/logs/model-download.log"),
+                global_failure=True,
+            )
+
+        operation.options = {}
+        operation.cleanup = lambda _committed: None
+        return operation
+
+    app.extensions["v32_operation_factory"] = operation_factory
+    try:
+        response = client.post(
+            "/api/batch/generate",
+            headers=headers,
+            json={
+                "projects": [song["id"] for song in songs],
+                "preset": "rice_jack",
+                "engine": "v32-mini",
+                "keys": 8,
+            },
+        )
+        assert response.status_code == 200, response.json
+        result = _wait_job(client, response.json["id"])
+        assert result["status"] == "error"
+        assert [item["status"] for item in result["items"]] == [
+            "error", "cancelled", "cancelled",
+        ]
+        assert calls == [songs[0]["id"]]
+        assert "下载 v32-mini mania 权重失败" in result["message"]
+        assert "model-download.log" in result["message"]
     finally:
         app.extensions["task_service"].shutdown()
 

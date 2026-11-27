@@ -123,6 +123,20 @@ def test_native_10k_collision_repair_preserves_object_count_and_timing():
     assert validate(after["notes"], 10)["valid"]
 
 
+def test_native_collision_repair_does_not_drop_an_overfull_chord():
+    keys = 10
+    chart = _chart(keys=keys)
+    rows = []
+    for lane in range(keys + 1):
+        x = int((lane % keys + 0.5) * 512 / keys)
+        rows.append(f"{x},192,1000,1,0,0:0:0:0:")
+    chart = chart.split("[HitObjects]", 1)[0] + "[HitObjects]\n" + "\n".join(rows) + "\n"
+
+    assert len(parse_osu(chart)["notes"]) == keys + 1
+    with pytest.raises(ValueError):
+        v32_charts.repair_native_10k_collisions(chart)
+
+
 def test_grid_snap_moves_only_endpoints_and_restores_confirmed_clock():
     shifted = _chart().replace(
         "25,192,100,128,0,900:0:0:0:0:",
@@ -134,6 +148,48 @@ def test_grid_snap_moves_only_endpoints_and_restores_confirmed_clock():
     assert report["max_endpoint_shift_ms"] <= 7
     assert v32_charts.validate_map_grid(snapped, bpm=120, offset_ms=0)["off_grid"] == 0
     assert len(parsed["notes"]) == 3
+
+
+def test_snapped_model_collision_cleanup_keeps_long_lns_and_unique_tracks():
+    keys = 7
+    chart = _chart(keys=keys)
+    rows = []
+    specs = [
+        (0, False, 1000),
+        (0, True, 2300),
+        (1, True, 5000),
+        (1, True, 2200),
+        (2, False, 1000),
+        (3, False, 1000),
+        (4, False, 1000),
+        (5, False, 1000),
+        (6, False, 1000),
+    ]
+    for lane, hold, end in specs:
+        x = int((lane + 0.5) * 512 / keys)
+        if hold:
+            rows.append(f"{x},192,1000,128,0,{end}:0:0:0:0:")
+        else:
+            rows.append(f"{x},192,1000,1,0,0:0:0:0:")
+    chart = chart.split("[HitObjects]", 1)[0] + "[HitObjects]\n" + "\n".join(rows) + "\n"
+
+    cleaned, report = v32_charts.clean_snapped_model_collisions(
+        chart,
+        model_keys=keys,
+    )
+    parsed = parse_osu(cleaned)
+    assert report["objects_before"] == 9
+    assert report["objects_after"] == 7
+    assert report["removed_objects"] == 2
+    assert report["duplicate_track_objects_removed"] == 2
+    assert report["capacity_objects_removed"] == 0
+    assert report["collided_chords"] == 1
+    assert report["overfull_chords"] == 1
+    assert [note.lane for note in parsed["notes"]] == list(range(7))
+    assert [(note.lane, note.end) for note in parsed["notes"] if note.hold] == [
+        (0, 2300),
+        (1, 5000),
+    ]
 
 
 def test_reference_timing_shifts_into_excerpt_and_accepts_confirmed_clock():

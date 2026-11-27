@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import ast
 import hashlib
 import io
+from datetime import timedelta
 from pathlib import Path
 import threading
 import time
+from types import SimpleNamespace
 import zipfile
 
 import numpy as np
@@ -24,6 +27,83 @@ from manialab.v32_routes import build_v32_operation, register_v32_routes, scan_l
 ROOT = Path(__file__).parents[1]
 _FAKE_TOROSU_CALLS = []
 _FAKE_LN_SHAPE_CALLS = []
+
+
+def _upstream_timing_event_times(reference_path: Path) -> list[int]:
+    with zipfile.ZipFile(ROOT / "assets" / "mapperatorinator-source.zip") as archive:
+        source = archive.read("osuT5/osuT5/dataset/osu_parser.py").decode("utf-8")
+    tree = ast.parse(source)
+    parser_class = next(
+        node for node in tree.body
+        if isinstance(node, ast.ClassDef) and node.name == "OsuParser"
+    )
+    method = next(
+        node for node in parser_class.body
+        if isinstance(node, ast.FunctionDef) and node.name == "parse_timing"
+    )
+    module = ast.Module(
+        body=[
+            ast.ImportFrom(
+                module="__future__",
+                names=[ast.alias(name="annotations")],
+                level=0,
+            ),
+            method,
+        ],
+        type_ignores=[],
+    )
+    namespace = {
+        "timedelta": timedelta,
+        "EventType": SimpleNamespace(
+            TIMING_POINT="timing_point",
+            MEASURE="measure",
+            BEAT="beat",
+        ),
+    }
+    exec(compile(ast.fix_missing_locations(module), "<upstream-parse-timing>", "exec"), namespace)
+
+    parsed = parse_osu(reference_path.read_text(encoding="utf-8-sig"))
+
+    class Beatmap:
+        def __init__(self):
+            self.timing_points = []
+            for line in parsed["timing"]:
+                fields = line.split(",")
+                if len(fields) < 7:
+                    continue
+                ms_per_beat = float(fields[1])
+                red_line = int(fields[6]) == 1
+                self.timing_points.append(SimpleNamespace(
+                    offset=timedelta(milliseconds=float(fields[0])),
+                    bpm=60000 / ms_per_beat if red_line else None,
+                    ms_per_beat=ms_per_beat,
+                    meter=int(fields[2]),
+                ))
+            self._hit_objects = [
+                SimpleNamespace(
+                    time=timedelta(milliseconds=note.start),
+                    **(
+                        {"end_time": timedelta(milliseconds=note.end)}
+                        if note.hold else {}
+                    ),
+                )
+                for note in parsed["notes"]
+            ]
+
+        def hit_objects(self, stacking=False):
+            return self._hit_objects
+
+    namespace["Beatmap"] = Beatmap
+
+    class Parser:
+        add_timing_points = True
+
+        @staticmethod
+        def _add_group(event, time, events, event_times, _beatmap, **_kwargs):
+            events.append(event)
+            event_times.append(int(time.total_seconds() * 1000 + 1e-5))
+
+    return namespace["parse_timing"](Parser(), Beatmap())[1]
 
 
 def _osu(keys: int, *, audio: str = "song.wav", notes=None) -> str:
@@ -58,8 +138,9 @@ class FakeEngine:
             "install_available": self.install_available,
         }
 
-    def install_runtime(self, *, progress, cancelled):
+    def install_runtime(self, *, progress, cancelled, use_mirrors=False):
         assert not cancelled()
+        self.install_use_mirrors = use_mirrors
         progress(100, "V32 推理环境已就绪")
         return {"device": "cuda", "gpu": "RTX 4050"}
 
@@ -354,6 +435,7 @@ def test_v32_candidate_uses_torus_task_pipeline_and_existing_osz_export(route_ap
     assert candidate["timing_revision"] == 3
     assert candidate["source_audio_sha256"] == route_app["audio_sha"]
     assert candidate["report"]["v32"]["separation"]["profile"] == "six"
+    assert candidate["report"]["v32"]["collision_cleanup"]["removed_objects"] == 0
     assert candidate["report"]["grid"]["off_grid"] == 0
     assert candidate["report"]["v32"]["torosu"]["keep_jacks"] is True
 
@@ -375,13 +457,14 @@ def test_v32_runtime_install_uses_shared_task_queue(route_app):
     engine.install_available = True
     submitted = route_app["client"].post(
         "/api/v32/install",
-        json={},
+        json={"use_mirrors": True},
     )
     assert submitted.status_code == 200
     job = _wait_job(route_app["client"], submitted.json["id"])
     assert job["status"] == "done", job
     assert job["global"] is True
     assert job["result"] == {"device": "cuda", "gpu": "RTX 4050"}
+    assert engine.install_use_mirrors is True
     status = route_app["client"].get(
         f"/api/v32/install/{submitted.json['id']}"
     )
@@ -553,7 +636,7 @@ def test_v32_applies_explicit_clock_and_layout_to_candidate_and_export(route_app
     assert candidate["audio_shift_ms"] == 10
     assert route_app["engine"].calls[0]["reference_keys"] == 8
     assert route_app["engine"].calls[0]["reference_note_count"] == 1
-    assert route_app["engine"].calls[0]["reference_note_times"] == [(0, 0)]
+    assert route_app["engine"].calls[0]["reference_note_times"] == [(4082, 4082)]
 
     exported = client.get(f"/api/projects/{project_id}/export/osu")
     assert exported.status_code == 200, exported.json
@@ -561,6 +644,112 @@ def test_v32_applies_explicit_clock_and_layout_to_candidate_and_export(route_app
     assert parsed["keys"] == 8
     assert parsed["timing"][0].split(",")[0] == "-40.000"
     assert "BeatDivisor: 6" in exported.data.decode("utf-8")
+
+
+def test_v32_timing_context_covers_180_second_audio_with_upstream_parser(
+    route_app, monkeypatch,
+):
+    import manialab.v32_routes as routes
+
+    def decode_180_seconds(_audio, work, *, cancelled):
+        assert not cancelled()
+        path = Path(work) / "preview.wav"
+        path.write_bytes(b"decoded 180-second preview")
+        return np.zeros(180 * 22050, dtype=np.float32)
+
+    monkeypatch.setattr(routes, "decode", decode_180_seconds)
+    engine = route_app["engine"]
+    original_generate = engine.generate
+    parsed_timing = {}
+
+    def parse_reference(**kwargs):
+        reference_path = Path(kwargs["reference_chart"])
+        notes = parse_osu(reference_path.read_text(encoding="utf-8-sig"))["notes"]
+        assert notes[-1].end >= 179_000
+        parsed_timing["event_times"] = _upstream_timing_event_times(reference_path)
+        return original_generate(**kwargs)
+
+    monkeypatch.setattr(engine, "generate", parse_reference)
+    response = route_app["client"].post(
+        f"/api/projects/{route_app['project_id']}/v32-generate",
+        json={"timing_confirmed": True},
+    )
+    assert response.status_code == 200, response.json
+    result = _wait_job(route_app["client"], response.json["id"])
+    assert result["status"] == "done", result
+
+    event_times = parsed_timing["event_times"]
+    assert min(event_times) == 0
+    assert max(event_times) >= 179_000
+    assert len(event_times) >= 360
+    assert max(right - left for left, right in zip(event_times, event_times[1:])) <= 500
+
+
+def test_v32_route_cleans_snapped_model_collisions_and_reports_drops(
+    route_app, monkeypatch,
+):
+    import manialab.v32_routes as routes
+
+    model_keys = 7
+    chart = _osu(model_keys)
+    rows = []
+    specs = [
+        (0, False, 1000),
+        (0, True, 2300),
+        (1, True, 5000),
+        (1, True, 2200),
+        (2, False, 1000),
+        (3, False, 1000),
+        (4, False, 1000),
+        (5, False, 1000),
+        (6, False, 1000),
+    ]
+    for lane, hold, end in specs:
+        x = int((lane + 0.5) * 512 / model_keys)
+        rows.append(
+            f"{x},192,1000,{128 if hold else 1},0,"
+            f"{end}:0:0:0:0:" if hold else f"{x},192,1000,1,0,0:0:0:0:"
+        )
+    chart = chart.split("[HitObjects]", 1)[0] + "[HitObjects]\n" + "\n".join(rows) + "\n"
+
+    engine = route_app["engine"]
+    original_generate = engine.generate
+
+    def generate_collision_chart(**kwargs):
+        result = original_generate(**kwargs)
+        Path(result["map"]).write_text(chart, encoding="utf-8")
+        return result
+
+    converted_inputs = {}
+    original_convert = routes.convert_osu_text
+
+    def capture_torosu_input(osu_text, *args, **kwargs):
+        converted_inputs["notes"] = parse_osu(osu_text)["notes"]
+        return original_convert(osu_text, *args, **kwargs)
+
+    monkeypatch.setattr(engine, "generate", generate_collision_chart)
+    monkeypatch.setattr(routes, "convert_osu_text", capture_torosu_input)
+    response = route_app["client"].post(
+        f"/api/projects/{route_app['project_id']}/v32-generate",
+        json={"preset": "ln_focus", "keys": 10},
+    )
+    assert response.status_code == 200, response.json
+    result = _wait_job(route_app["client"], response.json["id"])
+    assert result["status"] == "done", result
+
+    saved = route_app["projects"].load(route_app["project_id"])
+    candidate = saved["variants"][saved["active"]]
+    cleanup = candidate["report"]["v32"]["collision_cleanup"]
+    assert cleanup["objects_before"] == 9
+    assert cleanup["objects_after"] == 7
+    assert cleanup["removed_objects"] == 2
+    assert cleanup["duplicate_track_objects_removed"] == 2
+    assert len(converted_inputs["notes"]) == 7
+    lanes_by_start = {}
+    for note in converted_inputs["notes"]:
+        lanes = lanes_by_start.setdefault(note.start, set())
+        assert note.lane not in lanes
+        lanes.add(note.lane)
 
 
 def test_v32_timing_placeholder_does_not_precede_positive_first_red_line(route_app):
@@ -578,7 +767,7 @@ def test_v32_timing_placeholder_does_not_precede_positive_first_red_line(route_a
 
     call = route_app["engine"].calls[0]
     assert call["reference_timing_offset"] == 3181
-    assert call["reference_note_times"] == [(3181, 3181)]
+    assert call["reference_note_times"] == [(4082, 4082)]
     assert call["reference_note_times"][0][0] >= call["reference_timing_offset"]
 
 

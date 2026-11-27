@@ -6,6 +6,7 @@ import subprocess
 import time
 
 from .cancellation import stop_process
+from .task_errors import UserVisibleTaskError, UserVisibleTimeoutError
 from .worker_process import start_worker
 
 
@@ -34,6 +35,7 @@ def run_owned_command(
     message: str,
     timeout_seconds: float,
     monitor_python: str | Path | None = None,
+    global_failure: bool = False,
 ) -> dict:
     if cancelled():
         raise InterruptedError("已取消，原有谱面已保留")
@@ -89,16 +91,21 @@ def run_owned_command(
                     stop_process(
                         process, cancelled, terminate_timeout=15, kill_timeout=15,
                     )
-                    raise TimeoutError(f"{message}超过 {timeout_seconds:g} 秒，已停止")
+                    raise UserVisibleTimeoutError(
+                        f"{message}超过 {timeout_seconds:g} 秒，已停止",
+                        log_path=log_path,
+                        global_failure=global_failure,
+                    )
                 progress(
                     min(89, 10 + int(elapsed / max(1, timeout_seconds) * 79)),
                     f"{message} · 已运行 {int(elapsed)} 秒",
                 )
                 time.sleep(0.4)
             if process.returncode:
-                detail = log_path.read_text(encoding="utf-8", errors="replace")[-5000:]
-                raise RuntimeError(
-                    f"{message}失败（退出码 {process.returncode}），日志：{log_path}\n{detail}"
+                raise UserVisibleTaskError(
+                    f"{message}失败（退出码 {process.returncode}）",
+                    log_path=log_path,
+                    global_failure=global_failure,
                 )
         finally:
             try:
