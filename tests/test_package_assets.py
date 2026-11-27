@@ -14,6 +14,7 @@ from scripts.package_assets import (
     PUBLIC_PROFILE,
     add_profile_argument,
     capabilities,
+    checksum_filename,
     lora_adapter_inventory,
     stage_assets,
     start_guide,
@@ -24,8 +25,9 @@ from scripts.worker_inventory import worker_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
 PORTABLE_PR_PROFILE = (
-    "${{ github.event_name == 'pull_request' && "
-    "contains(github.event.pull_request.title, '[portable]') && "
+    "${{ (startsWith(github.ref, 'refs/tags/v0.2.') || "
+    "(github.event_name == 'pull_request' && "
+    "contains(github.event.pull_request.title, '[portable]'))) && "
     "'workbench' || 'core' }}"
 )
 
@@ -97,8 +99,14 @@ def test_portable_pr_builds_workbench_while_other_events_keep_core():
     assert _workflow_uses_public_profile(workflow)
     assert (
         "contains(github.event.pull_request.title, '[portable]')"
-        " && 'workbench' || 'core'"
+        ")) && 'workbench' || 'core'"
     ) in workflow
+
+
+def test_v020_version_tags_select_the_workbench_profile():
+    workflow = (ROOT / '.github/workflows/windows.yml').read_text(encoding='utf-8')
+    assert _workflow_uses_public_profile(workflow)
+    assert "startsWith(github.ref, 'refs/tags/v0.2.')" in workflow
 
 
 def test_marked_portable_pr_runs_workbench_verifiers_without_heavy_assets_or_legacy_collector():
@@ -355,6 +363,14 @@ def test_workbench_profile_creates_empty_scan_directory_without_local_loras(tmp_
     assert lora_adapter_inventory(destination / 'lora') == {}
     assert not (destination / 'deep').exists()
     assert not (destination / 'instruments').exists()
+
+
+def test_workbench_checksum_has_stable_name_without_changing_other_profiles():
+    assert checksum_filename('0.2.0-beta.1', 'workbench') == 'SHA256SUMS.txt'
+    assert checksum_filename('0.2.0-beta.1', 'core') == \
+        'ManiaLab-0.2.0-beta.1-windows-x64-core-SHA256SUMS.txt'
+    assert checksum_filename('0.2.0-beta.1', 'standard') == \
+        'ManiaLab-0.2.0-beta.1-windows-x64-SHA256SUMS.txt'
 
 
 def test_workbench_profile_rejects_incomplete_local_lora_before_staging(tmp_path):

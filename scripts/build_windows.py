@@ -16,7 +16,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from manialab import __version__
 from package_assets import (
-    MAPPER_INSTALLER_FILES, add_profile_argument, archive_stem, capabilities,
+    MAPPER_INSTALLER_FILES, add_profile_argument, archive_stem, checksum_filename, capabilities,
     lora_adapter_inventory, stage_assets, start_guide, verify_core_model_files,
 )
 from worker_inventory import worker_inventory
@@ -260,6 +260,6 @@ name=archive_stem(__version__,profile)
 archive=Path(shutil.make_archive(str(package_path/name),'zip',distpath,'ManiaLab'))
 with archive.open('rb') as stream:
     digest=hashlib.file_digest(stream,'sha256').hexdigest()
-checksums=package_path/f'{name}-SHA256SUMS.txt'
+checksums=package_path/checksum_filename(__version__,profile)
 checksums.write_text(f'{digest}  {archive.name}\n',encoding='utf-8')
 print(f'Portable directory: {target}\nBuilt: {archive}\nSHA256 file: {checksums}\nSHA256: {digest}')

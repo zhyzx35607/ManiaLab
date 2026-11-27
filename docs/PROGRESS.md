@@ -1,13 +1,18 @@
 # ManiaLab 2.0 续接进度
 
-更新：2026-11-27（Asia/Shanghai）。阶段 #01–#05 已由用户验收；当前只执行阶段 #06（Phase 3A），不发 Release/tag，不进入阶段 #07。
+更新：2026-11-27（Asia/Shanghai）。阶段 #01–#06 已由用户验收；当前仅准备阶段 #06 的公开试用版 `v0.2.0-beta.1`，不进入阶段 #07。
 
 ## 当前基线
 
-- `main` / `origin/main` 基线：`27a9d41`（PR #281）。阶段 #06 唯一分支 `feat/phase3-full-workbench`，唯一 worktree 为 `D:\project\ManiaLab`；改动尚未提交或创建 PR。
+- `main` / `origin/main` 基线：`6586936`（PR #282）。当前单一发布配置分支 `release/v0.2.0-beta.1`，唯一 worktree 为 `D:\project\ManiaLab`。
 - PR #280 于 2026-11-26 合并，一并包含阶段 #03 提交 `582dd337` 与阶段 #04 提交 `438850a0`；特性分支已删除。未发布 Release/tag。
 - 阶段 #03 用户实打冠军：FullMix → v32-mini 7K → Torosu dense 10K；去人声不再作为主推理输入。
 - C 盘阶段 #06 起始可用约 7,754,723,328 bytes；测试、PyTorch/V32 运行时、模型权重、缓存和临时目录均置于 D 盘。
+
+## Workbench Beta 发布准备
+
+- 用户授权基于已验收的阶段 #06 发布 `v0.2.0-beta.1`。本 PR 仅调整应用版本、README 当前下载入口及 Windows 发布 profile；`v0.2.*` tag 与标记 `[portable]` 的 PR 均构建/校验 `workbench`，旧 Core/Standard/Extended profile 策略保留。
+- 目标单 ZIP：`ManiaLab-0.2.0-beta.1-windows-x64-workbench.zip`，校验文件为 `SHA256SUMS.txt`。发布后只以精确 tag 的 Windows CI 构建产物创建 Pre-Release；在 tag CI 通过前不发布。
 
 ## 阶段 #01 历史基线
 

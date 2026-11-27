@@ -159,6 +159,11 @@ def archive_stem(version, profile):
     return f'ManiaLab-{version}-windows-x64{suffix}'
 
 
+def checksum_filename(version, profile):
+    stem = archive_stem(version, profile)
+    return 'SHA256SUMS.txt' if profile == 'workbench' else f'{stem}-SHA256SUMS.txt'
+
+
 def verify_core_payload(files):
     """Check the actual distribution, not just its declared capabilities."""
     prefix = ('_internal', 'assets')
