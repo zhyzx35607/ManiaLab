@@ -134,7 +134,8 @@ def test_fixed_meter_survives_edit_reanalysis_selection_region_and_both_export_f
         def exported(meter):
             text = client.get(base + "/export/osu").data
             with zipfile.ZipFile(io.BytesIO(client.get(base + "/export/osz").data)) as archive:
-                assert archive.read("ManiaLab.osu") == text
+                chart_name = next(name for name in archive.namelist() if name.endswith(".osu"))
+                assert archive.read(chart_name) == text
             red, = (line.split(",") for line in parse_osu(text.decode())["timing"] if line.strip())
             assert [float(red[0]), float(red[1]), int(red[2])] == [93, 400, meter]
 

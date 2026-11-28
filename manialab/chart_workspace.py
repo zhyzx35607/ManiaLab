@@ -10,7 +10,7 @@ from .arrange_config import DEFAULT_KEY_LAYOUTS
 from .storage import resolve_project_reference, safe_path
 
 
-_PROJECT_FIELDS = ("id", "charts", "cache_origin_audio")
+_PROJECT_FIELDS = ("id", "charts", "cache_origin_audio", "track_metadata", "export_metadata")
 
 
 def _key(name):

@@ -22,7 +22,9 @@ from package_assets import (
 from worker_inventory import worker_inventory
 parser=argparse.ArgumentParser(description=__doc__)
 add_profile_argument(parser)
-profile=parser.parse_args().profile
+parser.add_argument('--output-root', type=Path, help='Optional build root outside the repository.')
+cli_args=parser.parse_args()
+profile=cli_args.profile
 enabled=capabilities(profile)
 from build_provenance import (
     archive_payload_inventory,
@@ -137,7 +139,7 @@ if enabled['separation_four']:
 build_id=os.environ.get('MANIALAB_BUILD_ID') or datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+f'-{os.getpid()}'
 if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',build_id):
     raise SystemExit('MANIALAB_BUILD_ID must be a simple path component.')
-build_root=ROOT/'build'/'portable'/build_id
+build_root=(cli_args.output_root / build_id) if cli_args.output_root else ROOT/'build'/'portable'/build_id
 try:
     build_root.mkdir(parents=True,exist_ok=False)
 except FileExistsError:
@@ -187,6 +189,7 @@ args=[sys.executable,'-m','PyInstaller','--noconfirm','--name','ManiaLab','--con
       '--add-data',f'{ROOT / "manialab/tsumugi-source.json"};manialab',
       '--add-data',f'{ROOT / "vendor/mapperatorinator/template.osu"};vendor/mapperatorinator',
       '--copy-metadata','numpy','--copy-metadata','scipy','--copy-metadata','onnxruntime',
+      '--copy-metadata','pypinyin',
       '--collect-all','imageio_ffmpeg','--collect-binaries','onnxruntime','--exclude-module','pytest',
       '--workpath',str(workpath),'--distpath',str(distpath),'--specpath',str(specpath),
       str(ROOT / 'launcher.py')]

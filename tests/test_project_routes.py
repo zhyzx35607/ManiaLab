@@ -260,7 +260,8 @@ def test_chart_switch_preserves_saved_edits_and_uses_its_own_audio_across_restar
         assert restored["settings"]["keys"] == 8
         assert client.get(base + "/audio").data == b"preview A"
         with zipfile.ZipFile(io.BytesIO(client.get(base + "/export/osz").data)) as output:
-            contents = parse_osu(output.read("ManiaLab.osu").decode())
+            chart_name = next(name for name in output.namelist() if name.endswith(".osu"))
+            contents = parse_osu(output.read(chart_name).decode())
             assert [(n.start, n.end, n.lane) for n in contents["notes"]] == [(1003, 1753, changed_lane)]
             assert output.read(contents["general"]["AudioFilename"]) == b"mix.wav"
         other = client.post(base + "/chart", json={"path": "b.osu"}, headers=headers).json

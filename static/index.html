@@ -70,6 +70,7 @@
             <summary>20 首批量出谱包 <span>串行生成 · 单首落盘 · 可恢复</span></summary>
             <p class="muted compact">批量分析最多同时处理 2 首；V32 生成逐首串行，完成结果立即保存。刷新页面或重启后可恢复并仅续跑未完成歌曲。</p>
             <label class="batch-drop">选择 2–20 首音频<input id="batchFiles" type="file" multiple accept=".mp3,.wav,.flac,.ogg,.m4a,.opus,.aac"></label>
+            <label class="check"><input id="batchMetadataEnrich" type="checkbox" /> 联网补全译名与标签（发送曲名和歌手）</label>
             <p id="batchFileSummary" class="muted compact" aria-live="polite">尚未选择歌曲。</p>
             <button id="batchAnalyze" class="secondary full" disabled>导入并开始批量分析</button>
             <div id="batchStatus" class="batch-status" role="status" aria-live="polite"></div>
@@ -114,7 +115,7 @@
                 <label class="field">统一谱师名<input id="batchScribe" type="text" maxlength="64" value="zhyzx35607" /></label>
                 <label class="field">预设版本后缀<input id="batchVersionSuffix" type="text" maxlength="48" placeholder="例如 stream-v1" /></label>
               </div>
-              <label class="range-field">密度上限 / 秒 <output id="batchDensityOut">7</output>
+              <label id="batchTraditionalSettings" class="range-field hidden">密度上限 / 秒（仅传统 CPU 引擎生效） <output id="batchDensityOut">7</output>
                 <input id="batchDensity" type="range" min="1" max="50" step="1" value="7" />
               </label>
               <label class="check batch-timing-confirm">
@@ -123,7 +124,8 @@
               </label>
               <p class="muted compact">每首歌使用自己的 BPM / Offset；勾选只代表允许未稳定拍线继续，不代表已完成试听校准。</p>
               <button id="batchGenerate" class="primary full" disabled>统一预设并生成全部</button>
-              <a id="batchDownloadAll" class="button secondary full hidden disabled" aria-disabled="true">下载全部 OSZ（ZIP）</a>
+              <a id="batchDownloadPack" class="button primary full hidden disabled" aria-disabled="true">下载合集包（单个 .osz）</a>
+              <a id="batchDownloadAll" class="button secondary full hidden disabled" aria-disabled="true">下载独立谱包（ZIP）</a>
               <div id="batchGeneratedDownloads" class="batch-downloads"></div>
             </div>
             <div id="batchHistory" class="batch-history" aria-live="polite"></div>
@@ -635,6 +637,30 @@
             ><a id="exportJson" class="button subtle disabled">分析 JSON</a>
           </div>
         </div>
+        <div data-single-workflow>
+          <details id="metadataEditor" class="advanced-settings hidden">
+            <summary>导出 Metadata</summary>
+            <form id="metadataForm">
+              <fieldset id="metadataFields" class="metadata-fields" disabled>
+                <label class="field">Title<input name="title" maxlength="200" /></label>
+                <label class="field">TitleUnicode<input name="title_unicode" maxlength="200" /></label>
+                <label class="field">Artist<input name="artist" maxlength="200" /></label>
+                <label class="field">ArtistUnicode<input name="artist_unicode" maxlength="200" /></label>
+                <label class="field">Creator<input name="creator" maxlength="64" /></label>
+                <label class="field">Version<input name="version" maxlength="120" /></label>
+                <label class="field">Source<input name="source" maxlength="200" /></label>
+                <label class="field">背景图文件名<input name="background" maxlength="200" /></label>
+                <label class="field metadata-tags">Tags<input name="tags" maxlength="500" /></label>
+                <label class="field">OD<input name="od" type="number" min="0" max="10" step="any" placeholder="自动" /></label>
+                <label class="field">HP<input name="hp" type="number" min="0" max="10" step="any" placeholder="自动" /></label>
+              </fieldset>
+              <div class="metadata-actions">
+                <button id="metadataSave" class="primary" type="submit" disabled>保存 Metadata</button>
+                <button id="metadataEnrich" class="secondary" type="button" title="发送曲名和歌手以查询公开曲目信息" disabled>联网补全译名与标签</button>
+              </div>
+            </form>
+          </details>
+        </div>
         <div class="job hidden" id="job">
           <div>
             <span class="spinner"></span><span id="jobText">正在处理…</span
@@ -670,7 +696,7 @@
           </p>
         </details>
       </article>
-      <aside class="right">
+      <aside class="right" data-single-workflow>
         <section>
           <div class="section-title">
             <span class="step">03</span>
@@ -712,8 +738,8 @@
               <label class="field">谱师名<input id="singleScribe" type="text" maxlength="64" value="zhyzx35607" /></label>
               <label class="field">版本后缀<input id="singleVersionSuffix" type="text" maxlength="48" placeholder="可选" /></label>
             </div>
-            <details class="advanced-settings">
-              <summary>采音与 LN 参数 <span>密度、声部取舍</span></summary>
+            <details id="singleTraditionalSettings" class="advanced-settings hidden">
+              <summary>采音与 LN 参数 <span>仅传统 CPU 引擎生效</span></summary>
               <label class="range-field"
                 >密度上限 / 秒 <output id="densityOut"></output
                 ><input
@@ -892,9 +918,9 @@
               <button id="v32Generate" class="primary full" disabled>生成 V32 候选</button>
             </div>
           </details>
-          <button id="generate" class="primary full large">
+          <button id="generate" class="primary full large" disabled>
             生成候选谱面 <span>↗</span></button
-          ><button id="another" class="quiet full">换一个布局 · 新种子</button>
+          ><button id="another" class="quiet full" disabled>换一个布局 · 新种子</button>
           <hr />
           <details class="advanced-settings">
             <summary>高级定轨与 LN <span>纯键型预设在上方选择</span></summary>

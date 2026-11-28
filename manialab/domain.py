@@ -162,7 +162,7 @@ def fixed_red_line(bpm, offset, meter=4):
 
 def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unknown", audio="audio.ogg",
                bpm=120.0, offset=0.0, original=None, version="ManiaLab", creator="ManiaLab", grid_division=None,
-               bookmarks=(), meter=4):
+               bookmarks=(), meter=4, track_metadata=None):
     report = validate(notes, keys)
     if not report["valid"]:
         raise ValueError("谱面未通过结构校验：" + report["issues"][0])
@@ -185,13 +185,46 @@ def export_osu(notes, keys, template_path: Path, title="Untitled", artist="Unkno
             retained = [line for line in s.get(name, []) if line.split(":", 1)[0].strip() not in changes]
             s[name] = retained + [f"{k}:{clean_meta(v)}" for k, v in changes.items()]
         s["HitObjects"] = lines
+        overrides = track_metadata or {}
+        metadata = dict(overrides)
+        for key in ("Title", "TitleUnicode", "Artist", "ArtistUnicode", "Creator", "Version", "Source", "Tags"):
+            if key in metadata:
+                s["Metadata"] = [line for line in s.get("Metadata", [])
+                                 if line.partition(":")[0].strip() != key]
+                s["Metadata"].append(f"{key}:{clean_meta(metadata[key])}")
+        for key in ("OverallDifficulty", "HPDrainRate"):
+            if key in metadata:
+                s["Difficulty"] = [line for line in s.get("Difficulty", [])
+                                   if line.partition(":")[0].strip() != key]
+                s["Difficulty"].append(f"{key}:{metadata[key]}")
+        if "Background" in metadata:
+            background = metadata["Background"]
+            replaced = False
+            events = []
+            for line in s.get("Events", []):
+                if re.match(r'\s*0\s*,\s*0\s*,', line):
+                    if not replaced and background:
+                        events.append(f'0,0,"{clean_meta(background)}",0,0')
+                    replaced = True
+                else:
+                    events.append(line)
+            if background and not replaced:
+                events.append(f'0,0,"{clean_meta(background)}",0,0')
+            s["Events"] = events
         return "\n".join(["\n".join(s.get("", ["osu file format v14"]))] +
                          [f"[{name}]\n" + "\n".join(body) for name, body in s.items() if name]) + "\n"
-    substitutions = dict(audio_filename=clean_meta(audio), preview_time=-1, mode=3, title=clean_meta(title),
-        title_unicode=clean_meta(title), artist=clean_meta(artist), artist_unicode=clean_meta(artist),
-        creator=clean_meta(creator), version=f"{version} {keys}K", source="", tags="ManiaLab generated",
-        hp_drain_rate=5, circle_size=keys, overall_difficulty=7, approach_rate=5,
-        slider_multiplier=1.4, slider_tick_rate=1, background_line="",
+    metadata = track_metadata or {}
+    od = metadata.get("OverallDifficulty", 8 if not notes or sum(n.hold for n in notes) * 10 < len(notes) * 3 else 6 if keys <= 8 else 5)
+    hp = metadata.get("HPDrainRate", 8 if not notes or sum(n.hold for n in notes) * 10 < len(notes) * 3 else 6 if keys <= 8 else 5)
+    background = metadata.get("Background", Path(audio).stem + ".png")
+    substitutions = dict(audio_filename=clean_meta(audio), preview_time=-1, mode=3,
+        title=clean_meta(metadata.get("Title", title)),
+        title_unicode=clean_meta(metadata.get("TitleUnicode", title)),
+        artist=clean_meta(metadata.get("Artist", artist)), artist_unicode=clean_meta(metadata.get("ArtistUnicode", artist)),
+        creator=clean_meta(metadata.get("Creator", creator)), version=clean_meta(metadata.get("Version", f"{version} {keys}K")),
+        source=clean_meta(metadata.get("Source", "")), tags=clean_meta(metadata.get("Tags", "ManiaLab generated")),
+        hp_drain_rate=hp, circle_size=keys, overall_difficulty=od, approach_rate=5,
+        slider_multiplier=1.4, slider_tick_rate=1, background_line=f'0,0,"{clean_meta(background)}",0,0' if background else "",
         timing_points=fixed_red_line(bpm, offset, meter), hit_objects="\n".join(lines))
     content = Template(template_path.read_text(encoding="utf-8")).substitute(substitutions)
     # New charts must not inherit the template's placeholder bookmark, including

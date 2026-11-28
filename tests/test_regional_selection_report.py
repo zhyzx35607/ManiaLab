@@ -426,7 +426,8 @@ def test_regional_phrase_bookmark_and_osz_survive_edit_and_reopen(tmp_path):
             (note['start'], note['end'], note['lane']) for note in edited['notes']
         ]
         with zipfile.ZipFile(io.BytesIO(bundle.data)) as archive:
-            assert archive.read('ManiaLab.osu') == chart.data
+            chart_name = next(name for name in archive.namelist() if name.endswith('.osu'))
+            assert archive.read(chart_name) == chart.data
             assert archive.read('song.wav') == audio
     finally:
         reopened.extensions['executor'].shutdown()

@@ -869,6 +869,9 @@ def run(executable, work, piano_audio=None, instrument_fixtures=None, instrument
         failure=wait(request('/api/projects/'+bad['id']+'/analyze',dict(engine='basic',settings={})))
         assert failure['status']=='error'
         assert request('/api/status')['version']==__version__
+        import pypinyin
+        assert pypinyin.lazy_pinyin('樱花草') == ['ying', 'hua', 'cao']
+        record(dict(check='bundled_pypinyin', version=pypinyin.__version__))
         record(dict(check='cancel_and_failure',cancelled=cancelled['status'],bad_audio=failure['status'],service_alive=True))
     finally:
         stop()

@@ -1,13 +1,19 @@
 # ManiaLab 2.0 续接进度
 
-更新：2026-11-28（Asia/Shanghai）。阶段 #01–#06 已验收，`v0.2.0-beta.1` 与热修版 `v0.2.0-beta.2` 已发布；阶段 #07 修改基于 PR #285 合入后的 `b350e2b`，当前仅补充 Tier 2 候选来源验证，不进入阶段 #08。
+更新：2026-11-28。阶段 #01–#06 已验收，`v0.2.0-beta.1` 与热修版 `v0.2.0-beta.2` 已发布；阶段 #07 的 Tier 2 候选拓展已由 PR #286 合并。当前工单仅为阶段 #07.5 和 `v0.2.0-beta.3` Workbench 预发布，不进入阶段 #08。
 
 ## 当前基线
 
-- `main` / `origin/main` 阶段基线：`b350e2b`（PR #285，beta.2 之后的阶段 #07 实现）。当前唯一工作分支为 `feat/phase3b-tier2-qualified`，唯一 worktree 为 `D:\project\ManiaLab`。
-- 本轮只改 Sayobot Tier 2 合法候选状态白名单和回归测试；实验产物仅在忽略目录 `workspace_exp/lora_6_10k_kit/`。
+- 阶段 #07.5 起点：`3efe904`（PR #286）。本工单在主工作区的唯一分支 `feat/beta3-mapper-workflow` 完成；实现、测试及本记录放入同一个 PR。
+- C 盘停止线为 5 GiB；本地 pip/uv/pytest/Playwright/PyInstaller 缓存及临时文件显式落在 D 盘。阶段 #07 的 `workspace_exp/lora_6_10k_kit/` 不属于本工单，不改动语料或启动 LoRA 训练。
 - 阶段 #03 用户实打冠军：FullMix → v32-mini 7K → Torosu dense 10K；去人声不再作为主推理输入。
-- 阶段 #07 停止线按用户最新指示为 C 盘可用 5 GiB；最终复核空间见收尾记录。下载、缓存、临时目录和测试输出全部必须留在 D 盘。
+
+## 阶段 #07.5（Workbench Beta 3）
+
+- 交付范围：V32 隔离传统采音参数并允许自定义生成；无项目时禁用单曲生成按钮，批量与单曲工作区分离。
+- 交付范围：标准 osu! 文件命名，合集 `.osz` 为批量主选项，独立谱包 ZIP 保留；逐项验证媒体 SHA-256 和归档 CRC。
+- 交付范围：FFmpeg 标签/文件名 Metadata、离线拼音/罗马音与显式联网补全；按实际 LN 占比设 OD / HP，手填值优先；英文难度名、风格标签、背景占位及 remap 背景保留。
+- 验收：全量 pytest、Playwright、真实歌曲 `.osz`、本机 Workbench 构建与离线 EXE 校验；单一 PR 和精确 tag 的 Windows CI 通过后，只发布 Workbench ZIP 和 `SHA256SUMS.txt`。预发布状态以精确 tag 的 GitHub Release 资产校验为准。
 
 ## Workbench Beta 已发布
 

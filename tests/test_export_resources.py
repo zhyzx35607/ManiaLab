@@ -62,9 +62,10 @@ def test_osz_export_uses_temporary_file_and_closes_after_response(tmp_path, monk
         assert files[0].closed
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
             assert archive.testzip() is None
-            assert set(archive.namelist()) == {"ManiaLab.osu", "song.wav"}
+            chart_name = next(name for name in archive.namelist() if name.endswith(".osu"))
+            assert len(archive.namelist()) == 2
             assert archive.read("song.wav") == b"synthetic audio"
-            assert b"128,192,1000,128,0,1500:0:0:0:0:" in archive.read("ManiaLab.osu")
+            assert b"128,192,1000,128,0,1500:0:0:0:0:" in archive.read(chart_name)
     finally:
         app.extensions["executor"].shutdown()
 
