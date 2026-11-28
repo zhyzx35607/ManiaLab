@@ -628,7 +628,7 @@ def test_batch_generation_and_osz_bundle_accept_twenty_songs(tmp_path, monkeypat
                 chart_name = next(name for name in first_osz.namelist() if name.endswith(".osu"))
                 metadata = parse_osu(first_osz.read(chart_name).decode("utf-8"))["metadata"]
                 assert metadata["Creator"] == "zhyzx35607"
-                assert "rice_stream" in metadata["Version"]
+                assert metadata["Version"] == "Rice Stream"
         encoded_items = ",".join(
             f"{item['project']}:{item['candidate_id']}" for item in items
         )
@@ -944,7 +944,7 @@ def test_batch_bundle_contains_only_requested_current_candidates_and_audio(tmp_p
                     ]["AudioFilename"]
                     assert osz.read(audio_name) == audio
                     parsed = parse_osu(osz.read(chart_name).decode("utf-8"))
-                    assert parsed["metadata"]["Title"] == "same/title"
+                    assert parsed["metadata"]["Title"] in {"same title", "same title copy"}
                     assert len(parsed["notes"]) == 1
 
         # A previously valid candidate cannot silently resolve to the newly selected variant.
@@ -1020,5 +1020,47 @@ def test_batch_bundle_direct_get_download_is_candidate_bound_and_rejects_bad_lis
             json={"items": [{"project": row["project"],
                              "candidate_id": "f" * 32}]},
         ).status_code == 400
+    finally:
+        app.extensions["task_service"].shutdown()
+
+
+def test_batch_pack_exports_one_osz_with_unique_audio_and_valid_references(tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path)
+    client = app.test_client()
+    headers = {"X-ManiaLab-Token": app.config["TOKEN"]}
+    _install_fake_generator(monkeypatch, [])
+    songs_and_audio = [_import_song(client, headers, "audio.wav") for _ in range(2)]
+    projects = app.extensions["projects"]
+    try:
+        for song, _ in songs_and_audio:
+            _set_analysis(projects, song)
+        generated = _submit_generation(client, headers, [song["id"] for song, _ in songs_and_audio])
+        assert generated.status_code == 200
+        job = _wait_job(client, generated.json["id"])
+        items = [{"project": row["project"], "candidate_id": row["result"]["candidate_id"]}
+                 for row in job["items"]]
+        response = client.post("/api/batch/export-pack", headers=headers, json={"items": items})
+        assert response.status_code == 200, response.json
+        assert response.headers["Content-Disposition"].endswith("ManiaLab-Pack.osz")
+        with zipfile.ZipFile(io.BytesIO(response.data)) as pack:
+            assert pack.testzip() is None
+            charts = [name for name in pack.namelist() if name.endswith(".osu")]
+            assert len(charts) == 2 and all(name != "ManiaLab.osu" for name in charts)
+            assert len(set(name.casefold() for name in charts)) == 2
+            audio_names = []
+            for chart_name in charts:
+                parsed = parse_osu(pack.read(chart_name).decode("utf-8"))
+                audio_name = parsed["general"]["AudioFilename"]
+                audio_names.append(audio_name)
+                assert audio_name in pack.namelist()
+                assert hashlib.sha256(pack.read(audio_name)).hexdigest() in {
+                    hashlib.sha256(audio).hexdigest() for _, audio in songs_and_audio
+                }
+                assert pack.testzip() is None
+            assert len(set(name.casefold() for name in audio_names)) == 2
+        independent = client.post("/api/batch/export-osz", headers=headers, json={"items": items})
+        assert independent.status_code == 200
+        with zipfile.ZipFile(io.BytesIO(independent.data)) as bundle:
+            assert len(bundle.namelist()) == 2
     finally:
         app.extensions["task_service"].shutdown()

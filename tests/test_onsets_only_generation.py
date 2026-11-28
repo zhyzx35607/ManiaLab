@@ -102,7 +102,8 @@ def test_zero_global_ln_ratio_overrides_saved_phrase_and_segment_preferences(tmp
         parsed = parse_osu(chart.get_data(as_text=True))
         assert parsed['notes'] and not any(note.hold for note in parsed['notes'])
         with zipfile.ZipFile(io.BytesIO(package.data)) as archive:
-            assert archive.read('ManiaLab.osu') == chart.data
+            chart_name = next(name for name in archive.namelist() if name.endswith('.osu'))
+            assert archive.read(chart_name) == chart.data
             assert archive.read('song.wav') == audio
         assert client.get(project_url + '/export/osz?candidate_id=' + previous['candidate_id']).status_code == 400
     finally:

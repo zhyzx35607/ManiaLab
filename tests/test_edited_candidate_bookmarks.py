@@ -65,7 +65,8 @@ def _exported_notes(client, base, expected_bookmarks):
     bundle = client.get(base + "/export/osz")
     assert chart.status_code == bundle.status_code == 200
     with zipfile.ZipFile(io.BytesIO(bundle.data)) as archive:
-        assert archive.read("ManiaLab.osu") == chart.data
+        chart_name = next(name for name in archive.namelist() if name.endswith(".osu"))
+        assert archive.read(chart_name) == chart.data
     text = chart.get_data(as_text=True)
     assert values(sections(text)["Editor"])["Bookmarks"] == expected_bookmarks
     return [(note.start, note.end, note.lane) for note in parse_osu(text)["notes"]]
@@ -77,7 +78,7 @@ def _export_payloads(client, base):
     assert chart.status_code == bundle.status_code == 200
     with zipfile.ZipFile(io.BytesIO(bundle.data)) as archive:
         contents = {name: archive.read(name) for name in archive.namelist()}
-    assert contents["ManiaLab.osu"] == chart.data
+    assert next(content for name, content in contents.items() if name.endswith(".osu")) == chart.data
     return chart.data, contents
 
 

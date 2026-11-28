@@ -447,7 +447,8 @@ def test_v32_candidate_uses_torus_task_pipeline_and_existing_osz_export(route_ap
     assert osz_response.status_code == 200, osz_response.json
     with zipfile.ZipFile(io.BytesIO(osz_response.data)) as archive:
         assert archive.testzip() is None
-        chart = parse_osu(archive.read("ManiaLab.osu").decode("utf-8"))
+        chart_name = next(name for name in archive.namelist() if name.endswith(".osu"))
+        chart = parse_osu(archive.read(chart_name).decode("utf-8"))
         assert chart["general"]["AudioFilename"] == "song.wav"
         assert "song.wav" in archive.namelist()
 

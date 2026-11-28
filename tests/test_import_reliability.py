@@ -270,7 +270,7 @@ def test_nested_chart_supplemental_audio_export_closes_reference_and_preserves_o
     response = client.get(f'/api/projects/{pid}/export/osz')
     assert response.status_code == 200
     with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
-        name = 'nested/ManiaLab.osu'
+        name = next(name for name in archive.namelist() if name.startswith('nested/') and name.endswith('.osu'))
         parsed = parse_osu(archive.read(name).decode())
         reference = (Path(name).parent / parsed['general']['AudioFilename']).as_posix()
         assert archive.read(reference) == b'supplemental-audio'
@@ -304,7 +304,7 @@ def test_nested_chart_parent_audio_reference_round_trips_without_duplicate_audio
     response = client.get(base + '/export/osz')
     assert response.status_code == 200
     with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
-        chart_path = 'charts/ManiaLab.osu'
+        chart_path = next(name for name in archive.namelist() if name.startswith('charts/') and name.endswith('.osu'))
         parsed = parse_osu(archive.read(chart_path).decode())
         reference = posixpath.normpath(
             (Path(chart_path).parent / parsed['general']['AudioFilename'].replace('\\', '/')).as_posix()

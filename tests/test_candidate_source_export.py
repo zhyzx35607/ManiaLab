@@ -70,7 +70,8 @@ def _assert_exports(client, base, candidate, analysis, music):
     bundle = client.get(base + '/export/osz')
     assert chart.status_code == bundle.status_code == 200
     with zipfile.ZipFile(io.BytesIO(bundle.data)) as archive:
-        assert archive.read('ManiaLab.osu') == chart.data
+        chart_name = next(name for name in archive.namelist() if name.endswith('.osu'))
+        assert archive.read(chart_name) == chart.data
         assert archive.read('song.wav') == music
     parsed = parse_osu(chart.get_data(as_text=True))
     assert [(note.start, note.end, note.lane) for note in parsed['notes']] == [
@@ -336,8 +337,9 @@ def test_audio_osz_hash_resolves_case_insensitive_reference_to_unique_member(tmp
         response = client.get(base + '/export/osz')
         assert response.status_code == 200, response.json
         with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
-            chart = parse_osu(archive.read('ManiaLab.osu').decode())
-            assert chart['general']['AudioFilename'] == 'song.wav'
+            chart_name = next(name for name in archive.namelist() if name.endswith('.osu'))
+            chart = parse_osu(archive.read(chart_name).decode())
+            assert chart['general']['AudioFilename'] == 'SONG.WAV'
             assert archive.read('SONG.WAV') == original
             assert [name for name in archive.namelist()
                     if name.casefold() == 'song.wav'] == ['SONG.WAV']
@@ -666,7 +668,8 @@ def test_source_snapshots_survive_successive_edits_exports_and_reopening(tmp_pat
         chart = parse_osu(client.get(base + '/export/osu').get_data(as_text=True))
         assert deleted_chart_note not in [(note.start, note.end, note.lane) for note in chart['notes']]
         with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
-            bundled_chart = parse_osu(archive.read('ManiaLab.osu').decode())
+            chart_name = next(name for name in archive.namelist() if name.endswith('.osu'))
+            bundled_chart = parse_osu(archive.read(chart_name).decode())
         assert deleted_chart_note not in [
             (note.start, note.end, note.lane) for note in bundled_chart['notes']
         ]
@@ -907,8 +910,9 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
             for note in parse_osu(chart.get_data(as_text=True))['notes']] == [
                 (note['start'], note['end'], note['lane']) for note in edited['notes']]
         with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
-            assert archive.read('ManiaLab.osu') == chart.data
-            assert archive.read('song.wav') == music
+            chart_name = next(name for name in archive.namelist() if name.endswith('.osu'))
+            assert archive.read(chart_name) == chart.data
+            assert archive.read(parse_osu(chart.data.decode())['general']['AudioFilename']) == music
         assert client.get(base + '/stem/other?context=chart&source_identity=' + reference['identity']).data == old_stem
 
         first_candidate_id = client.get(base).json['variants'][0]['candidate_id']
@@ -923,8 +927,9 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
             for note in parse_osu(parent_chart.get_data(as_text=True))['notes']] == [
                 (note['start'], note['end'], note['lane']) for note in parent['notes']]
         with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
-            assert archive.read('ManiaLab.osu') == parent_chart.data
-            assert archive.read('song.wav') == music
+            chart_name = next(name for name in archive.namelist() if name.endswith('.osu'))
+            assert archive.read(chart_name) == parent_chart.data
+            assert archive.read(parse_osu(parent_chart.data.decode())['general']['AudioFilename']) == music
         third_candidate_id = client.get(base).json['variants'][2]['candidate_id']
         assert client.post(base + '/variant', json={
             'index': 2, 'candidate_id': third_candidate_id}, headers=headers).status_code == 200
@@ -948,8 +953,9 @@ def test_regional_ln_clock_evidence_audition_export_and_reopen_stay_aligned(
             for note in parse_osu(child_chart.get_data(as_text=True))['notes']] == [
                 (note['start'], note['end'], note['lane']) for note in reopened_child['notes']]
         with zipfile.ZipFile(io.BytesIO(client.get(base + '/export/osz').data)) as archive:
-            assert archive.read('ManiaLab.osu') == child_chart.data
-            assert archive.read('song.wav') == music
+            chart_name = next(name for name in archive.namelist() if name.endswith('.osu'))
+            assert archive.read(chart_name) == child_chart.data
+            assert archive.read(parse_osu(child_chart.data.decode())['general']['AudioFilename']) == music
         response = client.get(base + '/stem/other?context=chart&source_identity=' + reference['identity'])
         assert response.status_code == 200 and response.data == old_stem
     finally:

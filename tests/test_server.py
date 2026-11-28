@@ -152,7 +152,10 @@ def test_full_remap_export(tmp_path):
     assert [(n.start,n.end) for n in parsed['notes']]==[(1000,4000),(1000,5000),(2000,2000)]
     package=client.get(f'/api/projects/{pid}/export/osz')
     with zipfile.ZipFile(io.BytesIO(package.data)) as z:
-        assert set(z.namelist())=={'ManiaLab.osu','song.wav'}
+        chart_name = next(name for name in z.namelist() if name.endswith('.osu'))
+        chart = parse_osu(z.read(chart_name).decode())
+        assert z.read(chart['general']['AudioFilename']) == b'fake-audio'
+        assert 'ManiaLab.osu' not in z.namelist()
     assert client.get('/api/status',headers={'Host':'evil.example'}).status_code==403
     assert client.get('/api/status',headers={'Origin':'https://evil.example'}).status_code==403
     app.extensions['executor'].shutdown()

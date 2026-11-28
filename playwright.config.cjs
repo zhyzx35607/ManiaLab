@@ -4,7 +4,7 @@ const python = process.env.MANIALAB_TEST_PYTHON || path.resolve('.venv', process
 const port = process.env.MANIALAB_TEST_PORT || '8977';
 module.exports = defineConfig({
   testDir: './tests/browser',
-  outputDir: './tests/artifacts/browser',
+  outputDir: process.env.MANIALAB_PLAYWRIGHT_OUTPUT_DIR || './tests/artifacts/browser',
   workers: 1,
   timeout: 30000,
   use: { baseURL: `http://127.0.0.1:${port}`, headless: true, viewport: { width: 1440, height: 1000 },

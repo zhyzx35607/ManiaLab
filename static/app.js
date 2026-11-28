@@ -229,7 +229,7 @@ function loadState(s,{newAudioProject=false}={}){
   setSettings(newAudioProject&&s.mode==='audio'&&(!Array.isArray(s.variants)||s.variants.length===0)
     ?{...s.settings,...GENERATION_PRESETS.hybrid_adaptive}
     :s.settings);
-  $('projectTitle').textContent=s.title;$('projectSub').textContent=s.mode==='remap'?`已导入 ${s.input_keys}K 原谱 · ${s.input_notes.length} 个物件`:'本地音频项目 · 先检查采音，再调整编排';
+  $('projectTitle').textContent=s.title;$('projectSub').textContent=s.mode==='remap'?`已导入 ${s.input_keys}K 原谱 · ${s.input_notes.length} 个物件`:'本地音频项目 · 先检查采音，再调整编排';updateMetadataControls();
   $('mode').value=s.mode;
   if(s.mode==='remap')$('singleEngine').value='traditional';
   updateSingleEngineControls();
@@ -248,7 +248,9 @@ function loadState(s,{newAudioProject=false}={}){
   const ref=s.reference_style;$('referenceStyleInfo').textContent=ref?`${ref.title} · ${ref.keys}K · LN ${(ref.ln_ratio*100).toFixed(1)}% · 中位长度 ${ref.ln_duration_ms['50']||0} ms · 峰值 ${ref.peak_nps} 物件/秒。${ref.warnings.join(' ')} ${ref.notice}`:'不复制原谱音符或时间，也不保证相同手感。';
   options($('variants'),s.variants.length?s.variants.map((v,i)=>{const origin=generationOrigin(v);return [i,`候选 ${i+1} · ${v.settings.keys}K · seed ${v.settings.seed} · ${v.notes.length} 物件${v.region?' · 局部':origin==='regional'?' · 编辑自局部候选':origin==='unknown'?' · 来源未知':''}${v.edits?.length?' · 已修正 '+v.edits.length+' 次':''}`];}):[['','尚未生成']]);$('variants').value=s.active;
   setPlaybackSource(changed);updateAudioStatus();
-  [['exportOsu','osu'],['exportOsz','osz'],['exportJson','json']].forEach(([id,kind])=>{const a=$(id);a.title=kind==='osz'&&!s.audio?'请导入配套音频后导出谱包':'';a.download='ManiaLab.'+kind;});
+  $('exportOsz').title=s.audio?'':'请导入配套音频后导出谱包';
+  $('metadataEditor').classList.toggle('hidden',!s);
+  if(s)loadMetadata(s.id);
   const report=v?.report;const vals=report?[report.notes,`${(report.ln_ratio*100).toFixed(1)}%`,report.max_held,`${(report.longest_ln_ms/1000).toFixed(2)}s`]:['—','—','—','—'];document.querySelectorAll('.metrics strong').forEach((e,i)=>e.textContent=vals[i]);
   selected=null;$('inspector').textContent='点击音符查看起止时间与来源。';window.resetWaveDetail?.();setMode();updateGridStatus();renderReview();window.renderLNDesign?.();window.renderNoteEditor?.();window.renderRecommendations?.();window.renderStructure?.();window.renderProvidedStems?.();window.renderPianoDetector?.();window.renderInstrumentDetector?.();window.renderGuitarDetector?.();draw();updateChartPreview();refreshRecent();
 }
@@ -347,6 +349,7 @@ async function refreshRecent(){
     updateSingleEngineControls();
   }
   if(!batchEngineTouched)$('batchEngine').value=v32GenerateAvailable?'v32-mini':'traditional';
+  updateBatchControls();
   $('v32Status').textContent=v32StatusText(v32EngineStatus);
   const device=v32EngineStatus?.device||{},deviceType=typeof device==='string'?device:device.type;
   $('hardwareStatus').textContent=deviceType==='cuda'?`CUDA GPU 加速 · ${device.name||'NVIDIA'}`:'纯 CPU 模式';
@@ -370,7 +373,18 @@ async function refreshRecent(){
   options($('v32LoraSelect'),loraOptions);options($('batchLora'),loraOptions);
   await refreshBatchHistory();
 }
-function setMode(){const remap=$('mode').value==='remap';$('musical').classList.toggle('hidden',remap);$('strictHint').classList.toggle('hidden',!remap);$('bpm').disabled=remap||busy;$('offset').disabled=remap||busy;['tempoCandidates','halfBpm','doubleBpm','division','timingConfirmed','checkTiming','refitTiming','referenceTiming','applyTiming','audioShift','waveAlign','auditionOffset','auditionB','auditionApply'].forEach(id=>$(id).disabled=remap||busy);$('auditionA').textContent=remap?'试听原谱拍线':'试听当前拍线 A';$('generate').firstChild.textContent=remap?'严格重新定轨 ':'生成候选谱面 ';$('v32Generate').disabled=busy||!state||remap||!v32GenerateAvailable;}
+function setMode(){const remap=$('mode').value==='remap';$('musical').classList.toggle('hidden',remap);$('strictHint').classList.toggle('hidden',!remap);$('bpm').disabled=remap||busy;$('offset').disabled=remap||busy;['tempoCandidates','halfBpm','doubleBpm','division','timingConfirmed','checkTiming','refitTiming','referenceTiming','applyTiming','audioShift','waveAlign','auditionOffset','auditionB','auditionApply'].forEach(id=>$(id).disabled=remap||busy);$('auditionA').textContent=remap?'试听原谱拍线':'试听当前拍线 A';$('generate').firstChild.textContent=remap?'严格重新定轨 ':'生成候选谱面 ';updateGenerationButtons();}
+function updateGenerationButtons(){
+  const blocked=busy||!state,remap=$('mode').value==='remap';
+  $('generate').disabled=$('another').disabled=blocked||(!remap&&$('singleEngine').value!=='traditional'&&!v32GenerateAvailable);
+  $('v32Generate').disabled=blocked||remap||!v32GenerateAvailable;
+}
+function updateMetadataControls(){
+  const disabled=busy||!state;
+  $('metadataFields').disabled=disabled;
+  $('metadataSave').disabled=disabled;
+  $('metadataEnrich').disabled=disabled;
+}
 // A pending recent-project GET must not replace the project being acted on.
 function setBusy(value){
   if(value)projectLoadRequest++;
@@ -384,6 +398,8 @@ function setBusy(value){
     !!v32EngineStatus?.runtime_available&&!v32EngineStatus?.runtime_needs_cuda
   );
   $('v32Generate').disabled=value||!state||$('mode').value==='remap'||!v32GenerateAvailable;
+  updateGenerationButtons();
+  updateMetadataControls();
   document.querySelectorAll('[data-key]').forEach(button=>button.disabled=value);
   $('job').classList.toggle('hidden',!value);setMode();window.updateEditorLocks?.();window.lockStructure?.();window.lockProvidedStems?.();window.lockPianoDetector?.();window.lockInstrumentDetector?.();window.lockGuitarDetector?.();
   document.querySelectorAll('[data-recommendation],#recommendationRefresh').forEach(button=>button.disabled=value||!state?.analysis);
@@ -469,27 +485,23 @@ function updateBatchControls(){
   const generated=generationItems.filter(item=>item.status==='done'&&batchCandidateId(item));
   controls.classList.toggle('hidden',!ready.length&&!generated.length);
   $('batchGenerate').disabled=busy||!ready.length||batchResultsOnly;
-  $('batchDownloadAll').classList.toggle('hidden',!generated.length);
   const downloadDisabled=busy||!generated.length;
-  $('batchDownloadAll').setAttribute('aria-disabled',String(downloadDisabled));
-  $('batchDownloadAll').classList.toggle('disabled',downloadDisabled);
-  if(generated.length&&!busy){
-    const encoded=generated.map(item=>`${item.project||item.project_id}:${batchCandidateId(item)}`).join(',');
-    $('batchDownloadAll').href='/api/batch/export-osz?'+new URLSearchParams({items:encoded}).toString();
-    $('batchDownloadAll').removeAttribute('tabindex');
-  }else{
-    $('batchDownloadAll').removeAttribute('href');
-    $('batchDownloadAll').setAttribute('tabindex','-1');
+  const items=generated.map(item=>`${item.project||item.project_id}:${batchCandidateId(item)}`).join(',');
+  for(const [id,endpoint] of [['batchDownloadPack','export-pack'],['batchDownloadAll','export-osz']]){
+    const link=$(id);
+    link.classList.toggle('hidden',!generated.length);
+    link.classList.toggle('disabled',downloadDisabled);
+    link.setAttribute('aria-disabled',String(downloadDisabled));
+    if(downloadDisabled){link.removeAttribute('href');link.tabIndex=-1;}
+    else{link.href=`/api/batch/${endpoint}?${new URLSearchParams({items})}`;link.removeAttribute('tabindex');}
   }
+  $('batchMetadataEnrich').disabled=busy;
+  $('batchTraditionalSettings').classList.toggle('hidden',$('batchEngine').value!=='traditional');
   $('batchDensityOut').textContent=$('batchDensity').value;
 }
 async function batchUnstableTimingTitles(items){
   const projects=await Promise.all(items.map(item=>api('/api/projects/'+encodeURIComponent(item.project||item.project_id))));
   return projects.filter(project=>!project.analysis?.tempo?.stable).map(project=>project.title||project.id);
-}
-function batchDownloadName(title){
-  const safe=String(title||'ManiaLab').replace(/[<>:"/\\|?*\u0000-\u001f]/g,'_').trim().slice(0,100);
-  return (safe||'ManiaLab')+'.osz';
 }
 let reconnectingBatch=false;
 async function refreshBatchHistory(){
@@ -631,7 +643,23 @@ function setWorkflowMode(mode){
   panel.hidden=!batch;
   if(batch)panel.open=true;
   if(!batch)panel.open=false;
-  $('batchFiles').disabled=busy;
+  $('batchFiles').disabled=busy;updateGenerationButtons();
+}
+async function loadMetadata(projectId){
+  const metadata=await api(`/api/projects/${encodeURIComponent(projectId)}/metadata`);
+  if(state?.id!==projectId)return;
+  const names={Title:'title',TitleUnicode:'title_unicode',Artist:'artist',ArtistUnicode:'artist_unicode',
+    Creator:'creator',Version:'version',Source:'source',Background:'background',Tags:'tags',
+    OverallDifficulty:'od',HPDrainRate:'hp'};
+  for(const [key,name] of Object.entries(names)){const field=$('metadataForm').elements.namedItem(name);if(field)field.value=metadata[key]??'';}
+}
+function metadataPayload(){
+  const fields=[...$('metadataForm').elements].filter(field=>field.name);
+  const keys={title:'Title',title_unicode:'TitleUnicode',artist:'Artist',artist_unicode:'ArtistUnicode',
+    creator:'Creator',version:'Version',source:'Source',background:'Background',tags:'Tags',
+    od:'OverallDifficulty',hp:'HPDrainRate'};
+  return Object.fromEntries(fields.filter(field=>!['od','hp'].includes(field.name)||field.value.trim()!=='')
+    .map(field=>[keys[field.name],['od','hp'].includes(field.name)?Number(field.value):field.value]));
 }
 function selectedLora(){
   const selected=$('v32LoraSelect')?.value||$('batchLora')?.value||'';
@@ -654,6 +682,8 @@ function updateSingleEngineControls(){
   const engine=$('singleEngine').value;
   $('v32Model').value=engine==='v32'?'v32':'v32-mini';
   $('v32PanelControls').classList.toggle('hidden',engine==='traditional');
+  $('singleTraditionalSettings').classList.toggle('hidden',engine!=='traditional');
+  updateGenerationButtons();
 }
 function renderBatchStatus(snapshot){
   batchSnapshot=snapshot;
@@ -698,7 +728,7 @@ function renderBatchStatus(snapshot){
         const download=document.createElement('a');download.className='batch-download-link';download.dataset.batchDownload='';
         if(busy){download.classList.add('disabled');download.setAttribute('aria-disabled','true');download.setAttribute('tabindex','-1');}
         else{download.href=`/api/projects/${encodeURIComponent(projectId)}/export/osz?candidate_id=${encodeURIComponent(candidateId)}`;download.setAttribute('aria-disabled','false');}
-        download.download=batchDownloadName(item.title||item.name);download.textContent='下载 OSZ';row.append(download);
+        download.textContent='下载 OSZ';row.append(download);
       }
     }
     list.append(row);
@@ -791,6 +821,7 @@ async function runBatchAnalysis(files){
       renderBatchStatus({status:'importing',message:'导入 '+(index+1)+'/'+files.length+'：'+file.name,items:importedItems});
       const data=new FormData();data.append('files',file);
       const project=await api('/api/import',data,true);
+      if($('batchMetadataEnrich').checked)await api(`/api/projects/${encodeURIComponent(project.id)}/metadata/lookup`,{}).catch(()=>null);
       batchImported.push(project);
       importedItems.push({project:project.id,title:project.title||file.name,status:'imported',message:'已创建本地项目，等待分析。'});
       renderBatchStatus({status:'importing',message:'已导入 '+(index+1)+'/'+files.length+' 首。',items:importedItems});
@@ -865,7 +896,7 @@ async function runBatchGeneration(){
   if(!GENERATION_PRESETS[payload.preset]||payload.preset==='torosu_remap')throw Error('请选择有效的音频风格预设。');
   if(engine!=='traditional'&&!v32GenerateAvailable)throw Error('V32 环境尚未就绪，请先查看顶部状态并准备运行环境。');
   batchPhase='analysis';batchSnapshot=batchAnalysisSnapshot;
-  $('batchGeneratedDownloads').replaceChildren();$('batchDownloadAll').removeAttribute('href');
+  $('batchGeneratedDownloads').replaceChildren();$('batchDownloadPack').removeAttribute('href');$('batchDownloadAll').removeAttribute('href');
   batchGenerationSubmitting=true;batchCancelRequested=false;
   setBusy(true);$('jobText').textContent='正在检查歌曲拍线…';$('progress').value=0;
   try{
@@ -898,17 +929,16 @@ async function generate(region){
     throw Error('Torosu 不支持局部重写；请在高级设置中将定轨引擎切换为 beam 或 classic 后重试。');
   if(engine!=='traditional'&&!region){
     if($('mode').value==='remap')throw Error('V32 音频大脑不用于已有谱严格转键；请切换传统 Torosu。');
-    if(preset==='custom')throw Error('V32 生成请选择五大风格预设之一。');
-    const values=GENERATION_PRESETS[preset]||GENERATION_PRESETS.hybrid_adaptive;
+    const v32Preset=GENERATION_PRESETS[preset]&&preset!=='torosu_remap'?preset:'hybrid_adaptive';
     return runJob('v32-generate',{
-      preset,keys,key_layout:$('keyLayout').value,bpm:Number($('bpm').value),
+      preset:v32Preset,keys,key_layout:$('keyLayout').value,bpm:Number($('bpm').value),
       offset:Number($('offset').value),division:Number($('division').value),
       audio_shift_ms:clockShift(),difficulty:Number($('v32Difficulty').value),
       model_variant:engine,generation_strategy:$('v32Strategy').value,
       hold_note_ratio:Number($('v32HoldRatio').value),
       mania_column_temperature:Number($('v32Temperature').value),
       torosu_density:$('v32Density').value,
-      torosu_keep_jacks:values.torosu_keep_jacks!==false,torosu_ln_mode:$('v32LnMode').value,
+      torosu_keep_jacks:currentSettings.torosu_keep_jacks,torosu_ln_mode:$('v32LnMode').value,
       lora_path:$('v32LoraSelect').value||$('v32LoraPath').value.trim()||null,
       metadata:{creator:$('singleScribe').value.trim()||'zhyzx35607',version_suffix:$('singleVersionSuffix').value.trim()},
       timing_confirmed:$('timingConfirmed').checked,
@@ -922,7 +952,7 @@ async function generate(region){
   return runJob('generate',payload);
 }
 numbers.forEach(k=>$(k).addEventListener('input',updateOutputs));
-$('batchDownloadAll').setAttribute('aria-disabled','true');
+$('batchDownloadAll').setAttribute('aria-disabled','true');$('batchDownloadPack').setAttribute('aria-disabled','true');
 numbers.forEach(k=>$(k).addEventListener('input',()=>{syncPresetLabel();updateGridStatus();}));
 document.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{keys=Number(b.dataset.key);updateKeys();syncPresetLabel();updateGridStatus();window.updateEditorLocks?.();});
 $('keyLayout').addEventListener('change',()=>{syncPresetLabel();updateGridStatus();});
@@ -944,14 +974,14 @@ $('batchFiles').onchange=updateBatchAvailability;
 $('batchFiles').disabled=false;
 $('batchAnalyze').onclick=guarded(()=>runBatchAnalysis([...$('batchFiles').files]));
 $('batchGenerate').onclick=guarded(()=>runBatchGeneration());
-$('batchDownloadAll').onclick=()=>msg('已开始下载批量谱包；服务端逐首打包，不会在浏览器中缓存全部音频。');
+for(const id of ['batchDownloadPack','batchDownloadAll'])$(id).onclick=()=>msg('正在准备批量谱包；服务端逐首打包，不会在浏览器中缓存全部音频。');
 $('batchKeys').onchange=()=>{updateBatchKeyLayout();updateBatchControls();};
 $('batchPreset').onchange=()=>{const presetId=$('batchPreset').value,preset=GENERATION_PRESETS[presetId];if(preset){$('batchDensity').value=preset.density;$('batchTorosuDensity').value=PRESET_TOROSU_DEFAULTS[presetId]||'dense';$('batchTorosuLnMode').value=preset.torosu_ln_mode||'keep';$('batchHoldRatio').value=PRESET_V32_HOLD[presetId]??.3;$('batchHoldRatioOut').textContent=`${Math.round(Number($('batchHoldRatio').value)*100)}%`;}updateBatchControls();};
 $('batchDensity').oninput=updateBatchControls;
 $('batchTorosuDensity').onchange=updateBatchControls;
 $('batchTorosuLnMode').onchange=updateBatchControls;
 $('batchHoldRatio').oninput=()=>{$('batchHoldRatioOut').textContent=`${Math.round(Number($('batchHoldRatio').value)*100)}%`;};
-$('batchEngine').onchange=()=>{batchEngineTouched=true;if($('batchEngine').value!=='traditional'&&!v32GenerateAvailable)msg('顶部 V32 状态未就绪；准备环境后即可运行 V32 批量。',true);};
+$('batchEngine').onchange=()=>{batchEngineTouched=true;updateBatchControls();if($('batchEngine').value!=='traditional'&&!v32GenerateAvailable)msg('顶部 V32 状态未就绪；准备环境后即可运行 V32 批量。',true);};
 $('batchKeyLayout').onchange=updateBatchControls;
 updateBatchKeyLayout();updateBatchControls();
 $('batchHistory').addEventListener('click',guarded(async event=>{
@@ -974,6 +1004,20 @@ document.querySelectorAll('[data-work-mode]').forEach(button=>button.onclick=()=
 setWorkflowMode('single');
 $('drop').ondragover=e=>{e.preventDefault();$('drop').classList.add('drag');};$('drop').ondragleave=()=>$('drop').classList.remove('drag');$('drop').ondrop=guarded(e=>{e.preventDefault();$('drop').classList.remove('drag');return importFiles(e.dataTransfer.files);});
 $('recent').onchange=guarded(async e=>{const id=e.target.value;if(!id)return;const request=++projectLoadRequest;const project=await api('/api/projects/'+id);if(request===projectLoadRequest)loadState(project);});
+$('metadataForm').onsubmit=guarded(async event=>{
+  event.preventDefault();if(!state)return;
+  const projectId=state.id;const saved=await fetch(`/api/projects/${encodeURIComponent(projectId)}/metadata`,{
+    method:'PUT',headers:{'Content-Type':'application/json','X-ManiaLab-Token':token},body:JSON.stringify(metadataPayload())});
+  const result=await saved.json().catch(()=>({}));if(!saved.ok)throw Error(result.error||'保存 Metadata 失败');
+  if(state?.id===projectId){await loadMetadata(projectId);updateGridStatus();}
+  msg('Metadata 已保存，导出时立即生效。');
+});
+$('metadataEnrich').onclick=guarded(async()=>{
+  if(!state)return;const projectId=state.id;const found=await api(`/api/projects/${encodeURIComponent(projectId)}/metadata/lookup`,{});
+  if(state?.id!==projectId)return;
+  await loadMetadata(projectId);
+  msg('曲目信息补全完成；已保留手动填写字段。');
+});
 async function switchSavedSelection(kind,payload){
   if(busy)return;
   projectLoadRequest++;setBusy(true);$('jobText').textContent='正在切换…';
@@ -1004,7 +1048,7 @@ $('headerV32Install').onclick=guarded(()=>runGlobalV32Install());
 $('v32HoldRatio').oninput=updateV32Outputs;$('v32Temperature').oninput=updateV32Outputs;
 $('v32Generate').onclick=guarded(()=>{$('singleEngine').value=$('v32Model').value;return generate();});
 $('preset').onchange=()=>applyGenerationPreset($('preset').value);
-$('singleEngine').onchange=()=>{singleEngineTouched=true;updateSingleEngineControls();$('v32PanelControls').classList.toggle('hidden',$('singleEngine').value==='traditional');};
+$('singleEngine').onchange=()=>{singleEngineTouched=true;updateSingleEngineControls();};
 $('v32LoraSelect').onchange=()=>{if($('v32LoraSelect').value)$('v32LoraPath').value='';};
 $('batchLora').onchange=()=>{if($('batchLora').value)$('batchLoraPath').value='';};
 $('torosuKeepJacks').onchange=()=>{syncPresetLabel();updateGridStatus();};

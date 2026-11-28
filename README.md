@@ -4,14 +4,15 @@ ManiaLab 是面向 osu!mania 6–10K 的本地智能制谱工作台，以 10K �
 
 ## 当前公开试用版
 
-[下载 ManiaLab 2.0 Workbench Beta 2（Windows x64）](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.2.0-beta.2/ManiaLab-0.2.0-beta.2-windows-x64-workbench.zip)（单文件 ZIP，首次使用 V32 时在界面点击「准备 V32 运行环境」）。
+[下载 ManiaLab 2.0 Workbench Beta 3（Windows x64）](https://github.com/zhyzx35607/ManiaLab/releases/download/v0.2.0-beta.3/ManiaLab-0.2.0-beta.3-windows-x64-workbench.zip)（单文件 ZIP，首次使用 V32 时在界面点击「准备 V32 运行环境」）。
 
 ## 工作流程
 
 1. 导入一首歌曲或已有 `.osu/.osz`；也可一次选择最多 20 首歌曲。
 2. 检查采音证据并确认 BPM / Offset；批量任务按单首记录进度，刷新后可继续未完成歌曲。
 3. 选择 6–10K、难度与风格：切指偏米 `rice_stream`、叠键偏米 `rice_jack`、综合随歌 `hybrid_adaptive`、精致 LN `ln_focus`，或已有谱 Torosu 改造 `torosu_remap`。可选择本地 LoRA。
-4. 使用竖屏下落预览检查短键、LN、拍线与键型摘要，然后导出 `.osu/.osz`、逐首谱包或整套 ZIP。
+4. 使用竖屏下落预览检查短键、LN、拍线与键型摘要。单曲导出前可编辑曲名、谱师、难度名及 OD / HP 等信息；联网补全默认关闭，可按需启用。
+5. 单曲按曲名和谱师导出 `.osu/.osz`。批量优先导出单个合集 `.osz`，双击一次导入所有已完成歌曲；也可下载含多个独立 `.osz` 的 ZIP。
 
 ## Windows 便携版
 

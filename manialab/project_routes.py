@@ -9,6 +9,7 @@ from .arrange_config import DEFAULTS, merge_parameters
 from .chart_workspace import select_chart
 from .domain import parse_osu
 from .meter import project_with_meter
+from .mapper_metadata import audio_metadata, effective_metadata, online_metadata, override_metadata
 from .storage import (
     AUDIO,
     MAX_IMPORT_BYTES,
@@ -69,6 +70,9 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             audio = audio_candidates[0] if audio_candidates else None
             if audio:
                 state.update(audio=audio.relative_to(path / "files").as_posix(), title=audio.stem)
+                track_metadata = audio_metadata(audio)
+                state.update(title=track_metadata["TitleUnicode"], artist=track_metadata["ArtistUnicode"],
+                             track_metadata=track_metadata)
             for chart in sorted(item for item in candidates if item.is_file() and item.suffix.lower() == ".osu"):
                 try:
                     parsed = parse_osu(chart.read_text(encoding="utf-8-sig"))
@@ -163,6 +167,52 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
             projects.save(state)
         return jsonify(project_with_meter(state))
 
+    def get_metadata(pid):
+        state = projects.load(pid)
+        index = state.get("active", -1)
+        variant = state["variants"][index] if 0 <= index < len(state.get("variants", [])) else {}
+        notes = [parse_note(note) for note in variant.get("notes", [])]
+        original = None
+        if state.get("original"):
+            original = safe_path(projects.path(pid) / "files", state["original"]).read_text(encoding="utf-8-sig")
+        return jsonify(effective_metadata(state, variant, notes, variant.get("settings", state["settings"]).get("keys", 7),
+                                          original=original, audio=state.get("audio")))
+
+    def save_metadata(pid):
+        with task_service.lock:
+            task_service.ensure_project_idle(pid)
+            state = projects.load(pid)
+            payload = request.get_json(silent=True)
+            if not isinstance(payload, dict):
+                raise ValueError("Metadata 必须为对象")
+            state["export_metadata"] = override_metadata(payload)
+            if state["export_metadata"].get("TitleUnicode"):
+                state["title"] = state["export_metadata"]["TitleUnicode"]
+            if state["export_metadata"].get("ArtistUnicode"):
+                state["artist"] = state["export_metadata"]["ArtistUnicode"]
+            projects.save(state)
+        return jsonify(effective_metadata(state))
+
+    def lookup_metadata(pid):
+        state = projects.load(pid)
+        current = effective_metadata(state)
+        try:
+            found = online_metadata(current)
+        except Exception:
+            found = {}
+        if found:
+            with task_service.lock:
+                task_service.ensure_project_idle(pid)
+                state = projects.load(pid)
+                current.update(state.get("export_metadata", {}))
+                current.update({key: value for key, value in found.items()
+                                if key not in state.get("export_metadata", {})})
+                state["export_metadata"] = override_metadata(current)
+                projects.save(state)
+        return jsonify(effective_metadata(state))
+
+    from .domain import note_from as parse_note
+
     app.add_url_rule("/api/import", endpoint="import_files", view_func=import_files, methods=["POST"])
     app.add_url_rule("/api/projects/<pid>", endpoint="get_project", view_func=get_project, methods=["GET"])
     app.add_url_rule("/api/projects/<pid>/chart", endpoint="choose_chart", view_func=choose_chart,
@@ -171,3 +221,9 @@ def register_project_routes(app, projects, task_service, *, parameters, describe
                      methods=["POST"])
     app.add_url_rule("/api/projects/<pid>/reference-style", endpoint="reference_style",
                      view_func=reference_style, methods=["POST"])
+    app.add_url_rule("/api/projects/<pid>/metadata", endpoint="get_metadata",
+                     view_func=get_metadata, methods=["GET"])
+    app.add_url_rule("/api/projects/<pid>/metadata", endpoint="save_metadata",
+                     view_func=save_metadata, methods=["PATCH", "PUT"])
+    app.add_url_rule("/api/projects/<pid>/metadata/lookup", endpoint="lookup_metadata",
+                     view_func=lookup_metadata, methods=["POST"])
