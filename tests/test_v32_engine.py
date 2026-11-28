@@ -469,6 +469,35 @@ def test_whisper_config_cache_seeds_both_hub_roots_without_overwriting(
         assert json.loads(raw.decode("utf-8"))["model_type"] == "whisper"
 
 
+def test_whisper_config_cache_can_use_localappdata_fallback(tmp_path):
+    from manialab.v32_engine import _WHISPER_CONFIGS
+
+    local_cache = tmp_path / "localappdata-cache"
+    for repo, revision in _WHISPER_CONFIGS.items():
+        snapshot = local_cache / repo / "snapshots" / revision
+        refs = local_cache / repo / "refs"
+        snapshot.mkdir(parents=True)
+        refs.mkdir(parents=True)
+        (snapshot / "config.json").write_text(
+            '{"model_type":"whisper","fallback":true}', encoding="utf-8"
+        )
+        (refs / "main").write_text(revision, encoding="utf-8")
+
+    engine = V32Engine(tmp_path / "data", tmp_path / "empty-resources")
+    runtime_env = {
+        "HF_HOME": str(tmp_path / "hf-home"),
+        "MANIALAB_WHISPER_CONFIG_CACHE": str(local_cache),
+    }
+
+    engine._seed_whisper_config_cache(runtime_env)
+
+    isolated_cache = Path(runtime_env["HF_HUB_CACHE"])
+    assert isolated_cache != local_cache
+    for repo, revision in _WHISPER_CONFIGS.items():
+        copied_config = isolated_cache / repo / "snapshots" / revision / "config.json"
+        assert json.loads(copied_config.read_text(encoding="utf-8"))["fallback"] is True
+
+
 def test_model_cache_revision_mismatch_is_a_global_user_visible_error(tmp_path):
     cache = tmp_path / "models"
     destination = cache / "Mapperatorinator-v32-74f2258"

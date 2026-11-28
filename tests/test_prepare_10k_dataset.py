@@ -20,6 +20,7 @@ from training.prepare_10k_dataset import (
     tier1_review_rows,
     write_tier1_review,
     read_tier1_review,
+    reviewed_source_paths,
 )
 
 
@@ -374,9 +375,23 @@ def test_local_creator_scan_and_review_csv_roundtrip_preserve_manual_decisions(t
         row["ReviewDecision"] = "DROP"
         writer.writerow(row)
     assert read_tier1_review(csv_path, candidates) == {candidates[0]["review_id"]: "DROP"}
+    assert reviewed_source_paths(csv_path) == {candidates[0]["relative_path"]}
     write_tier1_review(csv_path, candidates)
     preserved = list(csv.DictReader(csv_path.open(encoding="utf-8-sig", newline="")))
     assert preserved[0]["ReviewDecision"] == "DROP"
+
+
+def test_local_creator_scan_can_be_limited_to_reviewed_paths(tmp_path):
+    songs = tmp_path / "Songs"
+    set_dir = songs / "123 Artist - Song"
+    set_dir.mkdir(parents=True)
+    first = set_dir / "Artist - Song (Mapper) [10K LN].osu"
+    first.write_text(_chart().replace("Creator: Mapper", "Creator: zhyzx35607"), encoding="utf-8")
+    unrelated = songs / "unrelated.osu"
+    unrelated.write_text("not a beatmap", encoding="utf-8")
+
+    assert len(scan_local_creator_charts(songs, {first.relative_to(songs).as_posix()})) == 1
+    assert scan_local_creator_charts(songs, {"../outside.osu"}) == []
 
 
 def test_local_review_flags_repeated_short_same_lane_ln_tail_gaps():

@@ -1,12 +1,21 @@
 # ManiaLab 2.0 续接进度
 
-更新：2026-11-28。阶段 #01–#06 已验收，`v0.2.0-beta.1` 与热修版 `v0.2.0-beta.2` 已发布；阶段 #07 的 Tier 2 候选拓展已由 PR #286 合并。当前工单仅为阶段 #07.5 和 `v0.2.0-beta.3` Workbench 预发布，不进入阶段 #08。
+更新：2026-11-28。阶段 #01–#07.5 已验收，`v0.2.0-beta.1` 至 `v0.2.0-beta.3` Workbench 预发布已完成。当前工单仅为阶段 #08A：锁定人工审核谱、构建黄金语料并验证 RTX 4050 离线速训套件；不启动长时间 CPU 训练，不发布 Release/tag。
 
 ## 当前基线
 
-- 阶段 #07.5 起点：`3efe904`（PR #286）。本工单在主工作区的唯一分支 `feat/beta3-mapper-workflow` 完成；实现、测试及本记录放入同一个 PR。
-- C 盘停止线为 5 GiB；本地 pip/uv/pytest/Playwright/PyInstaller 缓存及临时文件显式落在 D 盘。阶段 #07 的 `workspace_exp/lora_6_10k_kit/` 不属于本工单，不改动语料或启动 LoRA 训练。
+- 阶段 #08A 基于 `main`/`16bde91`（PR #287），唯一分支 `feat/phase3c-4050-lora-kit`，唯一工作区 `D:\project\ManiaLab`；代码、测试与本记录放在同一个 PR。
+- C 盘停止线为 5 GiB；缓存、临时文件、数据集与套件均在 D 盘忽略目录。此阶段仅允许单步离线 smoke，禁止本机长时间 CPU 训练；数据集、权重与套件不入库。
 - 阶段 #03 用户实打冠军：FullMix → v32-mini 7K → Torosu dense 10K；去人声不再作为主推理输入。
+
+
+## 阶段 #08A（Phase 3C-Prep）
+
+- `zhyzx35607_review.csv` 59 行全部锁定：42 KEEP / 17 DROP（Baby Pack 1 的 7 张与重复谱 10 张均按计划剔除）。
+- `dataset/` 状态 `human_reviewed`，1,771 张 / 2,444,245,127 bytes：Tier 1/2/3 为 42/34/1,695；键数 6K–10K 为 298/680/184/178/431；所有键数 Train/Val 均覆盖，音频哈希、歌曲组、mapset 泄露复算交集均为 0。
+- `portable_4050_kit/` 已组装；清洁目录含 manifest 在内共 2,717 文件、2,677,664,103 bytes（manifest 校验的 2,716 个载荷文件为 2,677,119,144 bytes），含本地 V32-mini、离线 Whisper 配置、源码、Torosu、训练入口和 `sitecustomize.py`。
+- 完全离线 CPU 干跑 1 个 optimizer step + V32-mini/LoRA 推理成功，导出 10K `.osz`（ZIP CRC 通过）；step 237.22 秒，峰值 RSS 1,149.27 MiB。验证后已清除 smoke 输出，便携套件保持干净；未进行长训。
+- 全量 pytest `2718 passed, 76 skipped, 1 warning`（377.18s），Playwright `107 passed`（4.0m）；Windows PR CI 作为合并门禁。阶段 #08A 不发布 Release/tag。
 
 ## 阶段 #07.5（Workbench Beta 3）
 
