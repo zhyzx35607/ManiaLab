@@ -1,20 +1,27 @@
 # ManiaLab 2.0 续接进度
 
-更新：2026-11-28（Asia/Shanghai）。阶段 #01–#06 已验收，`v0.2.0-beta.1` 已发布；当前仅执行 beta.2 热修，阶段 #07 暂停，不进入阶段 #08。
+更新：2026-11-28（Asia/Shanghai）。阶段 #01–#06 已验收，`v0.2.0-beta.1` 与热修版 `v0.2.0-beta.2` 已发布；当前仅收尾阶段 #07，不进入阶段 #08。
 
 ## 当前基线
 
-- `main` / `origin/main` 基线：`4b57dcf`（PR #283，tag `v0.2.0-beta.1`）。当前唯一分支为 `fix/v0.2.0-beta.2-hotfix`，唯一 worktree 为 `D:\project\ManiaLab`。
-- 阶段 #07 未提交的 8 个文件已放入本地 stash `preserve-phase07-before-beta2-hotfix`；未带入本热修分支。`workspace_exp/` 实验产物保留原位。
+- `main` / `origin/main` 阶段基线：`83d5b43`（PR #284，tag `v0.2.0-beta.2`）。当前唯一阶段分支为 `feat/phase3b-6-10k-lora-kit`，唯一 worktree 为 `D:\project\ManiaLab`。
+- 阶段 #07 先前工作已从恢复点 `stash@{0}` 应用到 beta.2 基线；stash 保留作恢复副本。实验产物仅在忽略目录 `workspace_exp/lora_6_10k_kit/`。
 - 阶段 #03 用户实打冠军：FullMix → v32-mini 7K → Torosu dense 10K；去人声不再作为主推理输入。
-- 热修期间 pytest basetemp、TMP/TEMP 与 HF/Torch/pip/uv 缓存均指向 D 盘。复核时 C 盘可用 `10,526,060,544` bytes（9.80 GiB），低于用户给定 10.09 GiB 基线；D 盘可用 `98,809,004,032` bytes（92.02 GiB）。未清理归属不明的 C 盘文件。
+- 阶段 #07 停止线按用户最新指示为 C 盘可用 5 GiB；最终复核空间见收尾记录。下载、缓存、临时目录和测试输出全部必须留在 D 盘。
 
-## Workbench Beta 发布与热修
+## Workbench Beta 已发布
 
 - `v0.2.0-beta.1` 已作为公开 Workbench 预发布版发布；`v0.2.*` 精确 tag 与标记 `[portable]` 的 PR 均构建/校验 `workbench`，旧 Core/Standard/Extended profile 策略保留。
-- 当前 beta.2 热修只处理五项用户报告：全曲 Timing 上下文、V32 吸附后 AI 同刻碰撞清理、Whisper 配置离线缓存、2 小时可配置安装超时与镜像选项、安全任务错误摘要及批量权重故障提前停止。
-- 真实离线检查在 `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1` 下从 ManiaLab 隔离配置缓存加载 `openai/whisper-base` 与 `openai/whisper-small` 成功；既有共享 HF 缓存保持不变。全量 pytest `2643 passed, 76 skipped, 1 warning`；Playwright `103 passed`，V32 安装专项 `5 passed`。
-- 热修目标包：`ManiaLab-0.2.0-beta.2-windows-x64-workbench.zip` + `SHA256SUMS.txt`；先经单一 `[portable]` PR 与 Windows CI 合入，再由精确 tag CI 产物发布。完成 beta.2 后停止，不自动继续阶段 #07。
+- beta.2 热修经 PR #284 合并并发布；修复全曲 Timing 上下文、V32 吸附后 AI 同刻碰撞、Whisper 离线配置缓存、安装超时/镜像、任务错误摘要与批量全局故障提前停止。CI 与 tag Workbench 资产校验通过。
+
+## 阶段 #07（Phase 3B）收尾
+
+- 只读扫描本机 `osu!\Songs` 得到 `zhyzx35607` 6–10K 谱面 59 张：自动 `KEEP` 56 张、`REVIEW_INVERSE` 3 张；键数为 6K 0、7K 30、8K 2、9K 2、10K 25。审核文件位于忽略目录 `workspace_exp/lora_6_10k_kit/`，59 行 `ReviewDecision` 均留空，未代替用户作决定。
+- 最终 provisional 语料 `workspace_exp/lora_6_10k_kit/dataset_provisional_phase07_deep_tier2/`：740 张谱 / 212 个歌曲泄露组 / 1,184,537,245 bytes；Tier mapset 为 18/15/187，Train/Val 为 180/32 组（约 85/15），音频哈希/歌曲别名/mapset 零泄露，6K–10K 五键数均覆盖两个 split。中文定向搜索上限加深到每查询 50 页。
+- Tier 1 有 56 张正常谱及 3 张自动标红谱；未人工判定。加深检索后 Tier 2 仍为 15 个 Sayobot 中文 mapset，LN mapset 数：6K 1/4、7K 9/7、8K 0/2、9K 0/2、10K 0/4；50 页内未找到能补缺的匹配中文 LN mapset，短缺已写入 manifest，不以 Tier 3 冒充。Tier 3 为 187 Ranked/Loved mapset。
+- 最新真实 CPU smoke `smoke/run-20261128-123132/` 针对加深搜索后的数据完成冷启动 1 步、`--resume-latest` 到 2 步；V32-mini CPU 加载 LoRA，step 2 固定抽到 10K LN 与 10K Hybrid。两个 `.osz` 均通过 CRC、10K 键数及结构检查；Hybrid 有 3 条窗口内未闭合 LN 警告，LN 样本 0 条。Peak RSS 1,083.08 MiB，训练 step 约 15.14 秒，评测约 241 秒；未运行长时间训练。
+- 数据器/训练器专项 `29 passed` / `47 passed`；全量 pytest `2692 passed, 76 skipped, 1 warning`（231.40s），Playwright 最终复跑 `103 passed`（4.0m）。LN-only 键配额、最终 payload 预算、固定 LN+Hybrid 验证抽样、内容哈希推理缓存及 V32 边界修复均有回归测试。
+- 最终复核 C 盘可用约 9.99 GiB、D 盘约 73.82 GiB，高于 C 盘 5 GiB 停止线；缓存、临时目录、浏览器副本和 smoke 产物均在 D 盘或忽略目录。阶段 #07 代码与本记录统一进入单一 PR，等待 Windows CI；不发 Release/tag，不进入阶段 #08。
 
 ## 阶段 #01 历史基线
 
