@@ -27,6 +27,9 @@ import zipfile
 SAYOBOT_API = "https://api.sayobot.cn"
 SAYOBOT_DOWNLOAD = "https://txy1.sayobot.cn/beatmaps/download/novideo"
 RANKED_STATUSES = (1, 4)
+# Sayobot's non-negative approved states are safe candidates for the
+# Chinese Tier 2 discovery pass.  Tier 3 deliberately remains Ranked/Loved.
+TIER2_STATUSES = (1, 2, 3, 4)
 SUPPORTED_KEYCOUNTS = (6, 7, 8, 9, 10)
 KEYCOUNT_KEYWORDS = {
     7: ("7K", "7 key", "7-key"),
@@ -571,7 +574,7 @@ def _find_map_rows(payload: Any) -> list[dict[str, Any]]:
 
 def _status(value: Any) -> int | None:
     status = _as_int(value)
-    return status if status in RANKED_STATUSES else None
+    return status if status in TIER2_STATUSES else None
 
 
 def _map_star(row: dict[str, Any]) -> float | None:
@@ -632,8 +635,8 @@ class SayobotClient:
         limit: int,
         language: int | None = None,
     ) -> dict[str, Any]:
-        if status not in RANKED_STATUSES:
-            raise ValueError("只允许检索 Ranked (1) 与 Loved (4)")
+        if status not in TIER2_STATUSES:
+            raise ValueError("只允许检索非负的 Sayobot 状态 (1/2/3/4)")
         body = {
             "cmd": "beatmaplist",
             "type": "search",
@@ -1605,6 +1608,7 @@ def _sayobot_search_options(
         "max_pages_per_query": max_pages_per_query,
     }
     if tier == "tier2":
+        options["statuses"] = TIER2_STATUSES
         options["keywords"] = (
             "",
             f"{keycount}K LN",

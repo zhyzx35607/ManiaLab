@@ -495,6 +495,39 @@ def test_sayobot_search_can_filter_language_without_affecting_status():
     assert all(call["language"] == dataset.CHINESE_LANGUAGE_BIT for call in calls)
 
 
+def test_sayobot_tier2_accepts_approved_states_but_rejects_pending():
+    client = SayobotClient(request_delay=0)
+    calls = []
+
+    def fake_api_json(_url, *, body=None, timeout=45):
+        calls.append(body)
+        status = body["class"]
+        return {
+            "status": 0,
+            "endid": 0,
+            "data": [{"sid": status, "approved": status}],
+        }
+
+    original = dataset._api_json
+    dataset._api_json = fake_api_json
+    try:
+        rows = list(client.iter_search(
+            keywords=("8K LN",),
+            statuses=dataset.TIER2_STATUSES,
+            page_size=10,
+            max_pages_per_query=1,
+        ))
+    finally:
+        dataset._api_json = original
+
+    assert [call["class"] for call in calls] == [1, 2, 3, 4]
+    assert [(row["sid"], row["approved"]) for row in rows] == [
+        (1, 1), (2, 2), (3, 3), (4, 4)
+    ]
+    with pytest.raises(ValueError):
+        client.list_page(keyword="8K", status=-1, offset=0, limit=10)
+
+
 def test_tier2_query_filters_chinese_and_reserves_ln_mapsets_by_keycount():
     tier2 = dataset._sayobot_search_options(
         "tier2",
@@ -510,10 +543,12 @@ def test_tier2_query_filters_chinese_and_reserves_ln_mapsets_by_keycount():
     )
 
     assert tier2["language"] == dataset.CHINESE_LANGUAGE_BIT
+    assert tier2["statuses"] == dataset.TIER2_STATUSES
     assert tier2["keywords"][0] == ""
     assert tier2["keywords"][1:4] == ("10K LN", "10 key LN", "10-key LN")
     assert tier3["keywords"][0] == ""
     assert "language" not in tier3
+    assert tier3["statuses"] == dataset.RANKED_STATUSES
     assert dataset._tier2_ln_mapset_targets(
         {6: 14, 7: 30, 8: 9, 9: 8, 10: 15}
     ) == {6: 4, 7: 8, 8: 3, 9: 2, 10: 4}
