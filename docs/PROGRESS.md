@@ -21,7 +21,7 @@
 - Tier 1 有 56 张正常谱及 3 张自动标红谱；未人工判定。加深检索后 Tier 2 仍为 15 个 Sayobot 中文 mapset，LN mapset 数：6K 1/4、7K 9/7、8K 0/2、9K 0/2、10K 0/4；50 页内未找到能补缺的匹配中文 LN mapset，短缺已写入 manifest，不以 Tier 3 冒充。Tier 3 为 187 Ranked/Loved mapset。
 - 最新真实 CPU smoke `smoke/run-20261128-123132/` 针对加深搜索后的数据完成冷启动 1 步、`--resume-latest` 到 2 步；V32-mini CPU 加载 LoRA，step 2 固定抽到 10K LN 与 10K Hybrid。两个 `.osz` 均通过 CRC、10K 键数及结构检查；Hybrid 有 3 条窗口内未闭合 LN 警告，LN 样本 0 条。Peak RSS 1,083.08 MiB，训练 step 约 15.14 秒，评测约 241 秒；未运行长时间训练。
 - 数据器/训练器专项 `29 passed` / `47 passed`；全量 pytest `2692 passed, 76 skipped, 1 warning`（231.40s），Playwright 最终复跑 `103 passed`（4.0m）。LN-only 键配额、最终 payload 预算、固定 LN+Hybrid 验证抽样、内容哈希推理缓存及 V32 边界修复均有回归测试。
-- 最终复核 C 盘可用约 9.99 GiB、D 盘约 73.82 GiB，高于 C 盘 5 GiB 停止线；缓存、临时目录、浏览器副本和 smoke 产物均在 D 盘或忽略目录。阶段 #07 代码与本记录统一进入 PR #285；Windows CI run `46109051487` 全绿。不发 Release/tag，不进入阶段 #08。
+- 最终复核 C 盘可用约 10.01 GiB、D 盘约 73.63 GiB，高于 C 盘 5 GiB 停止线；缓存、临时目录、浏览器副本和 smoke 产物均在 D 盘或忽略目录。阶段 #07 代码与本记录统一进入 PR #285；Windows CI run `46109051487` 全绿。不发 Release/tag，不进入阶段 #08。
 
 ## 阶段 #01 历史基线
 
