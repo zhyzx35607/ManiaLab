@@ -60,14 +60,14 @@ def test_generated_defaults_have_language_tags_and_background():
 
 def test_generated_background_event_is_separate_from_template_comment_and_overrides_apply():
     from pathlib import Path
-    from manialab.domain import export_osu, parse_osu
+    from manialab.domain import export_osu, parse_osu, sections, values
 
     state = {"title": "原始标题", "artist": "原始歌手", "audio": "track.mp3",
              "export_metadata": {"Title": "Edited Title", "TitleUnicode": "修改标题",
                                  "OverallDifficulty": 4, "HPDrainRate": 3,
                                  "Background": "cover.png"}}
-    resolved = metadata.effective_metadata(state, notes=[Note(0, 0)], keys=7)
-    content = export_osu([Note(0, 0)], 7, Path(__file__).resolve().parents[1]
+    resolved = metadata.effective_metadata(state, notes=[Note(1000, 1000, lane=0)], keys=7)
+    content = export_osu([Note(1000, 1000, lane=0)], 7, Path(__file__).resolve().parents[1]
                          / "vendor" / "mapperatorinator" / "template.osu",
                          audio="track.mp3", track_metadata=resolved)
     event = next(line for line in content.splitlines() if line.startswith('0,0,"'))
@@ -75,8 +75,9 @@ def test_generated_background_event_is_separate_from_template_comment_and_overri
     parsed = parse_osu(content)
     assert parsed["metadata"]["Title"] == "Edited Title"
     assert parsed["metadata"]["TitleUnicode"] == "修改标题"
-    assert parsed["difficulty"]["OverallDifficulty"] == 4
-    assert parsed["difficulty"]["HPDrainRate"] == 3
+    difficulty = values(sections(content)["Difficulty"])
+    assert difficulty["OverallDifficulty"] == "4"
+    assert difficulty["HPDrainRate"] == "3"
 
 
 def test_osu_export_name_uses_ascii_metadata_and_cleans_windows_characters():
