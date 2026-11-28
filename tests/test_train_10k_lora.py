@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -423,21 +424,37 @@ def test_generated_zero_or_negative_length_holds_are_preserved_as_taps(tmp_path,
     assert repeated_count == 1
 
 
-def test_free_disk_guard_and_repository_drive_guard_are_explicit(tmp_path, monkeypatch):
+def test_free_disk_guard_and_runtime_paths_are_portable(tmp_path, monkeypatch):
     assert ensure_free_disk_space(tmp_path, 0.001) > 0
     monkeypatch.setattr(trainer, "repo_root", lambda: Path("D:/ManiaLab"))
     assert require_repo_drive(Path("D:/experiment"), "output").drive == "D:"
-    with pytest.raises(ValueError, match="repository drive"):
-        require_repo_drive(Path("C:/temp"), "output")
-    with pytest.raises(ValueError, match="repository drive"):
-        trainer.resolve_model_cache(
-            trainer.parse_args(["--model-cache", "C:/no-write/model-cache"]),
-            tmp_path,
-        )
-    c_drive_runtime = Path(f"C:/phase07-runtime-{id(tmp_path)}")
-    with pytest.raises(ValueError, match="must stay on D:"):
-        trainer.pin_runtime_paths(c_drive_runtime)
-    assert not c_drive_runtime.exists()
+    assert require_repo_drive(Path("C:/temp"), "output").drive == "C:"
+    assert trainer.resolve_model_cache(
+        trainer.parse_args(["--model-cache", str(tmp_path / "portable-models")]), tmp_path
+    ) == (tmp_path / "portable-models").resolve()
+    portable_runtime = tmp_path / "kit-on-another-drive"
+    paths = trainer.pin_runtime_paths(portable_runtime)
+    assert paths["HF_HOME"] == portable_runtime / "runtime" / "cache" / "huggingface"
+    assert paths["TMP"].is_dir()
+
+
+def test_runtime_paths_preserve_selected_offline_whisper_cache(tmp_path, monkeypatch):
+    whisper_cache = tmp_path / "assets" / "huggingface"
+    monkeypatch.setenv("HF_HUB_CACHE", str(whisper_cache))
+    monkeypatch.setenv("TRANSFORMERS_CACHE", str(whisper_cache))
+
+    paths = trainer.pin_runtime_paths(tmp_path / "portable")
+
+    assert paths["HF_HUB_CACHE"] == whisper_cache
+    assert Path(os.environ["TRANSFORMERS_CACHE"]) == whisper_cache
+    assert whisper_cache.is_dir()
+
+
+def test_portable_defaults_use_4050_safe_checkpoint_cadence():
+    args = trainer.parse_args([])
+    assert args.model == "v32-mini"
+    assert args.gradient_accumulation_steps == 16
+    assert args.checkpoint_every_steps == 50
 
 
 @pytest.mark.parametrize("free_gib", [5.0, 4.99])

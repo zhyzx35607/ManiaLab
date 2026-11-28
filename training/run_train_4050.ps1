@@ -7,12 +7,18 @@ param(
     [ValidateRange(0, 100000000)]
     [int]$Steps = 0,
     [switch]$Resume,
-    [string]$TorosuCli
+    [string]$TorosuCli,
+    [string]$PythonPath,
+    [switch]$NoMirrors
 )
 
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$kitRoot = Join-Path $repoRoot "workspace_exp\lora_6_10k_kit"
+$kitRoot = if (Test-Path -LiteralPath (Join-Path $repoRoot "dataset\manifest.json") -PathType Leaf) {
+    $repoRoot
+} else {
+    Join-Path $repoRoot "workspace_exp\lora_6_10k_kit"
+}
 $runtimeRoot = Join-Path $kitRoot "runtime"
 $cacheRoot = Join-Path $runtimeRoot "cache"
 $venvRoot = Join-Path $runtimeRoot "venv"
@@ -22,20 +28,17 @@ $datasetManifest = Join-Path $kitRoot "dataset\manifest.json"
 $python = Join-Path $venvRoot "Scripts\python.exe"
 $uv = Join-Path $toolsRoot "uv.exe"
 $minimumCFreeGiB = 5.0
-$minimumDFreeGiB = 4.0
-
-if (-not $repoRoot.StartsWith("D:\", [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "The RTX 4050 runner requires the ManiaLab workspace on D:."
-}
+$minimumKitFreeGiB = 4.0
 $cDrive = Get-PSDrive -Name C -ErrorAction Stop
 $cFreeGiB = $cDrive.Free / 1GB
 if ($cFreeGiB -le $minimumCFreeGiB) {
     throw ("C: has {0:N2} GiB free, at or below the {1:N2} GiB stop floor." -f $cFreeGiB, $minimumCFreeGiB)
 }
-$dDrive = Get-PSDrive -Name D -ErrorAction Stop
-$dFreeGiB = $dDrive.Free / 1GB
-if ($dFreeGiB -lt $minimumDFreeGiB) {
-    throw ("D: has {0:N2} GiB free, below the {1:N2} GiB training reserve." -f $dFreeGiB, $minimumDFreeGiB)
+$kitDriveName = ([System.IO.Path]::GetPathRoot($kitRoot)).TrimEnd(':\')
+$kitDrive = Get-PSDrive -Name $kitDriveName -ErrorAction Stop
+$kitFreeGiB = $kitDrive.Free / 1GB
+if ($kitFreeGiB -lt $minimumKitFreeGiB) {
+    throw ("Training drive {0}: has {1:N2} GiB free, below the {2:N2} GiB training reserve." -f $kitDriveName, $kitFreeGiB, $minimumKitFreeGiB)
 }
 
 if (-not (Test-Path -LiteralPath $datasetManifest -PathType Leaf)) {
@@ -55,8 +58,9 @@ $env:TMP = Join-Path $runtimeRoot "tmp"
 $env:TEMP = $env:TMP
 $env:TMPDIR = $env:TMP
 $env:HF_HOME = Join-Path $cacheRoot "huggingface"
-$env:HF_HUB_CACHE = Join-Path $env:HF_HOME "hub"
-Remove-Item Env:TRANSFORMERS_CACHE -ErrorAction SilentlyContinue
+$bundledWhisperCache = Join-Path $repoRoot "assets\huggingface"
+$env:HF_HUB_CACHE = if (Test-Path -LiteralPath $bundledWhisperCache -PathType Container) { $bundledWhisperCache } else { Join-Path $env:HF_HOME "hub" }
+$env:TRANSFORMERS_CACHE = $env:HF_HUB_CACHE
 $env:TORCH_HOME = Join-Path $cacheRoot "torch"
 $env:TORCHINDUCTOR_CACHE_DIR = Join-Path $env:TORCH_HOME "inductor"
 $env:XDG_CACHE_HOME = Join-Path $cacheRoot "xdg"
@@ -64,7 +68,63 @@ $env:PIP_CACHE_DIR = Join-Path $cacheRoot "pip"
 $env:UV_CACHE_DIR = Join-Path $cacheRoot "uv"
 $env:UV_PYTHON_INSTALL_DIR = $pythonRoot
 $env:MANIALAB_CACHE_ROOT = $cacheRoot
-$env:MANIALAB_V32_MODEL_CACHE = Join-Path $cacheRoot "huggingface\manialab"
+$localAppRoot = Join-Path $env:LOCALAPPDATA "ManiaLab"
+$bundledModels = Join-Path $kitRoot "models"
+$localModels = Join-Path $localAppRoot "models\mapperatorinator"
+$env:MANIALAB_V32_MODEL_CACHE = if (Test-Path -LiteralPath $bundledModels -PathType Container) {
+    $bundledModels
+} elseif (Test-Path -LiteralPath $localModels -PathType Container) {
+    $localModels
+} else {
+    Join-Path $cacheRoot "huggingface\manialab"
+}
+$env:MANIALAB_KIT_ROOT = $kitRoot
+$bundledSource = Join-Path $kitRoot "source"
+$localSource = Join-Path $localAppRoot "mapperatorinator-v32\source"
+if (Test-Path -LiteralPath (Join-Path $bundledSource "inference.py") -PathType Leaf) {
+    $env:MANIALAB_MAPPER_REPO = $bundledSource
+} elseif (Test-Path -LiteralPath (Join-Path $localSource "inference.py") -PathType Leaf) {
+    $env:MANIALAB_MAPPER_REPO = $localSource
+}
+$modelName = if ($Model -eq "v32-mini") { "Mapperatorinator-v32-mini-7807f0d" } else { "Mapperatorinator-v32" }
+$modelCheckpoint = Join-Path $env:MANIALAB_V32_MODEL_CACHE "$modelName\gamemode=3"
+$modelFiles = @("config.json", "generation_config.json", "model.safetensors", "tokenizer.json")
+$modelReady = @($modelFiles | ForEach-Object { Test-Path -LiteralPath (Join-Path $modelCheckpoint $_) -PathType Leaf } | Where-Object { -not $_ }).Count -eq 0
+$whisperCandidates = @(
+    $bundledWhisperCache,
+    (Join-Path $localAppRoot "assets\huggingface"),
+    (Join-Path $localAppRoot "cache\huggingface"),
+    (Join-Path $localAppRoot "mapperatorinator-v32\cache\huggingface")
+)
+$whisperFiles = @(
+    "models--openai--whisper-base\refs\main",
+    "models--openai--whisper-base\snapshots\e37978b90ca9030d5170a5c07aadb050351a65bb\config.json",
+    "models--openai--whisper-small\refs\main",
+    "models--openai--whisper-small\snapshots\973afd24965f72e36ca33b3055d56a652f456b4d\config.json"
+)
+$whisperCache = $null
+foreach ($candidate in $whisperCandidates) {
+    if ((@($whisperFiles | ForEach-Object { Test-Path -LiteralPath (Join-Path $candidate $_) -PathType Leaf } | Where-Object { -not $_ }).Count -eq 0)) {
+        $whisperCache = $candidate
+        break
+    }
+}
+if ($whisperCache) {
+    $env:HF_HUB_CACHE = $whisperCache
+    $env:TRANSFORMERS_CACHE = $whisperCache
+    $env:MANIALAB_WHISPER_CONFIG_CACHE = $whisperCache
+    $whisperReady = $true
+} else {
+    $whisperReady = $false
+    Remove-Item Env:MANIALAB_WHISPER_CONFIG_CACHE -ErrorAction SilentlyContinue
+}
+if ($modelReady -and $whisperReady) {
+    $env:HF_HUB_OFFLINE = "1"
+    $env:TRANSFORMERS_OFFLINE = "1"
+} else {
+    Remove-Item Env:HF_HUB_OFFLINE -ErrorAction SilentlyContinue
+    Remove-Item Env:TRANSFORMERS_OFFLINE -ErrorAction SilentlyContinue
+}
 $env:PYTHONDONTWRITEBYTECODE = "1"
 $env:PYTHONUTF8 = "1"
 $env:HF_HUB_DISABLE_SYMLINKS_WARNING = "1"
@@ -82,7 +142,20 @@ $env:HF_HUB_DISABLE_SYMLINKS_WARNING = "1"
     New-Item -ItemType Directory -Force -Path $_ | Out-Null
 }
 
-if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
+$usingExistingCudaPython = $false
+$knownCudaPython = Join-Path $env:LOCALAPPDATA "ManiaLab\mapperatorinator-v32\venv\Scripts\python.exe"
+if ($PythonPath) {
+    if (-not (Test-Path -LiteralPath $PythonPath -PathType Leaf)) { throw "PythonPath does not exist: $PythonPath" }
+    $python = (Resolve-Path -LiteralPath $PythonPath).Path
+} elseif (Test-Path -LiteralPath $knownCudaPython -PathType Leaf) {
+    $knownTorch = & $knownCudaPython -c "import torch; print(f'{torch.__version__}|{torch.cuda.is_available()}')" 2>$null
+    if ($LASTEXITCODE -eq 0 -and $knownTorch -match "^2\.9\.1\+cu128\|True$") {
+        $python = $knownCudaPython
+        $usingExistingCudaPython = $true
+    }
+}
+
+if (-not $usingExistingCudaPython -and -not (Test-Path -LiteralPath $python -PathType Leaf)) {
     $python310 = $false
     $pyLauncher = Get-Command py -ErrorAction SilentlyContinue
     if ($pyLauncher) {
@@ -145,8 +218,8 @@ if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
     }
 }
 
-$needsCudaTorch = $true
-if (Test-Path -LiteralPath $python -PathType Leaf) {
+$needsCudaTorch = -not $usingExistingCudaPython
+if (-not $usingExistingCudaPython -and (Test-Path -LiteralPath $python -PathType Leaf)) {
     $torchProbe = & $python -c "import torch; print(f'{torch.__version__}|{torch.cuda.is_available()}')" 2>$null
     if ($LASTEXITCODE -eq 0 -and $torchProbe -match "^2\.9\.1\+cu128\|True$") {
         $needsCudaTorch = $false
@@ -154,13 +227,31 @@ if (Test-Path -LiteralPath $python -PathType Leaf) {
 }
 
 if ($needsCudaTorch) {
-    & $python -m pip install --upgrade pip
+    $torchIndexUrl = if ($NoMirrors) { "https://download.pytorch.org/whl/cu128" } elseif ($env:MANIALAB_TORCH_INDEX_URL) { $env:MANIALAB_TORCH_INDEX_URL } else { "https://mirror.nju.edu.cn/pytorch/whl/cu128/" }
+    $env:MANIALAB_PYPI_INDEX_URL = if ($NoMirrors) { "https://pypi.org/simple" } elseif ($env:MANIALAB_PYPI_INDEX_URL) { $env:MANIALAB_PYPI_INDEX_URL } else { "https://mirrors.aliyun.com/pypi/simple/" }
+    & $python -m pip install --index-url $env:MANIALAB_PYPI_INDEX_URL --upgrade pip
     if ($LASTEXITCODE -ne 0) { throw "pip upgrade failed." }
-    & $python -m pip install --index-url https://download.pytorch.org/whl/cu128 torch==2.9.1 torchaudio==2.9.1
+    & $python -m pip install --index-url $torchIndexUrl torch==2.9.1 torchaudio==2.9.1
     if ($LASTEXITCODE -ne 0) { throw "CUDA PyTorch installation failed." }
 }
 
-& $python -m pip install -r (Join-Path $repoRoot "assets\mapperatorinator-requirements.txt")
+$requirements = Join-Path $repoRoot "assets\mapperatorinator-requirements.txt"
+if ($usingExistingCudaPython) {
+    $lightDependencies = @("accelerate==1.12.0", "pandas==2.3.3", "pyarrow==22.0.0", "peft==0.18.1", "datasets==4.8.3", "safetensors")
+    if (-not $NoMirrors) {
+        $env:MANIALAB_PYPI_INDEX_URL = if ($env:MANIALAB_PYPI_INDEX_URL) { $env:MANIALAB_PYPI_INDEX_URL } else { "https://mirrors.aliyun.com/pypi/simple/" }
+        & $python -m pip install --index-url $env:MANIALAB_PYPI_INDEX_URL @lightDependencies
+    } else {
+        & $python -m pip install @lightDependencies
+    }
+} else {
+    if (-not $NoMirrors) {
+        $env:MANIALAB_PYPI_INDEX_URL = if ($env:MANIALAB_PYPI_INDEX_URL) { $env:MANIALAB_PYPI_INDEX_URL } else { "https://mirrors.aliyun.com/pypi/simple/" }
+        & $python -m pip install --index-url $env:MANIALAB_PYPI_INDEX_URL -r $requirements
+    } else {
+        & $python -m pip install -r $requirements
+    }
+}
 if ($LASTEXITCODE -ne 0) {
     throw "Mapperatorinator training dependencies could not be installed."
 }
@@ -175,6 +266,10 @@ if ($TorosuCli) {
         throw "Torosu CLI does not exist: $TorosuCli"
     }
     $env:MANIALAB_TOROSU_CLI = (Resolve-Path -LiteralPath $TorosuCli).Path
+} elseif (Test-Path -LiteralPath (Join-Path $kitRoot "engines\torosu_cli\torosu-cli.exe") -PathType Leaf) {
+    $env:MANIALAB_TOROSU_CLI = Join-Path $kitRoot "engines\torosu_cli\torosu-cli.exe"
+} elseif (Test-Path -LiteralPath (Join-Path $localAppRoot "engines\torosu_cli\torosu-cli.exe") -PathType Leaf) {
+    $env:MANIALAB_TOROSU_CLI = Join-Path $localAppRoot "engines\torosu_cli\torosu-cli.exe"
 } elseif (Test-Path -LiteralPath (Join-Path $repoRoot "engines\torosu_cli\torosu-cli.exe") -PathType Leaf) {
     $env:MANIALAB_TOROSU_CLI = Join-Path $repoRoot "engines\torosu_cli\torosu-cli.exe"
 }

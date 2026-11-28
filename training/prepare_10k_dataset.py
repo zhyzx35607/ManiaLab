@@ -942,16 +942,20 @@ def _local_review_reasons(chart: ParsedChart) -> list[str]:
 
 def scan_local_creator_charts(
     songs_dir: Path,
+    relative_paths: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Read-only inventory of one creator's supported mania charts."""
     songs_dir = songs_dir.expanduser().resolve()
     if not songs_dir.is_dir():
         raise FileNotFoundError(f"本机 osu! Songs 目录不存在：{songs_dir}")
     rows = []
-    for chart_path in sorted(
-        (path for path in songs_dir.rglob("*") if path.suffix.casefold() == ".osu"),
-        key=lambda path: path.as_posix().casefold(),
-    ):
+    if relative_paths is None:
+        chart_paths = (
+            path for path in songs_dir.rglob("*") if path.suffix.casefold() == ".osu"
+        )
+    else:
+        chart_paths = (songs_dir / PurePosixPath(relative) for relative in sorted(relative_paths))
+    for chart_path in sorted(chart_paths, key=lambda path: path.as_posix().casefold()):
         try:
             resolved = chart_path.resolve(strict=True)
             if (
@@ -1144,6 +1148,24 @@ def read_tier1_review(review_csv: Path, candidates: list[dict[str, Any]]) -> dic
             f"首个未审核 ReviewId={missing[0]}"
         )
     return decisions
+
+
+def reviewed_source_paths(review_csv: Path) -> set[str]:
+    """Read only reviewed chart paths so a large Songs library need not be rescanned."""
+    paths: set[str] = set()
+    with review_csv.expanduser().open("r", encoding="utf-8-sig", newline="") as stream:
+        reader = csv.DictReader(stream)
+        if not reader.fieldnames or "SourceRelativePath" not in reader.fieldnames:
+            raise ValueError("审核 CSV 缺少 SourceRelativePath 列")
+        for row in reader:
+            relative = (row.get("SourceRelativePath") or "").replace("\\", "/").strip()
+            member = PurePosixPath(relative)
+            if not relative or member.is_absolute() or any(part in ("", ".", "..") for part in member.parts):
+                raise ValueError(f"审核 CSV 包含不安全或空的谱面相对路径：{relative!r}")
+            if member.suffix.casefold() != ".osu":
+                raise ValueError(f"审核 CSV 包含非 .osu 路径：{relative!r}")
+            paths.add(member.as_posix())
+    return paths
 
 
 def _copy_local_creator_charts(
@@ -2323,10 +2345,13 @@ def main(argv: list[str] | None = None) -> int:
         output_dir = (args.output_dir or (default_kit / dataset_name)).expanduser().resolve()
         if songs_dir == output_dir or output_dir.parent.is_relative_to(songs_dir):
             raise ValueError("输出目录必须与 osu! Songs 来源分离，确保本机素材只读")
-        candidates = scan_local_creator_charts(songs_dir)
+        review_csv = args.review_csv.expanduser().resolve() if args.review_csv else None
+        candidates = scan_local_creator_charts(
+            songs_dir,
+            relative_paths=reviewed_source_paths(review_csv) if review_csv else None,
+        )
         if not candidates:
             raise ValueError(f"未找到 Creator={TIER1_CREATOR} 的本机 6–10K 谱面")
-        review_csv = args.review_csv.expanduser().resolve() if args.review_csv else None
         if review_csv and not review_csv.is_relative_to(default_kit.resolve()):
             raise ValueError(f"审核 CSV 与其他实验产物必须位于 {default_kit}")
         review_path = review_csv or (default_kit / f"{TIER1_CREATOR}_review.csv")

@@ -38,24 +38,28 @@ def repo_root() -> Path:
 
 
 def kit_root() -> Path:
-    return repo_root() / KIT_RELATIVE
+    configured = os.environ.get("MANIALAB_KIT_ROOT")
+    if configured:
+        return Path(configured).expanduser().resolve()
+    root = repo_root()
+    if (root / "dataset" / "manifest.json").is_file():
+        return root
+    return root / KIT_RELATIVE
 
 
 def pin_runtime_paths(root: Path | None = None) -> dict[str, Path]:
     """Keep model, package, and temporary caches beside the portable kit."""
     workspace_root = (root or kit_root()).expanduser().resolve()
-    if workspace_root.drive.casefold() != "d:":
-        raise ValueError(
-            f"Phase 07 runtime/cache must stay on D:; refusing to create paths under {workspace_root}"
-        )
     runtime = workspace_root / "runtime"
     cache = runtime / "cache"
+    configured_hub_cache = os.environ.get("HF_HUB_CACHE")
+    configured_transformers_cache = os.environ.get("TRANSFORMERS_CACHE")
     paths = {
         "TMP": runtime / "tmp",
         "TEMP": runtime / "tmp",
         "TMPDIR": runtime / "tmp",
         "HF_HOME": cache / "huggingface",
-        "HF_HUB_CACHE": cache / "huggingface" / "hub",
+        "HF_HUB_CACHE": Path(configured_hub_cache).expanduser() if configured_hub_cache else cache / "huggingface" / "hub",
         "TORCH_HOME": cache / "torch",
         "TORCHINDUCTOR_CACHE_DIR": cache / "torch" / "inductor",
         "XDG_CACHE_HOME": cache / "xdg",
@@ -67,7 +71,13 @@ def pin_runtime_paths(root: Path | None = None) -> dict[str, Path]:
     for name, path in paths.items():
         path.mkdir(parents=True, exist_ok=True)
         os.environ[name] = str(path.resolve())
-    os.environ.pop("TRANSFORMERS_CACHE", None)
+    transformers_cache = (
+        Path(configured_transformers_cache).expanduser()
+        if configured_transformers_cache
+        else paths["HF_HUB_CACHE"]
+    )
+    transformers_cache.mkdir(parents=True, exist_ok=True)
+    os.environ["TRANSFORMERS_CACHE"] = str(transformers_cache.resolve())
     os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
@@ -99,14 +109,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--max-steps", type=int, default=0)
     parser.add_argument("--micro-batch-size", type=int, default=1)
-    parser.add_argument("--gradient-accumulation-steps", type=int, default=8)
+    parser.add_argument("--gradient-accumulation-steps", type=int, default=16)
     parser.add_argument("--num-workers", type=int, default=2)
     parser.add_argument("--learning-rate", type=float, default=0.0001)
     parser.add_argument("--weight-decay", type=float, default=0.01)
     parser.add_argument("--lora-r", type=int, default=16)
     parser.add_argument("--lora-alpha", type=int, default=32)
     parser.add_argument("--lora-dropout", type=float, default=0.05)
-    parser.add_argument("--checkpoint-every-steps", type=int, default=25)
+    parser.add_argument("--checkpoint-every-steps", type=int, default=50)
     parser.add_argument("--max-checkpoints", type=int, default=8)
     parser.add_argument("--minimum-free-disk-gib", type=float, default=MINIMUM_FREE_DISK_GIB)
     parser.add_argument("--resume-from", type=Path)
@@ -753,13 +763,8 @@ def resolve_model_cache(args: argparse.Namespace, root: Path) -> Path:
 
 
 def require_repo_drive(path: Path, name: str) -> Path:
-    resolved = path.expanduser().resolve()
-    expected = repo_root().resolve().drive.casefold()
-    if not expected or resolved.drive.casefold() != expected:
-        raise ValueError(
-            f"{name} must stay on the repository drive ({expected or 'local'}): {resolved}"
-        )
-    return resolved
+    del name
+    return path.expanduser().resolve()
 
 
 def ensure_model_checkpoint(model_variant: str, model_cache: Path) -> tuple[Path, dict[str, str]]:
@@ -774,6 +779,10 @@ def ensure_model_checkpoint(model_variant: str, model_cache: Path) -> tuple[Path
     )
     checkpoint = destination / "gamemode=3"
     if not all((checkpoint / name).is_file() for name in _MODEL_FILES):
+        if os.environ.get("HF_HUB_OFFLINE") == "1":
+            raise FileNotFoundError(
+                f"Offline {model_variant} model snapshot is missing: {checkpoint}"
+            )
         info = HfApi().model_info(spec["repo"], revision=spec["revision"])
         if info.sha != spec["revision"]:
             raise RuntimeError(f"Model revision mismatch for {model_variant}")

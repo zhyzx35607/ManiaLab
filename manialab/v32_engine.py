@@ -152,7 +152,12 @@ class V32Engine:
         return env
 
     def _seed_whisper_config_cache(self, env: dict[str, str]) -> None:
-        bundled_root = self.resources / "assets" / "huggingface"
+        configured_root = env.get("MANIALAB_WHISPER_CONFIG_CACHE")
+        bundled_root = (
+            Path(configured_root).expanduser().resolve()
+            if configured_root
+            else self.resources / "assets" / "huggingface"
+        )
         config_cache = (
             Path(env["HF_HOME"]).expanduser().resolve()
             / "manialab-whisper-config-cache"
