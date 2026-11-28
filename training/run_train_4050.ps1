@@ -12,21 +12,51 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$kitRoot = Join-Path $repoRoot "workspace_exp\lora_10k_kit"
+$kitRoot = Join-Path $repoRoot "workspace_exp\lora_6_10k_kit"
 $runtimeRoot = Join-Path $kitRoot "runtime"
 $cacheRoot = Join-Path $runtimeRoot "cache"
 $venvRoot = Join-Path $runtimeRoot "venv"
 $pythonRoot = Join-Path $runtimeRoot "python"
 $toolsRoot = Join-Path $runtimeRoot "tools"
+$datasetManifest = Join-Path $kitRoot "dataset\manifest.json"
 $python = Join-Path $venvRoot "Scripts\python.exe"
 $uv = Join-Path $toolsRoot "uv.exe"
+$minimumCFreeGiB = 5.0
+$minimumDFreeGiB = 4.0
+
+if (-not $repoRoot.StartsWith("D:\", [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "The RTX 4050 runner requires the ManiaLab workspace on D:."
+}
+$cDrive = Get-PSDrive -Name C -ErrorAction Stop
+$cFreeGiB = $cDrive.Free / 1GB
+if ($cFreeGiB -le $minimumCFreeGiB) {
+    throw ("C: has {0:N2} GiB free, at or below the {1:N2} GiB stop floor." -f $cFreeGiB, $minimumCFreeGiB)
+}
+$dDrive = Get-PSDrive -Name D -ErrorAction Stop
+$dFreeGiB = $dDrive.Free / 1GB
+if ($dFreeGiB -lt $minimumDFreeGiB) {
+    throw ("D: has {0:N2} GiB free, below the {1:N2} GiB training reserve." -f $dFreeGiB, $minimumDFreeGiB)
+}
+
+if (-not (Test-Path -LiteralPath $datasetManifest -PathType Leaf)) {
+    throw "Reviewed 6–10K dataset manifest is missing at $datasetManifest."
+}
+Add-Type -AssemblyName System.Web.Extensions
+$manifestSerializer = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+$manifestSerializer.MaxJsonLength = 100MB
+$manifest = $manifestSerializer.DeserializeObject(
+    [System.IO.File]::ReadAllText($datasetManifest, [System.Text.Encoding]::UTF8)
+)
+if ($manifest["review_status"] -ne "human_reviewed") {
+    throw "The dataset is provisional. Complete zhyzx35607_review.csv and rebuild before GPU training."
+}
 
 $env:TMP = Join-Path $runtimeRoot "tmp"
 $env:TEMP = $env:TMP
 $env:TMPDIR = $env:TMP
 $env:HF_HOME = Join-Path $cacheRoot "huggingface"
 $env:HF_HUB_CACHE = Join-Path $env:HF_HOME "hub"
-$env:TRANSFORMERS_CACHE = Join-Path $env:HF_HOME "transformers"
+Remove-Item Env:TRANSFORMERS_CACHE -ErrorAction SilentlyContinue
 $env:TORCH_HOME = Join-Path $cacheRoot "torch"
 $env:TORCHINDUCTOR_CACHE_DIR = Join-Path $env:TORCH_HOME "inductor"
 $env:XDG_CACHE_HOME = Join-Path $cacheRoot "xdg"
@@ -140,11 +170,6 @@ if ($LASTEXITCODE -ne 0 -or $cudaProbe.Trim() -ne "1") {
     throw "CUDA is unavailable in this Python environment. Confirm the NVIDIA driver is installed."
 }
 
-$datasetManifest = Join-Path $kitRoot "dataset\manifest.json"
-if (-not (Test-Path -LiteralPath $datasetManifest -PathType Leaf)) {
-    throw "Dataset missing at $datasetManifest. Run python -m training.prepare_10k_dataset first."
-}
-
 if ($TorosuCli) {
     if (-not (Test-Path -LiteralPath $TorosuCli -PathType Leaf)) {
         throw "Torosu CLI does not exist: $TorosuCli"
@@ -157,7 +182,9 @@ if ($TorosuCli) {
 $arguments = @(
     "-m", "training.train_10k_lora",
     "--model", $Model,
-    "--epochs", "$Epochs"
+    "--epochs", "$Epochs",
+    "--device", "cuda",
+    "--gradient-accumulation-steps", "16"
 )
 if ($Steps -gt 0) {
     $arguments += @("--max-steps", "$Steps")
